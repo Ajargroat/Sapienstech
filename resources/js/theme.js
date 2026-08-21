@@ -1,0 +1,1 @@
+document.addEventListener('DOMContentLoaded',()=>{const shell=document.querySelector('.consultant-shell');window.SapienstechTheme={getPreset:()=>shell?.dataset.themePreset||null,setVariable:(n,v)=>document.documentElement.style.setProperty(`--${n}`,v),getVariable:n=>getComputedStyle(document.documentElement).getPropertyValue(`--${n}`).trim()};});

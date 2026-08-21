@@ -1,0 +1,8 @@
+/vendor
+/node_modules
+/public/build
+/.env
+/.phpunit.result.cache
+/storage/*.key
+/storage/pail
+/database/*.sqlite-journal
