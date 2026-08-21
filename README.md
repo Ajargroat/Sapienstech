@@ -3,7 +3,7 @@
 ## Requirements
 PHP 8.2+, Composer, Node.js 20+, npm.
 
-## Install
+## run
 ```powershell
 php artisan serve
 ```
