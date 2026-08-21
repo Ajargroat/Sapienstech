@@ -5,7 +5,7 @@ PHP 8.2+, Composer, Node.js 20+, npm.
 
 ## Install
 ```powershell
-cd D:\sapienstech-consultant-laravel
+cd YOUR_FOLDER
 composer install
 Copy-Item .env.example .env
 php artisan key:generate
