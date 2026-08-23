@@ -1,1 +1,19 @@
-@extends('layouts.consultant') @section('content')<div class="dashboard-header"><div><h1>{{ $page['title'] }}</h1><p>{{ $page['description'] }}</p></div></div><section class="panel feature-placeholder"><span class="feature-placeholder-icon"><i class="fas fa-layer-group"></i></span><h2>Feature فعال است</h2><p>این صفحه در MVP مرز feature است؛ منطق اصلی باید در کنترلر/سرویس tenant-scoped قرار بگیرد.</p><a href="{{ route('consultant.dashboard') }}" class="primary-button">بازگشت</a></section>@endsection
+@extends('layouts.consultant')
+
+@section('content')
+    <div class="dashboard-header">
+        <div>
+            <h1>{{ $page['title'] }}</h1>
+            <p>{{ $page['description'] }}</p>
+        </div>
+    </div>
+
+    <section class="panel feature-placeholder">
+        <span class="feature-placeholder-icon">
+            <i class="fas fa-layer-group"></i>
+        </span>
+        <h2>Feature فعال است</h2>
+        <p>این صفحه در MVP مرز feature است؛ منطق اصلی باید در کنترلر/سرویس tenant-scoped قرار بگیرد.</p>
+        <a href="{{ route('consultant.dashboard') }}" class="primary-button">بازگشت</a>
+    </section>
+@endsection
