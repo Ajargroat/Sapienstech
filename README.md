@@ -3,16 +3,9 @@
 ## Requirements
 PHP 8.2+, Composer, Node.js 20+, npm.
 
-## Install
+## run
 ```powershell
-cd D:\sapienstech-consultant-laravel
-composer install
-Copy-Item .env.example .env
-php artisan key:generate
-New-Item -ItemType File -Force database\database.sqlite
-php artisan migrate
-npm install
-composer run dev
+php artisan serve
 ```
 Open http://127.0.0.1:8000/consultant/dashboard
 
