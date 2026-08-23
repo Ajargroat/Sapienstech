@@ -5,4 +5,9 @@
 /.phpunit.result.cache
 /storage/*.key
 /storage/pail
+/storage/framework/cache/data
+/storage/framework/cache/*.php
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/logs/*.log
 /database/*.sqlite-journal
