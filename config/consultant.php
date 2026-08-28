@@ -24,8 +24,8 @@ return [
     |--------------------------------------------------------------------------
     |
     | These switches control which features are visible and accessible in the
-    | consultant dashboard. Disabling a feature here will hide it from the
-    | sidebar and block its routes via middleware.
+    | consultant dashboard. Disabling a feature here blocks its routes via
+    | the consultant.feature middleware.
     |
     | Multi-Tenant Security Note: These flags ensure that tenants only see
     | and can access the modules they are authorized to use.
@@ -35,86 +35,36 @@ return [
 
         /*
         |--------------------------------------------------------------------------
-        | Core & Dashboard
+        | Core & Dashboard (top navigation: Dashboard | Blog | Direct Chat)
         |--------------------------------------------------------------------------
         */
         'dashboard' => true,
+        'blog_management' => true,
+        'direct_chat' => true,
 
         /*
         |--------------------------------------------------------------------------
-        | Blog & Content Management
+        | Student Workspace (per-student destinations reached from the
+        | dashboard's Actions menu)
         |--------------------------------------------------------------------------
         */
-        'blog_management'    => true,
-        'create_post_action' => true, // Controls the "Create Post" button visibility
-
-        /*
-        |--------------------------------------------------------------------------
-        | Student Management
-        |--------------------------------------------------------------------------
-        */
-        'student_statistics' => true,
-        'student_search'     => true,
-        'student_filters'    => true,
-        'student_sorting'    => true,
-        'student_schedule'   => true,
-        'student_quizzes'    => true,
+        'student_profile'    => true,
         'report_cards'       => true,
+        'student_exams'      => true,
+        'student_schedule'   => true,
+        'source_permissions' => true,
 
         /*
         |--------------------------------------------------------------------------
-        | Quizzes & Questions
+        | Legacy top-level placeholders (no longer linked from navigation,
+        | kept for backward compatibility only)
         |--------------------------------------------------------------------------
         */
         'quiz_management'     => true,
         'question_management' => true,
+        'book_access'         => true,
+        'create_post_action'  => true,
 
-        /*
-        |--------------------------------------------------------------------------
-        | Books & Resources
-        |--------------------------------------------------------------------------
-        */
-        'book_access' => true,
-
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Sidebar
-    |--------------------------------------------------------------------------
-    */
-    'sidebar' => [
-        [
-            'key'       => 'dashboard',
-            'label_key' => 'dashboard',
-            'route'     => 'consultant.dashboard',
-            'icon'      => 'fa-chart-pie',
-        ],
-
-        [
-            'key'       => 'blog_management',
-            'label_key' => 'blog_management',
-            'route'     => 'consultant.blog',
-            'icon'      => 'fa-newspaper',
-        ],
-        [
-            'key'       => 'book_access',
-            'label_key' => 'book_access',
-            'route'     => 'consultant.permissions',
-            'icon'      => 'fa-book-reader',
-        ],
-        [
-            'key'       => 'question_management',
-            'label_key' => 'question_management',
-            'route'     => 'consultant.questions',
-            'icon'      => 'fa-file-circle-question',
-        ],
-        [
-            'key'       => 'quiz_management',
-            'label_key' => 'quiz_management',
-            'route'     => 'consultant.quizzes',
-            'icon'      => 'fa-list-check',
-        ],
     ],
 
     /*
@@ -176,6 +126,7 @@ return [
             'sidebar_bottom'    => '48px',
             'sidebar_offset'    => '36px',
             'card_gap'          => '24px',
+            'topnav_height'     => '76px',
         ],
 
         'effects' => [
@@ -245,70 +196,20 @@ return [
     |--------------------------------------------------------------------------
     */
     'labels' => [
-        // Sidebar
-        'dashboard'            => 'داشبورد',
-        'blog_management'      => 'مدیریت وبلاگ',
-        'book_access'          => 'دسترسی کتاب',
-        'question_management'  => 'مدیریت سوالات',
-        'quiz_management'      => 'مدیریت آزمون‌ها',
+        // Top navigation
+        'dashboard'       => 'داشبورد',
+        'blog_management' => 'وبلاگ',
+        'direct_chat'     => 'گفتگوی مستقیم',
 
         // Dashboard
-        'dashboard_heading'    => 'داشبورد مشاور',
-        'welcome_prefix'       => 'خوش آمدید،',
-        'create_post'          => 'نوشته جدید',
-
-        // Student stats
-        'student_statistics'   => 'آمار دانش‌آموزان',
-        'student_count'        => 'کل دانش‌آموزان',
-        'active_quizzes'       => 'آزمون‌های فعال',
-
-        // Filters
-        'filters_heading'      => 'فیلتر و جستجوی پیشرفته',
-        'search_placeholder'   => 'جستجوی نام...',
-        'all_grades'           => 'همه پایه‌ها',
-        'all_majors'           => 'همه رشته‌ها',
-        'all_genders'          => 'جنسیت (همه)',
-        'sort_asc'             => 'حروف الفبا (الف - ی)',
-        'sort_desc'            => 'حروف الفبا (ی - الف)',
+        'dashboard_heading' => 'داشبورد مشاور',
+        'welcome_prefix'    => 'خوش آمدید،',
 
         // Student list
-        'student_list'         => 'لیست دانش‌آموزان شما',
-        'student_grade'        => 'پایه',
-        'student_major'        => 'رشته',
-        'schedule'             => 'برنامه',
-        'quizzes'              => 'آزمون‌ها',
-        'report_card'          => 'کارنامه',
-
-        // Empty states
-        'empty_students_title' => 'دانش‌آموزی یافت نشد',
-        'empty_students_text'  => 'در حال حاضر هیچ دانش‌آموزی به شما اختصاص داده نشده است.',
-        'empty_search_title'   => 'نتیجه‌ای یافت نشد',
-        'empty_search_text'    => 'با فیلترهای اعمال شده دانش‌آموزی پیدا نشد.',
+        'student_list' => 'لیست دانش‌آموزان شما',
 
         // Misc
-        'logout'               => 'خروج از حساب',
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Filters
-    |--------------------------------------------------------------------------
-    */
-    'filters' => [
-        'grades' => [
-            ['value' => '10', 'label' => 'پایه دهم'],
-            ['value' => '11', 'label' => 'پایه یازدهم'],
-            ['value' => '12', 'label' => 'پایه دوازدهم'],
-        ],
-        'majors' => [
-            ['value' => 'تجربی', 'label' => 'تجربی'],
-            ['value' => 'ریاضی', 'label' => 'ریاضی'],
-            ['value' => 'انسانی', 'label' => 'انسانی'],
-        ],
-        'genders' => [
-            ['value' => 'پسر', 'label' => 'پسر'],
-            ['value' => 'دختر', 'label' => 'دختر'],
-        ],
+        'logout' => 'خروج از حساب',
     ],
 
 ];

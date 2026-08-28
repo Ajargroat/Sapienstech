@@ -1,2 +1,40 @@
 import './theme';
-document.addEventListener('DOMContentLoaded',()=>{const s=document.getElementById('sidebar'),o=document.getElementById('sidebar-overlay'),op=document.getElementById('open-sidebar-btn'),cl=document.getElementById('close-sidebar-btn');const close=()=>{s?.classList.remove('open');o?.classList.remove('open')};op?.addEventListener('click',()=>{s?.classList.add('open');o?.classList.add('open')});cl?.addEventListener('click',close);o?.addEventListener('click',close);window.addEventListener('resize',()=>{if(innerWidth>900)close()});const search=document.getElementById('searchInput'),grade=document.getElementById('gradeFilter'),major=document.getElementById('majorFilter'),gender=document.getElementById('genderFilter'),sort=document.getElementById('sortSelect'),list=document.getElementById('studentListContainer'),badge=document.getElementById('studentCountBadge'),empty=document.getElementById('searchEmptyState');if(!list)return;const filter=()=>{const cards=[...list.querySelectorAll('.student-card')],q=(search?.value||'').trim().toLocaleLowerCase('fa'),g=grade?.value||'all',m=major?.value||'all',sex=gender?.value||'all';let v=cards.filter(c=>(!q||(c.dataset.name||'').toLocaleLowerCase('fa').includes(q))&&(g==='all'||c.dataset.grade===g)&&(m==='all'||c.dataset.major===m)&&(sex==='all'||c.dataset.gender===sex));if(sort){v.sort((a,b)=>{const r=(a.dataset.name||'').localeCompare(b.dataset.name||'','fa');return sort.value==='name_desc'?-r:r});v.forEach(c=>list.appendChild(c))}cards.forEach(c=>c.classList.toggle('hidden',!v.includes(c)));if(badge)badge.textContent=`${v.length.toLocaleString('fa-IR')} نفر`;empty?.classList.toggle('hidden',v.length!==0||cards.length===0)};[search,grade,major,gender,sort].forEach(x=>{x?.addEventListener('input',filter);x?.addEventListener('change',filter)})});
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Per-row "Actions" dropdown on the student table.
+    const openDropdown = (dropdown) => {
+        document
+            .querySelectorAll('.actions-dropdown.open')
+            .forEach((el) => {
+                if (el !== dropdown) el.classList.remove('open');
+            });
+        dropdown.classList.toggle('open');
+    };
+
+    document.addEventListener('click', (event) => {
+        const toggle = event.target.closest('.actions-toggle');
+
+        if (toggle) {
+            const dropdown = toggle.parentElement.querySelector('.actions-dropdown');
+            if (dropdown) {
+                event.stopPropagation();
+                openDropdown(dropdown);
+            }
+            return;
+        }
+
+        if (!event.target.closest('.actions-dropdown')) {
+            document
+                .querySelectorAll('.actions-dropdown.open')
+                .forEach((el) => el.classList.remove('open'));
+        }
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            document
+                .querySelectorAll('.actions-dropdown.open')
+                .forEach((el) => el.classList.remove('open'));
+        }
+    });
+});

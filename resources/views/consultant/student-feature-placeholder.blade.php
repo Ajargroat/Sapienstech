@@ -4,15 +4,19 @@
     <div class="dashboard-header">
         <div>
             <h1>{{ $title }}</h1>
-            <p>شناسه دانش‌آموز: {{ persian_digits($student) }}</p>
+            <p>
+                <a href="{{ route('consultant.student.profile', $student) }}" class="secondary-button">
+                    <i class="fas fa-arrow-right"></i> بازگشت به پروفایل {{ $student->name }}
+                </a>
+            </p>
         </div>
     </div>
 
     <section class="panel feature-placeholder">
-        <span class="feature-placeholder-icon">
-            <i class="fas fa-user-graduate"></i>
-        </span>
-        <h2>Student feature boundary</h2>
-        <p>در پیاده‌سازی واقعی، دانش‌آموز باید فقط از tenant جاری پیدا شود و هرگز به ID به تنهایی اعتماد نشود.</p>
+        <div class="feature-placeholder-icon">
+            <i class="fas fa-tools"></i>
+        </div>
+        <h2>{{ $title }}</h2>
+        <p>این بخش برای «{{ $student->name }}» به‌زودی راه‌اندازی می‌شود.</p>
     </section>
 @endsection

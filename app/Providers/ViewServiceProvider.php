@@ -9,10 +9,9 @@ class ViewServiceProvider extends ServiceProvider {
          'tenant'  => $c['tenant'],
          'theme'   => $c['theme'],    // <-- here
          'labels'  => $c['labels'],
-         'filters' => $c['filters'],
-         'sidebar' => $c['sidebar'],
-     ]); 
+         'filters' => $c['filters'] ?? [],
+         'sidebar' => $c['sidebar'] ?? [],
+     ]);
  });
 }
 }
-

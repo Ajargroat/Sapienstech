@@ -3,95 +3,63 @@
 namespace App\Http\Controllers\Consultant;
 
 use App\Http\Controllers\Controller;
+use App\Models\Student;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class ConsultantDashboardController extends Controller
 {
-    public function index(Request $request)
+    /**
+     * The dashboard IS the student workspace: it lists the current tenant's
+     * students, searchable by name/email, server-side paginated.
+     *
+     * Tenant isolation is handled entirely by Student::BelongsToTenant
+     * (global scope) -- this controller never touches tenant_id directly,
+     * and never trusts a client-supplied tenant id.
+     */
+    public function index(Request $request): View
     {
-        $assignedStudents = [
-            [
-                'id' => 1,
-                'username' => 'علی رضایی',
-                'email' => 'ali@example.com',
-                'grade' => '12',
-                'gender' => 'پسر',
-                'major' => 'تجربی',
-            ],
-            [
-                'id' => 2,
-                'username' => 'سارا محمدی',
-                'email' => 'sara@example.com',
-                'grade' => '11',
-                'gender' => 'دختر',
-                'major' => 'ریاضی',
-            ],
-            [
-                'id' => 3,
-                'username' => 'محمد کریمی',
-                'email' => 'mohammad@example.com',
-                'grade' => '10',
-                'gender' => 'پسر',
-                'major' => 'انسانی',
-            ],
-            [
-                'id' => 4,
-                'username' => 'نگار احمدی',
-                'email' => 'negar@example.com',
-                'grade' => '12',
-                'gender' => 'دختر',
-                'major' => 'تجربی',
-            ],
-        ];
+        $search = trim((string) $request->query('search', ''));
 
-        $labels = [
-            'dashboard_heading' => 'داشبورد مشاور',
-            'welcome_prefix' => 'خوش آمدید',
-            'create_post' => 'ایجاد پست',
-            'student_count' => 'تعداد دانش‌آموزان',
-            'active_quizzes' => 'آزمون‌های فعال',
-            'filters_heading' => 'فیلتر دانش‌آموزان',
-            'search_placeholder' => 'جستجوی دانش‌آموز...',
-            'all_grades' => 'همه پایه‌ها',
-            'all_majors' => 'همه رشته‌ها',
-            'all_genders' => 'همه جنسیت‌ها',
-            'sort_asc' => 'نام: صعودی',
-            'sort_desc' => 'نام: نزولی',
-            'student_list' => 'لیست دانش‌آموزان',
-            'student_grade' => 'پایه',
-            'student_major' => 'رشته',
-            'schedule' => 'برنامه',
-            'quizzes' => 'آزمون‌ها',
-            'report_card' => 'کارنامه',
-            'empty_students_title' => 'دانش‌آموزی وجود ندارد',
-            'empty_students_text' => 'در حال حاضر دانش‌آموزی به شما اختصاص داده نشده است.',
-            'empty_search_title' => 'نتیجه‌ای پیدا نشد',
-            'empty_search_text' => 'دانش‌آموزی مطابق جستجوی شما پیدا نشد.',
-        ];
-
-        $filters = [
-            'grades' => [
-                ['value' => '10', 'label' => 'دهم'],
-                ['value' => '11', 'label' => 'یازدهم'],
-                ['value' => '12', 'label' => 'دوازدهم'],
-            ],
-            'majors' => [
-                ['value' => 'تجربی', 'label' => 'تجربی'],
-                ['value' => 'ریاضی', 'label' => 'ریاضی'],
-                ['value' => 'انسانی', 'label' => 'انسانی'],
-            ],
-            'genders' => [
-                ['value' => 'پسر', 'label' => 'پسر'],
-                ['value' => 'دختر', 'label' => 'دختر'],
-            ],
-        ];
+        $students = Student::query()
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%");
+                });
+            })
+            ->orderBy('name')
+            ->paginate(10)
+            ->withQueryString();
 
         return view('consultant.dashboard', [
-            'assigned_students' => $assignedStudents,
-            'active_quizzes_count' => 7,
+            'students' => $students,
+            'search' => $search,
             'username' => session('username', 'مدیر سیستم'),
-            'labels' => $labels,
-            'filters' => $filters,
+            'labels' => [
+                'dashboard_heading' => 'داشبورد مشاور',
+                'welcome_prefix' => 'خوش آمدید',
+                'student_list' => 'لیست دانش‌آموزان شما',
+                'search_placeholder' => 'جستجو بر اساس نام یا ایمیل...',
+                'search_button' => 'جستجو',
+                'clear_search' => 'پاک کردن جستجو',
+                'th_name' => 'نام',
+                'th_email' => 'ایمیل',
+                'th_grade' => 'پایه',
+                'th_gender' => 'جنسیت',
+                'th_major' => 'رشته',
+                'th_actions' => 'عملیات',
+                'actions_label' => 'عملیات',
+                'action_profile' => 'پروفایل دانش‌آموز',
+                'action_report_card' => 'کارنامه',
+                'action_exams' => 'آزمون‌ها',
+                'action_schedule' => 'برنامه',
+                'action_source_permissions' => 'دسترسی منابع',
+                'empty_students_title' => 'دانش‌آموزی وجود ندارد',
+                'empty_students_text' => 'در حال حاضر دانش‌آموزی برای این مجموعه ثبت نشده است.',
+                'empty_search_title' => 'نتیجه‌ای پیدا نشد',
+                'empty_search_text' => 'دانش‌آموزی مطابق جستجوی شما پیدا نشد.',
+            ],
         ]);
     }
 }
