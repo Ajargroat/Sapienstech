@@ -90,6 +90,7 @@ return [
             'route'     => 'consultant.dashboard',
             'icon'      => 'fa-chart-pie',
         ],
+
         [
             'key'       => 'blog_management',
             'label_key' => 'blog_management',
