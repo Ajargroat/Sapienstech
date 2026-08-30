@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Aug 28, 2026 at 01:34 PM
+-- Generation Time: Aug 30, 2026 at 03:09 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.0.30
 
@@ -292,6 +292,13 @@ CREATE TABLE `schedule_items` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ;
+
+--
+-- Dumping data for table `schedule_items`
+--
+
+INSERT INTO `schedule_items` (`id`, `tenant_id`, `student_id`, `week_start_date`, `title`, `description`, `start_datetime`, `end_datetime`, `color`, `item_type`, `created_by_type`, `created_by_user_id`, `created_by_student_id`, `link_url`, `book_name`, `test_count`, `page_count`, `is_completed`, `completion_timestamp`, `created_at`, `updated_at`) VALUES
+(1, 1, 48, '2026-08-29', 'as', NULL, '2026-08-29 07:15:00', '2026-08-29 08:45:00', '#3b82f6', 'consultant_event', 'user', NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-08-30 17:28:31', '2026-08-30 17:28:31');
 
 -- --------------------------------------------------------
 
