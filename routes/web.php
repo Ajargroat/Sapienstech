@@ -3,6 +3,7 @@
 use App\Http\Controllers\Consultant\ConsultantDashboardController;
 use App\Http\Controllers\Consultant\ConsultantFeatureController;
 use App\Http\Controllers\Consultant\StudentFeatureController;
+use App\Http\Controllers\Consultant\StudentScheduleController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/consultant/dashboard');
@@ -50,10 +51,23 @@ Route::prefix('consultant')->name('consultant.')->group(function () {
             ->middleware('consultant.feature:student_exams')
             ->name('exams');
 
-        Route::get('/schedule', [StudentFeatureController::class, 'show'])
-            ->defaults('feature', 'schedule')
+        // Real schedule editor (replaces the old placeholder page). Kept
+        // under the same route name, `consultant.student.schedule`, so any
+        // existing links (e.g. the dashboard's Actions menu) keep working
+        // unchanged.
+        Route::get('/schedule', [StudentScheduleController::class, 'edit'])
             ->middleware('consultant.feature:student_schedule')
             ->name('schedule');
+
+        // JSON API backing the schedule editor's calendar. Gated behind the
+        // same student_schedule feature flag as the page itself.
+        Route::prefix('schedule/items')->name('schedule.items.')->middleware('consultant.feature:student_schedule')->group(function () {
+            Route::get('/', [StudentScheduleController::class, 'items'])->name('index');
+            Route::post('/', [StudentScheduleController::class, 'store'])->name('store');
+            Route::put('/{item}', [StudentScheduleController::class, 'update'])->name('update');
+            Route::delete('/{item}', [StudentScheduleController::class, 'destroy'])->name('destroy');
+            Route::get('/{item}/comments', [StudentScheduleController::class, 'comments'])->name('comments');
+        });
 
         Route::get('/source-permissions', [StudentFeatureController::class, 'show'])
             ->defaults('feature', 'source-permissions')

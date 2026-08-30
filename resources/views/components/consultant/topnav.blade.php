@@ -29,6 +29,10 @@
         </nav>
 
         <div class="topnav-user">
+            <button type="button" id="theme-toggle-btn" class="theme-toggle" title="تغییر حالت روشن/تاریک" aria-label="تغییر حالت روشن/تاریک">
+                <i class="fas fa-moon"></i>
+                <i class="fas fa-sun"></i>
+            </button>
             <span class="user-avatar user-avatar-sm">
                 <i class="fas fa-user"></i>
             </span>

@@ -1,6 +1,22 @@
 @import "tailwindcss";
 
 /* =========================================
+   0. Theme color tokens
+   -----------------------------------------
+   Registers the tenant's CSS custom properties (set inline on <body> by
+   layouts.consultant) as real Tailwind color utilities. Without this block,
+   classes like bg-primary / text-primary / ring-primary compile to nothing.
+   ========================================= */
+@theme {
+  --color-primary: var(--c-primary);
+  --color-primary-hover: var(--c-primary-hover);
+  --color-secondary: var(--c-secondary);
+  --color-success: var(--c-success);
+  --color-info: var(--c-info);
+  --color-danger: var(--c-danger);
+}
+
+/* =========================================
    1. Global Resets & Base Styles
    ========================================= */
 * {
@@ -169,6 +185,38 @@ a {
 .user-avatar-sm {
   width: 34px;
   height: 34px;
+}
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 1px solid var(--c-border);
+  background: color-mix(in srgb, var(--c-text) 5%, transparent);
+  color: var(--c-muted);
+  cursor: pointer;
+  transition: all var(--animation-duration) ease;
+  flex: 0 0 auto;
+}
+
+.theme-toggle:hover {
+  color: var(--c-text);
+  background: color-mix(in srgb, var(--c-text) 10%, transparent);
+}
+
+.theme-toggle .fa-sun {
+  display: none;
+}
+
+[data-color-scheme="light"] .theme-toggle .fa-sun {
+  display: inline;
+}
+
+[data-color-scheme="light"] .theme-toggle .fa-moon {
+  display: none;
 }
 
 /* =========================================
