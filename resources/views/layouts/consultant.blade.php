@@ -23,6 +23,8 @@
         --c-surface-elevated: {{ $theme['colors']['surface_elevated'] }};
         --c-text: {{ $theme['colors']['text'] }};
         --c-muted: {{ $theme['colors']['text_muted'] }};
+        --c-text-subtle: {{ $theme['colors']['text_subtle'] ?? '#6B7280' }};
+        --c-text-on-primary: {{ $theme['colors']['text_on_primary'] ?? '#000000' }};
         --c-border: {{ $theme['colors']['border'] }};
         --c-border-strong: {{ $theme['colors']['border_strong'] }};
         --c-success: {{ $theme['colors']['success'] }};
@@ -35,6 +37,7 @@
         --backdrop-blur: {{ $theme['effects']['backdrop_blur'] }};
         --brand-gradient: {{ $theme['gradients']['brand'] }};
         --animation-duration: {{ $theme['effects']['animation_duration'] }};
+        --student-avatar-size: {{ $theme['shape']['student_avatar_size'] ?? '40px' }};
     "
     data-theme-preset="{{ $theme['preset'] }}"
 >

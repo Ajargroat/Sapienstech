@@ -48,13 +48,17 @@
                 </thead>
                 <tbody>
                     @forelse($students as $student)
-                        <tr>
+                        <tr class="student-row" data-href="{{ route('consultant.student.profile', $student) }}">
                             <td data-label="{{ $labels['th_name'] }}">
                                 <div class="student-cell">
                                     <span class="student-avatar-sm">
-                                        {{ mb_substr($student->name, 0, 1) }}
+                                        @if($student->avatar)
+                                            <img src="{{ asset('storage/' . $student->avatar) }}" alt="{{ $student->name }}" class="student-avatar-img">
+                                        @else
+                                            {{ mb_substr($student->name, 0, 1) }}
+                                        @endif
                                     </span>
-                                    {{ $student->name }}
+                                    <a href="{{ route('consultant.student.profile', $student) }}" class="student-name-link">{{ $student->name }}</a>
                                 </div>
                             </td>
                             <td data-label="{{ $labels['th_email'] }}">{{ $student->email }}</td>
@@ -68,9 +72,6 @@
                                         <i class="fas fa-chevron-down"></i>
                                     </button>
                                     <div class="actions-dropdown">
-                                        <a href="{{ route('consultant.student.profile', $student) }}">
-                                            <i class="fas fa-id-card"></i> {{ $labels['action_profile'] }}
-                                        </a>
                                         <a href="{{ route('consultant.student.report-card', $student) }}">
                                             <i class="fas fa-chart-line"></i> {{ $labels['action_report_card'] }}
                                         </a>
@@ -113,4 +114,13 @@
             </div>
         @endif
     </section>
+
+    <script>
+        document.querySelectorAll('.student-row').forEach(function(row) {
+            row.addEventListener('click', function(e) {
+                if (e.target.closest('.actions-menu') || e.target.closest('a') || e.target.closest('button')) return;
+                window.location = this.dataset.href;
+            });
+        });
+    </script>
 @endsection

@@ -40,6 +40,10 @@ Route::prefix('consultant')->name('consultant.')->group(function () {
             ->middleware('consultant.feature:student_profile')
             ->name('profile');
 
+        Route::put('/', [StudentFeatureController::class, 'update'])
+            ->middleware('consultant.feature:student_profile')
+            ->name('profile.update');
+
         Route::get('/report-card', [StudentFeatureController::class, 'show'])
             ->defaults('feature', 'report-card')
             ->middleware('consultant.feature:report_cards')

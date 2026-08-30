@@ -7,8 +7,9 @@ class ViewServiceProvider extends ServiceProvider {
      $c = config('consultant');
      $view->with([
          'tenant'  => $c['tenant'],
-         'theme'   => $c['theme'],    // <-- here
+         'theme'   => $c['theme'],
          'labels'  => $c['labels'],
+         'profile' => $c['profile'] ?? [],
          'filters' => $c['filters'] ?? [],
          'sidebar' => $c['sidebar'] ?? [],
      ]);

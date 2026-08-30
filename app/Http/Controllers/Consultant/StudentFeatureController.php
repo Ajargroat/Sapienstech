@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Consultant;
 
 use App\Http\Controllers\Controller;
 use App\Models\Student;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 /**
@@ -41,6 +43,54 @@ class StudentFeatureController extends Controller
         return view('consultant.students.profile', [
             'student' => $student,
         ]);
+    }
+
+    /**
+     * Persists the profile edit form. Which fields exist, whether they are
+     * required, and their input type are all driven by
+     * config('consultant.profile.form'), so each tenant can shape its own
+     * profile form without touching the view or this controller. Avatar
+     * storage settings (disk/path/limits) come from the same config file.
+     */
+    public function update(Request $request, Student $student): RedirectResponse
+    {
+        $avatarConfig = config('consultant.profile.avatar', []);
+
+        $rules = [
+            'avatar' => [
+                'nullable',
+                'image',
+                'mimes:' . ($avatarConfig['mimes'] ?? 'jpeg,jpg,png,webp'),
+                'max:' . ($avatarConfig['max_size_kb'] ?? 1024),
+            ],
+        ];
+
+        foreach (config('consultant.profile.form.fields', []) as $field) {
+            if (! isset($field['key'])) {
+                continue;
+            }
+
+            $rules[$field['key']] = [
+                ($field['required'] ?? false) ? 'required' : 'nullable',
+                ($field['type'] ?? 'text') === 'email' ? 'email' : 'string',
+                'max:255',
+            ];
+        }
+
+        $validated = $request->validate($rules);
+
+        if ($request->hasFile('avatar')) {
+            $validated['avatar'] = $request->file('avatar')->store(
+                $avatarConfig['path'] ?? 'avatars',
+                $avatarConfig['disk'] ?? 'public'
+            );
+        }
+
+        $student->update($validated);
+
+        return redirect()
+            ->route('consultant.student.profile', $student)
+            ->with('status', 'پروفایل با موفقیت به‌روزرسانی شد.');
     }
 
     public function show(string $feature, Student $student): View

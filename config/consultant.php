@@ -87,6 +87,7 @@ return [
             'text'                 => '#FFFFFF',
             'text_muted'           => '#9CA3AF',
             'text_subtle'          => '#6B7280',
+            'text_on_primary'      => '#000000',
             'border'               => 'rgba(255,255,255,.08)',
             'border_strong'        => 'rgba(255,255,255,.16)',
             'success'              => '#34D399',
@@ -115,7 +116,8 @@ return [
             'button_radius'  => '999px',
             'input_radius'   => '14px',
             'card_radius'    => '24px',
-            'sidebar_radius' => '24px',
+            'sidebar_radius'      => '24px',
+            'student_avatar_size' => '40px',
         ],
 
         'layout' => [
@@ -208,8 +210,92 @@ return [
         // Student list
         'student_list' => 'لیست دانش‌آموزان شما',
 
+        // Profile
+        'profile_heading'      => 'پروفایل دانش‌آموز',
+        'back_to_students'     => 'بازگشت به لیست دانش‌آموزان',
+        'profile_form_heading' => 'ویرایش اطلاعات',
+        'upload_photo'         => 'انتخاب تصویر',
+        'save_photo'           => 'ذخیره تصویر',
+        'save_changes'         => 'ذخیره تغییرات',
+
+        // Field labels
+        'student_name'  => 'نام',
+        'student_email' => 'ایمیل',
+        'student_grade' => 'پایه',
+        'student_gender' => 'جنسیت',
+        'student_major' => 'رشته',
+
         // Misc
         'logout' => 'خروج از حساب',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Student Profile
+    |--------------------------------------------------------------------------
+    |
+    | Controls how the student profile page is rendered and how avatar
+    | uploads are handled.  Every label references a key from the labels
+    | section above so that translations stay centralised.
+    |
+    */
+    'profile' => [
+        'avatar' => [
+            'disk'        => 'public',
+            'path'        => 'avatars',
+            'fallback'    => 'initials',
+            'max_size_kb' => 1024,
+            'mimes'       => 'jpeg,jpg,png,webp',
+        ],
+
+        'form' => [
+            'method' => 'PUT',
+            'fields' => [
+                [
+                    'key'         => 'name',
+                    'label'       => 'student_name',
+                    'type'        => 'text',
+                    'required'    => true,
+                    'placeholder' => 'نام کامل دانش‌آموز',
+                ],
+                [
+                    'key'         => 'email',
+                    'label'       => 'student_email',
+                    'type'        => 'email',
+                    'required'    => true,
+                    'placeholder' => 'example@domain.com',
+                    'ltr'         => true,
+                ],
+                [
+                    'key'         => 'grade',
+                    'label'       => 'student_grade',
+                    'type'        => 'text',
+                    'required'    => false,
+                    'placeholder' => 'مثلاً: دهم',
+                ],
+                [
+                    'key'         => 'gender',
+                    'label'       => 'student_gender',
+                    'type'        => 'text',
+                    'required'    => false,
+                    'placeholder' => 'مثلاً: دختر',
+                ],
+                [
+                    'key'         => 'major',
+                    'label'       => 'student_major',
+                    'type'        => 'text',
+                    'required'    => false,
+                    'placeholder' => 'مثلاً: ریاضی فیزیک',
+                ],
+            ],
+        ],
+
+        // Fields shown read-only on the profile page: model column => label key
+        'display_fields' => [
+            'grade'  => 'student_grade',
+            'gender' => 'student_gender',
+            'major'  => 'student_major',
+        ],
     ],
 
 ];

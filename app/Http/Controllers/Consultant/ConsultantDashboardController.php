@@ -50,7 +50,6 @@ class ConsultantDashboardController extends Controller
                 'th_major' => 'رشته',
                 'th_actions' => 'عملیات',
                 'actions_label' => 'عملیات',
-                'action_profile' => 'پروفایل دانش‌آموز',
                 'action_report_card' => 'کارنامه',
                 'action_exams' => 'آزمون‌ها',
                 'action_schedule' => 'برنامه',

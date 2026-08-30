@@ -18,6 +18,7 @@ class Student extends Model
         'grade',
         'gender',
         'major',
+        'avatar',
     ];
 
     protected $hidden = [
