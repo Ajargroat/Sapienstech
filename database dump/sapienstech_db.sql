@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Aug 30, 2026 at 03:09 PM
+-- Generation Time: Sep 01, 2026 at 06:27 PM
 -- Server version: 10.4.32-MariaDB
--- PHP Version: 8.0.30
+-- PHP Version: 8.2.12
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -185,7 +185,7 @@ CREATE TABLE `event_comments` (
   `commenter_student_id` bigint(20) UNSIGNED DEFAULT NULL,
   `comment_text` text NOT NULL,
   `commented_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -217,7 +217,7 @@ CREATE TABLE `item_comments` (
   `commenter_student_id` bigint(20) UNSIGNED DEFAULT NULL,
   `comment_text` text NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -291,14 +291,16 @@ CREATE TABLE `schedule_items` (
   `completion_timestamp` datetime DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `schedule_items`
 --
 
 INSERT INTO `schedule_items` (`id`, `tenant_id`, `student_id`, `week_start_date`, `title`, `description`, `start_datetime`, `end_datetime`, `color`, `item_type`, `created_by_type`, `created_by_user_id`, `created_by_student_id`, `link_url`, `book_name`, `test_count`, `page_count`, `is_completed`, `completion_timestamp`, `created_at`, `updated_at`) VALUES
-(1, 1, 48, '2026-08-29', 'as', NULL, '2026-08-29 07:15:00', '2026-08-29 08:45:00', '#3b82f6', 'consultant_event', 'user', NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-08-30 17:28:31', '2026-08-30 17:28:31');
+(1, 1, 48, '2026-08-29', 'as', NULL, '2026-08-29 07:15:00', '2026-08-29 08:45:00', '#3b82f6', 'consultant_event', 'user', NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-08-30 17:28:31', '2026-08-30 17:28:31'),
+(2, 1, 48, '2026-08-29', 'جق', 'بسیتنالبعهشبلشبدصش', '2026-08-31 07:30:00', '2026-08-31 11:45:00', '#ec4899', 'consultant_event', 'user', NULL, NULL, NULL, 'منسابمشنباسمباع', 12, 21, 0, NULL, '2026-08-30 09:45:20', '2026-08-30 09:45:20'),
+(3, 1, 48, '2026-08-29', 'جق', 'بسیتنالبعهشبلشبدصش', '2026-08-31 07:30:00', '2026-08-31 11:45:00', '#ec4899', 'consultant_event', 'user', NULL, NULL, NULL, 'منسابمشنباسمباع', 12, 21, 0, NULL, '2026-08-30 09:45:21', '2026-08-30 09:45:21');
 
 -- --------------------------------------------------------
 
@@ -326,26 +328,26 @@ CREATE TABLE `students` (
 --
 
 INSERT INTO `students` (`id`, `tenant_id`, `name`, `email`, `password`, `grade`, `gender`, `major`, `email_verified_at`, `remember_token`, `created_at`, `updated_at`) VALUES
-(40, 1, 'مازیار', 'mahmoudieh.simin@example.net', '$2y$12$9MlyrSmeZFP4N0CQM8eCxe.et1IG5BEYPD3cOG8F7gSfQ0BWaSjTG', NULL, NULL, NULL, NULL, NULL, '2026-08-28 17:46:13', '2026-08-28 17:46:13'),
-(41, 1, 'مهربانو', 'dhusseini@example.net', '$2y$12$t2oRNd9dA.oz9cNVavj6dOvckm014a9GbZ..hOpumkG74Z98fDEOi', NULL, NULL, NULL, NULL, NULL, '2026-08-28 17:46:13', '2026-08-28 17:46:13'),
-(42, 1, 'پارسا', 'yaghoub78@example.net', '$2y$12$4ePhki0Y5FMB9RU.DH2.gOqYjLudApitMy5iWfKCoWAvnjTz50z.i', NULL, NULL, NULL, NULL, NULL, '2026-08-28 17:46:13', '2026-08-28 17:46:13'),
-(43, 1, 'پارمین', 'laleh63@example.net', '$2y$12$u2n8f./xyPu5q0O5p3XLFOBZhWA0mpKqVPjc0mlHhvKtJHQbtqE0e', NULL, NULL, NULL, NULL, NULL, '2026-08-28 17:46:13', '2026-08-28 17:46:13'),
-(44, 1, 'گلنسا', 'yrahmani@example.com', '$2y$12$mAsDsH4Zi3i8/yW7oi7qfu/8hApcYngVSuQePEKXhSrsEYrq5qNAq', NULL, NULL, NULL, NULL, NULL, '2026-08-28 17:46:13', '2026-08-28 17:46:13'),
-(45, 1, 'پیروزه', 'mhusseini@example.org', '$2y$12$pH6ytrt6pkVzpur3dzh5dOpYSuhzebGTR3nS/e6kVxevsxQf03bJy', NULL, NULL, NULL, NULL, NULL, '2026-08-28 17:46:13', '2026-08-28 17:46:13'),
-(46, 1, 'فرامرز', 'salehi.anousheh@example.net', '$2y$12$vMzthZH9Gz8j/LBdacwB0.ZYtLAIGjfEx4W8xmtF0PXptN9jErE8u', NULL, NULL, NULL, NULL, NULL, '2026-08-28 17:46:13', '2026-08-28 17:46:13'),
-(47, 1, 'تبسم', 'namazi.mahshid@example.net', '$2y$12$LNBLB/H.AqTeZ0CFKjkEkuqujwIMkyF0AeM5yBm6BSTVK1GLR9yNu', NULL, NULL, NULL, NULL, NULL, '2026-08-28 17:46:13', '2026-08-28 17:46:13'),
-(48, 1, 'آتاناز', 'khorsandi.mohammad@example.net', '$2y$12$.enRFrABHN54pFa5BIsEc.jmIeOPIaX2GBRZjnTsg2sj4kDCUhGa6', NULL, NULL, NULL, NULL, NULL, '2026-08-28 17:46:13', '2026-08-28 17:46:13'),
-(49, 1, 'بارمان', 'lmokri@example.org', '$2y$12$s/rESs4aKb7N7eXTowhKSO9jR5zpXB/8FNRjBXyZXfC5feYw9hbO2', NULL, NULL, NULL, NULL, NULL, '2026-08-28 17:46:13', '2026-08-28 17:46:13'),
-(50, 1, 'عدیله', 'hijazi.saman@example.org', '$2y$12$7iAnReiTA5JP.nvTh.8N3.m9RyQk6nuvfgBlr4szIpwAAZboh/Ji.', NULL, NULL, NULL, NULL, NULL, '2026-08-28 17:46:13', '2026-08-28 17:46:13'),
-(51, 1, 'آذین بانو', 'salemi.kourosh@example.com', '$2y$12$DVTBjILimVUzUL0/L7wUheWhDcboPyYxJNqn3xf5Wiv0TDkuEFQkO', NULL, NULL, NULL, NULL, NULL, '2026-08-28 17:46:13', '2026-08-28 17:46:13'),
-(52, 1, 'امیر', 'farnaz.mahmoudi@example.org', '$2y$12$x3t19Lt8iW8rAvlLqy14euJotoQmrM2IYaP7HuEUp6T8pjHdwZQ/m', NULL, NULL, NULL, NULL, NULL, '2026-08-28 17:46:13', '2026-08-28 17:46:13'),
-(53, 1, 'قباد', 'ljamshidi@example.com', '$2y$12$u3h8r3y6ZX0R5P7EdLe9/eF73bqKGTpRPyQTZZOTA9Js.nMtSuwXS', NULL, NULL, NULL, NULL, NULL, '2026-08-28 17:46:13', '2026-08-28 17:46:13'),
-(54, 1, 'زرتشت', 'mtalebi@example.net', '$2y$12$8qkucdBYcy5K9sN3TX/0s.xnrKGeIRLWwi91P747ZUSok/hj4vawe', NULL, NULL, NULL, NULL, NULL, '2026-08-28 17:46:13', '2026-08-28 17:46:13'),
-(55, 1, 'بهامین', 'bnamdar@example.com', '$2y$12$g5qAK5XuQJj0o8HEG3K6oei/nZ0c9WTtIZvTJtsTU9KWsUFXQ2qLK', NULL, NULL, NULL, NULL, NULL, '2026-08-28 17:46:13', '2026-08-28 17:46:13'),
-(56, 1, 'خندان', 'shahin.ahmadi@example.org', '$2y$12$IK9DJrE3Y7Mjd6fGA.7cfu6/dFRWOfBXVkeL6NUCNmig59CZtlGJG', NULL, NULL, NULL, NULL, NULL, '2026-08-28 17:46:13', '2026-08-28 17:46:13'),
-(57, 1, 'سیامک', 'meysam.asadi@example.com', '$2y$12$C5SjPbNbaWTl1yRmtO8TguL5YM0UL/DRfN5UXfOmtdAv6FkDnQrm6', NULL, NULL, NULL, NULL, NULL, '2026-08-28 17:46:13', '2026-08-28 17:46:13'),
-(58, 1, 'آتنا', 'farhad99@example.org', '$2y$12$aisYm3lWOi0E852ZtrmZCesnXrgBasM23OeuTGAtW1ZYkGCt4nRKW', NULL, NULL, NULL, NULL, NULL, '2026-08-28 17:46:13', '2026-08-28 17:46:13'),
-(59, 1, 'چیکا', 'manuchehr.zandi@example.org', '$2y$12$veL/rSHjSb79/vYscAhHmeZ.HKFIS0z0Pbbohn6FlvHgpO5zFAu2y', NULL, NULL, NULL, NULL, NULL, '2026-08-28 17:46:13', '2026-08-28 17:46:13');
+(40, 1, 'مازیار علی‌پور', 'mahmoudieh.simin@example.net', '$2y$12$9MlyrSmeZFP4N0CQM8eCxe.et1IG5BEYPD3cOG8F7gSfQ0BWaSjTG', 'یازدهم', 'دختر', 'تجربی', NULL, NULL, '2026-08-28 17:46:13', '2026-09-01 11:44:49'),
+(41, 1, 'سارا عطایی', 'dhusseini@example.net', '$2y$12$t2oRNd9dA.oz9cNVavj6dOvckm014a9GbZ..hOpumkG74Z98fDEOi', 'یازدهم', 'دختر', 'تجربی', NULL, NULL, '2026-08-28 17:46:13', '2026-09-01 11:45:04'),
+(42, 1, 'پارسا داودی‌پناه', 'yaghoub78@example.net', '$2y$12$4ePhki0Y5FMB9RU.DH2.gOqYjLudApitMy5iWfKCoWAvnjTz50z.i', 'یازدهم', 'دختر', 'تجربی', NULL, NULL, '2026-08-28 17:46:13', '2026-09-01 11:50:27'),
+(43, 1, 'آرمین نصرتی', 'laleh63@example.net', '$2y$12$u2n8f./xyPu5q0O5p3XLFOBZhWA0mpKqVPjc0mlHhvKtJHQbtqE0e', 'یازدهم', 'دختر', 'تجربی', NULL, NULL, '2026-08-28 17:46:13', '2026-09-01 11:45:36'),
+(44, 1, 'محدثه پناهی', 'yrahmani@example.com', '$2y$12$mAsDsH4Zi3i8/yW7oi7qfu/8hApcYngVSuQePEKXhSrsEYrq5qNAq', 'یازدهم', 'دختر', 'تجربی', NULL, NULL, '2026-08-28 17:46:13', '2026-09-01 11:45:52'),
+(45, 1, 'پریسا ابراهیمی', 'mhusseini@example.org', '$2y$12$pH6ytrt6pkVzpur3dzh5dOpYSuhzebGTR3nS/e6kVxevsxQf03bJy', 'یازدهم', 'دختر', 'تجربی', NULL, NULL, '2026-08-28 17:46:13', '2026-09-01 11:46:05'),
+(46, 1, 'فرامرز اصلانی', 'salehi.anousheh@example.net', '$2y$12$vMzthZH9Gz8j/LBdacwB0.ZYtLAIGjfEx4W8xmtF0PXptN9jErE8u', 'یازدهم', 'دختر', 'تجربی', NULL, NULL, '2026-08-28 17:46:13', '2026-09-01 11:46:14'),
+(47, 1, 'تینا طاهری', 'namazi.mahshid@example.net', '$2y$12$LNBLB/H.AqTeZ0CFKjkEkuqujwIMkyF0AeM5yBm6BSTVK1GLR9yNu', 'یازدهم', 'دختر', 'تجربی', NULL, NULL, '2026-08-28 17:46:13', '2026-09-01 11:46:49'),
+(48, 1, 'مانی ولایتی', 'khorsandi.mohammad@example.net', '$2y$12$.enRFrABHN54pFa5BIsEc.jmIeOPIaX2GBRZjnTsg2sj4kDCUhGa6', 'یازدهم', 'دختر', 'تجربی', NULL, NULL, '2026-08-28 17:46:13', '2026-09-01 11:47:12'),
+(49, 1, 'محمدرضا جنت‌فریدونی', 'lmokri@example.org', '$2y$12$s/rESs4aKb7N7eXTowhKSO9jR5zpXB/8FNRjBXyZXfC5feYw9hbO2', 'دوازدهم', 'پسر', 'انسانی', NULL, NULL, '2026-08-28 17:46:13', '2026-09-01 11:47:26'),
+(50, 1, 'امیرحسین بخشی', 'hijazi.saman@example.org', '$2y$12$7iAnReiTA5JP.nvTh.8N3.m9RyQk6nuvfgBlr4szIpwAAZboh/Ji.', 'یازدهم', 'دختر', 'تجربی', NULL, NULL, '2026-08-28 17:46:13', '2026-09-01 11:47:38'),
+(51, 1, 'سینا رحمانی', 'salemi.kourosh@example.com', '$2y$12$DVTBjILimVUzUL0/L7wUheWhDcboPyYxJNqn3xf5Wiv0TDkuEFQkO', 'یازدهم', 'دختر', 'تجربی', NULL, NULL, '2026-08-28 17:46:13', '2026-09-01 11:47:48'),
+(52, 1, 'امیررضا معمار', 'farnaz.mahmoudi@example.org', '$2y$12$x3t19Lt8iW8rAvlLqy14euJotoQmrM2IYaP7HuEUp6T8pjHdwZQ/m', 'دهم', 'پسر', 'ریاضی', NULL, NULL, '2026-08-28 17:46:13', '2026-09-01 11:48:02'),
+(53, 1, 'فاطمه افضلی', 'ljamshidi@example.com', '$2y$12$u3h8r3y6ZX0R5P7EdLe9/eF73bqKGTpRPyQTZZOTA9Js.nMtSuwXS', 'یازدهم', 'دختر', 'تجربی', NULL, NULL, '2026-08-28 17:46:13', '2026-09-01 11:48:18'),
+(54, 1, 'آنیتا سوداگری', 'mtalebi@example.net', '$2y$12$8qkucdBYcy5K9sN3TX/0s.xnrKGeIRLWwi91P747ZUSok/hj4vawe', 'یازدهم', 'دختر', 'تجربی', NULL, NULL, '2026-08-28 17:46:13', '2026-09-01 11:48:36'),
+(55, 1, 'باران دولت‌شاهی', 'bnamdar@example.com', '$2y$12$g5qAK5XuQJj0o8HEG3K6oei/nZ0c9WTtIZvTJtsTU9KWsUFXQ2qLK', 'یازدهم', 'دختر', 'تجربی', NULL, NULL, '2026-08-28 17:46:13', '2026-09-01 11:48:56'),
+(56, 1, 'متین ستوده', 'shahin.ahmadi@example.org', '$2y$12$IK9DJrE3Y7Mjd6fGA.7cfu6/dFRWOfBXVkeL6NUCNmig59CZtlGJG', 'یازدهم', 'دختر', 'تجربی', NULL, NULL, '2026-08-28 17:46:13', '2026-09-01 11:49:08'),
+(57, 1, 'سیامک آقایی', 'meysam.asadi@example.com', '$2y$12$C5SjPbNbaWTl1yRmtO8TguL5YM0UL/DRfN5UXfOmtdAv6FkDnQrm6', 'یازدهم', 'دختر', 'تجربی', NULL, NULL, '2026-08-28 17:46:13', '2026-09-01 11:49:19'),
+(58, 1, 'آتنا مدرسی', 'farhad99@example.org', '$2y$12$aisYm3lWOi0E852ZtrmZCesnXrgBasM23OeuTGAtW1ZYkGCt4nRKW', 'یازدهم', 'دختر', 'تجربی', NULL, NULL, '2026-08-28 17:46:13', '2026-09-01 11:49:28'),
+(59, 1, 'منوچهر زندی', 'manuchehr.zandi@example.org', '$2y$12$veL/rSHjSb79/vYscAhHmeZ.HKFIS0z0Pbbohn6FlvHgpO5zFAu2y', 'یازدهم', 'دختر', 'تجربی', NULL, NULL, '2026-08-28 17:46:13', '2026-09-01 11:49:51');
 
 -- --------------------------------------------------------
 
@@ -509,7 +511,7 @@ CREATE TABLE `users` (
   `remember_token` varchar(100) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -855,7 +857,7 @@ ALTER TABLE `schedule_events`
 -- AUTO_INCREMENT for table `schedule_items`
 --
 ALTER TABLE `schedule_items`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `students`
