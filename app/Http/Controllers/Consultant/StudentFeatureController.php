@@ -24,12 +24,6 @@ use Illuminate\View\View;
  */
 class StudentFeatureController extends Controller
 {
-    private const LABELS = [
-        'report-card' => 'کارنامه دانش‌آموز',
-        'exams' => 'آزمون‌های دانش‌آموز',
-        'source-permissions' => 'دسترسی منابع دانش‌آموز',
-    ];
-
     public function profile(Student $student): View
     {
         $tenant = tenant();
@@ -40,16 +34,6 @@ class StudentFeatureController extends Controller
         );
 
         return view('consultant.students.profile', [
-            'student' => $student,
-        ]);
-    }
-
-    public function show(string $feature, Student $student): View
-    {
-        abort_unless(isset(self::LABELS[$feature]), 404);
-
-        return view('consultant.student-feature-placeholder', [
-            'title' => self::LABELS[$feature],
             'student' => $student,
         ]);
     }

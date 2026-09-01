@@ -1,54 +1,52 @@
 @extends('layouts.consultant')
 
 @section('content')
-    <div class="dashboard-header">
+    <section class="student-profile-head">
+        <span class="student-avatar-lg">{{ mb_substr($student->name, 0, 1) }}</span>
         <div>
-            <h1>پروفایل دانش‌آموز</h1>
-            <p>
-                <a href="{{ route('consultant.dashboard') }}" class="secondary-button">
-                    <i class="fas fa-arrow-right"></i> بازگشت به لیست دانش‌آموزان
-                </a>
-            </p>
-        </div>
-    </div>
-
-    <section class="panel student-profile-panel">
-        <div class="student-profile-head">
-            <span class="student-avatar-lg">{{ mb_substr($student->name, 0, 1) }}</span>
-            <div>
-                <h2>{{ $student->name }}</h2>
-                <span class="student-email">{{ $student->email }}</span>
+            <h2>{{ $student->name }}</h2>
+            <div class="student-tags">
+                @if($student->grade)
+                    <span class="student-tag student-tag-grade">{{ $student->grade }}</span>
+                @endif
+                @if($student->gender)
+                    <span class="student-tag student-tag-gender">{{ $student->gender }}</span>
+                @endif
+                @if($student->major)
+                    <span class="student-tag student-tag-major">{{ $student->major }}</span>
+                @endif
             </div>
-        </div>
-
-        <div class="student-profile-grid">
-            <div class="profile-field">
-                <span class="profile-field-label">پایه</span>
-                <span class="profile-field-value">{{ $student->grade ?? '—' }}</span>
-            </div>
-            <div class="profile-field">
-                <span class="profile-field-label">جنسیت</span>
-                <span class="profile-field-value">{{ $student->gender ?? '—' }}</span>
-            </div>
-            <div class="profile-field">
-                <span class="profile-field-label">رشته</span>
-                <span class="profile-field-value">{{ $student->major ?? '—' }}</span>
-            </div>
-        </div>
-
-        <div class="student-profile-links">
-            <a href="{{ route('consultant.student.report-card', $student) }}" class="secondary-button">
-                <i class="fas fa-chart-line"></i> کارنامه
-            </a>
-            <a href="{{ route('consultant.student.exams', $student) }}" class="secondary-button">
-                <i class="fas fa-tasks"></i> آزمون‌ها
-            </a>
-            <a href="{{ route('consultant.student.schedule', $student) }}" class="secondary-button">
-                <i class="fas fa-calendar-alt"></i> برنامه
-            </a>
-            <a href="{{ route('consultant.student.source-permissions', $student) }}" class="secondary-button">
-                <i class="fas fa-shield-alt"></i> دسترسی منابع
-            </a>
+            <span class="student-email">{{ $student->email }}</span>
         </div>
     </section>
+
+    <div class="student-profile-sections">
+        <a href="{{ route('consultant.student.report-card', $student) }}" class="profile-section-card">
+            <span class="profile-section-icon"><i class="fas fa-chart-line"></i></span>
+            <h3>کارنامه</h3>
+            <p>نمرات و کارنامه‌های تحصیلی {{ $student->name }} را بررسی کنید.</p>
+            <span class="profile-section-cta">مشاهده <i class="fas fa-arrow-left"></i></span>
+        </a>
+
+        <a href="{{ route('consultant.student.exams', $student) }}" class="profile-section-card">
+            <span class="profile-section-icon"><i class="fas fa-tasks"></i></span>
+            <h3>آزمون‌ها</h3>
+            <p>نتایج و وضعیت آزمون‌های {{ $student->name }} را دنبال کنید.</p>
+            <span class="profile-section-cta">مشاهده <i class="fas fa-arrow-left"></i></span>
+        </a>
+
+        <a href="{{ route('consultant.student.schedule', $student) }}" class="profile-section-card">
+            <span class="profile-section-icon"><i class="fas fa-calendar-alt"></i></span>
+            <h3>برنامه</h3>
+            <p>برنامه هفتگی و جلسات {{ $student->name }} را مدیریت کنید.</p>
+            <span class="profile-section-cta">مشاهده <i class="fas fa-arrow-left"></i></span>
+        </a>
+
+        <a href="{{ route('consultant.student.source-permissions', $student) }}" class="profile-section-card">
+            <span class="profile-section-icon"><i class="fas fa-shield-alt"></i></span>
+            <h3>دسترسی منابع</h3>
+            <p>منابع و سطح دسترسی‌های {{ $student->name }} را کنترل کنید.</p>
+            <span class="profile-section-cta">مشاهده <i class="fas fa-arrow-left"></i></span>
+        </a>
+    </div>
 @endsection

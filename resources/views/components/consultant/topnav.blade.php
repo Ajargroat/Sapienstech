@@ -29,14 +29,16 @@
         </nav>
 
         <div class="topnav-user">
-            <button type="button" id="theme-toggle-btn" class="theme-toggle" title="تغییر حالت روشن/تاریک" aria-label="تغییر حالت روشن/تاریک">
+            <button type="button" id="theme-toggle-btn" class="topnav-icon-btn theme-toggle" title="تغییر حالت روشن/تاریک" aria-label="تغییر حالت روشن/تاریک">
                 <i class="fas fa-moon"></i>
                 <i class="fas fa-sun"></i>
             </button>
-            <span class="user-avatar user-avatar-sm">
+            <span class="topnav-icon-btn" title="{{ session('username', 'مدیر سیستم') }}" aria-label="کاربر">
                 <i class="fas fa-user"></i>
             </span>
-            <span class="user-name">{{ session('username', 'مدیر سیستم') }}</span>
+            <button type="button" class="topnav-icon-btn" title="اطلاعیه‌ها" aria-label="اطلاعیه‌ها">
+                <i class="fas fa-bell"></i>
+            </button>
         </div>
     </div>
 </header>

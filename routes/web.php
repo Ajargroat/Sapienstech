@@ -2,8 +2,11 @@
 
 use App\Http\Controllers\Consultant\ConsultantDashboardController;
 use App\Http\Controllers\Consultant\ConsultantFeatureController;
+use App\Http\Controllers\Consultant\StudentExamController;
 use App\Http\Controllers\Consultant\StudentFeatureController;
+use App\Http\Controllers\Consultant\StudentReportCardController;
 use App\Http\Controllers\Consultant\StudentScheduleController;
+use App\Http\Controllers\Consultant\StudentSourcePermissionController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/consultant/dashboard');
@@ -41,15 +44,21 @@ Route::prefix('consultant')->name('consultant.')->group(function () {
             ->middleware('consultant.feature:student_profile')
             ->name('profile');
 
-        Route::get('/report-card', [StudentFeatureController::class, 'show'])
-            ->defaults('feature', 'report-card')
-            ->middleware('consultant.feature:report_cards')
-            ->name('report-card');
+            // Prototype report-card workspace (sample data in the controller until a
+            // ReportCard model exists). Kept under the same route name so existing
+            // links (student profile) keep working unchanged.
+            Route::get('/report-card', [StudentReportCardController::class, 'index'])
+                ->middleware('consultant.feature:report_cards')
+                ->name('report-card');
 
-        Route::get('/exams', [StudentFeatureController::class, 'show'])
-            ->defaults('feature', 'exams')
-            ->middleware('consultant.feature:student_exams')
-            ->name('exams');
+
+            // Prototype exams workspace (sample data in the controller until an
+            // Exam model exists). Kept under the same route name so existing
+            // links (student profile) keep working unchanged.
+            Route::get('/exams', [StudentExamController::class, 'index'])
+                ->middleware('consultant.feature:student_exams')
+                ->name('exams');
+
 
         // Real schedule editor (replaces the old placeholder page). Kept
         // under the same route name, `consultant.student.schedule`, so any
@@ -69,9 +78,12 @@ Route::prefix('consultant')->name('consultant.')->group(function () {
             Route::get('/{item}/comments', [StudentScheduleController::class, 'comments'])->name('comments');
         });
 
-        Route::get('/source-permissions', [StudentFeatureController::class, 'show'])
-            ->defaults('feature', 'source-permissions')
+        // Prototype source-permissions workspace (sample data in the controller
+        // until Source/Grant models exist). Kept under the same route name so
+        // existing links (student profile) keep working unchanged.
+        Route::get('/source-permissions', [StudentSourcePermissionController::class, 'index'])
             ->middleware('consultant.feature:source_permissions')
             ->name('source-permissions');
+
     });
 });
