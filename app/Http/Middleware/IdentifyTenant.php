@@ -9,13 +9,11 @@ use Illuminate\Support\Facades\Cache;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Resolves the current tenant from the request's Host header and makes
- * it available for the rest of the request lifecycle.
- *
- * Deliberately does NOT read tenant identity from any query string,
- * header, or form input the client controls -- only from the domain
- * the request actually arrived on. See roadmap Phase 4, "Very important".
- */
+* Resolves the current tenant from the request's Host header and makes
+* both the tenant AND the domain available for the rest of the request.
+* Domain identity comes only from the host the request arrived on —
+* never from client-controlled input.
+*/
 class IdentifyTenant
 {
     public function handle(Request $request, Closure $next): Response
@@ -38,9 +36,11 @@ class IdentifyTenant
             abort(403, 'This site is currently unavailable.');
         }
 
-        // Available for the rest of this request as app('tenant') or tenant().
         app()->instance('tenant', $tenant);
+        app()->instance('domain', $domain);
+
         $request->attributes->set('tenant', $tenant);
+        $request->attributes->set('domain', $domain);
 
         return $next($request);
     }

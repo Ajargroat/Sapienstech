@@ -14,6 +14,9 @@ class Student extends Authenticatable
 
     protected $fillable = [
         'tenant_id',
+        // NULL (for now) = not pinned. Students get domain-pinned login
+        // when student authentication is built. Never set from request input.
+        'domain_id',
         'name',
         'email',
         'password',
@@ -42,5 +45,14 @@ class Student extends Authenticatable
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
+    }
+
+    /**
+     * The domain this student logs in through. Mirrors User::domain();
+     * enforcement kicks in once student authentication exists.
+     */
+    public function domain(): BelongsTo
+    {
+        return $this->belongsTo(Domain::class);
     }
 }
