@@ -56,6 +56,15 @@ class ScheduleItem extends Model
         ];
     }
 
+    /**
+     * The tenant this schedule item belongs to.
+     * Required for Factory::for($tenant) to work in tests.
+     */
+    public function tenant(): BelongsTo
+    {
+        return $this->belongsTo(Tenant::class);
+    }
+
     public function student(): BelongsTo
     {
         return $this->belongsTo(Student::class);

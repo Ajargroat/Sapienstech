@@ -29,16 +29,45 @@
         </nav>
 
         <div class="topnav-user">
-            <button type="button" id="theme-toggle-btn" class="topnav-icon-btn theme-toggle" title="تغییر حالت روشن/تاریک" aria-label="تغییر حالت روشن/تاریک">
+            <button
+                type="button"
+                id="theme-toggle-btn"
+                class="topnav-icon-btn theme-toggle"
+                title="تغییر حالت روشن/تاریک"
+                aria-label="تغییر حالت روشن/تاریک"
+            >
                 <i class="fas fa-moon"></i>
                 <i class="fas fa-sun"></i>
             </button>
-            <span class="topnav-icon-btn" title="{{ session('username', 'مدیر سیستم') }}" aria-label="کاربر">
+
+            <span
+                class="topnav-icon-btn"
+                title="{{ session('username', 'مدیر سیستم') }}"
+                aria-label="کاربر"
+            >
                 <i class="fas fa-user"></i>
             </span>
-            <button type="button" class="topnav-icon-btn" title="اطلاعیه‌ها" aria-label="اطلاعیه‌ها">
+
+            <button
+                type="button"
+                class="topnav-icon-btn"
+                title="اطلاعیه‌ها"
+                aria-label="اطلاعیه‌ها"
+            >
                 <i class="fas fa-bell"></i>
             </button>
         </div>
+
+        @auth
+            <form method="POST" action="{{ route('logout') }}" class="inline">
+                @csrf
+                <button
+                    type="submit"
+                    class="text-sm text-gray-600 hover:text-red-600"
+                >
+                    خروج
+                </button>
+            </form>
+        @endauth
     </div>
 </header>
