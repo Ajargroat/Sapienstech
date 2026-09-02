@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\StudentLoginController;
 use App\Http\Controllers\Consultant\ConsultantDashboardController;
 use App\Http\Controllers\Consultant\ConsultantFeatureController;
 use App\Http\Controllers\Consultant\StudentExamController;
@@ -9,12 +10,12 @@ use App\Http\Controllers\Consultant\StudentReportCardController;
 use App\Http\Controllers\Consultant\StudentScheduleController;
 use App\Http\Controllers\Consultant\StudentSourcePermissionController;
 use App\Http\Controllers\Public\PageController;
+use App\Http\Controllers\Student\StudentDashboardController;
 use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
 | Public website — tenant-themed, no auth required.
-| Tenant comes from the domain (IdentifyTenant), never from input.
 |--------------------------------------------------------------------------
 */
 Route::get('/', [PageController::class, 'home'])->name('home');
@@ -23,7 +24,7 @@ Route::get('/contact', [PageController::class, 'contact'])->name('contact');
 
 /*
 |--------------------------------------------------------------------------
-| Authentication
+| Consultant Authentication
 |--------------------------------------------------------------------------
 */
 Route::middleware('guest')->group(function () {
@@ -39,7 +40,6 @@ Route::post('/logout', [LoginController::class, 'logout'])
 /*
 |--------------------------------------------------------------------------
 | Consultant area — authenticated tenant users only.
-| Everything inside is unchanged; it is now simply behind `auth`.
 |--------------------------------------------------------------------------
 */
 Route::middleware('auth')->prefix('consultant')->name('consultant.')->group(function () {
@@ -92,4 +92,20 @@ Route::middleware('auth')->prefix('consultant')->name('consultant.')->group(func
             ->middleware('consultant.feature:source_permissions')
             ->name('source-permissions');
     });
+});
+
+/*
+|--------------------------------------------------------------------------
+| Student Portal (Isolated from Consultant Dashboard)
+| Uses the 'student' auth guard defined in config/auth.php
+|--------------------------------------------------------------------------
+*/
+Route::middleware('guest:student')->prefix('student')->name('student.')->group(function () {
+    Route::get('login', [StudentLoginController::class, 'showLoginForm'])->name('login');
+    Route::post('login', [StudentLoginController::class, 'login'])->middleware('throttle:login');
+});
+
+Route::middleware('auth:student')->prefix('student')->name('student.')->group(function () {
+    Route::post('logout', [StudentLoginController::class, 'logout'])->name('logout');
+    Route::get('dashboard', [StudentDashboardController::class, 'index'])->name('dashboard');
 });

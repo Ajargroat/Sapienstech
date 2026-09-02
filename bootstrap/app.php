@@ -20,8 +20,20 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\EnsureUserDomain::class,
         ]);
 
-        $middleware->redirectGuestsTo(fn () => route('login'));
-        $middleware->redirectUsersTo(fn () => route('consultant.dashboard'));
+        // Smart redirect: keeps students on /student/* and consultants on /consultant/*
+        $middleware->redirectGuestsTo(function () {
+            if (request()->is('student/*') || request()->routeIs('student.*')) {
+                return route('student.login');
+            }
+            return route('login');
+        });
+
+        $middleware->redirectUsersTo(function () {
+            if (request()->is('student/*') || request()->routeIs('student.*')) {
+                return route('student.dashboard');
+            }
+            return route('consultant.dashboard');
+        });
     })
     ->withExceptions(function (Exceptions $exceptions): void {})
     ->create();
