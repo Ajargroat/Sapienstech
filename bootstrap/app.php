@@ -17,11 +17,23 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->web(append: [
             \App\Http\Middleware\IdentifyTenant::class,
+            \App\Http\Middleware\EnsureUserDomain::class,
         ]);
 
-        // Where the built-in auth/guest middleware sends people:
-        $middleware->redirectGuestsTo(fn () => route('login'));
-        $middleware->redirectUsersTo(fn () => route('consultant.dashboard'));
+        // Smart redirect: keeps students on /student/* and consultants on /consultant/*
+        $middleware->redirectGuestsTo(function () {
+            if (request()->is('student/*') || request()->routeIs('student.*')) {
+                return route('student.login');
+            }
+            return route('login');
+        });
+
+        $middleware->redirectUsersTo(function () {
+            if (request()->is('student/*') || request()->routeIs('student.*')) {
+                return route('student.dashboard');
+            }
+            return route('consultant.dashboard');
+        });
     })
     ->withExceptions(function (Exceptions $exceptions): void {})
     ->create();

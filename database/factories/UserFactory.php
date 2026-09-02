@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Domain;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -21,6 +22,11 @@ class UserFactory extends Factory
     {
         return [
             'tenant_id' => Tenant::factory(),
+            // NULL = not pinned to a specific domain: the user may log in
+            // through any of the tenant's domains (tenant admins and all
+            // pre-existing accounts). pinnedTo() restricts a consultant
+            // to a single domain.
+            'domain_id' => null,
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
             'password' => Hash::make('password'),
@@ -38,5 +44,13 @@ class UserFactory extends Factory
     public function tenantAdmin(): static
     {
         return $this->state(fn () => ['role' => 'tenant_admin']);
+    }
+
+    /**
+     * Pin the user to a single domain: they may only log in through it.
+     */
+    public function pinnedTo(Domain $domain): static
+    {
+        return $this->state(fn () => ['domain_id' => $domain->id]);
     }
 }

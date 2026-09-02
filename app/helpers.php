@@ -1,14 +1,21 @@
 <?php
 
+use App\Models\Domain;
 use App\Models\Tenant;
 
 if (! function_exists('tenant')) {
-    /**
-     * The tenant resolved by IdentifyTenant for the current request,
-     * or null outside a tenant-scoped request (e.g. artisan commands).
-     */
     function tenant(): ?Tenant
     {
         return app()->bound('tenant') ? app('tenant') : null;
+    }
+}
+
+if (! function_exists('domain')) {
+    /**
+     * The domain the current request arrived on, resolved by IdentifyTenant.
+     */
+    function domain(): ?Domain
+    {
+        return app()->bound('domain') ? app('domain') : null;
     }
 }

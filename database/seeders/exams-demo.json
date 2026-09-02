@@ -1,0 +1,141 @@
+{
+  "tests": [
+    {
+      "title": "آزمون جامع ریاضیات — نوبت اول",
+      "lesson": "ریاضی",
+      "exam_type": "comprehensive",
+      "question_count": 45,
+      "time_limit_minutes": 90,
+      "total_marks": 20,
+      "description": "پوشش کامل فصل‌های تابع، حد و پیوستگی با تمرکز بر مسائل ترکیبی و زمان‌دار.",
+      "assignments": [
+        { "student_id": 48, "scheduled_at": "2026-06-02 10:00", "status": "completed", "score_raw": 17.5 },
+        { "student_id": 40, "scheduled_at": "2026-06-02 10:00", "status": "completed", "score_raw": 15.75 },
+        { "student_id": 44, "scheduled_at": "2026-06-02 10:00", "status": "missed" }
+      ]
+    },
+    {
+      "title": "کوئیز فصلی فیزیک (حرکت‌شناسی)",
+      "lesson": "فیزیک",
+      "exam_type": "quiz",
+      "question_count": 12,
+      "time_limit_minutes": 30,
+      "total_marks": 20,
+      "description": "ارزشیابی کوتاه پایان فصل حرکت‌شناسی؛ تمرین سرعت متوسط و شتاب.",
+      "assignments": [
+        { "student_id": 48, "scheduled_at": "2026-07-24 09:00", "status": "completed", "score_raw": 12.25 },
+        { "student_id": 41, "scheduled_at": "2026-07-24 09:00", "status": "completed", "score_raw": 14 },
+        { "student_id": 45, "scheduled_at": "2026-07-24 09:00", "status": "grading" }
+      ]
+    },
+    {
+      "title": "آزمون آزمایشی ۱۲ — شبیه‌سازی کنکور",
+      "lesson": "علوم تجربی + ریاضی",
+      "exam_type": "comprehensive",
+      "question_count": 60,
+      "time_limit_minutes": 180,
+      "total_marks": 100,
+      "description": "شبیه‌سازی کامل شرایط کنکور با تحلیل تفکیکی دروس و تراز تخمینی.",
+      "assignments": [
+        { "student_id": 48, "scheduled_at": "2026-08-11 08:00", "status": "completed", "score_raw": 68 },
+        { "student_id": 42, "scheduled_at": "2026-08-11 08:00", "status": "completed", "score_raw": 74 },
+        { "student_id": 49, "scheduled_at": "2026-08-11 08:00", "status": "completed", "score_raw": 61 }
+      ]
+    },
+    {
+      "title": "کوئیز آنلاین شیمی (دوره‌های عناصر)",
+      "lesson": "شیمی",
+      "exam_type": "quiz",
+      "question_count": 8,
+      "time_limit_minutes": 20,
+      "total_marks": 10,
+      "description": "کوئیز کوتاه آنلاین برای مرور ترندهای دوره تناوبی.",
+      "assignments": [
+        { "student_id": 48, "scheduled_at": "2026-08-22 18:00", "status": "grading" },
+        { "student_id": 43, "scheduled_at": "2026-08-22 18:00", "status": "grading" },
+        { "student_id": 46, "scheduled_at": "2026-08-22 18:00", "status": "completed", "score_raw": 8.5 }
+      ]
+    },
+    {
+      "title": "امتحان میان‌ترم ادبیات فارسی",
+      "lesson": "ادبیات فارسی",
+      "exam_type": "comprehensive",
+      "question_count": 20,
+      "time_limit_minutes": 75,
+      "total_marks": 20,
+      "description": "میان‌ترم حضوری شامل درک مطلب، آرایه‌ها و املا.",
+      "assignments": [
+        { "student_id": 48, "scheduled_at": "2026-08-31 11:00", "status": "missed" },
+        { "student_id": 40, "scheduled_at": "2026-08-31 11:00", "status": "missed" }
+      ]
+    },
+    {
+      "title": "آزمون جامع زیست‌شناسی (سلول و ژنتیک)",
+      "lesson": "زیست‌شناسی",
+      "exam_type": "comprehensive",
+      "question_count": 35,
+      "time_limit_minutes": 90,
+      "total_marks": 20,
+      "description": "جمع‌بندی دو فصل سلول و ژنتیک پیش از امتحان نهایی.",
+      "assignments": [
+        { "student_id": 48, "scheduled_at": "2026-09-19 10:30", "status": "scheduled" },
+        { "student_id": 41, "scheduled_at": "2026-09-19 10:30", "status": "scheduled" },
+        { "student_id": 44, "scheduled_at": "2026-09-19 10:30", "status": "scheduled" },
+        { "student_id": 50, "scheduled_at": "2026-09-19 10:30", "status": "scheduled" }
+      ]
+    },
+    {
+      "title": "کوئیز مروری فرمول‌های فیزیک",
+      "lesson": "فیزیک",
+      "exam_type": "quiz",
+      "question_count": 10,
+      "time_limit_minutes": 15,
+      "total_marks": 10,
+      "description": "مرور سریع فرمول‌های کلیدی قبل از آزمون آزمایشی بعدی.",
+      "assignments": [
+        { "student_id": 48, "scheduled_at": "2026-09-05 08:00", "status": "scheduled" },
+        { "student_id": 47, "scheduled_at": "2026-09-05 08:00", "status": "in_progress" }
+      ]
+    },
+    {
+      "title": "کوئیز سریع عربی (ترجمه و آرایه)",
+      "lesson": "عربی",
+      "exam_type": "quiz",
+      "question_count": 15,
+      "time_limit_minutes": 25,
+      "total_marks": 20,
+      "description": "سنجش سرعت و دقت در ترجمه و شناسایی آرایه‌های ادبی.",
+      "assignments": [
+        { "student_id": 45, "scheduled_at": "2026-05-10 09:30", "status": "completed", "score_raw": 16 },
+        { "student_id": 51, "scheduled_at": "2026-05-10 09:30", "status": "completed", "score_raw": 12.5 }
+      ]
+    },
+    {
+      "title": "آزمون جامع شیمی آلی",
+      "lesson": "شیمی",
+      "exam_type": "comprehensive",
+      "question_count": 40,
+      "time_limit_minutes": 100,
+      "total_marks": 20,
+      "description": "ترکیبات آلی، واکنش‌ها و نام‌گذاری؛ همراه با مسائل استوکیومتری.",
+      "assignments": [
+        { "student_id": 42, "scheduled_at": "2026-08-23 14:00", "status": "completed", "score_raw": 18.25 },
+        { "student_id": 52, "scheduled_at": "2026-10-11 10:00", "status": "scheduled" }
+      ]
+    },
+    {
+      "title": "کوئیز دین و زندگی (درس ۵ تا ۷)",
+      "lesson": "دین و زندگی",
+      "exam_type": "quiz",
+      "question_count": 10,
+      "time_limit_minutes": 20,
+      "total_marks": 20,
+      "description": "پرسش‌های کوتاه مفهومی از سه درس اخیر کتاب.",
+      "assignments": [
+        { "student_id": 46, "scheduled_at": "2026-08-29 11:00", "status": "completed", "score_raw": 19 },
+        { "student_id": 53, "scheduled_at": "2026-08-29 11:00", "status": "grading" },
+        { "student_id": 48, "scheduled_at": "2026-09-16 09:00", "status": "scheduled" }
+      ]
+    }
+  ]
+}
