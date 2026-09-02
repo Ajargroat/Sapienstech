@@ -56,7 +56,7 @@ class ConsultantDashboardController extends Controller
             ->when($sort === 'newest', fn ($query) => $query->orderByDesc('created_at'))
             ->when($sort === 'oldest', fn ($query) => $query->orderBy('created_at'))
             ->when($sort === '' || $sort === 'name_asc', fn ($query) => $query->orderBy('name'))
-            ->paginate(12)
+            ->paginate(15)
             ->withQueryString();
 
         $activeFilterCount = count(array_filter([$grade, $gender, $major, $sort]));

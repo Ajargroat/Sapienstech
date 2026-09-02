@@ -5,6 +5,8 @@ namespace App\Models;
 use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -42,5 +44,27 @@ class Student extends Authenticatable
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
+    }
+
+    public function assignedQuizzes(): HasMany
+    {
+        return $this->hasMany(StudentAssignedQuiz::class, 'student_id');
+    }
+
+    public function tests(): BelongsToMany
+    {
+        return $this->belongsToMany(Test::class, 'student_assigned_quizzes')
+            ->withPivot(['assigned_at', 'scheduled_at', 'status']);
+    }
+
+    public function examAttempts(): HasMany
+    {
+        return $this->hasMany(StudentTestAttempt::class, 'student_id');
+    }
+
+    public function flaggedQuestions(): BelongsToMany
+    {
+        return $this->belongsToMany(Question::class, 'student_flagged_questions')
+            ->withPivot('created_at');
     }
 }

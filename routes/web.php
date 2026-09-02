@@ -76,6 +76,26 @@ Route::middleware('auth')->prefix('consultant')->name('consultant.')->group(func
             ->middleware('consultant.feature:student_exams')
             ->name('exams');
 
+        Route::post('/exams', [StudentExamController::class, 'store'])
+            ->middleware('consultant.feature:student_exams')
+            ->name('exams.store');
+
+        Route::get('/exams/questions', [StudentExamController::class, 'questions'])
+            ->middleware('consultant.feature:student_exams')
+            ->name('exams.questions');
+
+        Route::get('/exams/{assignment}/run', [StudentExamController::class, 'run'])
+            ->middleware('consultant.feature:student_exams')
+            ->name('exams.run');
+
+        Route::post('/exams/{assignment}/attempt', [StudentExamController::class, 'storeAttempt'])
+            ->middleware('consultant.feature:student_exams')
+            ->name('exams.attempt');
+
+        Route::get('/exams/{assignment}/result', [StudentExamController::class, 'result'])
+            ->middleware('consultant.feature:student_exams')
+            ->name('exams.result');
+
         Route::get('/schedule', [StudentScheduleController::class, 'edit'])
             ->middleware('consultant.feature:student_schedule')
             ->name('schedule');
