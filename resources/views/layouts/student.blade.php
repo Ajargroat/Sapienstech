@@ -1,36 +1,31 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="{{ $tenant['locale'] }}" dir="{{ $tenant['direction'] }}">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>پنل دانش‌آموز | {{ tenant()->name ?? 'آکادمی' }}</title>
-    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700&display=swap" rel="stylesheet">
-    @include('partials.theme-vars')
-    <style>
-        body { font-family: var(--font-body); background: var(--c-background); margin: 0; padding: 0; color: var(--c-text); line-height: var(--line-height); }
-        .nav { background: var(--c-surface); padding: 1rem 2rem; border-bottom: 1px solid var(--c-border); display: flex; justify-content: space-between; align-items: center; }
-        .container { max-width: var(--container-max); margin: 2rem auto; padding: 0 1rem; }
-        .card { background: var(--c-surface); padding: 2rem; border-radius: var(--radius-lg); border: 1px solid var(--c-border); box-shadow: var(--card-shadow); }
-        .btn { background: var(--c-primary); color: var(--c-on-primary); padding: 0.5rem 1rem; border: none; border-radius: var(--radius-button); cursor: pointer; text-decoration: none; display: inline-block; }
-        .btn-danger { background: var(--c-danger); color: var(--c-on-surface); }
-    </style>
-</head>
-<body>
-    <nav class="nav">
-        <strong>پنل دانش‌آموز</strong>
-        @auth('student')
-            <div>
-                <span style="margin-left: 1rem;">سلام، {{ auth('student')->user()->name }}</span>
-                <form action="{{ route('student.logout') }}" method="POST" style="display:inline;">
-                    @csrf
-                    <button type="submit" class="btn btn-danger">خروج</button>
-                </form>
-            </div>
-        @endauth
-    </nav>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ $tenant['name'] }} | پنل دانش‌آموز</title>
 
-    <div class="container">
-        @yield('content')
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="{{ $theme['assets']['font_url'] }}">
+    <link rel="stylesheet" href="{{ $theme['assets']['icon_library_url'] }}">
+
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @include('partials.theme-vars')
+</head>
+<body class="student-shell" data-theme-preset="{{ $theme['preset'] }}">
+    @include('partials.color-scheme', ['schemeKey' => 'student-color-scheme'])
+
+    <div class="page-glow page-glow-primary"></div>
+    <div class="page-glow page-glow-secondary"></div>
+
+    <div class="min-h-screen relative z-10">
+        @include('components.student.topnav')
+
+        <div class="consultant-content">
+            <main class="content-container" id="app-content">
+                @yield('content')
+            </main>
+        </div>
     </div>
 </body>
 </html>

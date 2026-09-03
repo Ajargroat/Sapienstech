@@ -34,7 +34,8 @@ body {
   min-height: 100%;
 }
 
-body.consultant-shell {
+body.consultant-shell,
+body.student-shell {
   margin: 0;
   background: var(--c-background);
   color: var(--c-text);
@@ -2260,4 +2261,360 @@ body.landing ::selection { background: var(--c-selection-bg); color: var(--c-sel
   .animate-float-delayed,
   .animate-float-fast,
   .spin-10s, .spin-15s, .spin-15s-rev, .spin-20s-rev { animation: none; }
+}
+
+/* ==========================================================================
+   STUDENT PORTAL DASHBOARD — student/dashboard
+   Page-specific pieces of the student workspace. Everything shared
+   (.panel, .count-badge, .student-profile-head, .student-avatar-lg,
+   .student-tag, .exam-status chips, .empty-state) comes from the sections
+   above; the shell/topnav styles are reused from the consultant area.
+   ========================================================================== */
+.student-welcome {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.student-today {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 12px 18px;
+  border-radius: 16px;
+  border: 1px solid var(--c-border);
+  background: var(--c-surface);
+  font-weight: 800;
+  font-size: 15px;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+
+.student-today-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--c-muted);
+}
+
+/* --- Stat cards --- */
+.student-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.student-stat {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--c-border);
+  background: var(--c-surface);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  transition:
+    transform var(--animation-duration) ease,
+    border-color var(--animation-duration) ease;
+}
+
+.student-stat:hover {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--c-primary) 40%, transparent);
+}
+
+.student-stat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+  flex: 0 0 auto;
+  background: color-mix(in srgb, var(--c-primary) 14%, transparent);
+  color: var(--c-primary);
+}
+
+.student-stat-icon--success {
+  background: color-mix(in srgb, var(--c-success) 14%, transparent);
+  color: var(--c-success);
+}
+
+.student-stat-icon--info {
+  background: color-mix(in srgb, var(--c-info) 14%, transparent);
+  color: var(--c-info);
+}
+
+.student-stat-icon--secondary {
+  background: color-mix(in srgb, var(--c-secondary) 14%, transparent);
+  color: var(--c-secondary);
+}
+
+.student-stat-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.student-stat-value {
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.student-stat-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--c-muted);
+}
+
+/* --- Two-column body: schedule beside exam panels --- */
+.student-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.student-side {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.student-panel {
+  padding: 22px;
+}
+
+.student-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.student-panel-head h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.student-panel-head h2 i {
+  color: var(--c-primary);
+  font-size: 15px;
+}
+
+.student-panel-note {
+  margin: 0;
+  padding: 18px 0;
+  text-align: center;
+  color: var(--c-muted);
+  font-size: 13px;
+}
+
+/* --- Weekly schedule list --- */
+.week-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.week-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--c-border);
+  border-radius: 14px;
+  background: var(--c-surface-alt);
+  transition:
+    transform var(--animation-duration) ease,
+    border-color var(--animation-duration) ease;
+}
+
+.week-item:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--c-primary) 40%, transparent);
+}
+
+.week-item-bar {
+  width: 4px;
+  align-self: stretch;
+  border-radius: 999px;
+  background: var(--bar, var(--c-primary));
+  flex: 0 0 auto;
+}
+
+.week-item-body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.week-item h3 {
+  margin: 0;
+  font-size: 14.5px;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.week-item-meta {
+  margin: 4px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  color: var(--c-muted);
+  font-size: 12px;
+}
+
+.week-item-meta i {
+  margin-inline-end: 5px;
+  color: var(--c-subtle);
+}
+
+.week-item.is-done {
+  opacity: 0.6;
+}
+
+.week-item-done {
+  color: var(--c-success);
+  font-size: 17px;
+  flex: 0 0 auto;
+}
+
+/* --- Compact exam lists (upcoming + recent results) --- */
+.mini-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mini-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--c-border);
+  border-radius: 14px;
+  background: var(--c-surface-alt);
+}
+
+.mini-item-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-size: 15px;
+  flex: 0 0 auto;
+  background: color-mix(in srgb, var(--c-primary) 12%, transparent);
+  color: var(--c-primary);
+}
+
+.mini-item-icon--success {
+  background: color-mix(in srgb, var(--c-success) 12%, transparent);
+  color: var(--c-success);
+}
+
+.mini-item-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mini-item-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mini-item-sub {
+  font-size: 12px;
+  color: var(--c-muted);
+}
+
+.mini-score {
+  flex: 0 0 auto;
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--c-primary);
+}
+
+.mini-score small {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--c-muted);
+}
+
+/* --- Report-card teaser (feature not wired yet) --- */
+.student-soon {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 20px;
+}
+
+.student-soon-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+  flex: 0 0 auto;
+  background: color-mix(in srgb, var(--c-secondary) 14%, transparent);
+  color: var(--c-secondary);
+}
+
+.student-soon h3 {
+  margin: 0 0 4px;
+  font-size: 15px;
+}
+
+.student-soon p {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--c-muted);
+}
+
+.empty-state--compact {
+  padding: 36px 20px;
+}
+
+@media (max-width: 1100px) {
+  .student-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 980px) {
+  .student-columns { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 680px) {
+  .student-welcome { flex-direction: column; align-items: center; }
+
+  .student-profile-head {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 12px;
+  }
+
+  .student-stats { gap: 10px; }
 }

@@ -12,8 +12,10 @@ class ViewServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        // Existing consultant dashboard composer (unchanged).
-        View::composer('layouts.consultant', function ($view) {
+        // Existing consultant dashboard composer (unchanged). The student
+        // shell renders with the exact same tenant/theme tokens, so it joins
+        // the same composer instead of duplicating the wiring.
+        View::composer(['layouts.consultant', 'layouts.student'], function ($view) {
             $c = config('consultant');
             $view->with([
                 'tenant'  => $c['tenant'],

@@ -10,6 +10,7 @@ export default defineConfig({
                 'resources/js/features/consultant-schedule.js',
                 'resources/js/features/consultant-exams.js',
                 'resources/js/features/consultant-exam-runner.js',
+                'resources/js/features/student-dashboard.js',
                 'resources/js/app.js',
             ],
             refresh: true,
