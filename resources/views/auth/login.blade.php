@@ -59,6 +59,14 @@
             </button>
         </form>
 
+        @if ($login['student_link']['visible'] ?? true)
+            <a href="{{ route($login['student_link']['route']) }}"
+               class="block w-full text-center font-semibold rounded-[var(--radius-button)] py-2.5 mt-4 transition-colors hover:opacity-90"
+               style="background:var(--c-surface-alt);border:1px solid var(--c-border);color:var(--c-text)">
+                {{ $login['student_link']['label'] }}
+            </a>
+        @endif
+
         @if ($login['back_link']['visible'] ?? true)
             <a href="{{ route($login['back_link']['route']) }}" class="block text-center text-sm mt-6 hover:underline"
                style="color:var(--c-muted)">→ {{ $login['back_link']['label'] }}</a>

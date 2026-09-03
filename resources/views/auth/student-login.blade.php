@@ -1,35 +1,76 @@
+{{-- resources/views/auth/student-login.blade.php --}}
+{{-- Config-driven student login: same tenant/theme tokens as the normal login
+     page (see config/consultant.php → public.student_login). --}}
+@php($login = $public['student_login'])
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="{{ $tenant['locale'] }}" dir="{{ $tenant['direction'] }}">
 <head>
     <meta charset="UTF-8">
-    <title>ورود دانش‌آموز</title>
-    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Vazirmatn', sans-serif; background: #f3f4f6; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        .login-box { background: #fff; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
-        h2 { text-align: center; margin-bottom: 1.5rem; }
-        label { display: block; margin-bottom: 0.5rem; font-weight: bold; }
-        input { width: 100%; padding: 0.5rem; margin-bottom: 1rem; border: 1px solid #d1d5db; border-radius: 4px; box-sizing: border-box; }
-        button { width: 100%; padding: 0.75rem; background: #2563eb; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        .error { color: #ef4444; font-size: 0.875rem; margin-top: -0.5rem; margin-bottom: 1rem; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ $login['title'] }} — {{ $tenant['name'] }}</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="{{ $theme['assets']['font_url'] }}">
+
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @include('partials.theme-vars')
 </head>
-<body>
-    <div class="login-box">
-        <h2>ورود به پنل دانش‌آموز</h2>
+<body class="landing flex items-center justify-center min-h-screen p-4">
+    <div class="page-glow page-glow-primary"></div>
+    <div class="page-glow page-glow-secondary"></div>
+
+    <div class="w-full p-8 relative z-10 rounded-[var(--radius-card)]"
+         style="max-width:{{ $login['card']['max_width'] }};
+                background:color-mix(in srgb, var(--c-surface) calc({{ $theme['effects']['glass_opacity'] }} * 100%), transparent);
+                border:1px solid var(--c-border);
+                box-shadow:var(--card-shadow);
+                {{ $login['card']['glass'] ? 'backdrop-filter:blur(var(--backdrop-blur));' : '' }}">
+
+        <h1 class="text-2xl font-bold text-center mb-1">{{ $tenant['name'] }}</h1>
+        <p class="text-center mb-6" style="color:var(--c-muted)">{{ $login['subtitle'] }}</p>
+
+        @if ($errors->any())
+            <div class="text-sm rounded-[var(--radius-input)] p-3 mb-4"
+                 style="background:color-mix(in srgb, var(--c-danger) 10%, transparent);border:1px solid var(--c-danger);color:var(--c-danger)">
+                {{ $errors->first() }}
+            </div>
+        @endif
+
         <form method="POST" action="{{ route('student.login') }}">
             @csrf
-            <div>
-                <label for="email">ایمیل</label>
-                <input type="email" name="email" id="email" value="{{ old('email') }}" required autofocus>
-                @error('email') <div class="error">{{ $message }}</div> @enderror
-            </div>
-            <div>
-                <label for="password">رمز عبور</label>
-                <input type="password" name="password" id="password" required>
-            </div>
-            <button type="submit">ورود</button>
+
+            <label for="email" class="block mb-1 text-sm font-medium">{{ $login['email_label'] }}</label>
+            <input id="email" type="email" name="email" value="{{ old('email') }}" required autofocus autocomplete="email"
+                   class="w-full px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-(--c-primary)" dir="ltr"
+                   style="background:var(--c-surface-alt);border:1px solid var(--c-border);border-radius:var(--radius-input);color:var(--c-text)">
+
+            <label for="password" class="block mb-1 text-sm font-medium">{{ $login['password_label'] }}</label>
+            <input id="password" type="password" name="password" required autocomplete="current-password"
+                   class="w-full px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-(--c-primary)" dir="ltr"
+                   style="background:var(--c-surface-alt);border:1px solid var(--c-border);border-radius:var(--radius-input);color:var(--c-text)">
+
+            <label class="flex items-center gap-2 mb-6 text-sm" style="color:var(--c-muted)">
+                <input type="checkbox" name="remember" value="1" class="rounded"> {{ $login['remember_label'] }}
+            </label>
+
+            <button type="submit" class="w-full font-semibold rounded-[var(--radius-button)] py-2.5 transition-colors hover:opacity-90"
+                    style="background:var(--c-primary);color:var(--c-on-primary)">
+                {{ $login['submit_label'] }}
+            </button>
         </form>
+
+        @if ($login['consultant_link']['visible'] ?? true)
+            <a href="{{ route($login['consultant_link']['route']) }}"
+               class="block w-full text-center font-semibold rounded-[var(--radius-button)] py-2.5 mt-4 transition-colors hover:opacity-90"
+               style="background:var(--c-surface-alt);border:1px solid var(--c-border);color:var(--c-text)">
+                {{ $login['consultant_link']['label'] }}
+            </a>
+        @endif
+
+        @if ($login['back_link']['visible'] ?? true)
+            <a href="{{ route($login['back_link']['route']) }}" class="block text-center text-sm mt-6 hover:underline"
+               style="color:var(--c-muted)">→ {{ $login['back_link']['label'] }}</a>
+        @endif
     </div>
 </body>
 </html>
