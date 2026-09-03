@@ -1,4 +1,5 @@
 import './theme';
+import './landing';
 import { onPageRender } from './page-router';
 
 // Closing the popover on an outside click is delegated once for the whole

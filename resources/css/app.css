@@ -14,6 +14,12 @@
   --color-success: var(--c-success);
   --color-info: var(--c-info);
   --color-danger: var(--c-danger);
+  --color-background: var(--c-background);
+  --color-surface: var(--c-surface);
+  --color-surface-alt: var(--c-surface-alt);
+  --color-ink: var(--c-text);
+  --color-muted: var(--c-muted);
+  --color-line: var(--c-border);
 }
 
 /* =========================================
@@ -2051,6 +2057,36 @@ a {
   from { opacity: 0; transform: translateY(14px) scale(0.98); }
 }
 
+/* Pagination: the grid scrolls out as a block, the new page's cards scroll
+   in from the other side. RTL reading order puts "next" to the left, so
+   forward exits right and enters from the left. */
+[data-stagger].is-paging-out {
+  animation: grid-out-next 200ms cubic-bezier(0.55, 0, 1, 0.45) both;
+}
+
+#app-content[data-paging="prev"] [data-stagger].is-paging-out {
+  animation-name: grid-out-prev;
+}
+
+@keyframes grid-out-next { to { opacity: 0; transform: translateX(48px); } }
+@keyframes grid-out-prev { to { opacity: 0; transform: translateX(-48px); } }
+
+/* Directional entrance replaces the vertical page-in while paging. */
+#app-content.is-page-enter[data-paging] { animation-name: page-fade; }
+
+@keyframes page-fade { from { opacity: 0.35; } }
+
+#app-content.is-page-enter[data-paging] [data-stagger] > * {
+  animation-name: card-in-next;
+}
+
+#app-content.is-page-enter[data-paging="prev"] [data-stagger] > * {
+  animation-name: card-in-prev;
+}
+
+@keyframes card-in-next { from { opacity: 0; transform: translateX(-28px); } }
+@keyframes card-in-prev { from { opacity: 0; transform: translateX(28px); } }
+
 /* Thin rail that only appears when a page is genuinely slow; hover-prefetched
    navigations never reach the 140ms threshold and show nothing. */
 .page-progress {
@@ -2090,9 +2126,138 @@ html[dir="rtl"] .page-progress > i {
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-old(root),
   ::view-transition-new(root) { animation: none; }
+  [data-stagger].is-paging-out,
+  #app-content.is-page-enter[data-paging] [data-stagger] > * { animation: none; }
 
   #app-content.is-page-enter,
   #app-content.is-page-enter [data-stagger] > * { animation: none; }
 
   .page-progress > i { animation: none; width: 100%; }
+}
+
+/* =========================================
+   Landing page (public/landing.blade.php)
+   ------------------------------------------
+   All values flow from partials/theme-vars.blade.php, which is generated
+   from config/consultant.php. Nothing here is tenant-specific.
+   ========================================= */
+body.landing {
+  margin: 0;
+  background: var(--c-background);
+  color: var(--c-text);
+  font-family: var(--font-body);
+  font-size: var(--body-size);
+  font-weight: var(--body-weight);
+  line-height: var(--line-height);
+  letter-spacing: var(--letter-spacing);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+body.landing ::selection { background: var(--c-selection-bg); color: var(--c-selection-text); }
+
+.landing-container {
+  width: min(100%, var(--container-max));
+  margin-inline: auto;
+  padding-inline: var(--container-padding);
+}
+
+/* fixed nav */
+.site-nav {
+  position: fixed;
+  inset-inline: 0;
+  top: 0;
+  z-index: 50;
+  min-height: var(--nav-height);
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid transparent;
+  transition: background var(--animation-duration), border-color var(--animation-duration), backdrop-filter var(--animation-duration);
+}
+.site-nav--static { position: static; }
+.site-nav--solid { background: var(--c-background); }
+.site-nav--glass {
+  background: color-mix(in srgb, var(--c-surface) calc(var(--glass-opacity) * 100%), transparent);
+  backdrop-filter: blur(var(--backdrop-blur));
+}
+.site-nav--transparent { background: transparent; }
+.site-nav.is-scrolled {
+  background: color-mix(in srgb, var(--c-surface) 92%, transparent);
+  border-bottom-color: var(--c-border);
+  backdrop-filter: blur(var(--backdrop-blur));
+}
+.site-nav__inner {
+  width: min(100%, var(--container-max));
+  margin-inline: auto;
+  padding-inline: var(--container-padding);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2.5rem;
+}
+.site-nav__links {
+  display: none;
+  align-items: center;
+  gap: 2rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: .875rem;
+  font-weight: 500;
+  color: var(--c-muted);
+}
+.site-nav__links a { transition: color var(--animation-duration); }
+.site-nav__links a:hover { color: var(--c-text); }
+@media (min-width: 768px) { .site-nav__links { display: flex; } }
+
+.nav-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .625rem 1.5rem;
+  font-size: .875rem;
+  font-weight: 500;
+  color: var(--c-text);
+  background: var(--c-glass);
+  border: 1px solid var(--c-glass-border);
+  border-radius: var(--radius-button);
+  transition: background var(--animation-duration), border-color var(--animation-duration);
+}
+.nav-cta:hover { background: var(--c-glass-hover); border-color: var(--c-border-strong); }
+
+/* scroll reveal */
+.reveal {
+  opacity: 0;
+  transform: translateY(var(--reveal-offset));
+  transition: opacity var(--reveal-duration) ease, transform var(--reveal-duration) ease;
+}
+.reveal.fade-right { transform: translateX(calc(var(--reveal-offset) * -1)); }
+.reveal.fade-left { transform: translateX(var(--reveal-offset)); }
+.reveal.is-visible { opacity: 1; transform: none; }
+
+/* floating hero cards */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(calc(var(--float-distance) * -1)); }
+}
+.animate-float { animation: float var(--float-duration) ease-in-out infinite; }
+.animate-float-delayed { animation: float var(--float-duration) ease-in-out calc(var(--float-duration) / 3) infinite; }
+.animate-float-fast { animation: float calc(var(--float-duration) * .66) ease-in-out infinite; }
+
+/* slow rotating rings (advisor / ecosystem decorations) */
+@keyframes rotate-360 { to { transform: rotate(360deg); } }
+.spin-10s { animation: rotate-360 10s linear infinite; }
+.spin-15s { animation: rotate-360 15s linear infinite; }
+.spin-15s-rev { animation: rotate-360 15s linear infinite reverse; }
+.spin-20s-rev { animation: rotate-360 20s linear infinite reverse; }
+
+.hide-scrollbar { scrollbar-width: none; }
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; transition: none; }
+  .animate-float,
+  .animate-float-delayed,
+  .animate-float-fast,
+  .spin-10s, .spin-15s, .spin-15s-rev, .spin-20s-rev { animation: none; }
 }

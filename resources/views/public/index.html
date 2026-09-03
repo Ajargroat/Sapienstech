@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>آکادمی جنت | پلتفرم آموزش هوشمند</title>
+    <meta name="description" content="سیستم مدیریت یادگیری و مشاوره تحصیلی مبتنی بر هوش مصنوعی">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="style.css">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Vazirmatn', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            yellow: '#FBBF24',
+                            purple: '#A855F7',
+                            dark: '#000000',
+                            surface: '#111111',
+                            surfaceLight: '#1A1A1A'
+                        }
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'float-delayed': 'float 6s ease-in-out 2s infinite',
+                        'float-fast': 'float 4s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-15px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-brand-dark text-white font-sans antialiased selection:bg-brand-yellow selection:text-black overflow-x-hidden">
+
+    <nav id="navbar" class="fixed w-full top-0 z-50 transition-all duration-300 py-4 px-6 md:px-12 border-b border-transparent bg-black">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-10">
+                <a href="#" class="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-yellow to-brand-purple flex items-center justify-center">
+                        <span class="w-4 h-4 bg-black rounded-sm"></span>
+                    </div>
+                    آکادمی جنت
+                </a>
+                
+                <ul class="hidden md:flex gap-8 text-sm font-medium text-gray-400">
+                    <li><a href="#about" class="hover:text-white transition-colors">درباره ما</a></li>
+                    <li><a href="#services" class="hover:text-white transition-colors">خدمات</a></li>
+                    <li><a href="#testimonials" class="hover:text-white transition-colors">دانش‌آموزان موفق</a></li>
+                    <li><a href="#blog" class="hover:text-white transition-colors">وبلاگ</a></li>
+                </ul>
+            </div>
+
+            <a href="login.html" class="group relative px-6 py-2.5 text-sm font-medium bg-white/5 border border-white/10 rounded-full overflow-hidden transition-all hover:bg-white/10 hover:border-white/20 focus:outline-none focus:ring-2 focus:ring-brand-yellow focus:ring-offset-2 focus:ring-offset-black">
+                <span class="relative z-10 flex items-center gap-2">
+                    ورود | ثبت‌نام
+                    <svg class="w-4 h-4 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                </span>
+            </a>
+        </div>
+    </nav>
+
+    <main>
+        <section class="relative min-h-screen flex items-center pt-24 pb-12 px-6 overflow-hidden">
+            <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-brand-yellow/10 rounded-full blur-[120px] pointer-events-none"></div>
+            <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-brand-purple/10 rounded-full blur-[120px] pointer-events-none"></div>
+
+            <div class="max-w-7xl mx-auto w-full grid md:grid-cols-2 gap-12 items-center relative z-10">
+                <div class="flex flex-col gap-6 reveal fade-bottom">
+                    <h1 class="text-5xl md:text-7xl font-bold leading-[1.2] tracking-tight">
+                        آینده یادگیری با <br>
+                        <span class="text-transparent bg-clip-text bg-gradient-to-l from-brand-yellow to-brand-purple">
+                            آکادمی جنت
+                        </span>
+                    </h1>
+                    <p class="text-lg text-gray-400 max-w-lg leading-relaxed">
+                        پلتفرم یکپارچه آموزش هوشمند. مسیر تحصیلی خود را با برنامه‌ریزی اختصاصی، تحلیل‌های دقیق و سیستم مدیریت یادگیری مدرن متحول کنید.
+                    </p>
+                    <div class="flex flex-wrap gap-4 mt-4">
+                        <a href="#" class="px-8 py-3.5 rounded-full bg-white text-black font-semibold hover:bg-gray-200 transition-colors shadow-[0_0_20px_rgba(255,255,255,0.2)]">
+                            شروع رایگان
+                        </a>
+                        <a href="#services" class="px-8 py-3.5 rounded-full bg-white/5 border border-white/10 text-white font-medium hover:bg-white/10 transition-colors">
+                            مشاهده امکانات
+                        </a>
+                    </div>
+                </div>
+
+                <div class="relative h-[500px] w-full reveal fade-bottom hidden md:block">
+                    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-96 bg-brand-surfaceLight/80 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-2xl animate-float z-20 flex flex-col gap-4">
+                        <div class="flex justify-between items-center border-b border-white/5 pb-4">
+                            <div class="flex gap-2">
+                                <div class="w-3 h-3 rounded-full bg-red-500/80"></div>
+                                <div class="w-3 h-3 rounded-full bg-yellow-500/80"></div>
+                                <div class="w-3 h-3 rounded-full bg-green-500/80"></div>
+                            </div>
+                            <div class="w-20 h-2 bg-white/10 rounded-full"></div>
+                        </div>
+                        <div class="w-full h-24 bg-gradient-to-r from-brand-yellow/20 to-brand-purple/20 rounded-xl border border-white/5 flex items-end p-2 gap-1">
+                            <div class="w-full bg-brand-yellow/80 rounded-t-sm h-[40%]"></div>
+                            <div class="w-full bg-brand-yellow/80 rounded-t-sm h-[60%]"></div>
+                            <div class="w-full bg-brand-yellow/80 rounded-t-sm h-[30%]"></div>
+                            <div class="w-full bg-brand-yellow/80 rounded-t-sm h-[80%]"></div>
+                            <div class="w-full bg-brand-purple/80 rounded-t-sm h-[100%]"></div>
+                        </div>
+                        <div class="flex flex-col gap-2 mt-2">
+                            <div class="w-3/4 h-3 bg-white/10 rounded-full"></div>
+                            <div class="w-1/2 h-3 bg-white/5 rounded-full"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="absolute top-10 right-10 w-48 p-4 bg-brand-surface/90 backdrop-blur-lg border border-white/10 rounded-xl shadow-xl animate-float-delayed z-30">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-brand-purple/20 flex items-center justify-center text-brand-purple border border-brand-purple/30">✓</div>
+                            <div class="flex flex-col gap-1">
+                                <div class="w-16 h-2 bg-white/20 rounded-full"></div>
+                                <div class="w-24 h-2 bg-white/10 rounded-full"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="absolute bottom-16 left-0 w-56 p-4 bg-white/5 backdrop-blur-lg border border-white/10 rounded-xl shadow-xl animate-float-fast z-10 flex gap-3 items-center">
+                         <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-brand-yellow to-orange-500 flex items-center justify-center">
+                            <div class="w-6 h-6 border-2 border-white/50 rounded-full border-t-white animate-spin"></div>
+                         </div>
+                         <div class="flex flex-col gap-2">
+                             <div class="w-20 h-2 bg-white/20 rounded-full"></div>
+                             <div class="w-12 h-2 bg-white/10 rounded-full"></div>
+                         </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    
+        <!-- Advisor Section -->
+        <section id="about" class="pt-24 pb-8 px-6 relative overflow-hidden">
+            <!-- Background Glows -->
+            <div class="absolute top-1/2 right-0 w-72 h-72 bg-brand-yellow/5 rounded-full blur-[100px] pointer-events-none -translate-y-1/2"></div>
+            <div class="absolute bottom-0 left-10 w-72 h-72 bg-brand-purple/5 rounded-full blur-[100px] pointer-events-none"></div>
+
+            <div class="max-w-7xl mx-auto">
+                <div class="flex flex-col md:flex-row items-center gap-12 bg-brand-surface border border-white/5 rounded-[2.5rem] p-8 md:p-12 relative z-10 shadow-2xl overflow-hidden">
+                    
+                    <!-- Decorative background pattern inside card -->
+                    <div class="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-brand-yellow/10 to-transparent rounded-full blur-3xl -z-10 -translate-y-1/2 translate-x-1/4"></div>
+
+                    <!-- Advisor Image/Avatar -->
+                    <div class="w-full md:w-2/5 flex justify-center reveal fade-right">
+                        <div class="relative group">
+                            <!-- Outer rotating border -->
+                            <div class="absolute inset-[-10px] rounded-full border border-dashed border-brand-yellow/30 animate-[spin_15s_linear_infinite] group-hover:border-brand-yellow/60 transition-colors duration-500"></div>
+                            <div class="absolute inset-[-20px] rounded-full border border-brand-purple/20 animate-[spin_20s_linear_infinite_reverse]"></div>
+                            
+                            <!-- Profile Image Container -->
+                            <div class="relative w-64 h-64 md:w-72 md:h-72 rounded-full overflow-hidden border-4 border-brand-surfaceLight shadow-[0_0_40px_rgba(251,191,36,0.15)] bg-gradient-to-br from-brand-surfaceLight to-black">
+                                <!-- Placeholder Image: Replace src with actual image path -->
+                                <img src="advisor.jpg" alt="محمدرضا جنت‌فریدونی" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 grayscale group-hover:grayscale-0">
+                            </div>
+                            
+                            <!-- Floating Badge -->
+                            <div class="absolute bottom-2 -right-4 bg-white/10 backdrop-blur-md border border-white/20 px-4 py-2 rounded-2xl shadow-xl flex items-center gap-2">
+                                <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
+                                <span class="text-xs font-semibold text-white">مشاوره فعال</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Advisor Details -->
+                    <div class="w-full md:w-3/5 flex flex-col gap-6 text-center md:text-right reveal fade-left">
+                        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-yellow/10 border border-brand-yellow/20 text-xs font-medium text-brand-yellow w-max mx-auto md:mx-0">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path></svg>
+                            مدیریت و مشاوره ارشد
+                        </div>
+                        
+                        <div>
+                            <h2 class="text-3xl md:text-5xl font-bold mb-3 tracking-tight">محمدرضا جنت‌فریدونی</h2>
+                            <p class="text-brand-purple text-lg font-medium">طراح مسیر موفقیت تحصیلی شما</p>
+                        </div>
+
+                        <p class="text-gray-400 text-base md:text-lg leading-relaxed max-w-2xl">
+                            ترکیب سال‌ها تجربه در زمینه مشاوره تحصیلی با قدرت تحلیل هوش مصنوعی، به ما این امکان را می‌دهد که برای هر دانش‌آموز یک نقشه راه اختصاصی طراحی کنیم. من اینجا هستم تا در کنار پلتفرم هوشمند آکادمی جنت، مسیر شما را تا رسیدن به قله‌های موفقیت هموار کنم و در تمام چالش‌های تحصیلی راهنمای شما باشم.
+                        </p>
+
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-4 my-2">
+                            <div class="bg-black/30 border border-white/5 rounded-2xl p-4 text-center hover:bg-white/5 transition-colors">
+                                <div class="text-2xl font-bold text-white mb-1">۴+</div>
+                                <div class="text-xs text-gray-500">سال تجربه</div>
+                            </div>
+                            <div class="bg-black/30 border border-white/5 rounded-2xl p-4 text-center hover:bg-white/5 transition-colors">
+                                <div class="text-2xl font-bold text-white mb-1">۱۰۰+</div>
+                                <div class="text-xs text-gray-500">دانش‌آموز موفق</div>
+                            </div>
+                            <div class="col-span-2 md:col-span-1 bg-black/30 border border-white/5 rounded-2xl p-4 text-center hover:bg-white/5 transition-colors">
+                                <div class="text-2xl font-bold text-white mb-1">۱۰۰٪</div>
+                                <div class="text-xs text-gray-500">پشتیبانی اختصاصی</div>
+                            </div>
+                        </div>
+
+                        <div class="pt-4 flex flex-col sm:flex-row items-center gap-4">
+                            <a href="#" class="w-full sm:w-auto px-8 py-3.5 rounded-full bg-brand-yellow text-black font-semibold hover:bg-yellow-500 transition-colors shadow-[0_0_20px_rgba(251,191,36,0.3)] text-center">
+                                رزرو وقت مشاوره
+                            </a>
+                            <a href="#" class="w-full sm:w-auto px-8 py-3.5 rounded-full bg-white/5 border border-white/10 text-white font-medium hover:bg-white/10 transition-colors flex items-center justify-center gap-2">
+                                مشاهده رزومه کامل
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                            </a>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <section class="pt-8 pb-24 px-6 bg-gradient-to-b from-black to-brand-surfaceLight">
+            <div class="max-w-7xl mx-auto grid md:grid-cols-2 gap-16 items-center">
+                <div class="reveal fade-right relative">
+                    <div class="aspect-square max-w-md mx-auto relative">
+                        <div class="absolute inset-0 rounded-full border border-white/10 animate-[spin_10s_linear_infinite]"></div>
+                        <div class="absolute inset-4 rounded-full border border-white/10 animate-[spin_15s_linear_infinite_reverse]"></div>
+                        <div class="absolute inset-8 rounded-full border border-brand-yellow/20"></div>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <div class="w-32 h-32 rounded-2xl bg-gradient-to-br from-brand-yellow to-brand-purple blur-sm opacity-50"></div>
+                            <div class="absolute w-32 h-32 rounded-2xl bg-brand-surfaceLight border border-white/10 flex items-center justify-center shadow-2xl">
+                                <svg class="w-12 h-12 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex flex-col gap-6 reveal fade-left">
+                    <h2 class="text-3xl md:text-5xl font-bold tracking-tight">اکوسیستم هوشمند آموزش</h2>
+                    <p class="text-gray-400 text-lg leading-relaxed">
+                        ما با ترکیب الگوریتم‌های پیشرفته هوش مصنوعی و متدهای نوین یادگیری، محیطی را فراهم کرده‌ایم که در آن هر دانش‌آموز بر اساس نقاط قوت و ضعف خود، مسیر تحصیلی شخصی‌سازی شده‌ای را طی می‌کند.
+                    </p>
+                    <ul class="flex flex-col gap-4 mt-4">
+                        <li class="flex items-center gap-3">
+                            <div class="w-6 h-6 rounded-full bg-brand-yellow/10 flex items-center justify-center text-brand-yellow text-sm">✦</div>
+                            <span class="text-gray-300">مشاوره تحصیلی مبتنی بر داده</span>
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <div class="w-6 h-6 rounded-full bg-brand-purple/10 flex items-center justify-center text-brand-purple text-sm">✦</div>
+                            <span class="text-gray-300">محیط یادگیری شخصی‌سازی شده</span>
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <div class="w-6 h-6 rounded-full bg-brand-yellow/10 flex items-center justify-center text-brand-yellow text-sm">✦</div>
+                            <span class="text-gray-300">آماده‌سازی برای آینده یادگیری</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+ 
+        <section id="services" class="py-24 px-6">
+            <div class="max-w-7xl mx-auto">
+                <div class="text-center mb-16 reveal fade-bottom">
+                    <h2 class="text-3xl md:text-5xl font-bold mb-4">خدمات ممتاز</h2>
+                    <p class="text-gray-400 max-w-2xl mx-auto">ابزارهای حرفه‌ای و یکپارچه برای رسیدن به بالاترین سطح عملکرد تحصیلی.</p>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="service-card group reveal fade-bottom transition-all duration-300 hover:-translate-y-2 bg-brand-surface border border-white/5 hover:border-white/20 p-8 rounded-3xl">
+                        <div class="w-12 h-12 rounded-xl bg-brand-yellow/10 flex items-center justify-center text-brand-yellow mb-6 transition-transform group-hover:scale-110">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-3">مشاوره هوشمند</h3>
+                        <p class="text-gray-400 text-sm leading-relaxed">تحلیل لحظه‌ای وضعیت تحصیلی و ارائه پیشنهادات هوشمندانه برای بهبود راندمان.</p>
+                    </div>
+
+                    <div class="service-card group reveal fade-bottom transition-all duration-300 hover:-translate-y-2 bg-brand-surface border border-white/5 hover:border-white/20 p-8 rounded-3xl" style="transition-delay: 100ms;">
+                        <div class="w-12 h-12 rounded-xl bg-brand-purple/10 flex items-center justify-center text-brand-purple mb-6 transition-transform group-hover:scale-110">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-3">برنامه‌ریزی شخصی</h3>
+                        <p class="text-gray-400 text-sm leading-relaxed">تولید برنامه مطالعاتی دینامیک بر اساس اهداف، زمان خالی و سرعت یادگیری شما.</p>
+                    </div>
+
+                    <div class="service-card group reveal fade-bottom transition-all duration-300 hover:-translate-y-2 bg-brand-surface border border-white/5 hover:border-white/20 p-8 rounded-3xl" style="transition-delay: 200ms;">
+                        <div class="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 mb-6 transition-transform group-hover:scale-110">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-3">تحلیل عملکرد</h3>
+                        <p class="text-gray-400 text-sm leading-relaxed">نمودارهای پیشرفته و داشبورد مدیریتی برای رصد دقیق پیشرفت تحصیلی.</p>
+                    </div>
+
+                    <div class="service-card group reveal fade-bottom transition-all duration-300 hover:-translate-y-2 bg-brand-surface border border-white/5 hover:border-white/20 p-8 rounded-3xl">
+                        <div class="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 mb-6 transition-transform group-hover:scale-110">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-3">آزمون‌های آزمایشی</h3>
+                        <p class="text-gray-400 text-sm leading-relaxed">بانک سوالات استاندارد همراه با سیستم برگزاری آزمون مشابه شرایط واقعی.</p>
+                    </div>
+
+                    <div class="service-card group reveal fade-bottom transition-all duration-300 hover:-translate-y-2 bg-brand-surface border border-white/5 hover:border-white/20 p-8 rounded-3xl" style="transition-delay: 100ms;">
+                        <div class="w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-400 mb-6 transition-transform group-hover:scale-110">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-3">مدیریت یادگیری</h3>
+                        <p class="text-gray-400 text-sm leading-relaxed">دسترسی به محتوای آموزشی، ویدیوها و جزوات در یک پلتفرم متمرکز.</p>
+                    </div>
+
+                    <div class="service-card group reveal fade-bottom transition-all duration-300 hover:-translate-y-2 bg-brand-surface border border-white/5 hover:border-white/20 p-8 rounded-3xl" style="transition-delay: 200ms;">
+                        <div class="w-12 h-12 rounded-xl bg-brand-yellow/10 flex items-center justify-center text-brand-yellow mb-6 transition-transform group-hover:scale-110">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-3">دستیار هوش مصنوعی</h3>
+                        <p class="text-gray-400 text-sm leading-relaxed">پاسخگویی ۲۴ ساعته به سوالات درسی و رفع اشکالات توسط دستیار اختصاصی.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="py-20 px-6">
+            <div class="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center" id="stats-container">
+                <div class="flex flex-col gap-2 reveal fade-bottom">
+                    <span class="text-4xl md:text-5xl font-bold text-white"><span class="counter" data-target="14">۱۴</span>+</span>
+                    <span class="text-2xl text-gray-400">دانش‌آموز فعال</span>
+                </div>
+                <div class="flex flex-col gap-2 reveal fade-bottom" style="transition-delay: 100ms;">
+                    <span class="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-l from-brand-yellow to-brand-purple">
+                        <span class="counter" data-target="91">۹۱</span>٪
+                    </span>
+                    <span class="text-2xl text-gray-400">رضایت و موفقیت</span>
+                </div>
+                <div class="flex flex-col gap-2 reveal fade-bottom" style="transition-delay: 200ms;">
+                    <span class="text-4xl md:text-5xl font-bold text-white"><span class="counter" data-target="2000">۲۰۰۰</span>+</span>
+                    <span class="text-2xl text-gray-400">ساعت مشاوره</span>
+                </div>
+                <div class="flex flex-col gap-2 reveal fade-bottom" style="transition-delay: 300ms;">
+                    <span class="text-4xl md:text-5xl font-bold text-white"><span class="counter" data-target="800">۸۰۰</span>+</span>
+                    <span class="text-2xl text-gray-400">آزمون برگزار شده</span>
+                </div>
+            </div>
+        </section>
+
+        <section id="testimonials" class="py-24 px-6 overflow-hidden">
+            <div class="max-w-7xl mx-auto">
+                <div class="text-center mb-16 reveal fade-bottom">
+                    <h2 class="text-3xl md:text-5xl font-bold mb-4">پیشگامان موفقیت</h2>
+                    <p class="text-gray-400 max-w-2xl mx-auto">داستان دانش‌آموزانی که با پلتفرم ما مرزهای پیشرفت را جابجا کردند.</p>
+                </div>
+
+                <div class="flex overflow-x-auto snap-x snap-mandatory gap-6 pb-8 hide-scrollbar cursor-grab active:cursor-grabbing md:grid md:grid-cols-3 md:overflow-visible">
+                    
+                    <div class="min-w-[300px] w-full snap-center bg-brand-surface border border-white/5 rounded-3xl p-8 reveal fade-bottom">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-14 h-14 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center text-lg font-bold">ع.ر</div>
+                            <div>
+                                <h4 class="font-bold text-white">علی رضایی</h4>
+                                <p class="text-brand-yellow text-sm font-medium">رتبه ۱۵۲ کنکور ریاضی</p>
+                            </div>
+                        </div>
+                        <p class="text-gray-400 leading-relaxed text-sm">
+                            "دستیار هوش مصنوعی و تحلیل‌های دقیق نموداری به من کمک کرد تا نقاط ضعفم را در دروس اختصاصی پیدا کنم. برنامه‌ریزی‌ها کاملا منطبق بر توانایی من بود."
+                        </p>
+                    </div>
+
+                    <div class="min-w-[300px] w-full snap-center bg-brand-surface border border-white/5 rounded-3xl p-8 reveal fade-bottom" style="transition-delay: 100ms;">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-14 h-14 rounded-full bg-gradient-to-tr from-brand-yellow to-orange-500 flex items-center justify-center text-lg font-bold">س.م</div>
+                            <div>
+                                <h4 class="font-bold text-white">سارا محمدی</h4>
+                                <p class="text-brand-yellow text-sm font-medium">قبولی پزشکی تهران</p>
+                            </div>
+                        </div>
+                        <p class="text-gray-400 leading-relaxed text-sm">
+                            "بانک سوالات و آزمون‌های شبیه‌ساز کاملا مشابه کنکور بودند. استرس من در جلسه اصلی به خاطر تمرین در این پلتفرم بسیار کم بود."
+                        </p>
+                    </div>
+
+                    <div class="min-w-[300px] w-full snap-center bg-brand-surface border border-white/5 rounded-3xl p-8 reveal fade-bottom" style="transition-delay: 200ms;">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-14 h-14 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-500 flex items-center justify-center text-lg font-bold">ا.ک</div>
+                            <div>
+                                <h4 class="font-bold text-white">امیرحسین کریمی</h4>
+                                <p class="text-brand-yellow text-sm font-medium">رتبه ۸۷ کنکور انسانی</p>
+                            </div>
+                        </div>
+                        <p class="text-gray-400 leading-relaxed text-sm">
+                            "لذت‌بخش‌ترین قسمت برای من رابط کاربری مینیمال و بدون حواس‌پرتی پلتفرم بود. همه چیز سر جای خودش قرار داشت و سرعت پیشرفتم دو برابر شد."
+                        </p>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <section id="blog" class="py-24 px-6 bg-gradient-to-l from-brand-surface to-black">
+            <div class="max-w-7xl mx-auto">
+                <div class="flex flex-col md:flex-row justify-between items-end mb-10 reveal fade-bottom gap-2">
+                    <div>
+                        <h2 class="text-3xl md:text-5xl font-bold mb-4">آخرین مقالات</h2>
+                        <p class="text-gray-400">تازه‌ترین متدهای یادگیری و تکنولوژی آموزشی.</p>
+                    </div>
+                    <a href="#" class="text-white hover:text-brand-yellow transition-colors text-sm font-medium flex items-center gap-1">
+                        مشاهده همه
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    </a>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <article class="group cursor-pointer reveal fade-bottom hover:-translate-y-2 border border-transparent hover:border-white/20 p-5 rounded-3xl">
+                        <div class="w-full h-48 rounded-2xl bg-brand-surfaceLight border border-white/5 mb-6 overflow-hidden relative">
+                            <div class="absolute inset-0 bg-gradient-to-br from-brand-yellow/10 to-brand-purple/10 group-hover:scale-105 transition-transform duration-500"></div>
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <img src="blog-pics/blog-pic1.png" class="flex">
+                            </div>
+                        </div>
+                        <h3 class="text-xl font-bold mb-3">چگونه هوش مصنوعی سبک یادگیری را تغییر می‌دهد؟</h3>
+                        <p class="text-gray-400 text-sm mb-4 line-clamp-2">بررسی جامع تاثیر الگوریتم‌های هوش مصنوعی بر شخصی‌سازی آموزش و افزایش بازدهی دانش‌آموزان در قرن جدید.</p>
+                    </article>
+
+                    <article class="group cursor-pointer reveal fade-bottom hover:-translate-y-2 border border-transparent hover:border-white/20 p-5 rounded-3xl" style="transition-delay: 100ms;">
+                        <div class="w-full h-48 rounded-2xl bg-brand-surfaceLight border border-white/5 mb-6 overflow-hidden relative">
+                            <div class="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-teal-500/10 group-hover:scale-105 transition-transform duration-500"></div>
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <img src="blog-pics/blog-pic2.png" class="flex">
+                            </div>
+                        </div>
+                        <h3 class="text-xl font-bold mb-3">مدیریت زمان در سال کنکور</h3>
+                        <p class="text-gray-400 text-sm mb-4 line-clamp-2">تکنیک‌های اثبات‌شده برای مدیریت زمان، جلوگیری از فرسودگی ذهنی و تنظیم یک برنامه مطالعاتی متعادل.</p>
+                    </article>
+
+                    <article class="group cursor-pointer reveal fade-bottom hover:-translate-y-2 border border-transparent hover:border-white/20 p-5 rounded-3xl" style="transition-delay: 200ms;">
+                        <div class="w-full h-48 rounded-2xl bg-brand-surfaceLight border border-white/5 mb-6 overflow-hidden relative">
+                            <div class="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-red-500/10 group-hover:scale-105 transition-transform duration-500"></div>
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <img src="blog-pics/blog-pic3.png" class="flex">
+                            </div>
+                        </div>
+                        <h3 class="text-xl font-bold mb-3">تحلیل کارنامه: قدم اول پیشرفت</h3>
+                        <p class="text-gray-400 text-sm mb-4 line-clamp-2">چگونه داده‌های کارنامه آزمون آزمایشی را تفسیر کنیم و از آن‌ها برای تنظیم استراتژی ماه آینده استفاده کنیم.</p>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <section class="py-32 px-6 relative overflow-hidden">
+             <div class="absolute inset-0 bg-gradient-to-b from-transparent to-brand-surfaceLight pointer-events-none z-0"></div>
+             <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-[300px] bg-brand-yellow/5 blur-[150px] pointer-events-none z-0"></div>
+
+            <div class="max-w-4xl mx-auto text-center relative z-10 reveal fade-bottom">
+                <h2 class="text-4xl md:text-6xl font-bold mb-6 tracking-tight">آماده‌ی شروع یک مسیر حرفه‌ای هستید؟</h2>
+                <p class="text-xl text-gray-400 mb-10 max-w-2xl mx-auto">همین حالا به جمع هزاران دانش‌آموز موفق ما بپیوندید و یادگیری را به سطح جدیدی ارتقا دهید.</p>
+                <div class="flex flex-col sm:flex-row justify-center items-center gap-4">
+                    <a href="login.html" class="w-full sm:w-auto px-10 py-4 rounded-full bg-white text-black font-semibold text-lg hover:bg-gray-200 transition-colors shadow-[0_0_30px_rgba(255,255,255,0.15)]">
+                        ثبت‌نام در پلتفرم
+                    </a>
+                    <a href="login.html" class="w-full sm:w-auto px-10 py-4 rounded-full bg-white/5 border border-white/10 text-white font-medium text-lg hover:bg-white/10 transition-colors">
+                        ورود به حساب کاربری
+                    </a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-black pt-20 pb-10 px-6 border-t border-white/10">
+        <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
+            <div class="md:col-span-2">
+                <a href="#" class="text-2xl font-bold tracking-tight text-white flex items-center gap-2 mb-6">
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-yellow to-brand-purple flex items-center justify-center">
+                        <span class="w-4 h-4 bg-black rounded-sm"></span>
+                    </div>
+                    آکادمی جنت
+                </a>
+                <p class="text-gray-500 text-sm max-w-sm leading-relaxed mb-6">
+                    ما آینده آموزش را با ترکیب هوش مصنوعی، طراحی انسان‌محور و تکنولوژی‌های روز دنیا می‌سازیم. یادگیری هوشمند، حق همه است.
+                </p>
+                <div class="flex items-center gap-4 text-gray-500">
+                    <a href="#" class="hover:text-white transition-colors" aria-label="X">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M18.9 2H22l-6.8 7.8L23 22h-6.2l-4.9-6.4L6.2 22H3.1l7.3-8.3L1 2h6.3l4.4 5.8L18.9 2zm-1.1 18h1.7L6.3 3.9H4.5L17.8 20z"/>
+    </svg></svg>
+                    </a>
+                    <a href="#" class="hover:text-white transition-colors" aria-label="Instagram">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                    </a>
+                    <a href="#" class="hover:text-white transition-colors" aria-label="Telegram">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M21.944 4.317c.148-.665-.235-.925-.75-.74L2.457 10.82c-.638.256-.63.612-.116.77l4.806 1.5 1.86 5.66c.223.617.113.862.765.862.503 0 .725-.23 1.006-.503l2.42-2.352 5.033 3.715c.928.512 1.596.248 1.827-.86L21.944 4.317zm-13.9 8.388 9.39-5.925c.468-.285.896-.132.544.18l-7.727 6.977-.302 3.227-1.905-4.46z"/></svg>
+                    </a>
+                </div>
+            </div>
+            
+            <div>
+                <h4 class="text-white font-semibold mb-4">دسترسی سریع</h4>
+                <ul class="flex flex-col gap-3 text-sm text-gray-500">
+                    <li><a href="#about" class="hover:text-brand-yellow transition-colors">درباره ما</a></li>
+                    <li><a href="#services" class="hover:text-brand-yellow transition-colors">خدمات سیستم</a></li>
+                    <li><a href="#testimonials" class="hover:text-brand-yellow transition-colors">داستان موفقیت</a></li>
+                    <li><a href="#blog" class="hover:text-brand-yellow transition-colors">وبلاگ آموزشی</a></li>
+                </ul>
+            </div>
+
+            <div>
+                <h4 class="text-white font-semibold mb-4">پشتیبانی</h4>
+                <ul class="flex flex-col gap-3 text-sm text-gray-500">
+                    <li><a href="#" class="hover:text-brand-yellow transition-colors">سوالات متداول</a></li>
+                    <li><a href="#" class="hover:text-brand-yellow transition-colors">حریم خصوصی</a></li>
+                    <li><a href="#" class="hover:text-brand-yellow transition-colors">شرایط استفاده</a></li>
+                    <li><a href="#" class="hover:text-brand-yellow transition-colors">تماس با ما</a></li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="max-w-7xl mx-auto pt-8 border-t border-white/5 text-center flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-gray-600">
+            <p>تمامی حقوق برای پلتفرم آکادمی جنت محفوظ است. © ۲۰۲۶</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+    <script>
+const statsSection = document.getElementById("stats-container");
+const counters = document.querySelectorAll(".counter");
+
+let started = false;
+
+// Convert English digits to Persian
+function toPersianNumber(num) {
+    return num.toString().replace(/\d/g, d => "۰۱۲۳۴۵۶۷۸۹"[d]);
+}
+
+function animateCounters() {
+
+    if (started) return;
+    started = true;
+
+    counters.forEach(counter => {
+
+        const target = +counter.dataset.target;
+        let current = 0;
+
+        // Animation duration
+        const duration = 1200;
+
+        // 60 FPS
+        const increment = target / (duration / 16);
+
+        function update() {
+
+            current += increment;
+
+            if (current < target) {
+                counter.textContent = toPersianNumber(Math.floor(current));
+                requestAnimationFrame(update);
+            } else {
+                counter.textContent = toPersianNumber(target);
+            }
+
+        }
+
+        update();
+
+    });
+
+}
+
+const observer = new IntersectionObserver(entries => {
+
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            animateCounters();
+        }
+    });
+
+}, {
+    threshold: 0.4
+});
+
+observer.observe(statsSection);
+</script>
+</body>
+</html>

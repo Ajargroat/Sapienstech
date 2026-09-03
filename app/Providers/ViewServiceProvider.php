@@ -24,9 +24,9 @@ class ViewServiceProvider extends ServiceProvider
             ]);
         });
 
-        // Public website + login page: the real Tenant model and the
-        // tenant's website config, for branding (name, colors, logo).
-        View::composer(['layouts.public', 'auth.login'], function ($view) {
+        // Public website: the real Tenant model and the tenant's website
+        // config, for branding (name, colors, logo).
+        View::composer(['layouts.public'], function ($view) {
             $tenant = tenant();
 
             $view->with([
@@ -34,6 +34,18 @@ class ViewServiceProvider extends ServiceProvider
                 'config' => $tenant
                     ? WebsiteConfig::where('tenant_id', $tenant->id)->first()
                     : null,
+            ]);
+        });
+
+        // Landing page + login: fully config-driven, so they render with the
+        // exact same tenant/theme tokens as the consultant dashboard.
+        View::composer(['public.landing', 'auth.login'], function ($view) {
+            $c = config('consultant');
+            $view->with([
+                'tenant' => $c['tenant'],
+                'theme'  => $c['theme'],
+                'public' => $c['public'] ?? [],
+                'labels' => $c['labels'],
             ]);
         });
     }

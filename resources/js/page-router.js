@@ -26,6 +26,7 @@ const REGION_SELECTOR = '#app-content';
 const CACHE_LIMIT = 10;
 const PROGRESS_DELAY = 140;
 const ENTER_DURATION = 420;
+const EXIT_DURATION = 220;
 const PREFETCH_SELECTOR =
     '[data-prefetch], .pager-next:not(.is-disabled), .pager-prev:not(.is-disabled)';
 
@@ -64,6 +65,15 @@ const hasViewTransitions = () => typeof document.startViewTransition === 'functi
 function inScope(url) {
     if (!url || !scope || url.origin !== window.location.origin) return false;
     return url.pathname === `/${scope}` || url.pathname.startsWith(`/${scope}/`);
+}
+
+/** 'next'/'prev' when a navigation only changes the ?page= param. */
+function pagingDirection(from, to) {
+    if (from.pathname !== to.pathname) return null;
+    const a = Number(from.searchParams.get('page') ?? 1);
+    const b = Number(to.searchParams.get('page') ?? 1);
+    if (a === b) return null;
+    return b > a ? 'next' : 'prev';
 }
 
 function resolveLink(raw) {
@@ -220,6 +230,15 @@ function syncNav(page) {
     }
 }
 
+/** Let the outgoing grid slide away before the swap. The fetch has already
+ *  resolved (pager links are hover-prefetched), so this is the only wait. */
+function scrollOut(region) {
+    const list = region.querySelector('[data-stagger]');
+    if (!list) return Promise.resolve();
+    list.classList.add('is-paging-out');
+    return new Promise((resolve) => window.setTimeout(resolve, EXIT_DURATION));
+}
+
 function enter(region) {
     for (const list of region.querySelectorAll('[data-stagger]')) {
         [...list.children]
@@ -230,16 +249,20 @@ function enter(region) {
     region.classList.remove('is-page-enter');
     void region.offsetWidth; // restart the animation when re-entering a page
     region.classList.add('is-page-enter');
-    window.setTimeout(() => region.classList.remove('is-page-enter'), ENTER_DURATION);
+    window.setTimeout(() => {
+        region.classList.remove('is-page-enter');
+        delete region.dataset.paging;
+    }, ENTER_DURATION);
 }
 
-async function render(page, { mode = 'push', scroll = null } = {}) {
+async function render(page, { mode = 'push', scroll = null, paging = null } = {}) {
     const region = document.querySelector(REGION_SELECTOR);
     const run = await prepare(page.scripts);
 
+    if (paging) region.dataset.paging = paging;
+
     const swap = () => {
         if (mode !== 'none') {
-            // Remember where the outgoing entry was so Back can return to it.
             window.history.replaceState({ router: true, y: window.scrollY }, '', window.location.href);
         }
 
@@ -253,13 +276,15 @@ async function render(page, { mode = 'push', scroll = null } = {}) {
         if (mode === 'replace') window.history.replaceState({ router: true, y: 0 }, '', page.url.href);
         window.scrollTo(0, scroll ?? 0);
 
-        // The View Transition snapshots the page once this callback settles, so
-        // every DOM mutation (Jalali dates, carousel height, …) has to happen
-        // here rather than in a later microtask.
-        runPage(region, run, { animate: !hasViewTransitions() });
+        runPage(region, run, { animate: !hasViewTransitions() || Boolean(paging) });
     };
 
-    if (hasViewTransitions() && !reducedMotion()) {
+    if (paging && !reducedMotion()) {
+        // A View Transition would snapshot the grid mid-slide and replay the
+        // motion twice, so paging swaps by hand: out, then in.
+        await scrollOut(region);
+        swap();
+    } else if (hasViewTransitions() && !reducedMotion()) {
         await document.startViewTransition(swap).finished;
     } else {
         swap();
@@ -352,7 +377,7 @@ function onClick(event) {
     }
 
     event.preventDefault();
-    navigate(() => load(url));
+    navigate(() => load(url), { paging: pagingDirection(current, url) });
 }
 
 function onSubmit(event) {
@@ -393,7 +418,11 @@ function onPointer(event) {
 function onPopState(event) {
     const url = new URL(window.location.href);
     if (!inScope(url)) return;
-    navigate(() => load(url), { mode: 'none', scroll: Number(event.state?.y ?? 0) });
+    navigate(() => load(url), {
+        mode: 'none',
+        scroll: Number(event.state?.y ?? 0),
+        paging: pagingDirection(current, url),
+    });
 }
 
 /* --------------------------------------------------------------- prefetch */

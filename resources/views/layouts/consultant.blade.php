@@ -10,34 +10,9 @@
     <link rel="stylesheet" href="{{ $theme['assets']['icon_library_url'] }}">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @include('partials.theme-vars')
 </head>
-<body
-    class="consultant-shell"
-    style="
-        --c-primary: {{ $theme['colors']['primary'] }};
-        --c-primary-hover: {{ $theme['colors']['primary_hover'] }};
-        --c-secondary: {{ $theme['colors']['secondary'] }};
-        --c-background: {{ $theme['colors']['background'] }};
-        --c-surface: {{ $theme['colors']['surface'] }};
-        --c-surface-alt: {{ $theme['colors']['surface_alt'] }};
-        --c-surface-elevated: {{ $theme['colors']['surface_elevated'] }};
-        --c-text: {{ $theme['colors']['text'] }};
-        --c-muted: {{ $theme['colors']['text_muted'] }};
-        --c-border: {{ $theme['colors']['border'] }};
-        --c-border-strong: {{ $theme['colors']['border_strong'] }};
-        --c-success: {{ $theme['colors']['success'] }};
-        --c-info: {{ $theme['colors']['info'] }};
-        --c-danger: {{ $theme['colors']['danger'] }};
-        --radius-card: {{ $theme['shape']['card_radius'] }};
-        --content-max: {{ $theme['layout']['content_max_width'] }};
-        --content-padding: {{ $theme['layout']['content_padding'] }};
-        --topnav-height: {{ $theme['layout']['topnav_height'] }};
-        --backdrop-blur: {{ $theme['effects']['backdrop_blur'] }};
-        --brand-gradient: {{ $theme['gradients']['brand'] }};
-        --animation-duration: {{ $theme['effects']['animation_duration'] }};
-    "
-    data-theme-preset="{{ $theme['preset'] }}"
->
+<body class="consultant-shell" data-theme-preset="{{ $theme['preset'] }}">
     <script>
         (function () {
             // Two states: the tenant's configured theme as-is ("dark", the
@@ -59,10 +34,12 @@
             var body = document.body;
 
             // Capture the tenant's original (server-rendered) values so we
-            // can restore them exactly when switching back to "dark".
+            // can restore them exactly when switching back to "dark". The
+            // tokens now live in a :root stylesheet (partials/theme-vars),
+            // so read them from the computed style instead of inline.
             var darkPalette = {};
             Object.keys(LIGHT_PALETTE).forEach(function (key) {
-                darkPalette[key] = body.style.getPropertyValue(key);
+                darkPalette[key] = getComputedStyle(body).getPropertyValue(key).trim();
             });
 
             function apply(scheme) {

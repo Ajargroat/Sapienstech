@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Public;
 
 use App\Http\Controllers\Controller;
 use App\Models\Content;
-use App\Models\Feature;
 use App\Models\WebsiteConfig;
 use Illuminate\View\View;
 
@@ -12,10 +11,9 @@ class PageController extends Controller
 {
     public function home(): View
     {
-        return view('public.home', array_merge($this->shared(), [
-            'features' => Feature::where('enabled', true)->pluck('key'),
-            'content'  => Content::all()->keyBy('key'),
-        ]));
+        // Landing page is fully driven by config('consultant.public') via the
+        // ViewServiceProvider composer.
+        return view('public.landing');
     }
 
     public function about(): View
