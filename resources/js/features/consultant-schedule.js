@@ -33,7 +33,7 @@ const COLOR_THEMES = {
     pink: '#ec4899',
 };
 
-function init() {
+export default function init() {
     const root = document.getElementById('schedule-app');
     if (!root) return;
 
@@ -644,10 +644,12 @@ function init() {
 
     // Exposed for the inline onclick handlers in the Blade view.
     window.ScheduleApp = { closeModal, saveEvent, deleteEvent };
+
+    // Re-entering the schedule page must not stack resize listeners.
+    return () => window.removeEventListener('resize', updateMobileVisibility);
 }
 
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-} else {
-    init();
+if (!window.sapienstechRouter) {
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+    else init();
 }

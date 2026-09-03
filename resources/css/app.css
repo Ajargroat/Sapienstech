@@ -415,6 +415,7 @@ a {
    /* --- Filter toggle + popover --- */
    .filter-wrap {
      position: relative;
+     flex: 0 0 auto;
    }
 
    .filter-toggle-input {
@@ -429,7 +430,7 @@ a {
      position: relative;
      display: inline-flex;
      align-items: center;
-     justify-content: center;
+     justify-content: flex-start;
      width: 44px;
      height: 44px;
      border-radius: 999px;
@@ -437,10 +438,51 @@ a {
      background: color-mix(in srgb, var(--c-text) 5%, transparent);
      color: var(--c-muted);
      cursor: pointer;
+     overflow: hidden;
      transition:
+       width 280ms cubic-bezier(0.4, 0, 0.2, 1),
        color var(--animation-duration) ease,
        background var(--animation-duration) ease,
+       border-radius 280ms cubic-bezier(0.4, 0, 0.2, 1),
        border-color var(--animation-duration) ease;
+   }
+
+   .filter-toggle-btn > i {
+     flex: 0 0 36px;
+     width: 36px;
+     height: 36px;
+     margin-inline-start: 4px;
+     display: inline-flex;
+     align-items: center;
+     justify-content: center;
+   }
+
+   .filter-toggle-label {
+     width: 0;
+     overflow: hidden;
+     white-space: nowrap;
+     padding-inline-start: 12px;   /* same gap as .search-reveal-input */
+     font-size: 16px;              /* inherited body size, like the search text */
+     font-weight: 400;
+     color: var(--c-muted);        /* stays pale; icon still turns primary */
+     transition: width 280ms cubic-bezier(0.4, 0, 0.2, 1);
+   }
+
+   .filter-wrap:hover .filter-toggle-btn,
+   .filter-toggle-input:checked ~ .filter-toggle-btn {
+     width: 280px;          /* was 128px */
+     background: var(--c-surface-elevated);          /* same surface as panel */
+     border-color: var(--c-border);
+     border-bottom-color: transparent;               /* seam line gone */
+     border-start-start-radius: 18px;                /* card top corners */
+     border-start-end-radius: 18px;
+     border-end-start-radius: 0;                     /* square off at the seam */
+     border-end-end-radius: 0;
+   }
+
+   .filter-wrap:hover .filter-toggle-label,
+   .filter-toggle-input:checked ~ .filter-toggle-btn .filter-toggle-label {
+     width: 224px;
    }
 
    .filter-toggle-btn:hover {
@@ -452,14 +494,12 @@ a {
      transition: transform var(--animation-duration) ease;
    }
 
-   .filter-toggle-btn:hover i {
+   .filter-wrap:hover .filter-toggle-btn > i {
      transform: rotate(90deg);
    }
 
    .filter-toggle-input:checked ~ .filter-toggle-btn {
      color: var(--c-primary);
-     background: color-mix(in srgb, var(--c-primary) 12%, transparent);
-     border-color: color-mix(in srgb, var(--c-primary) 45%, transparent);
    }
 
    .filter-toggle-input:checked ~ .filter-toggle-btn i {
@@ -489,66 +529,126 @@ a {
 
    .filter-popover {
      position: absolute;
-     top: calc(100% + 10px);
-     inset-inline-end: 0;
+     top: 100%;                    /* flush: pill's bottom border is transparent */
+     inset-inline-end: 0;        /* RTL: left edge aligns with pill's left edge */
      z-index: 30;
      width: 280px;
      padding: 18px;
-     border-radius: 18px;
      border: 1px solid var(--c-border);
+     border-top: 0;                /* no line across the seam */
+     border-radius: 0 0 18px 18px; /* panel is the card's bottom half */
      background: var(--c-surface-elevated);
      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
      opacity: 0;
      visibility: hidden;
-     transform: translateY(-8px) scale(0.97);
-     transform-origin: top;
+     clip-path: inset(0 236px 100% -30px);   /* retracted to the collapsed pill's 44px footprint */
      transition:
        opacity var(--animation-duration) ease,
-       transform var(--animation-duration) ease,
-       visibility var(--animation-duration) ease;
+       clip-path 280ms cubic-bezier(0.4, 0, 0.2, 1),
+       visibility 280ms ease;
    }
 
+   /* Unfolds downward out of the pill like a drawer */
+   .filter-wrap:hover .filter-popover,
    .filter-toggle-input:checked ~ .filter-popover {
      opacity: 1;
      visibility: visible;
-     transform: translateY(0) scale(1);
+     clip-path: inset(0 -30px -30px -30px);
+   }
+
+   /* panel pours out of the pill's bottom edge in lockstep with the width */
+
+   /* brief grace period before closing when the pointer leaves */
+   .filter-wrap:not(:hover) .filter-popover {
+     transition-delay: 140ms;
+   }
+
+   /* pill waits for the panel to pour back in before shrinking */
+   .filter-wrap:not(:hover) .filter-toggle-btn,
+   .filter-wrap:not(:hover) .filter-toggle-label {
+     transition-delay: 140ms;
    }
 
    .filter-popover-title {
-     margin: 0 0 12px;
+     flex: 1;
+     margin: 0;
+     text-align: center;
      font-size: 14px;
      font-weight: 800;
      color: var(--c-text);
+     transition: opacity 140ms ease, transform 140ms ease;
    }
+
+   .filter-popover-title.is-swapping {
+     opacity: 0;
+     transform: translateY(4px);
+   }
+
 
    .filter-field {
-     margin-bottom: 12px;
+     margin-bottom: 14px;
    }
 
-   .filter-field label {
+   .filter-field-name {
      display: block;
-     margin-bottom: 5px;
+     margin-bottom: 7px;
      font-size: 12px;
      font-weight: 700;
      color: var(--c-muted);
    }
 
-   .filter-field select {
-     width: 100%;
-     height: 38px;
-     padding: 0 10px;
-     border-radius: 10px;
-     border: 1px solid var(--c-border);
-     background: var(--c-surface);
-     color: var(--c-text);
-     font: inherit;
-     font-size: 13px;
-     outline: none;
-     transition: border-color var(--animation-duration) ease;
+   .filter-chips {
+     position: relative;
+     display: flex;
+     flex-wrap: wrap;
+     gap: 6px;
    }
 
-   .filter-field select:focus {
-     border-color: var(--c-primary);
+   .filter-chip-input {
+     position: absolute;
+     opacity: 0;
+     width: 1px;
+     height: 1px;
+     pointer-events: none;
+   }
+
+   .filter-chip {
+     padding: 5px 12px;
+     border-radius: 999px;
+     border: 1px solid var(--c-border);
+     background: var(--c-surface);
+     color: var(--c-muted);
+     font-size: 12.5px;
+     font-weight: 600;
+     cursor: pointer;
+     user-select: none;
+     transition:
+       color var(--animation-duration) ease,
+       background var(--animation-duration) ease,
+       border-color var(--animation-duration) ease,
+       transform var(--animation-duration) cubic-bezier(0.34, 1.56, 0.64, 1);
+   }
+
+   .filter-chip:hover {
+     color: var(--c-text);
+     border-color: color-mix(in srgb, var(--c-primary) 45%, transparent);
+     transform: translateY(-1px);
+   }
+
+   .filter-chip-input:checked + .filter-chip {
+     color: var(--c-primary);
+     background: color-mix(in srgb, var(--c-primary) 12%, transparent);
+     border-color: color-mix(in srgb, var(--c-primary) 45%, transparent);
+     font-weight: 700;
+   }
+
+   .filter-chip-input:checked + .filter-chip:active {
+     transform: scale(0.95);
+   }
+
+   .filter-chip-input:focus-visible + .filter-chip {
+     outline: 2px solid var(--c-primary);
+     outline-offset: 2px;
    }
 
    .filter-actions {
@@ -564,6 +664,111 @@ a {
      justify-content: center;
      height: 38px;
      font-size: 13px;
+   }
+
+   /* --- Filter carousel (4 pages, prev/next) --- */
+   .filter-carousel-head {
+     display: flex;
+     align-items: center;
+     gap: 8px;
+     margin-bottom: 12px;
+   }
+
+   .filter-page-btn {
+     display: inline-flex;
+     align-items: center;
+     justify-content: center;
+     width: 28px;
+     height: 28px;
+     flex: 0 0 auto;
+     border: 0;
+     border-radius: 999px;
+     background: color-mix(in srgb, var(--c-text) 5%, transparent);
+     color: var(--c-muted);
+     cursor: pointer;
+     transition:
+       color var(--animation-duration) ease,
+       background var(--animation-duration) ease;
+   }
+
+   .filter-page-btn i {
+     transition: transform var(--animation-duration) cubic-bezier(0.34, 1.56, 0.64, 1);
+   }
+
+   .filter-page-btn:hover:not(.is-disabled) {
+     color: #000;
+     background: var(--c-primary);
+   }
+
+   .filter-page-prev:hover:not(.is-disabled) i { transform: translateX(3px); }
+   .filter-page-next:hover:not(.is-disabled) i { transform: translateX(-3px); }
+
+   .filter-page-btn.is-disabled {
+     opacity: 0.35;
+     pointer-events: none;
+   }
+
+   .filter-carousel {
+     overflow: hidden;
+     transition: height 320ms cubic-bezier(0.4, 0, 0.2, 1);
+   }
+
+   .filter-carousel-track {
+     display: flex;
+     width: 400%;
+     /* RTL: pages flow right-to-left, so positive X reveals later pages */
+     transform: translateX(calc(var(--filter-page, 0) * 25%));
+     transition: transform 320ms cubic-bezier(0.4, 0, 0.2, 1);
+   }
+
+   .filter-page {
+     flex: 0 0 25%;
+     min-width: 0;
+   }
+
+   .filter-page-placeholder {
+     margin: 0;
+     padding: 20px 0;
+     text-align: center;
+     font-size: 13px;
+     color: var(--c-muted);
+   }
+
+   .filter-dots {
+     display: flex;
+     justify-content: center;
+     gap: 6px;
+     margin-top: 14px;
+   }
+
+   .filter-dot {
+     width: 6px;
+     height: 6px;
+     padding: 0;
+     border: 0;
+     border-radius: 999px;
+     background: color-mix(in srgb, var(--c-text) 22%, transparent);
+     cursor: pointer;
+     transition:
+       width var(--animation-duration) cubic-bezier(0.4, 0, 0.2, 1),
+       background var(--animation-duration) ease;
+   }
+
+   .filter-dot.is-active {
+     width: 18px;
+     background: var(--c-primary);
+   }
+
+   @media (prefers-reduced-motion: reduce) {
+     .filter-toggle-btn,
+     .filter-toggle-label,
+     .filter-popover,
+     .filter-carousel,
+     .filter-carousel-track,
+     .filter-dot,
+     .filter-chip {
+       transition: none;
+     }
    }
 
    /* --- List heading (no panel background) --- */
@@ -1801,3 +2006,93 @@ a {
 .opt--chosen-wrong { border-color: var(--c-danger); background: color-mix(in srgb, var(--c-danger) 10%, transparent); }
 .opt--chosen-wrong .opt-key { background: var(--c-danger); border-color: var(--c-danger); color: var(--c-surface); }
 .quiz-option { cursor: default; }
+
+/* =========================================
+   Page transitions (resources/js/page-router.js)
+   ========================================= */
+
+/* Safety net for navigations the router cannot intercept — POST redirects
+   from a hard reload, or a browser that never ran app.js. Supporting
+   browsers cross-fade the two documents themselves; everyone else ignores it. */
+@view-transition {
+  navigation: auto;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 260ms;
+  animation-timing-function: cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+::view-transition-old(root) { animation-name: page-out; }
+::view-transition-new(root) { animation-name: page-in; }
+
+/* Vertical, not horizontal: the shell is RTL and a Y axis reads the same in
+   both directions. */
+@keyframes page-out {
+  to { opacity: 0; transform: translateY(-10px) scale(0.995); }
+}
+
+@keyframes page-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.995); }
+}
+
+/* Fallback where the View Transitions API is missing. */
+#app-content.is-page-enter {
+  animation: page-in 300ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+#app-content.is-page-enter [data-stagger] > * {
+  animation: card-rise 340ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  animation-delay: calc(var(--stagger-index, 0) * 28ms);
+}
+
+@keyframes card-rise {
+  from { opacity: 0; transform: translateY(14px) scale(0.98); }
+}
+
+/* Thin rail that only appears when a page is genuinely slow; hover-prefetched
+   navigations never reach the 140ms threshold and show nothing. */
+.page-progress {
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: 2px;
+  z-index: 100;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+
+.page-progress.is-active { opacity: 1; }
+
+.page-progress > i {
+  display: block;
+  height: 100%;
+  width: 34%;
+  background: var(--brand-gradient, var(--c-primary));
+  animation: page-progress-ltr 900ms ease-in-out infinite;
+}
+
+html[dir="rtl"] .page-progress > i {
+  animation-name: page-progress-rtl;
+}
+
+@keyframes page-progress-ltr {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(300%); }
+}
+
+@keyframes page-progress-rtl {
+  from { transform: translateX(100%); }
+  to { transform: translateX(-300%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) { animation: none; }
+
+  #app-content.is-page-enter,
+  #app-content.is-page-enter [data-stagger] > * { animation: none; }
+
+  .page-progress > i { animation: none; width: 100%; }
+}

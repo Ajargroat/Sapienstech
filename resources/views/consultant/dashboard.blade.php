@@ -37,54 +37,101 @@
             <input type="checkbox" id="filter-toggle" class="filter-toggle-input" @checked($activeFilterCount > 0)>
             <label for="filter-toggle" class="filter-toggle-btn" aria-label="{{ $labels['filter_button'] }}">
                 <i class="fas fa-sliders-h"></i>
-                @if($activeFilterCount > 0)
-                    <span class="filter-count">{{ persian_digits($activeFilterCount) }}</span>
-                @endif
+                <span class="filter-toggle-label">{{ $labels['filter_button'] }}</span>
             </label>
 
+            @if($activeFilterCount > 0)
+                <span class="filter-count">{{ persian_digits($activeFilterCount) }}</span>
+            @endif
+
             <div class="filter-popover">
-                <p class="filter-popover-title">{{ $labels['filter_title'] }}</p>
                 <form method="GET" action="{{ route('consultant.dashboard') }}">
                     <input type="hidden" name="search" value="{{ $search }}">
 
-                    <div class="filter-field">
-                        <label for="filter-grade">{{ $labels['filter_grade'] }}</label>
-                        <select id="filter-grade" name="grade">
-                            <option value="">{{ $labels['filter_all'] }}</option>
-                            @foreach($gradeOptions as $option)
-                                <option value="{{ $option }}" @selected($filters['grade'] === $option)>{{ $option }}</option>
-                            @endforeach
-                        </select>
+                    <div class="filter-carousel-head">
+                        <button type="button" class="filter-page-btn filter-page-prev" data-filter-prev aria-label="گروه فیلتر قبلی">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                        <p class="filter-popover-title" data-filter-title>{{ $labels['filter_title'] }}</p>
+                        <button type="button" class="filter-page-btn filter-page-next" data-filter-next aria-label="گروه فیلتر بعدی">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
                     </div>
 
-                    <div class="filter-field">
-                        <label for="filter-gender">{{ $labels['filter_gender'] }}</label>
-                        <select id="filter-gender" name="gender">
-                            <option value="">{{ $labels['filter_all'] }}</option>
-                            @foreach($genderOptions as $option)
-                                <option value="{{ $option }}" @selected($filters['gender'] === $option)>{{ $option }}</option>
-                            @endforeach
-                        </select>
+                    <div class="filter-carousel" data-filter-carousel>
+                        <div class="filter-carousel-track">
+                            <div class="filter-page" data-filter-name="{{ $labels['filter_title'] }}">
+                                <div class="filter-field">
+                                    <span class="filter-field-name">{{ $labels['filter_grade'] }}</span>
+                                    <div class="filter-chips">
+                                        <input type="radio" name="grade" value="" id="grade-all" class="filter-chip-input" @checked($filters['grade'] === '')>
+                                        <label for="grade-all" class="filter-chip">{{ $labels['filter_all'] }}</label>
+                                        @foreach($gradeOptions as $option)
+                                            <input type="radio" name="grade" value="{{ $option }}" id="grade-{{ $loop->index }}" class="filter-chip-input" @checked($filters['grade'] === $option)>
+                                            <label for="grade-{{ $loop->index }}" class="filter-chip">{{ $option }}</label>
+                                        @endforeach
+                                    </div>
+                                </div>
+
+                                <div class="filter-field">
+                                    <span class="filter-field-name">{{ $labels['filter_gender'] }}</span>
+                                    <div class="filter-chips">
+                                        <input type="radio" name="gender" value="" id="gender-all" class="filter-chip-input" @checked($filters['gender'] === '')>
+                                        <label for="gender-all" class="filter-chip">{{ $labels['filter_all'] }}</label>
+                                        @foreach($genderOptions as $option)
+                                            <input type="radio" name="gender" value="{{ $option }}" id="gender-{{ $loop->index }}" class="filter-chip-input" @checked($filters['gender'] === $option)>
+                                            <label for="gender-{{ $loop->index }}" class="filter-chip">{{ $option }}</label>
+                                        @endforeach
+                                    </div>
+                                </div>
+
+                                <div class="filter-field">
+                                    <span class="filter-field-name">{{ $labels['filter_major'] }}</span>
+                                    <div class="filter-chips">
+                                        <input type="radio" name="major" value="" id="major-all" class="filter-chip-input" @checked($filters['major'] === '')>
+                                        <label for="major-all" class="filter-chip">{{ $labels['filter_all'] }}</label>
+                                        @foreach($majorOptions as $option)
+                                            <input type="radio" name="major" value="{{ $option }}" id="major-{{ $loop->index }}" class="filter-chip-input" @checked($filters['major'] === $option)>
+                                            <label for="major-{{ $loop->index }}" class="filter-chip">{{ $option }}</label>
+                                        @endforeach
+                                    </div>
+                                </div>
+
+                                @php($sortOptions = [
+                                    'name_asc' => $labels['sort_name_asc'],
+                                    'name_desc' => $labels['sort_name_desc'],
+                                    'newest' => $labels['sort_newest'],
+                                    'oldest' => $labels['sort_oldest'],
+                                ])
+                                <div class="filter-field">
+                                    <span class="filter-field-name">{{ $labels['filter_sort'] }}</span>
+                                    <div class="filter-chips">
+                                        <input type="radio" name="sort" value="" id="sort-all" class="filter-chip-input" @checked($filters['sort'] === '')>
+                                        <label for="sort-all" class="filter-chip">{{ $labels['filter_all'] }}</label>
+                                        @foreach($sortOptions as $value => $label)
+                                            <input type="radio" name="sort" value="{{ $value }}" id="sort-{{ $loop->index }}" class="filter-chip-input" @checked($filters['sort'] === $value)>
+                                            <label for="sort-{{ $loop->index }}" class="filter-chip">{{ $label }}</label>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="filter-page" data-filter-name="آزمون">
+                                <p class="filter-page-placeholder">فیلترهای آزمون…</p>
+                            </div>
+                            <div class="filter-page" data-filter-name="کارنامه">
+                                <p class="filter-page-placeholder">فیلترهای کارنامه…</p>
+                            </div>
+                            <div class="filter-page" data-filter-name="برنامه هفتگی">
+                                <p class="filter-page-placeholder">فیلترهای برنامه هفتگی…</p>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="filter-field">
-                        <label for="filter-major">{{ $labels['filter_major'] }}</label>
-                        <select id="filter-major" name="major">
-                            <option value="">{{ $labels['filter_all'] }}</option>
-                            @foreach($majorOptions as $option)
-                                <option value="{{ $option }}" @selected($filters['major'] === $option)>{{ $option }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div class="filter-field">
-                        <label for="filter-sort">{{ $labels['filter_sort'] }}</label>
-                        <select id="filter-sort" name="sort">
-                            <option value="" @selected($filters['sort'] === '' || $filters['sort'] === 'name_asc')>{{ $labels['sort_name_asc'] }}</option>
-                            <option value="name_desc" @selected($filters['sort'] === 'name_desc')>{{ $labels['sort_name_desc'] }}</option>
-                            <option value="newest" @selected($filters['sort'] === 'newest')>{{ $labels['sort_newest'] }}</option>
-                            <option value="oldest" @selected($filters['sort'] === 'oldest')>{{ $labels['sort_oldest'] }}</option>
-                        </select>
+                    <div class="filter-dots">
+                        <button type="button" class="filter-dot is-active" data-filter-dot="0" aria-label="فیلترها"></button>
+                        <button type="button" class="filter-dot" data-filter-dot="1" aria-label="آزمون"></button>
+                        <button type="button" class="filter-dot" data-filter-dot="2" aria-label="کارنامه"></button>
+                        <button type="button" class="filter-dot" data-filter-dot="3" aria-label="برنامه هفتگی"></button>
                     </div>
 
                     <div class="filter-actions">
@@ -122,7 +169,7 @@
 </div>
 
     @if($students->count() > 0)
-        <div class="student-grid">
+        <div class="student-grid" data-stagger>
             @foreach($students as $student)
             <a
                 href="{{ route('consultant.student.profile', $student) }}"

@@ -20,7 +20,7 @@
         </div>
     </section>
 
-    <div class="student-profile-sections">
+    <div class="student-profile-sections" data-stagger>
         <a href="{{ route('consultant.student.report-card', $student) }}" class="profile-section-card">
             <span class="profile-section-icon"><i class="fas fa-chart-line"></i></span>
             <h3>کارنامه</h3>

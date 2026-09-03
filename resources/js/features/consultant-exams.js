@@ -2,7 +2,7 @@
 // report-card popup, create-exam dialog. The filter popover's outside-click
 // close is already handled in app.js via the shared #filter-toggle checkbox.
 
-document.addEventListener('DOMContentLoaded', () => {
+export default function init() {
     const app = document.getElementById('exams-app');
     if (!app) return;
 
@@ -286,4 +286,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (selected.length) showStep(2);
     }
 
-});
+}
+// The router calls init() on every render of this page; this fallback only
+// boots the page when app.js never made it (so a JS error can't leave a
+// dead exam list).
+if (!window.sapienstechRouter) {
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+    else init();
+}

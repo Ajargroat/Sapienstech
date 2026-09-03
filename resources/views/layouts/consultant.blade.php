@@ -100,7 +100,7 @@
         @include('components.consultant.topnav')
 
         <div class="consultant-content">
-            <main class="content-container">
+            <main class="content-container" id="app-content">
                 @yield('content')
             </main>
         </div>

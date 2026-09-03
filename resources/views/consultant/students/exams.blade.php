@@ -115,7 +115,7 @@
     @endif
 
     @if($exams->isNotEmpty())
-        <div class="exam-grid" id="exam-grid">
+        <div class="exam-grid" id="exam-grid" data-stagger>
             @foreach($exams as $exam)
                 <article class="exam-card">
                     <div class="exam-card-head">

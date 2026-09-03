@@ -1,6 +1,6 @@
 // Exam runner: scroll-reveal cards, countdown, navigator state,
 // localStorage autosave, submit with elapsed time.
-document.addEventListener('DOMContentLoaded', () => {
+export default function init() {
     const root = document.getElementById('exam-runner');
     if (!root) return;
 
@@ -93,6 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
     cards.forEach((c) => spy.observe(c));
 
     // --- Countdown ---
+    let timer = null;
     const duration = +root.dataset.duration;
     if (duration > 0) {
         const timerEl = document.getElementById('runner-timer');
@@ -105,12 +106,12 @@ document.addEventListener('DOMContentLoaded', () => {
             timerText.textContent = `${m}:${s}`;
             timerEl.classList.toggle('is-danger', left <= 60);
             if (left === 0) {
-                clearInterval(handle);
+                clearInterval(timer);
                 document.getElementById('time-taken').value = duration;
                 document.getElementById('attempt-form').submit();
             }
         };
-        const handle = setInterval(tick, 1000);
+        timer = setInterval(tick, 1000);
         tick();
     }
 
@@ -128,4 +129,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     refresh();
-});
+
+    // Leaving the runner mid-exam must not keep ticking or observing cards.
+    return () => {
+        if (timer !== null) clearInterval(timer);
+        io.disconnect();
+        spy.disconnect();
+    };
+}
+
+if (!window.sapienstechRouter) {
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+    else init();
+}
