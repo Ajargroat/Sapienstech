@@ -12,7 +12,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @include('partials.theme-vars')
 </head>
-<body class="consultant-shell" data-theme-preset="{{ $theme['preset'] }}">
+<body class="consultant-shell" @include('partials.theme-attrs')>
     @include('partials.color-scheme', ['schemeKey' => 'consultant-color-scheme'])
 
     <div class="page-glow page-glow-primary"></div>

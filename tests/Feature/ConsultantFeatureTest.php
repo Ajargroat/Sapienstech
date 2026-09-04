@@ -64,7 +64,9 @@ class ConsultantFeatureTest extends TestCase
         [$tenant, $host] = $this->tenantWithDomain();
         $user = $this->consultantFor($tenant);
 
-        config(['consultant.features.blog_management' => false]);
+        // Feature switches are tenant-resolved now, so they are overridden
+        // through the site config rather than config('consultant.*').
+        site_override(['features' => ['blog_management' => false]]);
 
         $this->actingAs($user)
             ->get("http://{$host}/consultant/blog")
