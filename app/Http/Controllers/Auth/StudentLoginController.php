@@ -9,13 +9,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
-use Illuminate\View\View;
 
 class StudentLoginController extends Controller
 {
-    public function showLoginForm(): View
+    public function showLoginForm(): RedirectResponse
     {
-        return view('auth.student-login');
+        return redirect()->route('login', ['tab' => 'student']);
     }
 
     public function login(Request $request): RedirectResponse

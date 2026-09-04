@@ -31,7 +31,11 @@ class StudentAuthTest extends TestCase
     {
         [, , $host] = $this->makeTenantWithStudent('tenant-student.test');
 
+        // /student/login now forwards to the shared page with the student tab open.
         $this->get("http://tenant-student.test/student/login")
+            ->assertRedirect(route('login', ['tab' => 'student']));
+
+        $this->get("http://tenant-student.test/login?tab=student")
             ->assertOk()
             ->assertSee('ورود دانش‌آموز');
     }

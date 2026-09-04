@@ -42,7 +42,7 @@ class ViewServiceProvider extends ServiceProvider
         // Landing page + login pages (consultant and student): fully
         // config-driven, so they all render with the exact same tenant/theme
         // tokens as the consultant dashboard.
-        View::composer(['public.landing', 'auth.login', 'auth.student-login'], function ($view) {
+        View::composer(['public.landing', 'auth.login'], function ($view) {
             $c = config('consultant');
             $view->with([
                 'tenant' => $c['tenant'],

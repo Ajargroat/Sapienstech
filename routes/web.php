@@ -24,7 +24,8 @@ Route::get('/contact', [PageController::class, 'contact'])->name('contact');
 
 /*
 |--------------------------------------------------------------------------
-| Consultant Authentication
+| Authentication — single page with consultant/student role tabs.
+| The page lives at /login; each tab posts to its own guard endpoint.
 |--------------------------------------------------------------------------
 */
 Route::middleware('guest')->group(function () {
@@ -121,6 +122,8 @@ Route::middleware('auth')->prefix('consultant')->name('consultant.')->group(func
 |--------------------------------------------------------------------------
 */
 Route::middleware('guest:student')->prefix('student')->name('student.')->group(function () {
+    // GET is kept only so existing redirects (guest student, logout) resolve;
+    // it forwards to the shared /login page with the student tab pre-selected.
     Route::get('login', [StudentLoginController::class, 'showLoginForm'])->name('login');
     Route::post('login', [StudentLoginController::class, 'login'])->middleware('throttle:login');
 });

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ورود به حساب کاربری | آکادمی جنت</title>
+    <meta name="description" content="ورود یا ثبت‌نام در پلتفرم آموزش هوشمند">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Vazirmatn', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            yellow: '#FBBF24',
+                            purple: '#A855F7',
+                            dark: '#000000',
+                            surface: '#111111',
+                            surfaceLight: '#1A1A1A'
+                        }
+                    },
+                    animation: {
+                        'fade-in-up': 'fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                    },
+                    keyframes: {
+                        fadeInUp: {
+                            '0%': { opacity: 0, transform: 'translateY(20px)' },
+                            '100%': { opacity: 1, transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom input autofill styling for dark mode */
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover, 
+        input:-webkit-autofill:focus, 
+        input:-webkit-autofill:active{
+            -webkit-box-shadow: 0 0 0 30px #1A1A1A inset !important;
+            -webkit-text-fill-color: white !important;
+            transition: background-color 5000s ease-in-out 0s;
+        }
+    </style>
+</head>
+<body class="bg-brand-dark text-white font-sans antialiased selection:bg-brand-yellow selection:text-black min-h-screen flex flex-col relative overflow-hidden">
+
+    <div class="absolute top-0 left-1/4 w-96 h-96 bg-brand-yellow/10 rounded-full blur-[120px] pointer-events-none z-0"></div>
+    <div class="absolute bottom-0 right-1/4 w-96 h-96 bg-brand-purple/10 rounded-full blur-[120px] pointer-events-none z-0"></div>
+
+    <nav class="w-full relative z-10 py-6 px-6">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <a href="index.html" class="text-xl font-bold tracking-tight text-white flex items-center gap-2 transition-opacity hover:opacity-80">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-yellow to-brand-purple flex items-center justify-center">
+                    <span class="w-4 h-4 bg-black rounded-sm"></span>
+                </div>
+                آکادمی جنت
+            </a>
+            
+            <a href="index.html" class="text-sm font-medium text-gray-400 hover:text-white transition-colors flex items-center gap-1">
+                بازگشت به خانه
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+            </a>
+        </div>
+    </nav>
+
+    <main class="flex-1 flex items-center justify-center p-6 relative z-10">
+        <div class="w-full max-w-md bg-brand-surface/80 backdrop-blur-xl border border-white/5 rounded-3xl p-8 shadow-2xl animate-fade-in-up">
+            
+            <div class="text-center mb-8">
+                <h1 id="form-title" class="text-2xl font-bold mb-2">خوش آمدید</h1>
+                <p id="form-subtitle" class="text-gray-400 text-sm">برای دسترسی به پنل، وارد حساب خود شوید.</p>
+            </div>
+
+            <div class="flex p-1 bg-brand-surfaceLight border border-white/5 rounded-xl mb-8 relative">
+                <button id="tab-login" class="flex-1 py-2 text-sm font-medium rounded-lg bg-white/10 text-white shadow-sm transition-all" onclick="switchTab('login')">
+                    ورود
+                </button>
+                <button id="tab-signup" class="flex-1 py-2 text-sm font-medium rounded-lg text-gray-400 hover:text-white transition-all" onclick="switchTab('signup')">
+                    ثبت‌نام
+                </button>
+            </div>
+
+            <form id="auth-form" class="flex flex-col gap-5" onsubmit="event.preventDefault();">
+                
+                <div id="field-name" class="flex flex-col gap-1.5 overflow-hidden max-h-0 opacity-0 transition-all duration-300">
+                    <label for="name" class="text-sm text-gray-300 font-medium px-1">نام و نام خانوادگی</label>
+                    <input type="text" id="name" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none" required>
+                </div>
+
+                <div class="flex flex-col gap-1.5">
+                    <label for="email" class="text-sm text-gray-300 font-medium px-1">ایمیل یا شماره موبایل</label>
+                    <input type="text" id="email" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none" required>
+                </div>
+
+                <div class="flex flex-col gap-1.5 relative">
+                    <div class="flex justify-between items-center px-1">
+                        <label for="password" class="text-sm text-gray-300 font-medium">رمز عبور</label>
+                        <a href="#" id="forgot-password" class="text-xs text-white hover:text-brand-yellow transition-transform">فراموشی رمز؟</a>
+                    </div>
+                    <div class="relative">
+                        <input type="password" id="password" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none" required>
+                        <button type="button" id="toggle-password" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors">
+                            <svg id="eye-icon" class="w-5 h-5" fill="none" stroke="white" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                        </button>
+                    </div>
+                <div id="field-password-confirm"
+                    class="flex flex-col gap-1.5 relative mt-4 mb-4 overflow-hidden max-h-0 opacity-0 transition-all duration-300">
+                    <label for="password-confirm" class="text-sm text-gray-300 font-medium px-1">
+                     تکرار رمز عبور
+                    </label>
+                        <input type="password"
+                            id="password-confirm"
+                            class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none">
+                </div>
+                </div>
+                
+
+                <button type="submit" id="submit-btn" class="w-full mt-2 bg-white text-black font-semibold text-sm py-3.5 rounded-xl hover:bg-gray-200 transition-colors shadow-[0_0_20px_rgba(255,255,255,0.1)] focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black">
+                    ورود به حساب
+                </button>
+            </form>
+            
+            <p id="terms-text" class="text-center text-xs text-gray-500 mt-8 hidden">
+                با ثبت‌نام در پلتفرم، <a href="#" class="text-white hover:text-brand-yellow transition-colors">قوانین و مقررات</a> و <a href="#" class="text-white hover:text-brand-yellow transition-colors">حریم خصوصی</a> را می‌پذیرم.
+                <input type="checkbox" id="agree-terms" required class="mr-1 align-middle">
+            </p>
+            
+        </div>
+    </main>
+
+    <script>
+        // Tab Switching Logic
+        function switchTab(tab) {
+            const tabLogin = document.getElementById('tab-login');
+            const tabSignup = document.getElementById('tab-signup');
+            const formTitle = document.getElementById('form-title');
+            const formSubtitle = document.getElementById('form-subtitle');
+            const fieldName = document.getElementById('field-name');
+            const submitBtn = document.getElementById('submit-btn');
+            const forgotPassword = document.getElementById('forgot-password');
+            const termsText = document.getElementById('terms-text');
+            const nameInput = document.getElementById('name');
+            const confirmField = document.getElementById('field-password-confirm');
+            const confirmInput = document.getElementById('password-confirm');
+
+            if (tab === 'signup') {
+                // UI Updates for Sign Up
+                tabSignup.classList.replace('text-gray-400', 'text-white');
+                tabSignup.classList.replace('hover:text-white', 'bg-white/10');
+                tabSignup.classList.add('shadow-sm');
+                
+                tabLogin.classList.replace('text-white', 'text-gray-400');
+                tabLogin.classList.replace('bg-white/10', 'hover:text-white');
+                tabLogin.classList.remove('shadow-sm');
+
+                formTitle.innerText = 'ایجاد حساب کاربری';
+                formSubtitle.innerText = 'مسیر پیشرفت تحصیلی خود را از اینجا آغاز کنید.';
+                submitBtn.innerText = 'ثبت‌نام رایگان';
+                
+                forgotPassword.classList.add('hidden');
+                termsText.classList.remove('hidden');
+
+                fieldName.classList.remove('max-h-0', 'opacity-0');
+                fieldName.classList.add('max-h-32', 'opacity-100');
+
+                confirmField.classList.remove('max-h-0', 'opacity-0');
+                confirmField.classList.add('max-h-32', 'opacity-100');
+                confirmInput.required = true;
+
+                togglePassword.classList.add('hidden');
+
+                const type = passwordInput.type === 'text' ? 'password' : 'text';
+                passwordInput.type = type;
+
+                document.getElementById('password-confirm').type = 'text';
+            } else {
+                // UI Updates for Login
+                tabLogin.classList.replace('text-gray-400', 'text-white');
+                tabLogin.classList.replace('hover:text-white', 'bg-white/10');
+                tabLogin.classList.add('shadow-sm');
+                
+                tabSignup.classList.replace('text-white', 'text-gray-400');
+                tabSignup.classList.replace('bg-white/10', 'hover:text-white');
+                tabSignup.classList.remove('shadow-sm');
+
+                formTitle.innerText = 'خوش آمدید';
+                formSubtitle.innerText = 'برای دسترسی به پنل، وارد حساب خود شوید.';
+                submitBtn.innerText = 'ورود به حساب';
+
+                forgotPassword.classList.remove('hidden');
+                termsText.classList.add('hidden');
+
+                fieldName.classList.remove('max-h-32', 'opacity-100');
+                fieldName.classList.add('max-h-0', 'opacity-0');
+
+                confirmField.classList.remove('max-h-32', 'opacity-100');
+                confirmField.classList.add('max-h-0', 'opacity-0');
+                confirmInput.required = false;
+                confirmInput.value = '';
+
+                togglePassword.classList.remove('hidden');
+            }
+        }
+
+        // Password Visibility Toggle
+        const togglePassword = document.getElementById('toggle-password');
+        const passwordInput = document.getElementById('password');
+        const eyeIcon = document.getElementById('eye-icon');
+        
+        togglePassword.addEventListener('click', () => {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            
+            // Swap icon path based on visibility state
+            if(type === 'text') {
+                // Eye Off Icon
+                eyeIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path>`;
+                togglePassword.classList.replace('text-gray-500', 'text-brand-yellow');
+                
+            } else {
+                // Eye Icon
+                eyeIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>`;
+                togglePassword.classList.replace('text-brand-yellow', 'text-gray-500');
+
+                
+            }
+        });
+    </script>
+</body>
+</html>
