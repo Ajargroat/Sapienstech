@@ -58,7 +58,6 @@ return [
         'report_cards'       => true,
         'student_exams'      => true,
         'student_schedule'   => true,
-        'source_permissions' => true,
 
         /*
         |--------------------------------------------------------------------------

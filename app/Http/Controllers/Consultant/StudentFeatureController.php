@@ -8,10 +8,10 @@ use Illuminate\View\View;
 
 /**
  * Handles every student-specific destination reachable from the dashboard's
- * "Actions" menu (report card, exams, source permissions) plus the student
- * profile page. The schedule destination now has its own dedicated
- * controller, StudentScheduleController, since it needs real CRUD + a
- * JSON API rather than a static placeholder.
+ * "Actions" menu (report card, exams) plus the student profile page. The
+ * schedule destination now has its own dedicated controller,
+ * StudentScheduleController, since it needs real CRUD + a JSON API rather
+ * than a static placeholder.
  *
  * Tenant isolation / cross-tenant access:
  * The {student} route parameter is resolved via Laravel's implicit route

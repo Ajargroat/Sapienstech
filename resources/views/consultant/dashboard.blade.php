@@ -193,7 +193,6 @@
                     <i class="fas fa-chart-line"></i>
                     <i class="fas fa-tasks"></i>
                     <i class="fas fa-calendar-alt"></i>
-                    <i class="fas fa-shield-alt"></i>
                 </span>
             </a>
             @endforeach

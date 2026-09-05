@@ -8,7 +8,6 @@ use App\Http\Controllers\Consultant\StudentExamController;
 use App\Http\Controllers\Consultant\StudentFeatureController;
 use App\Http\Controllers\Consultant\StudentReportCardController;
 use App\Http\Controllers\Consultant\StudentScheduleController;
-use App\Http\Controllers\Consultant\StudentSourcePermissionController;
 use App\Http\Controllers\Public\PageController;
 use App\Http\Controllers\Student\StudentDashboardController;
 use Illuminate\Support\Facades\Route;
@@ -108,10 +107,6 @@ Route::middleware('auth')->prefix('consultant')->name('consultant.')->group(func
             Route::delete('/{item}', [StudentScheduleController::class, 'destroy'])->name('destroy');
             Route::get('/{item}/comments', [StudentScheduleController::class, 'comments'])->name('comments');
         });
-
-        Route::get('/source-permissions', [StudentSourcePermissionController::class, 'index'])
-            ->middleware('consultant.feature:source_permissions')
-            ->name('source-permissions');
     });
 });
 

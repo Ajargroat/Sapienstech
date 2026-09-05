@@ -1,0 +1,117 @@
+{
+  "companies": [
+    { "name": "قلم‌چی", "slug": "ghalamchi", "color": "#E11D48" },
+    { "name": "ماز", "slug": "maz", "color": "#7C3AED" },
+    { "name": "سنجش", "slug": "sanjesh", "color": "#0EA5E9" },
+    { "name": "خیلی‌سبز", "slug": "kheilisabz", "color": "#16A34A" },
+    { "name": "گزینه‌دو", "slug": "gozinedo", "color": "#F59E0B" }
+  ],
+  "results": [
+    {
+      "student_id": 48, "company": "ghalamchi",
+      "title": "آزمون آزمایشی ۲۵ — جامع تجربی", "exam_date": "2026-06-20", "status": "completed",
+      "total_questions": 120, "correct_count": 84, "wrong_count": 21, "blank_count": 15,
+      "percent": 70.0, "exam_rank": 1840, "participants": 92000,
+      "lesson_percents": { "زیست‌شناسی": 78, "شیمی": 66, "فیزیک": 61, "ریاضی": 55 }
+    },
+    {
+      "student_id": 48, "company": "ghalamchi",
+      "title": "آزمون آزمایشی ۲۸ — جامع تجربی", "exam_date": "2026-07-18", "status": "completed",
+      "total_questions": 120, "correct_count": 90, "wrong_count": 18, "blank_count": 12,
+      "percent": 75.0, "exam_rank": 1210, "participants": 95000,
+      "lesson_percents": { "زیست‌شناسی": 82, "شیمی": 70, "فیزیک": 66, "ریاضی": 60 }
+    },
+    {
+      "student_id": 48, "company": "ghalamchi",
+      "title": "آزمون آزمایشی ۳۰ — جامع تجربی", "exam_date": "2026-08-29", "status": "absent",
+      "total_questions": 120, "participants": 97000
+    },
+    {
+      "student_id": 48, "company": "maz",
+      "title": "آزمون جامع ماز — نوبت اول", "exam_date": "2026-05-29", "status": "completed",
+      "total_questions": 100, "correct_count": 68, "wrong_count": 20, "blank_count": 12,
+      "percent": 68.0, "exam_rank": 3400, "participants": 48000,
+      "lesson_percents": { "زیست‌شناسی": 74, "شیمی": 62, "فیزیک": 58, "ریاضی": 50 }
+    },
+    {
+      "student_id": 48, "company": "maz",
+      "title": "آزمون فصلی زیست (ژنتیک)", "exam_date": "2026-08-07", "status": "completed",
+      "total_questions": 45, "correct_count": 33, "wrong_count": 7, "blank_count": 5,
+      "percent": 73.33, "exam_rank": 980, "participants": 22000,
+      "lesson_percents": { "زیست‌شناسی": 73 }
+    },
+    {
+      "student_id": 48, "company": "kheilisabz",
+      "title": "آزمون آزمایشی خیلی‌سبز ۱۴", "exam_date": "2026-07-04", "status": "completed",
+      "total_questions": 110, "correct_count": 71, "wrong_count": 25, "blank_count": 14,
+      "percent": 64.55, "exam_rank": 2600, "participants": 61000,
+      "lesson_percents": { "زیست‌شناسی": 70, "شیمی": 58, "فیزیک": 55, "ریاضی": 48 }
+    },
+    {
+      "student_id": 48, "company": "sanjesh",
+      "title": "آزمون شبیه‌ساز کنکور سراسری", "exam_date": "2026-08-21", "status": "completed",
+      "total_questions": 125, "correct_count": 88, "wrong_count": 20, "blank_count": 17,
+      "percent": 70.4, "exam_rank": 1500, "participants": 130000,
+      "lesson_percents": { "زیست‌شناسی": 76, "شیمی": 68, "فیزیک": 62, "ریاضی": 57 }
+    },
+    {
+      "student_id": 48, "company": "gozinedo",
+      "title": "آزمون آزمایشی گزینه‌دو ۹", "exam_date": "2026-09-04", "status": "pending",
+      "total_questions": 100, "participants": 74000
+    },
+    {
+      "student_id": 40, "company": "maz",
+      "title": "آزمون جامع ماز — نوبت اول", "exam_date": "2026-05-29", "status": "completed",
+      "total_questions": 100, "correct_count": 60, "wrong_count": 25, "blank_count": 15,
+      "percent": 60.0, "exam_rank": 5200, "participants": 48000,
+      "lesson_percents": { "زیست‌شناسی": 66, "شیمی": 58, "فیزیک": 52, "ریاضی": 45 }
+    },
+    {
+      "student_id": 40, "company": "kheilisabz",
+      "title": "آزمون آزمایشی خیلی‌سبز ۱۴", "exam_date": "2026-07-04", "status": "completed",
+      "total_questions": 110, "correct_count": 66, "wrong_count": 30, "blank_count": 14,
+      "percent": 60.0, "exam_rank": 4100, "participants": 61000,
+      "lesson_percents": { "زیست‌شناسی": 64, "شیمی": 55, "فیزیک": 53, "ریاضی": 47 }
+    },
+    {
+      "student_id": 42, "company": "sanjesh",
+      "title": "آزمون شبیه‌ساز کنکور سراسری", "exam_date": "2026-08-21", "status": "completed",
+      "total_questions": 125, "correct_count": 95, "wrong_count": 15, "blank_count": 15,
+      "percent": 76.0, "exam_rank": 890, "participants": 130000,
+      "lesson_percents": { "زیست‌شناسی": 81, "شیمی": 74, "فیزیک": 69, "ریاضی": 63 }
+    },
+    {
+      "student_id": 42, "company": "ghalamchi",
+      "title": "آزمون آزمایشی ۲۵ — جامع تجربی", "exam_date": "2026-06-20", "status": "completed",
+      "total_questions": 120, "correct_count": 77, "wrong_count": 28, "blank_count": 15,
+      "percent": 64.17, "exam_rank": 2900, "participants": 92000,
+      "lesson_percents": { "زیست‌شناسی": 72, "شیمی": 60, "فیزیک": 57, "ریاضی": 51 }
+    },
+    {
+      "student_id": 45, "company": "gozinedo",
+      "title": "آزمون آزمایشی گزینه‌دو ۹", "exam_date": "2026-09-04", "status": "pending",
+      "total_questions": 100, "participants": 74000
+    },
+    {
+      "student_id": 49, "company": "ghalamchi",
+      "title": "آزمون آزمایشی ۲۵ — جامع انسانی", "exam_date": "2026-06-20", "status": "completed",
+      "total_questions": 100, "correct_count": 72, "wrong_count": 18, "blank_count": 10,
+      "percent": 72.0, "exam_rank": 640, "participants": 54000,
+      "lesson_percents": { "ادبیات فارسی": 80, "عربی": 70, "منطق": 66, "اقتصاد": 72 }
+    },
+    {
+      "student_id": 49, "company": "maz",
+      "title": "آزمون جامع ماز — انسانی", "exam_date": "2026-07-25", "status": "completed",
+      "total_questions": 100, "correct_count": 65, "wrong_count": 25, "blank_count": 10,
+      "percent": 65.0, "exam_rank": 1900, "participants": 41000,
+      "lesson_percents": { "ادبیات فارسی": 74, "عربی": 62, "منطق": 58, "اقتصاد": 66 }
+    },
+    {
+      "student_id": 52, "company": "kheilisabz",
+      "title": "آزمون آزمایشی خیلی‌سبز ۱۰ — ریاضی", "exam_date": "2026-06-06", "status": "completed",
+      "total_questions": 60, "correct_count": 41, "wrong_count": 12, "blank_count": 7,
+      "percent": 68.33, "exam_rank": 730, "participants": 33000,
+      "lesson_percents": { "ریاضی": 68, "فیزیک": 60 }
+    }
+  ]
+}

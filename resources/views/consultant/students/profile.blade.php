@@ -24,7 +24,7 @@
         <a href="{{ route('consultant.student.report-card', $student) }}" class="profile-section-card">
             <span class="profile-section-icon"><i class="fas fa-chart-line"></i></span>
             <h3>کارنامه</h3>
-            <p>نمرات و کارنامه‌های تحصیلی {{ $student->name }} را بررسی کنید.</p>
+            <p>کارنامهٔ آزمون‌های شرکتی (قلم‌چی، ماز، …) و آزمون‌های درون‌ساز {{ $student->name }} را ببینید.</p>
             <span class="profile-section-cta">مشاهده <i class="fas fa-arrow-left"></i></span>
         </a>
 
@@ -39,13 +39,6 @@
             <span class="profile-section-icon"><i class="fas fa-calendar-alt"></i></span>
             <h3>برنامه</h3>
             <p>برنامه هفتگی و جلسات {{ $student->name }} را مدیریت کنید.</p>
-            <span class="profile-section-cta">مشاهده <i class="fas fa-arrow-left"></i></span>
-        </a>
-
-        <a href="{{ route('consultant.student.source-permissions', $student) }}" class="profile-section-card">
-            <span class="profile-section-icon"><i class="fas fa-shield-alt"></i></span>
-            <h3>دسترسی منابع</h3>
-            <p>منابع و سطح دسترسی‌های {{ $student->name }} را کنترل کنید.</p>
             <span class="profile-section-cta">مشاهده <i class="fas fa-arrow-left"></i></span>
         </a>
     </div>
