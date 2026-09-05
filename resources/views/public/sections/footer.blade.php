@@ -1,9 +1,15 @@
 {{-- resources/views/public/sections/footer.blade.php --}}
-@php($f = $public['footer'])
+@php
+    $f = $public['footer'];
+
+    // The template used `md:grid-cols-4` with the brand block spanning 2, which
+    // silently assumed exactly two link columns; a third column overflowed.
+    $gridCols = count($f['columns'] ?? []) + 2;
+@endphp
 <footer class="px-[var(--container-padding)] border-t"
-        style="background:var(--c-background);padding-top:5rem;padding-bottom:2.5rem;border-color:var(--c-glass-border)">
-    <div class="landing-container grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
-        <div class="md:col-span-2">
+        style="background:var(--c-background);padding-top:var(--section-gap);padding-bottom:2.5rem;border-color:var(--c-glass-border)">
+    <div class="landing-container lp-footer-grid mb-16" style="--cols:{{ $gridCols }}">
+        <div class="lp-footer-grid__brand">
             <a href="{{ route('home') }}" class="text-2xl font-bold flex items-center gap-2 mb-6">
                 @if ($f['show_logo_mark'])
                     <span class="brand-mark brand-mark-small"></span>

@@ -15,14 +15,17 @@ class ViewServiceProvider extends ServiceProvider
         // Existing consultant dashboard composer (unchanged). The student
         // shell renders with the exact same tenant/theme tokens, so it joins
         // the same composer instead of duplicating the wiring.
+        //
+        // `filters` and `sidebar` used to be passed here from config keys that
+        // do not exist, so both views always received []. The dashboard's real
+        // `$filters` comes from its controller, which is a different view.
         View::composer(['layouts.consultant', 'layouts.student'], function ($view) {
-            $c = config('consultant');
+            $c = site();
+
             $view->with([
-                'tenant'  => $c['tenant'],
-                'theme'   => $c['theme'],
-                'labels'  => $c['labels'],
-                'filters' => $c['filters'] ?? [],
-                'sidebar' => $c['sidebar'] ?? [],
+                'tenant' => $c['tenant'],
+                'theme'  => $c['theme'],
+                'labels' => $c['labels'],
             ]);
         });
 
@@ -39,11 +42,14 @@ class ViewServiceProvider extends ServiceProvider
             ]);
         });
 
-        // Landing page + login pages (consultant and student): fully
-        // config-driven, so they all render with the exact same tenant/theme
-        // tokens as the consultant dashboard.
-        View::composer(['public.landing', 'auth.login', 'auth.student-login'], function ($view) {
-            $c = config('consultant');
+        // Landing page + login: fully config-driven, so they render with the
+        // exact same tenant/theme tokens as the consultant dashboard.
+        //
+        // `auth.student-login` is no longer a view — login.blade.php now hosts
+        // both role tabs — so it has been dropped from this list.
+        View::composer(['public.landing', 'auth.login'], function ($view) {
+            $c = site();
+
             $view->with([
                 'tenant' => $c['tenant'],
                 'theme'  => $c['theme'],

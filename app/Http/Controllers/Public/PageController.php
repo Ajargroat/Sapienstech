@@ -11,8 +11,8 @@ class PageController extends Controller
 {
     public function home(): View
     {
-        // Landing page is fully driven by config('consultant.public') via the
-        // ViewServiceProvider composer.
+        // Landing page is fully driven by the resolved site config
+        // (public.landing.*) via the ViewServiceProvider composer.
         return view('public.landing');
     }
 
@@ -31,9 +31,11 @@ class PageController extends Controller
     }
 
     /**
-     * Data every public page needs. Note: `config` may be null —
-     * your website_configs table is empty right now, and the views
-     * are written to handle that with defaults.
+     * Data every public page needs.
+     *
+     * `tenant` may be null: IdentifyTenant only 404s on an *unknown* host, and
+     * the dev fallback host is allowed to resolve to nothing. Callers must
+     * therefore null-check rather than assume a tenant exists.
      */
     private function shared(): array
     {
@@ -41,7 +43,9 @@ class PageController extends Controller
 
         return [
             'tenant' => $tenant,
-            'config' => WebsiteConfig::where('tenant_id', $tenant->id)->first(),
+            'config' => $tenant
+                ? WebsiteConfig::where('tenant_id', $tenant->id)->first()
+                : null,
         ];
     }
 }
