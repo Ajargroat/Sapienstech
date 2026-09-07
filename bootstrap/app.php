@@ -18,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             \App\Http\Middleware\IdentifyTenant::class,
             \App\Http\Middleware\EnsureUserDomain::class,
+            \App\Http\Middleware\ApplyPersonalTheme::class,
         ]);
 
         // Smart redirect: keeps students on /student/* and consultants on /consultant/*

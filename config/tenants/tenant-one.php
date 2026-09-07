@@ -25,14 +25,93 @@ return [
 
     'theme' => [
         'archetype' => 'aurora_glass',
+
+        /*
+        | Colors. Primitives (primary/secondary/background/…) inherit from the
+        | archetype; these are the semantic overrides and the extended accent
+        | palette that items[].accent / from / to can now name.
+        */
+        'colors' => [
+            'heading' => null,      // null = derive from text (see ThemeTokens)
+            'link'    => '#22D3EE', // footer/nav link hover colour
+        ],
+
+        /*
+        | Typography. Tighter headings, balanced wrapping, bigger stat numbers.
+        */
+        'typography' => [
+            'heading_line_height' => '1.3',
+            'heading_balance'     => 'balance',
+            'stat_size'           => 'clamp(2.5rem, 5.5vw, 3.75rem)',
+        ],
+
+        /*
+        | Motion identity: a different reveal, a different card hover, an
+        | animated hero headline, a scroll-progress bar and pointer tilt.
+        */
+        'motion' => [
+            'reveal'          => 'rise',
+            'hover'           => 'shadow-grow',
+            'text_effect'     => 'gradient-shift',
+            'scroll_progress' => true,
+            'marquee_pause'   => true,
+            'tilt'            => true,
+        ],
+
+        /*
+        | Ornament: hairline between sections, a gradient rule under every
+        | heading, dot grids in the corners, squircle icon chips, a brand
+        | quote glyph and a primary accent line on top of each card.
+        */
+        'decoration' => [
+            'section_divider' => 'line',
+            'heading_rule'    => 'thick-underline',
+            'accent_shapes'   => 'dots',
+            'quote_mark'      => 'brand',
+            'icon_backdrop'   => 'squircle',
+            'card_edge'       => 'top-accent',
+        ],
+
+        /*
+        | Buttons: tracked-out labels on a brand-tinted shadow. The icon is
+        | chosen per button below (see hero/cta/advisor buttons[].icon).
+        */
+        'buttons' => [
+            'letter_spacing' => '.01em',
+            'shadow'         => true,
+        ],
+
+        /*
+        | Split hero: the copy column dominates the media column.
+        */
+        'layout' => [
+            'hero_ratio' => '60-40',
+        ],
     ],
 
     'public' => [
+        'nav' => [
+            'links_style' => 'underline',
+            'cta_style'   => 'gradient',
+        ],
+
         'landing' => [
+            'meta' => [
+                'og_image' => 'images/blog-pics/blog-pic1.png',
+            ],
+
+            // Order + visibility. `faq` is an optional section the baseline
+            // ships empty; this tenant fills it below.
+            'sections' => ['hero', 'advisor', 'ecosystem', 'services', 'stats', 'testimonials', 'blog', 'faq', 'cta'],
+
             'hero' => [
                 'title_line1' => 'آینده یادگیری با',
                 'title_line2' => 'آکادمی جنت',
                 'subtitle' => 'پلتفرم یکپارچه آموزش هوشمند. مسیر تحصیلی خود را با برنامه‌ریزی اختصاصی، تحلیل‌های دقیق و سیستم مدیریت یادگیری مدرن متحول کنید.',
+                'buttons' => [
+                    ['label' => 'شروع رایگان', 'href' => '#', 'style' => 'solid', 'icon' => 'sparkle', 'visible' => true],
+                    ['label' => 'مشاهده امکانات', 'href' => '#services', 'style' => 'ghost', 'icon' => 'arrow-down', 'visible' => true],
+                ],
             ],
             'advisor' => [
                 'id' => 'about',
@@ -73,12 +152,14 @@ return [
                         'label' => 'رزرو وقت مشاوره',
                         'href' => '#',
                         'style' => 'primary',
+                        'icon' => 'arrow',
                         'visible' => true,
                     ],
                     [
                         'label' => 'مشاهده رزومه کامل',
                         'href' => '#',
                         'style' => 'ghost',
+                        'icon' => 'chevron',
                         'visible' => true,
                     ],
                 ],
@@ -87,16 +168,18 @@ return [
                 'text' => 'ما با ترکیب الگوریتم‌های پیشرفته هوش مصنوعی و متدهای نوین یادگیری، محیطی را فراهم کرده‌ایم که در آن هر دانش‌آموز بر اساس نقاط قوت و ضعف خود، مسیر تحصیلی شخصی‌سازی شده‌ای را طی می‌کند.',
             ],
             'services' => [
+                // Bento: the first service becomes a wide lead tile.
+                'variant' => 'bento',
                 'items' => [
                     [
                         'icon' => 'fa-solid fa-bolt',
-                        'accent' => 'primary',
+                        'accent' => 'accent-cyan',
                         'title' => 'مشاوره هوشمند',
                         'text' => 'تحلیل لحظه‌ای وضعیت تحصیلی و ارائه پیشنهادات هوشمندانه برای بهبود راندمان.',
                     ],
                     [
                         'icon' => 'fa-solid fa-calendar-days',
-                        'accent' => 'secondary',
+                        'accent' => 'accent-violet',
                         'title' => 'برنامه‌ریزی شخصی',
                         'text' => 'تولید برنامه مطالعاتی دینامیک بر اساس اهداف، زمان خالی و سرعت یادگیری شما.',
                     ],
@@ -108,25 +191,27 @@ return [
                     ],
                     [
                         'icon' => 'fa-solid fa-circle-check',
-                        'accent' => 'accent-emerald',
+                        'accent' => 'accent-lime',
                         'title' => 'آزمون‌های آزمایشی',
                         'text' => 'بانک سوالات استاندارد همراه با سیستم برگزاری آزمون مشابه شرایط واقعی.',
                     ],
                     [
                         'icon' => 'fa-solid fa-box-archive',
-                        'accent' => 'accent-orange',
+                        'accent' => 'accent-amber',
                         'title' => 'مدیریت یادگیری',
                         'text' => 'دسترسی به محتوای آموزشی، ویدیوها و جزوات در یک پلتفرم متمرکز.',
                     ],
                     [
                         'icon' => 'fa-solid fa-robot',
-                        'accent' => 'primary',
+                        'accent' => 'accent-rose',
                         'title' => 'دستیار هوش مصنوعی',
                         'text' => 'پاسخگویی ۲۴ ساعته به سوالات درسی و رفع اشکالات توسط دستیار اختصاصی.',
                     ],
                 ],
             ],
             'stats' => [
+                // Boxed: each number framed as its own claim.
+                'variant' => 'boxed',
                 'items' => [
                     [
                         'value' => 14,
@@ -159,13 +244,15 @@ return [
                 ],
             ],
             'testimonials' => [
+                // Masonry: quotes pack by height instead of equal rows.
+                'variant' => 'masonry',
                 'items' => [
                     [
                         'initials' => 'ع.ر',
                         'name' => 'علی رضایی',
                         'result' => 'رتبه ۱۵۲ کنکور ریاضی',
                         'from' => 'accent-blue',
-                        'to' => 'secondary',
+                        'to' => 'accent-violet',
                         'text' => '«دستیار هوش مصنوعی و تحلیل‌های دقیق نموداری به من کمک کرد تا نقاط ضعفم را در دروس اختصاصی پیدا کنم. برنامه‌ریزی‌ها کاملا منطبق بر توانایی من بود.»',
                         'visible' => true,
                     ],
@@ -222,9 +309,36 @@ return [
             ],
             'cta' => [
                 'text' => 'همین حالا به جمع هزاران دانش‌آموز موفق ما بپیوندید و یادگیری را به سطح جدیدی ارتقا دهید.',
+                'buttons' => [
+                    ['label' => 'ثبت‌نام در پلتفرم',   'route' => 'login', 'style' => 'solid', 'icon' => 'arrow', 'visible' => true],
+                    ['label' => 'ورود به حساب کاربری', 'route' => 'login', 'style' => 'ghost', 'icon' => null, 'visible' => true],
+                ],
+            ],
+            'faq' => [
+                'heading'    => 'پرسش‌های متداول',
+                'subheading' => 'هر آنچه قبل از شروع باید درباره پلتفرم بدانید.',
+                'items' => [
+                    [
+                        'question' => 'برنامه مطالعاتی چگونه شخصی‌سازی می‌شود؟',
+                        'answer' => 'الگوریتم‌های هوش مصنوعی با تحلیل نتایج آزمون‌ها، زمان آزاد و سرعت یادگیری شما، هر هفته برنامه را بازچینی می‌کنند تا همیشه متناسب با توان واقعی‌تان پیش بروید.',
+                        'visible' => true,
+                    ],
+                    [
+                        'question' => 'آیا امکان مشاوره حضوری هم وجود دارد؟',
+                        'answer' => 'بله. می‌توانید از بخش رزرو وقت، جلسه حضوری یا آنلاین با مشاور ارشد مجموعه را انتخاب کنید؛ تمام سوابق شما در هر دو حالت در پلتفرم ثبت می‌شود.',
+                        'visible' => true,
+                    ],
+                    [
+                        'question' => 'دسترسی به بانک سوالات چگونه است؟',
+                        'answer' => 'با هر اشتراک، دسترسی کامل به بانک سوالات استاندارد، آزمون‌های شبیه‌ساز و تحلیل کارنامه اختصاصی فعال می‌شود.',
+                        'visible' => true,
+                    ],
+                ],
             ],
         ],
         'footer' => [
+            'variant'    => 'columns',
+            'background' => 'surface',
             'blurb' => 'ما آینده آموزش را با ترکیب هوش مصنوعی، طراحی انسان‌محور و تکنولوژی‌های روز دنیا می‌سازیم. یادگیری هوشمند، حق همه است.',
             'social' => [
                 [

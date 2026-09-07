@@ -25,10 +25,10 @@
                 @if (!empty($h['title_line2']))
                     <br>
                     @if ($h['gradient_text'] ?? true)
-                        <span class="text-transparent bg-clip-text"
+                        <span class="lp-hero__accent text-transparent bg-clip-text"
                               style="background-image:var(--brand-gradient)">{{ $h['title_line2'] }}</span>
                     @else
-                        <span style="color:var(--c-primary)">{{ $h['title_line2'] }}</span>
+                        <span class="lp-hero__accent" style="color:var(--c-primary)">{{ $h['title_line2'] }}</span>
                     @endif
                 @endif
             </h1>
@@ -40,7 +40,7 @@
             <div class="flex flex-wrap justify-center gap-4 mt-4">
                 @foreach ($h['buttons'] ?? [] as $b)
                     @if ($b['visible'] ?? true)
-                        @include('public.sections._button', ['label' => $b['label'], 'href' => $b['href'] ?? '#', 'tone' => $b['style'] ?? null])
+                        @include('public.sections._button', ['label' => $b['label'], 'href' => $b['href'] ?? '#', 'tone' => $b['style'] ?? null, 'icon' => $b['icon'] ?? null])
                     @endif
                 @endforeach
             </div>

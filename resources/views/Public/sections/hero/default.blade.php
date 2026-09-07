@@ -11,7 +11,7 @@
 
     @include('public.sections._glow-blobs', ['scope' => 'hero'])
 
-    <div class="landing-container w-full grid md:grid-cols-2 gap-[var(--grid-gap)] items-center relative z-10">
+    <div class="landing-container w-full grid lp-hero-grid gap-[var(--grid-gap)] items-center relative z-10">
 
         {{-- Text column --}}
         <div class="flex flex-col gap-6 {{ $reveal ? 'reveal' : '' }}"
@@ -21,19 +21,19 @@
                 @if ($h['gradient_text'] ?? true)
                     {{-- Inline (not a utility class) because the direction comes
                          from config and Tailwind can't see runtime-built names. --}}
-                    <span class="text-transparent bg-clip-text"
+                    <span class="lp-hero__accent text-transparent bg-clip-text"
                           style="background-image:linear-gradient({{ ($h['gradient_dir'] ?? 'to-l') === 'to-r' ? 'to right' : 'to left' }}, var(--c-primary), var(--c-secondary))">
                         {{ $h['title_line2'] }}
                     </span>
                 @else
-                    <span style="color:var(--c-primary)">{{ $h['title_line2'] }}</span>
+                    <span class="lp-hero__accent" style="color:var(--c-primary)">{{ $h['title_line2'] }}</span>
                 @endif
             </h1>
             <p class="text-lg leading-relaxed" style="color:var(--c-muted);max-width:var(--measure)">{{ $h['subtitle'] }}</p>
             <div class="flex flex-wrap gap-4 mt-4">
                 @foreach ($h['buttons'] ?? [] as $b)
                     @if ($b['visible'] ?? true)
-                        @include('public.sections._button', ['label' => $b['label'], 'href' => $b['href'] ?? '#', 'tone' => $b['style'] ?? null])
+                        @include('public.sections._button', ['label' => $b['label'], 'href' => $b['href'] ?? '#', 'tone' => $b['style'] ?? null, 'icon' => $b['icon'] ?? null])
                     @endif
                 @endforeach
             </div>

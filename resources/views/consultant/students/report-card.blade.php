@@ -13,8 +13,8 @@
 
 @section('content')
 @php
-    // Company vs built-in badges: same geometry, same 2px stroke language as
-    // the exam-type badges; the company one is tinted by --rc-brand.
+    // Company vs built-in glyphs: minimal, single-color (currentColor) so the
+    // card's pale tenant plate tints them; --rc-brand only tints the percent bar.
     $sourceSvg = [
         'company' => '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
             <rect x="12" y="10" width="24" height="30" rx="5" fill="currentColor" opacity=".12"/>
@@ -35,11 +35,11 @@
     <div class="panel-heading">
         <div class="panel-heading-title">
             <h2>کارنامه‌ها</h2>
-            <span class="count-badge">{{ persian_digits($total) }} کارنامه</span>
+            <span class="count-badge" data-router-region="results">{{ persian_digits($total) }} کارنامه</span>
         </div>
 
         <div class="panel-heading-actions exam-toolbar">
-            <div class="search-reveal @if($search !== '') is-open @endif">
+            <div class="search-reveal @if($search !== '') is-open @endif" data-router-region="results">
                 <form method="GET" action="{{ route('consultant.student.report-card', $student) }}" class="search-reveal-form">
                     <button type="submit" class="search-reveal-toggle" aria-label="جستجو">
                         <i class="fas fa-search"></i>
@@ -58,9 +58,11 @@
                 <input type="checkbox" id="filter-toggle" class="filter-toggle-input" @checked($source !== '')>
                 <label for="filter-toggle" class="filter-toggle-btn" aria-label="فیلتر منبع کارنامه">
                     <i class="fas fa-sliders-h"></i>
-                    @if($source !== '')<span class="filter-count">{{ persian_digits($counts[$source] ?? 0) }}</span>@endif
+                    {{-- Always rendered (hidden when empty) so the router's region
+                         pairing stays stable across partial swaps. --}}
+                    <span class="filter-count" data-router-region="results" @if($source === '') hidden @endif>{{ persian_digits($counts[$source] ?? 0) }}</span>
                 </label>
-                <div class="filter-popover">
+                <div class="filter-popover" data-router-region="results">
                     <p class="filter-popover-title">منبع کارنامه</p>
                     <a href="{{ route('consultant.student.report-card', ['student' => $student, 'search' => $search !== '' ? $search : null]) }}"
                        class="exam-filter-option @if($source === '') is-active @endif">
@@ -101,51 +103,36 @@
         </div>
     </div>
 
+    <div data-router-region="results">
     @if($cards->isNotEmpty())
         <div class="exam-grid rc-grid" id="rc-grid" data-stagger>
             @foreach($cards as $card)
                 <article class="exam-card rc-card" style="--rc-brand: {{ $card['brand'] ?: 'var(--c-primary)' }}">
-                    <div class="exam-card-head">
-                        <span class="rc-source">
-                            {!! $sourceSvg[$card['kind']] !!}
-                            <span class="exam-type-label">{{ $card['source_label'] }}</span>
-                        </span>
+                    <div class="exam-card-icon exam-card-icon--{{ $card['kind'] }}">
                         <span class="exam-status exam-status--{{ $card['status'] }}">{{ $statuses[$card['status']] ?? $card['status'] }}</span>
+                        {!! $sourceSvg[$card['kind']] !!}
+                        <span class="exam-card-icon-label">{{ $card['source_label'] }}</span>
                     </div>
-                    <div class="exam-card-main">
+                    <div class="exam-card-body">
                         <h3 class="exam-card-title">{{ $card['title'] }}</h3>
-                        <p class="exam-card-desc">{{ $card['description'] }}</p>
-                        <ul class="exam-card-meta">
-                            <li><i class="fas fa-book-open"></i>{{ $card['lesson'] }}</li>
-                            @if($card['questions'])
-                                <li><i class="fas fa-question-circle"></i>{{ persian_digits($card['questions']) }} سوال</li>
-                            @endif
-                            @if($card['participants'])
-                                <li><i class="fas fa-users"></i>{{ persian_digits(number_format($card['participants'])) }} شرکت‌کننده</li>
-                            @endif
-                        </ul>
                         @if($card['percent'] !== null)
                             <div class="rc-percent">
                                 <div class="rc-progress"><span style="width: {{ $card['percent'] }}%"></span></div>
                                 <strong>{{ persian_digits($card['percent']) }}٪</strong>
                             </div>
                         @endif
-                    </div>
-                    <div class="exam-card-foot">
-                        @if($card['date_iso'])
-                            <span>
-                                <i class="fas fa-calendar-day"></i>
-                                <time class="fa-date" datetime="{{ $card['date_iso'] }}">{{ $card['date_text'] }}</time>
-                            </span>
-                        @endif
-                        @if($card['rank'] !== null)
-                            <span class="rc-rank" title="رتبه در بین شرکت‌کنندگان">
-                                <i class="fas fa-trophy"></i>رتبه {{ persian_digits(number_format($card['rank'])) }}
-                            </span>
-                        @endif
-                        @if($card['score'] !== null)
-                            <span class="exam-card-score">{{ persian_digits($card['score']) }} <small>از {{ persian_digits($card['total']) }}</small></span>
-                        @endif
+                        <ul class="exam-card-facts">
+                            <li><i class="fas fa-layer-group"></i>{{ $card['lesson'] }}</li>
+                            @if($card['questions'])
+                                <li><i class="fas fa-circle-question"></i>{{ persian_digits($card['questions']) }} سوال</li>
+                            @endif
+                            @if($card['date_iso'])
+                                <li>
+                                    <i class="fas fa-calendar-day"></i>
+                                    <time class="fa-date" datetime="{{ $card['date_iso'] }}">{{ $card['date_text'] }}</time>
+                                </li>
+                            @endif
+                        </ul>
                         @if($card['result_url'])
                             <a href="{{ $card['result_url'] }}" class="exam-run-btn" title="مشاهده تحلیل آزمون">
                                 <i class="fas fa-chart-bar"></i> تحلیل
@@ -167,6 +154,7 @@
             @endif
         </div>
     @endif
+    </div>
 
     <dialog id="send-report-card-modal" class="exam-modal">
         <form>
@@ -203,6 +191,5 @@
         </form>
     </dialog>
 </div>
-@endsection
-
 @vite(['resources/js/features/consultant-report-cards.js'])
+@endsection

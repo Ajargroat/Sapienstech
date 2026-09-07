@@ -1,7 +1,7 @@
 {{-- resources/views/public/sections/nav.blade.php --}}
 @php($nav = $public['nav'])
 @php($brand = site('brand', []))
-<nav id="site-nav" class="site-nav site-nav--{{ $nav['style'] ?? 'solid' }}{{ ($nav['sticky'] ?? true) ? '' : ' site-nav--static' }}">
+<nav id="site-nav" class="site-nav site-nav--{{ $nav['style'] ?? 'solid' }} site-nav--links-{{ $nav['links_style'] ?? 'plain' }}{{ ($nav['sticky'] ?? true) ? '' : ' site-nav--static' }}">
     <div class="site-nav__inner">
         <div class="flex items-center gap-10">
             <a href="{{ route('home') }}" class="brand group" style="font-size:1.5rem">
@@ -33,7 +33,7 @@
             {{-- The arrow had `group-hover:-translate-x-1` with no `group`
                  ancestor, so the transform never fired. --}}
             <a href="{{ route(auth()->check() ? 'consultant.dashboard' : $nav['cta']['route']) }}"
-               class="nav-cta group">
+               class="nav-cta nav-cta--{{ $nav['cta_style'] ?? 'glass' }} group">
                 {{ auth()->check() ? ($labels['dashboard'] ?? 'داشبورد') : ($nav['cta']['label'] ?? '') }}
                 <i class="fa-solid fa-arrow-left text-xs transition-transform group-hover:-translate-x-1" aria-hidden="true"></i>
             </a>

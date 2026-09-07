@@ -14,8 +14,8 @@
             </a>
 
             <a
-                href="{{ route('consultant.blog') }}"
-                class="topnav-link {{ request()->routeIs('consultant.blog') ? 'active' : '' }}"
+                href="{{ route('consultant.settings.blog.index') }}"
+                class="topnav-link {{ request()->routeIs('consultant.settings.blog.*') ? 'active' : '' }}"
             >
                 {{ $labels['blog_management'] ?? 'وبلاگ' }}
             </a>
@@ -26,6 +26,15 @@
             >
                 {{ $labels['direct_chat'] ?? 'گفتگوی مستقیم' }}
             </a>
+
+            @if(site('features.bulk_actions', false))
+                <a
+                    href="{{ route('consultant.bulk.exams') }}"
+                    class="topnav-link {{ request()->routeIs('consultant.bulk.*') ? 'active' : '' }}"
+                >
+                    {{ $labels['bulk_actions'] ?? 'اقدامات گروهی' }}
+                </a>
+            @endif
         </nav>
 
         <div class="topnav-user">
@@ -40,13 +49,32 @@
                 <i class="fas fa-sun"></i>
             </button>
 
-            <span
-                class="topnav-icon-btn"
-                title="{{ session('username', 'مدیر سیستم') }}"
-                aria-label="کاربر"
-            >
-                <i class="fas fa-user"></i>
-            </span>
+            <div class="topnav-dropdown" data-topnav-dropdown>
+                <button
+                    type="button"
+                    class="topnav-icon-btn"
+                    title="{{ $labels['settings'] ?? 'تنظیمات' }}"
+                    aria-label="{{ $labels['settings'] ?? 'تنظیمات' }}"
+                    aria-haspopup="true"
+                    aria-expanded="false"
+                >
+                    <i class="fas fa-user"></i>
+                </button>
+
+                <div class="topnav-dropdown-menu">
+                    <div class="topnav-dropdown-head">
+                        <strong>{{ auth()->user()->name ?? session('username', 'مدیر سیستم') }}</strong>
+                    </div>
+                    @foreach(\App\Support\SettingsTabs::visible('consultant') as $tab)
+                        <a
+                            href="{{ route($tab['route']) }}"
+                            class="topnav-dropdown-link {{ request()->routeIs($tab['route']) ? 'is-active' : '' }}"
+                        >
+                            {{ $tab['label'] }}
+                        </a>
+                    @endforeach
+                </div>
+            </div>
 
             <button
                 type="button"
@@ -57,17 +85,5 @@
                 <i class="fas fa-bell"></i>
             </button>
         </div>
-
-        @auth
-            <form method="POST" action="{{ route('logout') }}" class="inline">
-                @csrf
-                <button
-                    type="submit"
-                    class="text-sm text-gray-600 hover:text-red-600"
-                >
-                    خروج
-                </button>
-            </form>
-        @endauth
     </div>
 </header>

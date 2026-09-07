@@ -12,6 +12,62 @@ document.addEventListener('click', (event) => {
 });
 
 /*
+ * Topnav user dropdown (settings hub). Delegated at document level like the
+ * filter popover: the nav lives outside the router region and persists across
+ * page swaps, so one listener covers every page.
+ */
+const closeTopnavDropdown = (wrap) => {
+    wrap.classList.remove('is-open');
+    wrap.querySelector('button')?.setAttribute('aria-expanded', 'false');
+};
+
+document.addEventListener('click', (event) => {
+    const toggle = event.target.closest?.('[data-topnav-dropdown] > button');
+    const openWrap = document.querySelector('[data-topnav-dropdown].is-open');
+
+    if (openWrap && !openWrap.contains(event.target)) closeTopnavDropdown(openWrap);
+
+    if (toggle) {
+        const wrap = toggle.closest('[data-topnav-dropdown]');
+        if (wrap.classList.contains('is-open')) {
+            closeTopnavDropdown(wrap);
+        } else {
+            wrap.classList.add('is-open');
+            toggle.setAttribute('aria-expanded', 'true');
+        }
+    } else if (openWrap && event.target.closest('.topnav-dropdown-link')) {
+        closeTopnavDropdown(openWrap);
+    }
+});
+
+document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    document.querySelectorAll('[data-topnav-dropdown].is-open').forEach(closeTopnavDropdown);
+});
+
+/*
+ * Success flashes are transient notifications, not permanent page
+ * furniture: they fade out and remove themselves a few seconds after
+ * appearing. Error flashes stay put — role="alert" means the user has to
+ * act on them. Armed once at load (covers native-navigation pages like the
+ * student portal) and through the router (covers swapped-in panel pages).
+ */
+const dismissFlash = (flash) => {
+    if (flash.dataset.flashArmed) return;
+    flash.dataset.flashArmed = '1';
+    setTimeout(() => {
+        flash.classList.add('is-leaving');
+        setTimeout(() => flash.remove(), 500);
+    }, 4000);
+};
+
+const armFlashDismissal = (root) =>
+    root.querySelectorAll('.settings-flash--success').forEach(dismissFlash);
+
+armFlashDismissal(document);
+onPageRender(armFlashDismissal);
+
+/*
  * Filter popover carousel: general / exam / report-card / schedule pages.
  * Registered through the router so it boots on the first page and on every
  * swapped-in page; the returned cleanup detaches the window listeners.

@@ -50,6 +50,24 @@ return [
 
         /*
         |--------------------------------------------------------------------------
+        | Settings hub (topnav user dropdown: Profile | Blog | Appearance | Chat)
+        | and the Bulk Actions workspace.
+        |--------------------------------------------------------------------------
+        */
+        'settings_profile' => true,
+        'settings_chat' => true,
+        'theme_studio' => true,
+        'bulk_actions' => true,
+
+        /*
+        | Who may publish site-wide appearance changes. The tenant admin
+        | decides: when false (default) only tenant_admin can write the
+        | public theme layer; staff keep the "just for me" scope.
+        */
+        'appearance_staff_publish' => false,
+
+        /*
+        |--------------------------------------------------------------------------
         | Student Workspace (per-student destinations reached from the
         | dashboard's Actions menu)
         |--------------------------------------------------------------------------
@@ -114,13 +132,23 @@ return [
             'danger'               => '#F87171',
 
             // ---- accent palette used by items[].accent / from / to --------
+            // Any name here is addressable from content config: an item with
+            // 'accent' => 'accent-violet' resolves to var(--c-accent-violet).
             'accent_blue'          => '#60A5FA',
             'accent_emerald'       => '#34D399',
             'accent_orange'        => '#FB923C',
             'accent_teal'          => '#2DD4BF',
             'accent_red'           => '#F87171',
+            'accent_violet'        => '#A78BFA',
+            'accent_pink'          => '#F472B6',
+            'accent_lime'          => '#A3E635',
+            'accent_cyan'          => '#22D3EE',
+            'accent_amber'         => '#F59E0B',
+            'accent_rose'          => '#FB7185',
 
             // ---- derived: null means "compute from the primitives" --------
+            'heading'              => null,
+            'link'                 => null,
             'primary_hover'        => null,
             'secondary_hover'      => null,
             'primary_soft'         => null,
@@ -167,8 +195,13 @@ return [
             'section_rhythm'  => '6rem',
         ],
 
-        // Motion identity. reveal: fade-up | fade-down | fade-left | fade-right
-        // | zoom | blur-in | line-mask | none   parallax: none | subtle | strong
+        // Motion identity.
+        // reveal: fade-up | fade-down | fade-left | fade-right | zoom | blur-in
+        // | line-mask | rise | drop | flip | wipe | skew-in | none
+        // parallax: none | subtle | strong
+        // hover (cards): lift | glow | scale | border | skew | shadow-grow
+        // | shift | icon-spin | invert | underline | none
+        // text_effect (hero accent line): none | gradient-shift | glow-pulse
         'motion' => [
             'reveal'         => 'fade-up',
             'stagger'        => 'sequential',
@@ -178,10 +211,14 @@ return [
             'tilt'           => false,
             'magnetic'       => false,
             'hover'          => 'lift',
+            'text_effect'    => 'none',
+            'scroll_progress'=> false,
+            'marquee_pause'  => false,
         ],
 
         // Page and section ground. mode: glow | flat | gradient | mesh | grid
-        // | dots | noise | beams   section_alternation: none | tint | surface-alt | rule
+        // | dots | noise | beams | aurora | stripes
+        // section_alternation: none | tint | surface-alt | rule
         'background' => [
             'mode'                => 'glow',
             'gradient_angle'      => '180deg',
@@ -193,8 +230,16 @@ return [
             'glow_blobs'          => [],
         ],
 
-        // Ornament. section_divider: none | line | slant | wave | gradient-band
-        // heading_rule: none | short-bar | full-line | number | eyebrow-pill
+        // Ornament.
+        // section_divider: none | line | double-line | dots | slant | curve
+        // | zigzag | gradient-band
+        // heading_rule: none | short-bar | thick-underline | full-line | number
+        // | side-rules | dot | eyebrow-pill
+        // icon_backdrop: soft-square | soft-circle | square | circle | diamond
+        // | hexagon | squircle | ring | outline | gradient | none
+        // accent_shapes: none | plus | dots | grid | corner-brackets
+        // quote_mark: none | serif | brand | oversized
+        // card_edge: none | top-accent | left-accent | corner-cut | glow-border
         'decoration' => [
             'section_divider' => 'none',
             'heading_rule'    => 'none',
@@ -202,17 +247,23 @@ return [
             'accent_shapes'   => 'none',
             'quote_mark'      => 'none',
             'icon_backdrop'   => 'soft-square',
+            'card_edge'       => 'none',
         ],
 
         // Button anatomy, shared by every CTA on the public site.
         // variant: solid | outline | soft | ghost | gradient | glass | brutal | underline
+        // icon (default trailing icon): none | arrow | chevron | plus | sparkle
+        // | arrow-down
+        // Individual buttons may override it with an `icon` key in their config.
         'buttons' => [
-            'variant'   => 'solid',
-            'size'      => 'md',
-            'weight'    => '600',
-            'transform' => 'none',
-            'icon'      => 'none',
-            'hover'     => 'lift',
+            'variant'        => 'solid',
+            'size'           => 'md',
+            'weight'         => '600',
+            'transform'      => 'none',
+            'letter_spacing' => null,
+            'icon'           => 'none',
+            'hover'          => 'lift',
+            'shadow'         => false,
         ],
 
         // Logo lockup. variant: mark | wordmark | mark+word | stacked
@@ -263,17 +314,21 @@ return [
             'font_heading'     => null,
             'font_accent'      => null,
             'font_mono'        => null,
+            'font_button'      => null,
             'body_size'        => '15px',
             'body_weight'      => '400',
             'heading_weight'   => '800',
             'heading_transform'=> null,
             'heading_letter_spacing' => null,
+            'heading_line_height'    => null,
+            'heading_balance'  => null,
             'letter_spacing'   => '0',
             'line_height'      => '1.8',
             'measure'          => null,
             'h1_size'          => 'clamp(2.75rem, 6vw, 4.5rem)',
             'h2_size'          => 'clamp(1.875rem, 4vw, 3rem)',
             'h3_size'          => '1.25rem',
+            'stat_size'        => null,
             'hero_line_height' => '1.2',
         ],
 
@@ -303,6 +358,14 @@ return [
             'sidebar_offset'    => '36px',
             'card_gap'          => '24px',
             'topnav_height'     => '76px',
+            // Split-hero column ratio: 50-50 | 60-40 | 40-60 | 70-30 | 30-70.
+            // ThemeTokens derives the `--hero-cols` grid value from it.
+            'hero_ratio'        => '50-50',
+            // Where the panel's section tabs live: topnav | sidebar. The
+            // tenant's choice (Appearance studio); both the consultant and
+            // student shells follow it. Consumed as a data attribute by
+            // partials/theme-attrs, not as a CSS token.
+            'shell_nav'         => 'topnav',
         ],
 
         // Driven by `scale.density` / `scale.container_width` / section_rhythm.
@@ -370,6 +433,14 @@ return [
         'dashboard'       => 'داشبورد',
         'blog_management' => 'وبلاگ',
         'direct_chat'     => 'گفتگوی مستقیم',
+        'bulk_actions'    => 'اقدامات گروهی',
+
+        // Settings hub (topnav user dropdown + tab bar)
+        'settings'             => 'تنظیمات',
+        'settings_profile'     => 'پروفایل',
+        'settings_blog'        => 'وبلاگ',
+        'settings_appearance'  => 'ظاهر',
+        'settings_chat'        => 'گفتگو',
 
         // Dashboard
         'dashboard_heading' => 'داشبورد مشاور',
@@ -400,6 +471,10 @@ return [
             'position'       => 'top',     // top (left-rail and floating-pill are future variants)
             'sticky'         => true,
             'show_logo_mark' => true,
+            // Hover treatment for the link list: plain | underline | pill
+            'links_style'    => 'plain',
+            // CTA chip anatomy: glass | solid | outline | gradient
+            'cta_style'      => 'glass',
             'links'          => [
                 ['label' => 'درباره ما',        'href' => '#about',        'visible' => true],
                 ['label' => 'خدمات',            'href' => '#services',     'visible' => true],
@@ -417,6 +492,9 @@ return [
             'meta' => [
                 'title'       => 'پلتفرم آموزش هوشمند',
                 'description' => 'سیستم مدیریت یادگیری و مشاوره تحصیلی مبتنی بر هوش مصنوعی',
+                // Shared social card (og:image / twitter:image). Relative to
+                // the tenant's asset tree, like every other image here.
+                'og_image'    => null,
             ],
 
             // ORDER + VISIBILITY of every section. Reorder freely; remove to hide.
@@ -446,8 +524,8 @@ return [
                 'image_alt'     => null,
                 'eyebrow'       => null,
                 'buttons' => [
-                    ['label' => 'شروع رایگان',    'href' => '#',         'style' => 'solid', 'visible' => true],
-                    ['label' => 'مشاهده امکانات', 'href' => '#services', 'style' => 'ghost', 'visible' => true],
+                    ['label' => 'شروع رایگان',    'href' => '#',         'style' => 'solid', 'icon' => null, 'visible' => true],
+                    ['label' => 'مشاهده امکانات', 'href' => '#services', 'style' => 'ghost', 'icon' => null, 'visible' => true],
                 ],
             ],
 
@@ -528,6 +606,11 @@ return [
 
             'blog' => [
                 'variant'    => 'default',           // default | list
+                // config = render the items below; database = render the
+                // tenant's latest published BlogPosts (set from the blog
+                // settings tab; stored in website_configs.layout_config).
+                'source'     => 'config',            // config | database
+                'count'      => 3,
                 'id'         => 'blog',
                 'heading'    => 'آخرین مقالات',
                 'subheading' => 'تازه‌ترین متدهای یادگیری و تکنولوژی آموزشی.',
@@ -600,6 +683,10 @@ return [
         'footer' => [
             'enabled'        => true,
             'show_logo_mark' => true,
+            // columns | centered | minimal — structure, not just styling.
+            'variant'        => 'columns',
+            // background | surface | gradient — what the footer sits on.
+            'background'     => 'background',
             // Brand voice, links and social handles are tenant-owned; see
             // config/tenants/tenant-one.php for a worked example.
             'blurb'          => 'آموزش هوشمند، حق همه است.',

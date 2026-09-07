@@ -14,12 +14,18 @@
 </head>
 <body class="consultant-shell" @include('partials.theme-attrs')>
     @include('partials.color-scheme', ['schemeKey' => 'consultant-color-scheme'])
+    @include('partials.preview-banner')
 
     <div class="page-glow page-glow-primary"></div>
     <div class="page-glow page-glow-secondary"></div>
 
     <div class="min-h-screen relative z-10">
-        @include('components.consultant.topnav')
+        {{-- The tenant chooses where the panel tabs live: theme.layout.shell_nav
+             (Appearance studio → «جای منوی پنل»). The ternary normalises any
+             unexpected value back to the topnav, so the include path is always
+             one of two literals. --}}
+        @php $shellNav = site('theme.layout.shell_nav') === 'sidebar' ? 'sidebar' : 'topnav'; @endphp
+        @include('components.consultant.'.$shellNav)
 
         <div class="consultant-content">
             <main class="content-container" id="app-content">

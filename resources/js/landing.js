@@ -28,6 +28,23 @@ document.addEventListener('DOMContentLoaded', () => {
         onScroll();
     }
 
+    // Scroll progress bar (motion.scroll_progress). The element is created here
+    // rather than in Blade so pages that never enable it carry no dead markup.
+    if (root.dataset.scrollProgress === 'on' && motion) {
+        const bar = document.createElement('div');
+        bar.className = 'lp-scroll-progress';
+        bar.setAttribute('aria-hidden', 'true');
+        body.appendChild(bar);
+
+        const paint = () => {
+            const max = document.documentElement.scrollHeight - window.innerHeight;
+            bar.style.transform = `scaleX(${max > 0 ? window.scrollY / max : 0})`;
+        };
+        window.addEventListener('scroll', paint, { passive: true });
+        window.addEventListener('resize', paint, { passive: true });
+        paint();
+    }
+
     // Reveal on scroll
     const reveals = document.querySelectorAll('.reveal');
     if (!motion || !('IntersectionObserver' in window)) {

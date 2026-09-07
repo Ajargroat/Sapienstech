@@ -5,8 +5,6 @@
     $letters = ['الف', 'ب', 'ج', 'د', 'ه', 'و'];
 @endphp
 <div class="result-wrap">
-    <a href="{{ route('consultant.student.exams', $student) }}" class="runner-exit"><i class="fas fa-arrow-right"></i> بازگشت</a>
-
     <section class="result-hero">
         <div class="result-score">
             <strong>{{ persian_digits(rtrim(rtrim((string) $attempt->score_raw, '0'), '.')) }}</strong>

@@ -23,12 +23,25 @@
     $url  = !empty($route) ? route($route) : ($href ?? '#');
     $cls  = trim('lp-btn lp-btn--'.$tone
         .(!empty($block) ? ' lp-btn--block' : '')
+        .(!empty($b['size']) ? ' lp-btn--'.$b['size'] : '')
         .' '.($class ?? ''));
+
+    // Logical directions: in RTL "forward" is left, in LTR it is right.
+    $icons = [
+        'arrow'      => 'fa-arrow-left',
+        'arrow-ltr'  => 'fa-arrow-right',
+        'arrow-down' => 'fa-arrow-down',
+        'chevron'    => 'fa-chevron-left',
+        'plus'       => 'fa-plus',
+        'sparkle'    => 'fa-wand-magic-sparkles',
+        'download'   => 'fa-download',
+        'play'       => 'fa-play',
+    ];
 @endphp
 
 <a href="{{ $url }}" class="{{ $cls }}">
     {{ $label ?? '' }}
-    @if ($icon !== 'none')
-        <i class="fa-solid {{ ['arrow' => 'fa-arrow-left', 'chevron' => 'fa-chevron-left'][$icon] ?? 'fa-plus' }} text-xs" aria-hidden="true"></i>
+    @if ($icon !== 'none' && isset($icons[$icon]))
+        <i class="fa-solid {{ $icons[$icon] }} text-xs" aria-hidden="true"></i>
     @endif
 </a>

@@ -15,7 +15,7 @@
 @php
     $t       = site('theme');
     $vars    = $t['vars'] ?? [];
-    $schemes = $t['schemes'] ?? [];
+    $schemes = \App\Support\ThemeTokens::schemeVars($t);
     $animOff = empty($t['effects']['enable_animations']);
 @endphp
 <style>
@@ -25,25 +25,12 @@
 @endforeach
     }
 
-@foreach ($schemes as $scheme => $overrides)
+@foreach ($schemes as $scheme => $schemeVars)
     {{--
-        Resolved against the tenant's *current* palette, not on its own: a light
-        scheme only names backgrounds and text, but border/glass/muted must be
-        recomputed from the new ink so they stay visible on a light surface.
-
-        Filtered to colour tokens. resolve() also fills typography, spacing and
-        shape with platform defaults, and emitting those here would override the
-        tenant's own fonts and radii whenever light mode was active.
+        Resolved against the tenant's *current* palette, not on its own — the
+        computation lives in ThemeTokens::schemeVars(), shared with the studio's
+        live-preview endpoint so the two can never drift.
     --}}
-    @php
-        $schemeVars = array_filter(
-            \App\Support\ThemeTokens::resolve([
-                'colors' => array_replace($t['colors'] ?? [], is_array($overrides) ? $overrides : []),
-            ])['vars'],
-            static fn (string $name): bool => str_starts_with($name, 'c-'),
-            ARRAY_FILTER_USE_KEY
-        );
-    @endphp
     [data-color-scheme="{{ $scheme }}"] {
         @foreach ($schemeVars as $name => $value)
         --{{ $name }}: {{ $value }};

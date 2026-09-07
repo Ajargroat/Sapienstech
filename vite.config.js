@@ -25,6 +25,8 @@ export default defineConfig({
                 'resources/js/features/consultant-exams.js',
                 'resources/js/features/consultant-report-cards.js',
                 'resources/js/features/consultant-exam-runner.js',
+                'resources/js/features/bulk-actions.js',
+                'resources/js/features/theme-studio.js',
                 'resources/js/features/student-dashboard.js',
                 'resources/js/app.js',
             ],

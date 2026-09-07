@@ -110,7 +110,9 @@ class ConsultantDashboardTest extends TestCase
 
         $response->assertOk();
         $response->assertSee(route('consultant.dashboard'), false);
-        $response->assertSee(route('consultant.blog'), false);
+        // Blog management moved into the settings hub, so the topnav link now
+        // points at the settings blog tab rather than the legacy placeholder.
+        $response->assertSee(route('consultant.settings.blog.index'), false);
         $response->assertSee(route('consultant.direct-chat'), false);
     }
 }

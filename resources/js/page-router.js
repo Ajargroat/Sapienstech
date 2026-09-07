@@ -15,18 +15,27 @@
  *   - A page bundle `export default function init(region)` and may return a
  *     cleanup function. The router imports it once and calls it again every
  *     time its page renders.
+ *   - A screen marks its in-place-updatable areas with
+ *     `data-router-region="name"`. A navigation that only changes the query
+ *     string (filters, search, paging) swaps just those regions: no page
+ *     animation, no scroll reset, the filter UI stays alive.
  *   - `window.sapienstechRouter` exists before any body script runs, which is
  *     how bundles know they must not self-initialize.
  *   - Anything can opt out with `data-router="off"`. Links outside the first
  *     path segment (login, public site, student portal) are never intercepted,
  *     and any response without an app shell falls back to a real navigation.
+ *   - A tab bar can opt into `data-router="replace"`: clicks on its links
+ *     swap the page without adding a history entry, so "back" leaves the hub
+ *     in one step instead of walking through every tab visited.
  */
 
 const REGION_SELECTOR = '#app-content';
+const PARTIAL_SELECTOR = '[data-router-region]';
 const CACHE_LIMIT = 10;
 const PROGRESS_DELAY = 140;
 const ENTER_DURATION = 420;
 const EXIT_DURATION = 220;
+const REFRESH_DURATION = 360;
 const PREFETCH_SELECTOR =
     '[data-prefetch], .pager-next:not(.is-disabled), .pager-prev:not(.is-disabled)';
 
@@ -117,14 +126,57 @@ async function toPage(response, fallbackHref) {
     return {
         url: new URL(href),
         html: region.innerHTML,
+        regions: regionMarkup(region),
         title: doc.title,
         scripts: readScripts(region),
         // The server already resolved which nav item is active for this route;
         // copying that beats re-implementing `request()->routeIs()` in JS.
-        activeNav: [...doc.querySelectorAll('.topnav-link.active')]
+        // `.sidebar-link` is the shell's sidebar variant of `.topnav-link`;
+        // only one of the two is ever rendered, but the router stays agnostic.
+        activeNav: [...doc.querySelectorAll('.topnav-link.active, .sidebar-link.active')]
             .map((a) => resolveLink(a.getAttribute('href'))?.href)
             .filter(Boolean),
     };
+}
+
+/**
+ * name -> [outerHTML, ...] for every [data-router-region] in a fetched page.
+ * Same-named elements pair with their live counterparts by document order,
+ * so a page must render a stable set of them (toggle one with `hidden`, not
+ * @if). Do not nest regions inside each other.
+ */
+function regionMarkup(root) {
+    const map = new Map();
+    for (const el of root.querySelectorAll(PARTIAL_SELECTOR)) {
+        const name = el.getAttribute('data-router-region') || 'default';
+        if (!map.has(name)) map.set(name, []);
+        map.get(name).push(el.outerHTML);
+    }
+    return map;
+}
+
+/**
+ * The live regions to swap in place, or null when the whole shell region must
+ * be replaced. A partial swap is only safe when the path is unchanged (a
+ * filter/search/pager tweak) and both sides render the exact same region set.
+ */
+function partialPlan(page) {
+    if (current.pathname !== page.url.pathname) return null;
+
+    const app = document.querySelector(REGION_SELECTOR);
+    const live = new Map();
+    for (const el of app.querySelectorAll(PARTIAL_SELECTOR)) {
+        const name = el.getAttribute('data-router-region') || 'default';
+        if (!live.has(name)) live.set(name, []);
+        live.get(name).push(el);
+    }
+
+    if (!live.size || live.size !== page.regions.size) return null;
+    for (const [name, nodes] of live) {
+        const fresh = page.regions.get(name);
+        if (!fresh || fresh.length !== nodes.length) return null;
+    }
+    return live;
 }
 
 function load(url) {
@@ -143,6 +195,13 @@ function load(url) {
     }
 
     return pages.get(key);
+}
+
+/** Drops cached GET variants of a path after a mutation swapped in. */
+function bustCache(pathname) {
+    for (const key of [...pages.keys()]) {
+        if (new URL(key).pathname === pathname) pages.delete(key);
+    }
 }
 
 /* ---------------------------------------------------------------- bundles */
@@ -198,7 +257,15 @@ function reviveInlineScripts(region) {
 
 function runPage(region, run, { animate }) {
     reviveInlineScripts(region);
+    bindPage(region, run);
 
+    if (animate) enter(region);
+    prefetchLikely(region);
+    document.dispatchEvent(new CustomEvent('page:load', { detail: { url: current.href } }));
+}
+
+/** Runs the page bundle + shared behaviors against the live shell. */
+function bindPage(region, run) {
     for (const init of run) {
         const off = call(() => init(region));
         if (typeof off === 'function') teardown.push(off);
@@ -207,10 +274,6 @@ function runPage(region, run, { animate }) {
         const off = call(() => behavior(region));
         if (typeof off === 'function') teardown.push(off);
     }
-
-    if (animate) enter(region);
-    prefetchLikely(region);
-    document.dispatchEvent(new CustomEvent('page:load', { detail: { url: current.href } }));
 }
 
 function stopPage() {
@@ -222,7 +285,7 @@ function stopPage() {
 function syncNav(page) {
     const active = new Set(page.activeNav);
 
-    for (const link of document.querySelectorAll('.topnav-link')) {
+    for (const link of document.querySelectorAll('.topnav-link, .sidebar-link')) {
         const on = active.has(link.href);
         link.classList.toggle('active', on);
         if (on) link.setAttribute('aria-current', 'page');
@@ -255,7 +318,62 @@ function enter(region) {
     }, ENTER_DURATION);
 }
 
-async function render(page, { mode = 'push', scroll = null, paging = null } = {}) {
+/**
+ * Query-only navigation: the page stays put, only the marked result regions
+ * change. Filter UI, scroll position and shell are untouched, so applying a
+ * filter no longer looks like visiting a new page.
+ */
+async function renderPartial(page, live, mode) {
+    const app = document.querySelector(REGION_SELECTOR);
+    const run = await prepare(page.scripts);
+    const template = document.createElement('template');
+    const swapped = [];
+
+    stopPage();
+
+    for (const [name, nodes] of live) {
+        nodes.forEach((el, i) => {
+            template.innerHTML = page.regions.get(name)[i];
+            const next = template.content.firstElementChild;
+
+            el.replaceWith(next);
+            reviveInlineScripts(next);
+            next.classList.add('is-refreshing');
+            window.setTimeout(() => next.classList.remove('is-refreshing'), REFRESH_DURATION);
+            swapped.push(next);
+        });
+    }
+
+    current = page.url;
+    if (mode === 'push') {
+        window.history.pushState({ router: true, y: window.scrollY }, '', page.url.href);
+    }
+
+    // Re-run behaviors so bundles rebind to the fresh nodes (e.g. the bulk
+    // picker's checkbox wiring), but skip the page-enter animation.
+    bindPage(app, run);
+    for (const el of swapped) {
+        const lists = el.matches('[data-stagger]') ? [el] : [...el.querySelectorAll('[data-stagger]')];
+        for (const list of lists) {
+            [...list.children].slice(0, 18)
+                .forEach((child, i) => child.style.setProperty('--stagger-index', String(i)));
+        }
+    }
+    prefetchLikely(app);
+    document.dispatchEvent(new CustomEvent('page:load', { detail: { url: current.href } }));
+}
+
+async function render(page, { mode = 'push', scroll = null, paging = null, bust = false } = {}) {
+    // A filter/search/pager tweak keeps the page alive: only the marked
+    // regions update. POST redirects (bust) always do a full swap, because
+    // the server may have changed anything on that screen; tab-bar replaces
+    // land on a different pathname, so partialPlan declines them anyway.
+    if (mode !== 'replace') {
+        const live = partialPlan(page);
+        if (live) return renderPartial(page, live, mode);
+    }
+    if (bust) bustCache(page.url.pathname);
+
     const region = document.querySelector(REGION_SELECTOR);
     const run = await prepare(page.scripts);
 
@@ -377,7 +495,12 @@ function onClick(event) {
     }
 
     event.preventDefault();
-    navigate(() => load(url), { paging: pagingDirection(current, url) });
+    navigate(() => load(url), {
+        // Links inside a [data-router="replace"] container (a tab bar) swap
+        // the page without stacking one history entry per tab visited.
+        mode: link.closest('[data-router="replace"]') ? 'replace' : 'push',
+        paging: pagingDirection(current, url),
+    });
 }
 
 function onSubmit(event) {
@@ -407,7 +530,7 @@ function onSubmit(event) {
         return;
     }
 
-    navigate(() => postForm(form, action, method, data), { mode: 'replace' });
+    navigate(() => postForm(form, action, method, data), { mode: 'replace', bust: true });
 }
 
 function onPointer(event) {

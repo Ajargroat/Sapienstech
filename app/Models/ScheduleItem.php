@@ -41,6 +41,7 @@ class ScheduleItem extends Model
         'page_count',
         'is_completed',
         'completion_timestamp',
+        'bulk_action_id',
     ];
 
     protected function casts(): array

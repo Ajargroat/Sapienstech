@@ -144,6 +144,84 @@ class ThemeTokensTest extends TestCase
     }
 
     // =========================================================================
+    // Extended palette
+    // =========================================================================
+
+    public function test_heading_and_link_colours_derive_from_the_primitives(): void
+    {
+        $theme = $this->primitives();
+
+        $this->assertSame('#FFFFFF', $theme['vars']['c-heading']);
+        $this->assertSame('#06B6D4', $theme['vars']['c-link']);
+    }
+
+    public function test_explicit_heading_and_link_beat_the_derivation(): void
+    {
+        $theme = $this->primitives(['heading' => '#111111', 'link' => '#222222']);
+
+        $this->assertSame('#111111', $theme['vars']['c-heading']);
+        $this->assertSame('#222222', $theme['vars']['c-link']);
+    }
+
+    /** Content names accents (`accent-violet`); they must always resolve. */
+    public function test_the_extended_accent_palette_is_always_emitted(): void
+    {
+        $vars = $this->primitives()['vars'];
+
+        foreach (['c-accent-violet', 'c-accent-pink', 'c-accent-lime',
+                  'c-accent-cyan', 'c-accent-amber', 'c-accent-rose'] as $name) {
+            $this->assertArrayHasKey($name, $vars, "--{$name} must reach the browser");
+        }
+    }
+
+    // =========================================================================
+    // Typography / buttons / layout levers
+    // =========================================================================
+
+    public function test_typography_extras_default_to_visually_neutral(): void
+    {
+        $vars = $this->primitives()['vars'];
+
+        $this->assertSame('inherit', $vars['heading-line-height']);
+        $this->assertSame('auto', $vars['heading-balance']);
+        $this->assertSame('Vazirmatn', $vars['font-button']);
+        $this->assertStringContainsString('clamp', $vars['stat-size']);
+    }
+
+    public function test_button_levers_reach_css(): void
+    {
+        $theme = ThemeTokens::resolve(['buttons' => ['letter_spacing' => '.05em', 'shadow' => true]]);
+
+        $this->assertSame('.05em', $theme['vars']['btn-letter-spacing']);
+        // The shadow toggle is a behaviour lever: consumed as a data attribute,
+        // never as a custom property.
+        $this->assertTrue($theme['buttons']['shadow']);
+        $this->assertArrayNotHasKey('btn-shadow', $theme['vars']);
+    }
+
+    public function test_hero_ratio_derives_the_grid_columns(): void
+    {
+        $wide = ThemeTokens::resolve(['layout' => ['hero_ratio' => '60-40']]);
+        $this->assertSame('1.5fr 1fr', $wide['vars']['hero-cols']);
+
+        // The default must keep the historic 50/50 split.
+        $this->assertSame('1fr 1fr', ThemeTokens::resolve([])['vars']['hero-cols']);
+
+        // An unknown ratio falls back instead of emitting garbage.
+        $this->assertSame('1fr 1fr', ThemeTokens::resolve(['layout' => ['hero_ratio' => 'nope']])['vars']['hero-cols']);
+    }
+
+    public function test_new_motion_and_decoration_levers_default_to_off(): void
+    {
+        $theme = $this->primitives();
+
+        $this->assertSame('none', $theme['motion']['text_effect']);
+        $this->assertFalse($theme['motion']['scroll_progress']);
+        $this->assertFalse($theme['motion']['marquee_pause']);
+        $this->assertSame('none', $theme['decoration']['card_edge']);
+    }
+
+    // =========================================================================
     // Contrast helpers
     // =========================================================================
 

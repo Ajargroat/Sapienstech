@@ -49,7 +49,7 @@
         <div class="flex flex-wrap gap-4 pt-2">
             @foreach ($a['buttons'] ?? [] as $b)
                 @if ($b['visible'] ?? true)
-                    @include('public.sections._button', ['label' => $b['label'], 'href' => $b['href'] ?? '#', 'tone' => $b['style'] ?? null])
+                    @include('public.sections._button', ['label' => $b['label'], 'href' => $b['href'] ?? '#', 'tone' => $b['style'] ?? null, 'icon' => $b['icon'] ?? null])
                 @endif
             @endforeach
         </div>

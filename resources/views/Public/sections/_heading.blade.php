@@ -23,6 +23,7 @@
     $mxAuto      = $align === 'center' ? 'mx-auto' : '';
 
     $titleStyle = 'font-size:var(--h2-size);font-weight:var(--heading-weight);'
+                 .'line-height:var(--heading-line-height);text-wrap:var(--heading-balance);'
                  .'text-transform:var(--heading-transform);letter-spacing:var(--heading-letter-spacing)';
 @endphp
 

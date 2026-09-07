@@ -52,6 +52,41 @@
   background: linear-gradient(to bottom, transparent, color-mix(in oklab, var(--c-primary) 8%, transparent));
 }
 
+[data-divider="double-line"] .lp-section + .lp-section { border-block-start: var(--surface-border-w) solid var(--c-border); }
+[data-divider="double-line"] .lp-section + .lp-section::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: calc(var(--surface-border-w) + 3px);
+  block-size: var(--surface-border-w);
+  background: var(--c-border);
+}
+[data-divider="dots"] .lp-section + .lp-section { border-block-start: calc(var(--surface-border-w) + 1px) dotted var(--c-border-strong); }
+
+[data-divider="curve"] .lp-section + .lp-section::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: calc(var(--section-gap) * -1);
+  block-size: 2.5rem;
+  border-block-start: var(--surface-border-w) solid var(--c-border);
+  border-start-start-radius: 50% 100%;
+  border-start-end-radius: 50% 100%;
+}
+
+[data-divider="zigzag"] .lp-section + .lp-section::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: calc(var(--section-gap) * -1);
+  block-size: 12px;
+  background:
+    linear-gradient(135deg, var(--c-border-strong) 25%, transparent 25%) -6px 0,
+    linear-gradient(225deg, var(--c-border-strong) 25%, transparent 25%) -6px 0;
+  background-size: 12px 12px;
+  opacity: .6;
+}
+
 /* ---------- page ground ------------------------------------------------- */
 /* One place to decide what the page sits on, replacing the four hand-placed
    blob sets. */
@@ -86,8 +121,23 @@
     color-mix(in oklab, var(--c-primary) 10%, var(--c-background)) 45%,
     var(--c-background) 90%);
 }
+[data-bg-mode="aurora"] .lp-ground {
+  background:
+    radial-gradient(60rem 30rem at 20% 0%, color-mix(in oklab, var(--c-primary) 18%, transparent), transparent 60%),
+    radial-gradient(50rem 30rem at 80% 10%, color-mix(in oklab, var(--c-secondary) 18%, transparent), transparent 60%),
+    radial-gradient(40rem 30rem at 50% 100%, color-mix(in oklab, var(--c-accent-teal) 12%, transparent), transparent 60%),
+    var(--c-background);
+}
+[data-bg-mode="stripes"] .lp-ground {
+  background:
+    repeating-linear-gradient(var(--gradient-angle, 135deg),
+      transparent 0 22px,
+      color-mix(in oklab, var(--c-text) 4%, transparent) 22px 23px),
+    var(--c-background);
+}
 
-/* Film grain. Sits above the ground but below content. */
+/* Film grain. Sits above the ground but below content. `noise` mode forces the
+   grain visible even when the surface material itself carries none. */
 .lp-ground::after {
   content: "";
   position: absolute;
@@ -95,6 +145,7 @@
   opacity: var(--surface-noise, 0);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
 }
+[data-bg-mode="noise"] .lp-ground::after { opacity: max(var(--surface-noise, 0), .06); }
 
 /* ---------- cards -------------------------------------------------------- */
 .lp-card {
@@ -113,9 +164,23 @@
 [data-hover="glow"]   .lp-card:hover { box-shadow: 0 0 0 1px var(--c-primary-hover), var(--card-shadow); }
 [data-hover="scale"]  .lp-card:hover { transform: scale(1.015); }
 [data-hover="border"] .lp-card:hover { border-color: var(--c-primary); }
+[data-hover="skew"]   .lp-card:hover { transform: skewY(-.6deg) skewX(.4deg); border-color: var(--c-border-strong); }
+[data-hover="shadow-grow"] .lp-card:hover { box-shadow: var(--shadow); }
+[data-hover="shift"]  .lp-card:hover { transform: translateX(calc(var(--hover-lift) * 1.5)); border-color: var(--c-primary); }
 [data-hover="none"]   .lp-card:hover { transform: none; }
+/* icon-spin leaves the card still and moves the chip instead. */
+[data-hover="icon-spin"] .lp-card:hover .lp-icon { transform: rotate(360deg) scale(1.08); transition-duration: calc(var(--animation-duration) * 3); }
 
 .lp-card--featured { box-shadow: var(--card-shadow); }
+
+/* Card edge treatment: how a card announces itself without changing colour. */
+[data-card-edge="top-accent"]  .lp-card { border-block-start: calc(var(--surface-border-w) + 2px) solid var(--c-primary); }
+[data-card-edge="left-accent"] .lp-card { border-inline-start: calc(var(--surface-border-w) + 2px) solid var(--c-primary); }
+[data-card-edge="corner-cut"]  .lp-card { border-radius: 0; clip-path: polygon(0 0, calc(100% - 1.25rem) 0, 100% 1.25rem, 100% 100%, 0 100%); }
+[data-card-edge="glow-border"] .lp-card {
+  border-color: color-mix(in oklab, var(--c-primary) 45%, transparent);
+  box-shadow: 0 0 24px color-mix(in oklab, var(--c-primary) 12%, transparent);
+}
 
 /* ---------- surfaces ------------------------------------------------------ */
 /* The material a card is made of. `glass` keeps the translucent look the
@@ -140,12 +205,23 @@
 .lp-card:hover .lp-icon { transform: scale(1.08); }
 
 .lp-icon--soft-square { border-radius: var(--radius-md); background: color-mix(in oklab, currentColor 10%, transparent); }
+.lp-icon--soft-circle { border-radius: 999px;     background: color-mix(in oklab, currentColor 10%, transparent); }
+.lp-icon--square      { border-radius: 0;         background: color-mix(in oklab, currentColor 10%, transparent); }
 .lp-icon--circle      { border-radius: 999px;     background: color-mix(in oklab, currentColor 10%, transparent); }
+.lp-icon--diamond     { border-radius: var(--radius-sm); background: color-mix(in oklab, currentColor 10%, transparent); transform: rotate(45deg); }
+.lp-icon--diamond i   { transform: rotate(-45deg); }
+.lp-icon--hexagon     { border-radius: 0; background: color-mix(in oklab, currentColor 10%, transparent); clip-path: polygon(25% 5%, 75% 5%, 100% 50%, 75% 95%, 25% 95%, 0 50%); }
+.lp-icon--squircle    { border-radius: 40%; background: color-mix(in oklab, currentColor 10%, transparent); }
+.lp-icon--ring        { border-radius: 999px; background: transparent; border: calc(var(--surface-border-w) + 1px) solid currentColor; }
 .lp-icon--outline     { border-radius: var(--radius-md); border: var(--surface-border-w) solid currentColor; }
 .lp-icon--gradient    { border-radius: var(--radius-md); background: var(--brand-gradient); color: var(--c-on-primary) !important; }
 .lp-icon--none        { inline-size: auto; block-size: auto; background: none; }
 
 /* ---------- headings ------------------------------------------------------ */
+/* Heading ink is its own token so a theme can pair coloured headings with
+   neutral body copy. Defaults to the body text colour. */
+body.landing :is(h1, h2, h3, h4) { color: var(--c-heading); }
+
 .lp-eyebrow {
   display: inline-flex;
   align-items: center;
@@ -161,9 +237,23 @@
 
 .lp-heading__rule { display: block; margin-block-start: 1rem; }
 .lp-heading__rule--short-bar  { inline-size: 3rem; block-size: 3px; border-radius: 999px; background: var(--c-primary); }
+.lp-heading__rule--thick-underline { inline-size: 4rem; block-size: 6px; border-radius: 999px; background: var(--brand-gradient); }
 .lp-heading__rule--full-line  { inline-size: 100%; block-size: 1px; background: var(--c-border); }
 .lp-heading__rule--number     { inline-size: 2.5rem; block-size: 2px; background: var(--c-secondary); }
+.lp-heading__rule--dot        { inline-size: .5rem; block-size: .5rem; border-radius: 999px; background: var(--c-primary); }
 .lp-heading__rule--eyebrow-pill { inline-size: 4rem; block-size: 0; }
+.lp-heading__rule--side-rules { inline-size: min(18rem, 60%); block-size: 0; position: relative; margin-block: 1.25rem; }
+.lp-heading__rule--side-rules::before,
+.lp-heading__rule--side-rules::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  block-size: 1px;
+  inline-size: calc(50% - 1rem);
+  background: var(--c-border);
+}
+.lp-heading__rule--side-rules::before { inset-inline-start: 0; }
+.lp-heading__rule--side-rules::after  { inset-inline-end: 0; }
 
 /* ---------- buttons -------------------------------------------------------- */
 .lp-btn {
@@ -171,6 +261,7 @@
   align-items: center;
   justify-content: center;
   gap: .5rem;
+  font-family: var(--font-button, inherit);
   border-radius: var(--radius-button);
   font-weight: var(--btn-weight, 600);
   text-transform: var(--btn-transform, none);
@@ -180,6 +271,8 @@
               color var(--animation-duration) var(--ease, ease),
               box-shadow var(--animation-duration) var(--ease, ease);
 }
+
+[data-btn-shadow="on"] .lp-btn { box-shadow: 0 10px 30px color-mix(in oklab, var(--c-primary) 30%, transparent); }
 
 .lp-btn--sm { padding: .625rem 1.25rem; font-size: .875rem; }
 .lp-btn--md { padding: .875rem 2rem; }
@@ -230,7 +323,7 @@
   color: var(--c-muted);
 }
 
-.lp-stat__value  { font-size: clamp(2.25rem, 5vw, 3.25rem); font-weight: 800; line-height: 1.1; }
+.lp-stat__value  { font-size: var(--stat-size, clamp(2.25rem, 5vw, 3.25rem)); font-weight: 800; line-height: 1.1; }
 .lp-stat__label  { font-size: 1.25rem; color: var(--c-muted); }
 
 .lp-inline-stats { display: flex; flex-wrap: wrap; justify-content: center; gap: 0; }
@@ -255,6 +348,28 @@
 }
 .lp-stats-band .lp-stat__value,
 .lp-stats-band .lp-stat__label { color: inherit; }
+
+/* ---------- bento services grid (services/bento) ----------------------------- */
+.lp-bento {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--grid-gap);
+}
+.lp-bento > :first-child { grid-column: span 2; }
+@media (min-width: 768px) {
+  .lp-bento { grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr)); }
+}
+.lp-bento__lead { display: flex; flex-direction: column; }
+@media (min-width: 768px) {
+  .lp-bento__lead { flex-direction: row; align-items: flex-start; gap: 1.5rem; }
+  .lp-bento__lead .lp-icon { margin-block-end: 0; inline-size: 4rem; block-size: 4rem; font-size: 1.75rem; flex-shrink: 0; }
+}
+
+/* ---------- masonry testimonials (testimonials/masonry) ---------------------- */
+.lp-masonry { columns: 1; column-gap: var(--grid-gap); }
+@media (min-width: 768px) { .lp-masonry { columns: 2; } }
+@media (min-width: 1024px) { .lp-masonry { columns: var(--cols, 3); } }
+.lp-masonry > * { break-inside: avoid; margin-block-end: var(--grid-gap); }
 
 /* ---------- numbered list -------------------------------------------------- */
 .lp-numbered__row {
@@ -368,6 +483,118 @@
   .lp-footer-grid__brand { grid-column: span 2; }
 }
 
+/* ---------- split hero grid ------------------------------------------------ */
+/* The column ratio is a theme lever (layout.hero_ratio -> --hero-cols) rather
+   than a hardcoded `md:grid-cols-2`, so an archetype can make the copy column
+   dominant without touching the template. */
+.lp-hero-grid { grid-template-columns: 1fr; }
+@media (min-width: 768px) {
+  .lp-hero-grid { grid-template-columns: var(--hero-cols, 1fr 1fr); }
+}
+
+/* ---------- hero text effects ---------------------------------------------- */
+[data-text-effect="gradient-shift"] .lp-hero__accent {
+  background-size: 200% 200%;
+  animation: lp-gradient-shift 6s ease-in-out infinite;
+}
+@keyframes lp-gradient-shift { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+
+[data-text-effect="glow-pulse"] .lp-hero__accent {
+  animation: lp-glow-pulse 3s ease-in-out infinite;
+}
+@keyframes lp-glow-pulse {
+  0%, 100% { filter: drop-shadow(0 0 0 transparent); }
+  50%      { filter: drop-shadow(0 0 18px color-mix(in oklab, var(--c-primary) 60%, transparent)); }
+}
+
+/* ---------- scroll progress bar (motion.scroll_progress) -------------------- */
+.lp-scroll-progress {
+  position: fixed;
+  top: 0;
+  inset-inline: 0;
+  block-size: 3px;
+  z-index: 60;
+  background: var(--brand-gradient);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  pointer-events: none;
+}
+[dir="rtl"] .lp-scroll-progress { transform-origin: 100% 50%; }
+
+/* ---------- featured quote (single-featured testimonials) ------------------- */
+/* The template emitted these classes long before any CSS existed for them;
+   quote_mark now decides what the opening glyph looks like. */
+.lp-featured {
+  position: relative;
+  max-width: 52rem;
+  margin-inline: auto;
+  padding: var(--card-padding);
+  text-align: center;
+}
+.lp-featured__text  { font-size: clamp(1.25rem, 2.5vw, 1.75rem); line-height: 1.6; font-weight: 500; }
+.lp-featured__meta  { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-block-start: 1.5rem; }
+.lp-featured__mark  { display: block; line-height: 1; margin-block-end: .5rem; }
+.lp-featured__mark[data-quote="serif"]::before     { content: "\201C"; font-family: Georgia, 'Times New Roman', serif; font-size: 4rem; color: var(--c-primary); }
+.lp-featured__mark[data-quote="brand"]::before     { content: "\201C"; font-size: 4rem; font-weight: 800; color: var(--c-secondary); }
+.lp-featured__mark[data-quote="oversized"]::before { content: "\201D"; font-size: 9rem; line-height: .6; opacity: .12; color: var(--c-text); }
+
+/* ---------- accent shapes (section ornaments) ------------------------------- */
+[data-accent-shapes="plus"] .lp-section::after {
+  content: "+";
+  position: absolute;
+  top: 2rem;
+  inset-inline-end: 3rem;
+  font-size: 1.5rem;
+  font-weight: 300;
+  color: color-mix(in oklab, var(--c-primary) 40%, transparent);
+  pointer-events: none;
+}
+[data-accent-shapes="dots"] .lp-section::after {
+  content: "";
+  position: absolute;
+  top: 2.5rem;
+  inset-inline-end: 3rem;
+  inline-size: 3rem;
+  block-size: 3rem;
+  background-image: radial-gradient(var(--c-primary) 1.5px, transparent 1.5px);
+  background-size: .75rem .75rem;
+  opacity: .35;
+  pointer-events: none;
+}
+[data-accent-shapes="grid"] .lp-section::after {
+  content: "";
+  position: absolute;
+  top: 2rem;
+  inset-inline-start: 2rem;
+  inline-size: 4rem;
+  block-size: 4rem;
+  background-image:
+    linear-gradient(var(--c-border-strong) 1px, transparent 1px),
+    linear-gradient(90deg, var(--c-border-strong) 1px, transparent 1px);
+  background-size: 1rem 1rem;
+  opacity: .5;
+  pointer-events: none;
+}
+[data-accent-shapes="corner-brackets"] .lp-section::before {
+  content: "";
+  position: absolute;
+  top: 1.5rem;
+  inset-inline-start: 1.5rem;
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  border-block-start: 2px solid var(--c-primary);
+  border-inline-start: 2px solid var(--c-primary);
+  pointer-events: none;
+}
+
+/* ---------- footer variants -------------------------------------------------- */
+/* The link columns are wrapped so `centered` can pull them out of the grid;
+   `display: contents` keeps the classic layout pixel-identical. */
+.lp-footer-grid__cols { display: contents; }
+.lp-footer--centered .lp-footer-grid { text-align: center; }
+.lp-footer--centered .lp-footer-grid__brand { grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; }
+.lp-footer--centered .lp-footer-grid__cols { display: flex; flex-wrap: wrap; justify-content: center; gap: 3rem 5rem; grid-column: 1 / -1; }
+
 /* ---------- logo bar -------------------------------------------------------- */
 .lp-logo-mark, .lp-logo-text { opacity: .55; transition: opacity var(--animation-duration); }
 .lp-logo-mark:hover, .lp-logo-text:hover { opacity: 1; }
@@ -383,8 +610,22 @@
 [data-reveal="fade-left"] .reveal  { transform: translateX(calc(var(--reveal-offset) * -1)); }
 [data-reveal="fade-right"] .reveal { transform: translateX(var(--reveal-offset)); }
 [data-reveal="zoom"] .reveal       { transform: scale(.94); }
+[data-reveal="rise"] .reveal       { transform: translateY(var(--reveal-offset)) scale(.97); }
+[data-reveal="drop"] .reveal       { transform: translateY(calc(var(--reveal-offset) * -1)) scale(.97); }
+[data-reveal="flip"] .reveal       { transform: perspective(700px) rotateX(18deg); transform-origin: top center; }
+[data-reveal="skew-in"] .reveal    { transform: skewY(3deg) translateY(var(--reveal-offset)); }
 [data-reveal="blur-in"] .reveal    { transform: none; filter: blur(10px); }
 [data-reveal="blur-in"] .reveal.is-visible { filter: blur(0); transition: opacity var(--reveal-duration) var(--ease, ease), filter var(--reveal-duration) var(--ease, ease); }
+
+[data-reveal="wipe"] .reveal {
+  opacity: 1;
+  transform: none;
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path var(--reveal-duration) var(--ease, ease);
+}
+[data-reveal="wipe"] .reveal.is-visible { clip-path: inset(0 0 0 0); }
+/* Both attributes live on <html>, so this is a compound selector, not a descendant one. */
+[dir="rtl"][data-reveal="wipe"] .reveal { clip-path: inset(0 0 0 100%); }
 
 [data-reveal="line-mask"] .reveal {
   opacity: 1;
@@ -397,6 +638,9 @@
 /* Stagger mode: `none` removes the per-item transition-delay the templates
    write inline, without touching the templates. */
 [data-stagger="none"] .reveal { transition-delay: 0ms !important; }
+
+/* Marquee: pause the ticker under the cursor so a visitor can actually read it. */
+[data-marquee-pause="on"] .lp-marquee:hover .lp-marquee__track { animation-play-state: paused; }
 
 /* ---------- accessibility --------------------------------------------------- */
 
@@ -421,10 +665,12 @@ body.landing :focus-visible {
   [data-reduce-motion="respect"] .animate-float,
   [data-reduce-motion="respect"] .animate-float-delayed,
   [data-reduce-motion="respect"] .animate-float-fast,
+  [data-reduce-motion="respect"] .lp-hero__accent,
   [data-reduce-motion="respect"] .lp-marquee__track { animation: none; }
 }
 
 [data-reduce-motion="force-off"] .reveal { opacity: 1; transform: none; filter: none; clip-path: none; transition: none; }
+[data-reduce-motion="force-off"] .lp-hero__accent { animation: none; }
 [data-reduce-motion="force-off"] .animate-float,
 [data-reduce-motion="force-off"] .animate-float-delayed,
 [data-reduce-motion="force-off"] .animate-float-fast,

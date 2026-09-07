@@ -1,6 +1,6 @@
-// Exams workspace: Persian dates via the browser's ICU, grid/list switch,
-// report-card popup, create-exam dialog. The filter popover's outside-click
-// close is already handled in app.js via the shared #filter-toggle checkbox.
+// Exams workspace: Persian dates via the browser's ICU, grid/list switch and
+// the create-exam dialog. The filter popover's outside-click close is already
+// handled in app.js via the shared #filter-toggle checkbox.
 
 export default function init() {
     const app = document.getElementById('exams-app');
@@ -139,26 +139,6 @@ export default function init() {
 
     document.getElementById('open-create-exam')?.addEventListener('click', () => open('create-exam-modal'));
     app.querySelector('.exam-modal-cancel')?.addEventListener('click', () => close('create-exam-modal'));
-
-    const reportButton = document.getElementById('open-report-modal');
-    const reportModal = document.getElementById('report-modal');
-
-    if (reportButton && reportModal) {
-        const frame = reportModal.querySelector('iframe');
-
-        reportButton.addEventListener('click', () => {
-            // Lazy-load so the report page isn't fetched on every visit.
-            if (frame && !frame.src) frame.src = frame.dataset.src;
-            reportModal.showModal();
-        });
-
-        reportModal.querySelector('.report-modal-close')?.addEventListener('click', () => reportModal.close());
-
-        // Click on the blurred backdrop (the dialog element itself) closes it.
-        reportModal.addEventListener('click', (event) => {
-            if (event.target === reportModal) reportModal.close();
-        });
-    }
 
     // Server-side validation failed → reopen the dialog with the old input.
     if (document.getElementById('exam-form-errors')?.dataset.hasErrors === '1') {
