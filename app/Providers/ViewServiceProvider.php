@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Models\BlogPost;
 use App\Models\WebsiteConfig;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -47,13 +48,34 @@ class ViewServiceProvider extends ServiceProvider
         //
         // `auth.student-login` is no longer a view — login.blade.php now hosts
         // both role tabs — so it has been dropped from this list.
-        View::composer(['public.landing', 'auth.login'], function ($view) {
+        View::composer(['public.landing', 'auth.login', 'public.blog.index', 'public.blog.show'], function ($view) {
             $c = site();
+
+            $public = $c['public'] ?? [];
+
+            // Blog section: when the tenant switched the section to their
+            // real posts (blog settings tab), replace the config placeholder
+            // items with the latest published ones, shaped identically so
+            // every variant template renders either source unchanged.
+            if ($view->getName() === 'public.landing'
+                && ($public['landing']['blog']['source'] ?? 'config') === 'database') {
+                $public['landing']['blog']['items'] = BlogPost::published()
+                    ->orderByDesc('published_at')
+                    ->orderByDesc('id')
+                    ->take(max(1, (int) ($public['landing']['blog']['count'] ?? 3)))
+                    ->get()
+                    ->map->toLandingItem()
+                    ->all();
+
+                if (($public['landing']['blog']['see_all']['href'] ?? '#') === '#') {
+                    $public['landing']['blog']['see_all']['href'] = route('blog.index');
+                }
+            }
 
             $view->with([
                 'tenant' => $c['tenant'],
                 'theme'  => $c['theme'],
-                'public' => $c['public'] ?? [],
+                'public' => $public,
                 'labels' => $c['labels'],
             ]);
         });

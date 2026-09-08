@@ -19,7 +19,10 @@
     <div class="page-glow page-glow-secondary"></div>
 
     <div class="min-h-screen relative z-10">
-        @include('components.student.topnav')
+        {{-- Same tenant-chosen shell nav as the consultant portal:
+             theme.layout.shell_nav (topnav | sidebar). --}}
+        @php $shellNav = site('theme.layout.shell_nav') === 'sidebar' ? 'sidebar' : 'topnav'; @endphp
+        @include('components.student.'.$shellNav)
 
         <div class="consultant-content">
             <main class="content-container" id="app-content">

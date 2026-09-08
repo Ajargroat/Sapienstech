@@ -4,11 +4,11 @@
 <div class="panel-heading">
     <div class="panel-heading-title">
         <h2>{{ $labels['student_list'] }}</h2>
-        <span class="count-badge">{{ persian_digits($students->total()) }} نفر</span>
+        <span class="count-badge" data-router-region="results">{{ persian_digits($students->total()) }} نفر</span>
     </div>
 
     <div class="panel-heading-actions">
-        <div class="search-reveal @if($search !== '') is-open @endif">
+        <div class="search-reveal @if($search !== '') is-open @endif" data-router-region="results">
             <form method="GET" action="{{ route('consultant.dashboard') }}" class="search-reveal-form">
                 <button type="submit" class="search-reveal-toggle" aria-label="{{ $labels['search_button'] }}">
                     <i class="fas fa-search"></i>
@@ -40,9 +40,9 @@
                 <span class="filter-toggle-label">{{ $labels['filter_button'] }}</span>
             </label>
 
-            @if($activeFilterCount > 0)
-                <span class="filter-count">{{ persian_digits($activeFilterCount) }}</span>
-            @endif
+            {{-- Always rendered (hidden when empty) so the router's region
+                 pairing stays stable across partial swaps. --}}
+            <span class="filter-count" data-router-region="results" @if($activeFilterCount === 0) hidden @endif>{{ persian_digits($activeFilterCount) }}</span>
 
             <div class="filter-popover">
                 <form method="GET" action="{{ route('consultant.dashboard') }}">
@@ -142,32 +142,31 @@
             </div>
         </div>
 
-        @if($students->hasPages())
-            <div class="pager">
-                <a
-                    href="{{ $students->previousPageUrl() ?? '#' }}"
-                    class="pager-btn pager-prev @if($students->onFirstPage()) is-disabled @endif"
-                    @if($students->onFirstPage()) aria-disabled="true" tabindex="-1" @endif
-                    aria-label="صفحه قبل"
-                >
-                    <i class="fas fa-chevron-right"></i>
-                </a>
-                <span class="pager-info">
-                    {{ persian_digits($students->currentPage()) }} / {{ persian_digits($students->lastPage()) }}
-                </span>
-                <a
-                    href="{{ $students->nextPageUrl() ?? '#' }}"
-                    class="pager-btn pager-next @unless($students->hasMorePages()) is-disabled @endunless"
-                    @unless($students->hasMorePages()) aria-disabled="true" tabindex="-1" @endunless
-                    aria-label="صفحه بعد"
-                >
-                    <i class="fas fa-chevron-left"></i>
-                </a>
-            </div>
-        @endif
+        <div class="pager" data-router-region="results" @if(!$students->hasPages()) hidden @endif>
+            <a
+                href="{{ $students->previousPageUrl() ?? '#' }}"
+                class="pager-btn pager-prev @if($students->onFirstPage()) is-disabled @endif"
+                @if($students->onFirstPage()) aria-disabled="true" tabindex="-1" @endif
+                aria-label="صفحه قبل"
+            >
+                <i class="fas fa-chevron-right"></i>
+            </a>
+            <span class="pager-info">
+                {{ persian_digits($students->currentPage()) }} / {{ persian_digits($students->lastPage()) }}
+            </span>
+            <a
+                href="{{ $students->nextPageUrl() ?? '#' }}"
+                class="pager-btn pager-next @unless($students->hasMorePages()) is-disabled @endunless"
+                @unless($students->hasMorePages()) aria-disabled="true" tabindex="-1" @endunless
+                aria-label="صفحه بعد"
+            >
+                <i class="fas fa-chevron-left"></i>
+            </a>
+        </div>
     </div>
 </div>
 
+<div data-router-region="results">
     @if($students->count() > 0)
         <div class="student-grid" data-stagger>
             @foreach($students as $student)
@@ -209,4 +208,5 @@
             @endif
         </div>
     @endif
+</div>
 @endsection

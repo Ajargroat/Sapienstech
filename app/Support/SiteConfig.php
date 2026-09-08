@@ -34,6 +34,16 @@ class SiteConfig
     /** Top-most layer: runtime edits that beat every file and the DB. */
     protected array $runtime = [];
 
+    /**
+     * Per-user personalization layer, applied above $runtime.
+     *
+     * Kept separate from $runtime so the "just for me" theme can be replaced
+     * wholesale on every request (ApplyPersonalTheme always writes it, empty
+     * when the user has none) without clobbering the test/live-preview
+     * overrides that share $runtime.
+     */
+    protected array $personal = [];
+
     /** @var array<string, array> config path + relative => file contents */
     protected static array $files = [];
 
@@ -78,6 +88,21 @@ class SiteConfig
         return $this;
     }
 
+    /**
+     * Replace (not merge) the per-user personalization layer.
+     *
+     * Called on every authenticated request by ApplyPersonalTheme, passing []
+     * when the user has no personal theme, so one user's layer can never leak
+     * into the next request even when the app instance is reused.
+     */
+    public function personalize(array $layer): static
+    {
+        $this->personal = $layer;
+        $this->resolved = [];
+
+        return $this;
+    }
+
     /** Drop memoized trees so the next read re-resolves. */
     public function flush(): void
     {
@@ -94,7 +119,10 @@ class SiteConfig
         $config = (array) config('theme', []);
 
         if (! $tenant) {
-            return $this->finalize(Merge::structural($config, $this->runtime));
+            return $this->finalize(Merge::structural(
+                Merge::structural($config, $this->runtime),
+                $this->personal
+            ));
         }
 
         $tenantFile = $this->load("tenants/{$tenant->slug}");
@@ -118,6 +146,10 @@ class SiteConfig
 
         if ($this->runtime !== []) {
             $config = Merge::structural($config, $this->runtime);
+        }
+
+        if ($this->personal !== []) {
+            $config = Merge::structural($config, $this->personal);
         }
 
         Arr::set($config, 'theme.archetype', $archetype);
@@ -155,9 +187,20 @@ class SiteConfig
             return [];
         }
 
-        $key = "site:db:{$tenant->id}:".(optional($row->updated_at)->timestamp ?? 0);
+        $key = self::dbLayerCacheKey($tenant->id, optional($row->updated_at)->getTimestamp());
 
         return cache()->rememberForever($key, static fn (): array => $row->toOverrideLayer());
+    }
+
+    /**
+     * Cache key for a tenant's DB override layer. ConfigWriter forgets the
+     * pre-save key after publishing: `updated_at` has second granularity, so
+     * two saves within the same second would otherwise share one key and the
+     * second would read the first's stale layer.
+     */
+    public static function dbLayerCacheKey(int $tenantId, ?int $timestamp): string
+    {
+        return "site:db:{$tenantId}:".($timestamp ?? 0);
     }
 
     /**

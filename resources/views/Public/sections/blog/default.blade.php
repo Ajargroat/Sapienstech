@@ -30,7 +30,12 @@
                             <div class="absolute inset-0 group-hover:scale-105 transition-transform duration-500"
                                  style="background:linear-gradient(135deg, color-mix(in srgb, var(--c-{{ $post['from'] ?? 'primary' }}) 10%, transparent), color-mix(in srgb, var(--c-{{ $post['to'] ?? 'secondary' }}) 10%, transparent))"></div>
                             <div class="absolute inset-0 flex items-center justify-center">
-                                <img src="{{ tenant_asset($post['image']) }}" alt="{{ $post['title'] }}" class="max-w-full max-h-full object-cover" loading="lazy">
+                                @if (!empty($post['image']))
+                                    <img src="{{ tenant_asset($post['image']) }}" alt="{{ $post['title'] }}" class="max-w-full max-h-full object-cover" loading="lazy">
+                                @else
+                                    {{-- Posts without a picture keep the gradient plate; the glyph marks it as intentional, not a broken image. --}}
+                                    <i class="fa-solid fa-feather-pointed" style="font-size:2rem;color:var(--c-subtle)" aria-hidden="true"></i>
+                                @endif
                             </div>
                         </div>
                         <h3 class="text-xl font-bold mb-3">{{ $post['title'] }}</h3>

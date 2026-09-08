@@ -28,7 +28,7 @@
 
         {{-- Copy --}}
         <div class="flex flex-col gap-6 {{ $reveal ? 'reveal fade-left' : '' }}" style="{{ $textFirst ? 'order:1' : '' }}">
-            <h2 style="font-size:var(--h2-size);font-weight:var(--heading-weight);letter-spacing:var(--heading-letter-spacing);text-transform:var(--heading-transform)">{{ $eco['heading'] }}</h2>
+            <h2 style="font-size:var(--h2-size);font-weight:var(--heading-weight);line-height:var(--heading-line-height);letter-spacing:var(--heading-letter-spacing);text-transform:var(--heading-transform)">{{ $eco['heading'] }}</h2>
             <p class="text-lg leading-relaxed" style="color:var(--c-muted);max-width:var(--measure)">{{ $eco['text'] }}</p>
             <ul class="flex flex-col gap-4 mt-4 list-none p-0 m-0">
                 @foreach ($eco['items'] ?? [] as $item)

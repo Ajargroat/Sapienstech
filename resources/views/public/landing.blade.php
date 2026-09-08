@@ -24,6 +24,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $tenant['name'] }} | {{ $L['meta']['title'] ?? $tenant['short_name'] }}</title>
     <meta name="description" content="{{ $L['meta']['description'] ?? '' }}">
+    <meta property="og:title" content="{{ $tenant['name'] }} | {{ $L['meta']['title'] ?? $tenant['short_name'] }}">
+    <meta property="og:description" content="{{ $L['meta']['description'] ?? '' }}">
+    @if (!empty($L['meta']['og_image']))
+        <meta property="og:image" content="{{ tenant_asset($L['meta']['og_image']) }}">
+        <meta name="twitter:image" content="{{ tenant_asset($L['meta']['og_image']) }}">
+    @endif
 
     @if (!empty($theme['brand']['src']))
         <link rel="icon" href="{{ tenant_asset($theme['brand']['src']) }}">
@@ -40,6 +46,8 @@
     @include('partials.theme-vars')
 </head>
 <body class="landing">
+
+    @include('partials.preview-banner')
 
     {{-- Page ground. Replaces the per-section blobs the partials used to
          hand-place; `background.mode` decides what renders here. --}}

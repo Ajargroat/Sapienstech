@@ -16,9 +16,6 @@
 
     <header class="runner-bar">
         <div class="runner-bar-info">
-            <a href="{{ route('consultant.student.exams', $student) }}" class="runner-exit" aria-label="خروج">
-                <i class="fas fa-arrow-right"></i>
-            </a>
             <div>
                 <h2>{{ $test->test_title }}</h2>
                 <p>{{ $test->lesson }} · {{ persian_digits($questions->count()) }} سوال · نمره از {{ persian_digits($test->total_marks) }}</p>

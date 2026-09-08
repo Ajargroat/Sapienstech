@@ -338,6 +338,10 @@ class StudentExamController extends Controller
         $score = $assignment->latestAttempt?->score_raw;
         $scheduled = $assignment->scheduled_at;
 
+        $percent = ($score !== null && (float) $test->total_marks > 0)
+            ? (int) round((float) $score / (float) $test->total_marks * 100)
+            : null;
+
         return [
             'can_run' => (int) ($test->questions_count ?: 0) > 0,
             'id' => $assignment->id,
@@ -347,6 +351,7 @@ class StudentExamController extends Controller
             'description' => $test->description ?: 'بدون توضیح مشاور',
             'questions' => (int) ($test->questions_count ?: $test->question_count),
             'duration' => (int) $test->time_limit_minutes,
+            'percent' => $percent,
             // The browser renders $date_iso as a Jalali date; $date_text is the
             // Gregorian fallback shown before/if JavaScript does not run.
             'date_iso' => $scheduled ? $scheduled->format('Y-m-d\TH:i') . 'Z' : '',

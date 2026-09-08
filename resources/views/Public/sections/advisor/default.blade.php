@@ -53,7 +53,7 @@
                 @endif
 
                 <div>
-                    <h2 style="font-size:var(--h2-size);font-weight:var(--heading-weight);letter-spacing:var(--heading-letter-spacing);text-transform:var(--heading-transform)">{{ $a['name'] }}</h2>
+                    <h2 style="font-size:var(--h2-size);font-weight:var(--heading-weight);line-height:var(--heading-line-height);letter-spacing:var(--heading-letter-spacing);text-transform:var(--heading-transform)">{{ $a['name'] }}</h2>
                     <p class="text-lg font-medium" style="color:{{ $tagColor }}">{{ $a['tagline'] }}</p>
                 </div>
 
@@ -78,6 +78,7 @@
                                 'label' => $b['label'],
                                 'href'  => $b['href'] ?? '#',
                                 'tone'  => $b['style'] ?? null,
+                                'icon'  => $b['icon'] ?? null,
                                 'block' => true,
                             ])
                         @endif

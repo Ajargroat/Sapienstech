@@ -56,6 +56,14 @@ final class ThemeTokens
         'colors.accent_orange'        => 'c-accent-orange',
         'colors.accent_teal'          => 'c-accent-teal',
         'colors.accent_red'           => 'c-accent-red',
+        'colors.accent_violet'        => 'c-accent-violet',
+        'colors.accent_pink'          => 'c-accent-pink',
+        'colors.accent_lime'          => 'c-accent-lime',
+        'colors.accent_cyan'          => 'c-accent-cyan',
+        'colors.accent_amber'         => 'c-accent-amber',
+        'colors.accent_rose'          => 'c-accent-rose',
+        'colors.heading'              => 'c-heading',
+        'colors.link'                 => 'c-link',
         'colors.glass'                => 'c-glass',
         'colors.glass_hover'          => 'c-glass-hover',
         'colors.glass_border'         => 'c-glass-border',
@@ -69,17 +77,21 @@ final class ThemeTokens
         'typography.font_heading'           => 'font-heading',
         'typography.font_accent'            => 'font-accent',
         'typography.font_mono'              => 'font-mono',
+        'typography.font_button'            => 'font-button',
         'typography.body_size'              => 'body-size',
         'typography.body_weight'            => 'body-weight',
         'typography.heading_weight'         => 'heading-weight',
         'typography.heading_transform'      => 'heading-transform',
         'typography.heading_letter_spacing' => 'heading-letter-spacing',
+        'typography.heading_line_height'    => 'heading-line-height',
+        'typography.heading_balance'        => 'heading-balance',
         'typography.letter_spacing'         => 'letter-spacing',
         'typography.line_height'            => 'line-height',
         'typography.measure'                => 'measure',
         'typography.h1_size'                => 'h1-size',
         'typography.h2_size'                => 'h2-size',
         'typography.h3_size'                => 'h3-size',
+        'typography.stat_size'              => 'stat-size',
         'typography.hero_line_height'       => 'hero-line-height',
 
         // ---- shape --------------------------------------------------------
@@ -103,6 +115,7 @@ final class ThemeTokens
         'layout.sidebar_offset'    => 'sidebar-offset',
         'layout.card_gap'          => 'card-gap',
         'layout.topnav_height'     => 'topnav-height',
+        'layout.hero_cols'         => 'hero-cols',
 
         // ---- spacing (density-scaled, see spacing()) ----------------------
         'spacing.section_gap'       => 'section-gap',
@@ -148,8 +161,9 @@ final class ThemeTokens
         'motion.marquee_speed' => 'marquee-duration',
 
         // ---- buttons --------------------------------------------------------
-        'buttons.weight'    => 'btn-weight',
-        'buttons.transform' => 'btn-transform',
+        'buttons.weight'         => 'btn-weight',
+        'buttons.transform'      => 'btn-transform',
+        'buttons.letter_spacing' => 'btn-letter-spacing',
 
         // ---- background -----------------------------------------------------
         'background.grid_size'      => 'grid-size',
@@ -194,6 +208,20 @@ final class ThemeTokens
     ];
 
     /**
+     * hero_ratio name => grid-template-columns for the split hero.
+     *
+     * The text column is first; RTL mirroring is handled by the writing mode,
+     * so these stay plain fractions.
+     */
+    private const HERO_RATIOS = [
+        '50-50' => '1fr 1fr',
+        '60-40' => '1.5fr 1fr',
+        '40-60' => '1fr 1.5fr',
+        '70-30' => '2.33fr 1fr',
+        '30-70' => '1fr 2.33fr',
+    ];
+
+    /**
      * @param  array  $t  the raw `theme` block
      * @return array  the same tree with every token resolved, plus `vars`
      */
@@ -203,6 +231,7 @@ final class ThemeTokens
         self::colors($t);
         self::typography($t);
         self::scaleAndSpacing($t);
+        self::layout($t);
         self::shape($t);
         self::effects($t);
         self::surface($t);
@@ -238,6 +267,38 @@ final class ThemeTokens
         }
 
         return $vars;
+    }
+
+    /**
+     * Per-scheme colour overrides, resolved against the tenant's *current*
+     * palette rather than on their own: a light scheme only names backgrounds
+     * and text, but border/glass/muted must be recomputed from the new ink so
+     * they stay visible on a light surface.
+     *
+     * Filtered to colour tokens — resolve() also fills typography, spacing and
+     * shape with platform defaults, and emitting those would override the
+     * tenant's own values whenever a scheme is active.
+     *
+     * Shared by partials/theme-vars.blade.php and the studio's live-preview
+     * endpoint so the two can never drift.
+     *
+     * @return array<string, array<string, string>> scheme => var name => value
+     */
+    public static function schemeVars(array $t): array
+    {
+        $out = [];
+
+        foreach (($t['schemes'] ?? []) as $scheme => $overrides) {
+            $out[$scheme] = array_filter(
+                self::resolve([
+                    'colors' => array_replace($t['colors'] ?? [], is_array($overrides) ? $overrides : []),
+                ])['vars'],
+                static fn (string $name): bool => str_starts_with($name, 'c-'),
+                ARRAY_FILTER_USE_KEY
+            );
+        }
+
+        return $out;
     }
 
     /**
@@ -277,6 +338,8 @@ final class ThemeTokens
         $alt = $c['surface_alt'] ?? '#1A1A1A';
 
         $derived = [
+            'heading'              => $ink,
+            'link'                 => $p,
             'primary_hover'        => "color-mix(in oklab, {$p} 85%, black)",
             'secondary_hover'      => "color-mix(in oklab, {$s} 85%, black)",
             'primary_soft'         => "color-mix(in oklab, {$p} 12%, transparent)",
@@ -296,6 +359,28 @@ final class ThemeTokens
         ];
 
         foreach ($derived as $key => $value) {
+            if (($c[$key] ?? null) === null) {
+                $c[$key] = $value;
+            }
+        }
+
+        // The accent palette is content-addressable (items[].accent resolves to
+        // var(--c-accent-*)), so a theme that omits an accent must still be
+        // able to name it. Defaults live here, not only in the baseline file,
+        // for the same reason the primitives' defaults do.
+        foreach ([
+            'accent_blue'    => '#60A5FA',
+            'accent_emerald' => '#34D399',
+            'accent_orange'  => '#FB923C',
+            'accent_teal'    => '#2DD4BF',
+            'accent_red'     => '#F87171',
+            'accent_violet'  => '#A78BFA',
+            'accent_pink'    => '#F472B6',
+            'accent_lime'    => '#A3E635',
+            'accent_cyan'    => '#22D3EE',
+            'accent_amber'   => '#F59E0B',
+            'accent_rose'    => '#FB7185',
+        ] as $key => $value) {
             if (($c[$key] ?? null) === null) {
                 $c[$key] = $value;
             }
@@ -321,7 +406,7 @@ final class ThemeTokens
 
         // A theme naming one font gets it everywhere; naming a heading face gets
         // it on headings without having to restate the body font.
-        foreach (['font_heading' => $body, 'font_accent' => $body] as $key => $fallback) {
+        foreach (['font_heading' => $body, 'font_accent' => $body, 'font_button' => $body] as $key => $fallback) {
             if (($f[$key] ?? null) === null) {
                 $f[$key] = $fallback;
             }
@@ -335,12 +420,17 @@ final class ThemeTokens
             'heading_weight'           => '800',
             'heading_transform'        => 'none',
             'heading_letter_spacing'   => '-.02em',
+            // 'inherit' keeps the historic behaviour (headings rode the body
+            // line-height); a theme that wants tighter headings names a number.
+            'heading_line_height'      => 'inherit',
+            'heading_balance'          => 'auto',
             'letter_spacing'           => '0',
             'line_height'              => '1.8',
             'measure'                  => '46rem',
             'h1_size'                  => 'clamp(2.75rem, 6vw, 4.5rem)',
             'h2_size'                  => 'clamp(1.875rem, 4vw, 3rem)',
             'h3_size'                  => '1.25rem',
+            'stat_size'                => 'clamp(2.25rem, 5vw, 3.25rem)',
             'hero_line_height'         => '1.2',
         ]);
 
@@ -371,6 +461,23 @@ final class ThemeTokens
 
         $t['scale']   = $sc;
         $t['spacing'] = $sp;
+    }
+
+    /**
+     * `hero_ratio` is the human name; `hero_cols` is the grid value the hero
+     * template consumes. Deriving it here means an archetype can say "60-40"
+     * instead of restating fractions.
+     */
+    private static function layout(array &$t): void
+    {
+        $l = $t['layout'] ?? [];
+
+        $ratio = $l['hero_ratio'] ?? '50-50';
+
+        $l['hero_ratio'] = $ratio;
+        $l['hero_cols']  = self::HERO_RATIOS[$ratio] ?? self::HERO_RATIOS['50-50'];
+
+        $t['layout'] = $l;
     }
 
     /** Multiplies a `1.5rem`-style length, keeping its unit. */
@@ -524,6 +631,9 @@ final class ThemeTokens
             'magnetic'       => false,
             'marquee_speed'  => '38s',
             'hover'          => 'lift',
+            'text_effect'    => 'none',
+            'scroll_progress'=> false,
+            'marquee_pause'  => false,
         ]);
 
         $scale = max(0.0, (float) $m['duration_scale']);
@@ -589,18 +699,21 @@ final class ThemeTokens
             'accent_shapes'   => 'none',
             'quote_mark'      => 'none',
             'icon_backdrop'   => 'soft-square',
+            'card_edge'       => 'none',
         ]);
     }
 
     private static function buttons(array &$t): void
     {
         $t['buttons'] = self::fill($t['buttons'] ?? [], [
-            'variant'   => 'solid',
-            'size'      => 'md',
-            'weight'    => '600',
-            'transform' => 'none',
-            'icon'      => 'none',
-            'hover'     => 'lift',
+            'variant'        => 'solid',
+            'size'           => 'md',
+            'weight'         => '600',
+            'transform'      => 'none',
+            'letter_spacing' => '0',
+            'icon'           => 'none',
+            'hover'          => 'lift',
+            'shadow'         => false,
         ]);
     }
 

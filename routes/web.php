@@ -4,12 +4,21 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\StudentLoginController;
 use App\Http\Controllers\Consultant\ConsultantDashboardController;
 use App\Http\Controllers\Consultant\ConsultantFeatureController;
+use App\Http\Controllers\Consultant\Bulk\BulkExamController;
+use App\Http\Controllers\Consultant\Bulk\BulkHistoryController;
+use App\Http\Controllers\Consultant\Bulk\BulkScheduleController;
+use App\Http\Controllers\Consultant\Settings\AppearanceController;
+use App\Http\Controllers\Consultant\Settings\BlogController as ConsultantBlogController;
+use App\Http\Controllers\Consultant\Settings\ProfileController as ConsultantProfileController;
 use App\Http\Controllers\Consultant\StudentExamController;
 use App\Http\Controllers\Consultant\StudentFeatureController;
 use App\Http\Controllers\Consultant\StudentReportCardController;
 use App\Http\Controllers\Consultant\StudentScheduleController;
+use App\Http\Controllers\Public\BlogController as PublicBlogController;
 use App\Http\Controllers\Public\PageController;
+use App\Http\Controllers\Student\Settings\ProfileController as StudentProfileController;
 use App\Http\Controllers\Student\StudentDashboardController;
+use App\Support\SettingsTabs;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -20,6 +29,14 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [PageController::class, 'home'])->name('home');
 Route::get('/about', [PageController::class, 'about'])->name('about');
 Route::get('/contact', [PageController::class, 'contact'])->name('contact');
+
+/*
+|--------------------------------------------------------------------------
+| Public blog — tenant-published posts, themed like the landing page.
+|--------------------------------------------------------------------------
+*/
+Route::get('/blog', [PublicBlogController::class, 'index'])->name('blog.index');
+Route::get('/blog/{slug}', [PublicBlogController::class, 'show'])->name('blog.show');
 
 /*
 |--------------------------------------------------------------------------
@@ -57,6 +74,79 @@ Route::middleware('auth')->prefix('consultant')->name('consultant.')->group(func
         ->defaults('feature', 'direct-chat')
         ->middleware('consultant.feature:direct_chat')
         ->name('direct-chat');
+
+    /*
+    | Blog management — the settings-hub Blog tab. Gated by the same
+    | blog_management flag as the legacy placeholder route above.
+    */
+    Route::prefix('settings/blog')->name('settings.blog.')->middleware('consultant.feature:blog_management')->group(function () {
+        Route::get('/', [ConsultantBlogController::class, 'index'])->name('index');
+        Route::get('/create', [ConsultantBlogController::class, 'create'])->name('create');
+        Route::post('/', [ConsultantBlogController::class, 'store'])->name('store');
+        Route::put('/landing', [ConsultantBlogController::class, 'setLandingSource'])->name('landing');
+        Route::get('/{post}/edit', [ConsultantBlogController::class, 'edit'])->name('edit');
+        Route::patch('/{post}', [ConsultantBlogController::class, 'update'])->name('update');
+        Route::delete('/{post}', [ConsultantBlogController::class, 'destroy'])->name('destroy');
+    });
+
+    /*
+    | Settings hub — reached from the topnav user dropdown. Each tab is its
+    | own route so feature gating and shareable URLs stay independent.
+    */
+    Route::prefix('settings')->name('settings.')->group(function () {
+        Route::redirect('/', '/consultant/settings/profile');
+
+        Route::get('profile', [ConsultantProfileController::class, 'index'])
+            ->middleware('consultant.feature:settings_profile')
+            ->name('profile');
+        Route::patch('profile', [ConsultantProfileController::class, 'update'])
+            ->middleware('consultant.feature:settings_profile')
+            ->name('profile.update');
+        Route::put('profile/password', [ConsultantProfileController::class, 'updatePassword'])
+            ->middleware('consultant.feature:settings_profile')
+            ->name('profile.password');
+        Route::put('profile/avatar', [ConsultantProfileController::class, 'updateAvatar'])
+            ->middleware('consultant.feature:settings_profile')
+            ->name('profile.avatar');
+        Route::delete('profile/avatar', [ConsultantProfileController::class, 'deleteAvatar'])
+            ->middleware('consultant.feature:settings_profile')
+            ->name('profile.avatar.delete');
+
+        Route::get('chat', fn () => view('consultant.settings.chat', [
+            'tabs' => SettingsTabs::visible('consultant'),
+            'activeTab' => 'chat',
+        ]))
+            ->middleware('consultant.feature:settings_chat')
+            ->name('chat');
+
+        /*
+        | Appearance studio — schema-driven editor over the tenant's runtime
+        | config layer (see config/studio.php). "For everyone" is gated to the
+        | tenant admin inside the controller; the flag only hides the tab.
+        */
+        Route::prefix('appearance')->middleware('consultant.feature:theme_studio')->group(function () {
+            Route::get('/', [AppearanceController::class, 'index'])->name('appearance');
+            Route::post('/', [AppearanceController::class, 'save'])->name('appearance.save');
+            Route::post('reset', [AppearanceController::class, 'resetKey'])->name('appearance.reset');
+            Route::post('reset-all', [AppearanceController::class, 'resetAll'])->name('appearance.reset.all');
+            Route::post('preview/exit', [AppearanceController::class, 'exitPreview'])->name('appearance.preview.exit');
+            Route::post('live', [AppearanceController::class, 'live'])->name('appearance.live');
+        });
+    });
+
+    /*
+    | Bulk Actions ("اقدامات گروهی") — assign an exam or a weekly schedule
+    | block to many students at once, by checkbox selection or by re-applying
+    | a filter set server-side, with a revertable history.
+    */
+    Route::prefix('bulk')->name('bulk.')->middleware('consultant.feature:bulk_actions')->group(function () {
+        Route::get('exams', [BulkExamController::class, 'create'])->name('exams');
+        Route::post('exams', [BulkExamController::class, 'store'])->name('exams.store');
+        Route::get('schedule', [BulkScheduleController::class, 'create'])->name('schedule');
+        Route::post('schedule', [BulkScheduleController::class, 'store'])->name('schedule.store');
+        Route::get('history', [BulkHistoryController::class, 'index'])->name('history');
+        Route::delete('history/{action}', [BulkHistoryController::class, 'revert'])->name('history.revert');
+    });
 
     Route::get('/permissions', [ConsultantFeatureController::class, 'show'])->defaults('feature', 'permissions')->middleware('consultant.feature:book_access')->name('permissions');
     Route::get('/questions', [ConsultantFeatureController::class, 'show'])->defaults('feature', 'questions')->middleware('consultant.feature:question_management')->name('questions');
@@ -126,4 +216,14 @@ Route::middleware('guest:student')->prefix('student')->name('student.')->group(f
 Route::middleware('auth:student')->prefix('student')->name('student.')->group(function () {
     Route::post('logout', [StudentLoginController::class, 'logout'])->name('logout');
     Route::get('dashboard', [StudentDashboardController::class, 'index'])->name('dashboard');
+
+    Route::prefix('settings')->name('settings.')->group(function () {
+        Route::redirect('/', '/student/settings/profile');
+
+        Route::get('profile', [StudentProfileController::class, 'index'])->name('profile');
+        Route::patch('profile', [StudentProfileController::class, 'update'])->name('profile.update');
+        Route::put('profile/password', [StudentProfileController::class, 'updatePassword'])->name('profile.password');
+        Route::put('profile/avatar', [StudentProfileController::class, 'updateAvatar'])->name('profile.avatar');
+        Route::delete('profile/avatar', [StudentProfileController::class, 'deleteAvatar'])->name('profile.avatar.delete');
+    });
 });

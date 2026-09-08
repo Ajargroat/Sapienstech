@@ -107,6 +107,110 @@ class TenantThemingTest extends TestCase
         $this->assertStringContainsString('data-surface="paper"', $html);
     }
 
+    /**
+     * The second wave of levers: motion text effects, the scroll-progress bar,
+     * marquee pause, card edges and the button shadow all select behaviour,
+     * so they must arrive as data attributes; the value levers as variables.
+     */
+    public function test_the_new_levers_reach_the_markup(): void
+    {
+        [, $host] = $this->tenantWithDomain('levers-test', 'aurora_glass');
+
+        site_override([
+            'theme' => [
+                'motion'     => ['text_effect' => 'gradient-shift', 'scroll_progress' => true, 'marquee_pause' => true],
+                'decoration' => ['card_edge' => 'top-accent'],
+                'buttons'    => ['shadow' => true, 'letter_spacing' => '.05em'],
+                'colors'     => ['link' => '#22D3EE'],
+                'layout'     => ['hero_ratio' => '60-40'],
+            ],
+        ]);
+
+        $html = $this->get("http://{$host}/")->assertOk()->getContent();
+
+        foreach ([
+            'data-text-effect="gradient-shift"',
+            'data-scroll-progress="on"',
+            'data-marquee-pause="on"',
+            'data-card-edge="top-accent"',
+            'data-btn-shadow="on"',
+            '--c-link: #22D3EE',
+            '--hero-cols: 1.5fr 1fr',
+            '--btn-letter-spacing: .05em',
+        ] as $needle) {
+            $this->assertStringContainsString($needle, $html, "{$needle} missing from the rendered page");
+        }
+    }
+
+    /** Bento / boxed / masonry variants and the filled optional faq section. */
+    public function test_the_new_section_variants_render(): void
+    {
+        [$tenant, $host] = $this->tenantWithDomain('new-variants', 'aurora_glass');
+
+        $this->writeTenantFile('new-variants', [
+            'theme'  => ['archetype' => 'aurora_glass'],
+            'public' => ['landing' => [
+                'sections'     => ['hero', 'services', 'stats', 'testimonials', 'faq'],
+                'services'     => ['variant' => 'bento', 'items' => [
+                    ['icon' => 'fa-solid fa-bolt', 'accent' => 'accent-violet', 'title' => 'تست', 'text' => 'تست'],
+                    ['icon' => 'fa-solid fa-robot', 'accent' => 'accent-lime', 'title' => 'تست دو', 'text' => 'تست دو'],
+                ]],
+                'stats'        => ['variant' => 'boxed', 'items' => [
+                    ['value' => 5, 'suffix' => '+', 'label' => 'نمونه'],
+                ]],
+                'testimonials' => ['variant' => 'masonry', 'items' => [
+                    ['initials' => 'ن.م', 'name' => 'نمونه', 'result' => 'نتیجه',
+                     'from' => 'primary', 'to' => 'accent-cyan', 'text' => 'متن نمونه'],
+                ]],
+                'faq'          => ['items' => [
+                    ['question' => 'پرسش نمونه؟', 'answer' => 'پاسخ نمونه'],
+                ]],
+            ]],
+        ]);
+
+        $html = $this->get("http://{$host}/")->assertOk()->getContent();
+
+        $this->assertStringContainsString('lp-bento', $html);
+        $this->assertStringContainsString('var(--c-accent-violet)', $html);
+        $this->assertStringContainsString('lp-masonry', $html);
+        $this->assertStringContainsString('lp-faq', $html);
+        $this->assertStringContainsString('--c-accent-cyan:', $html);
+    }
+
+    /** Per-button icons: two buttons, two different glyphs. */
+    public function test_buttons_can_carry_their_own_icons(): void
+    {
+        [$tenant, $host] = $this->tenantWithDomain('button-icons', 'aurora_glass');
+
+        $this->writeTenantFile('button-icons', [
+            'theme'  => ['archetype' => 'aurora_glass'],
+            'public' => ['landing' => [
+                'sections' => ['hero'],
+                'hero'     => ['buttons' => [
+                    ['label' => 'الف', 'href' => '#', 'style' => 'solid', 'icon' => 'sparkle', 'visible' => true],
+                    ['label' => 'ب',   'href' => '#', 'style' => 'ghost', 'icon' => 'arrow-down', 'visible' => true],
+                ]],
+            ]],
+        ]);
+
+        $html = $this->get("http://{$host}/")->assertOk()->getContent();
+
+        $this->assertStringContainsString('fa-wand-magic-sparkles', $html);
+        $this->assertStringContainsString('fa-arrow-down', $html);
+    }
+
+    public function test_the_og_image_meta_is_rendered(): void
+    {
+        [, $host] = $this->tenantWithDomain('og-test');
+
+        site_override(['public' => ['landing' => ['meta' => ['og_image' => 'images/blog-pics/blog-pic1.png']]]]);
+
+        $html = $this->get("http://{$host}/")->assertOk()->getContent();
+
+        $this->assertStringContainsString('property="og:image"', $html);
+        $this->assertStringContainsString('blog-pic1.png', $html);
+    }
+
     /** The core promise: two archetypes must not render the same CSS. */
     public function test_archetype_changes_the_rendered_theme(): void
     {

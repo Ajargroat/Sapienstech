@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Consultant;
 
 use App\Http\Controllers\Controller;
 use App\Models\Student;
+use App\Support\StudentFilter;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -19,19 +20,13 @@ class ConsultantDashboardController extends Controller
      * and never trusts a client-supplied tenant id. The distinct option
      * lists below run through the same global scope, so a consultant only
      * ever sees values that exist among their own students.
+     *
+     * Filter interpretation lives in App\Support\StudentFilter so the bulk
+     * actions picker applies the exact same semantics.
      */
     public function index(Request $request): View
     {
-        $search = trim((string) $request->query('search', ''));
-        $grade = trim((string) $request->query('grade', ''));
-        $gender = trim((string) $request->query('gender', ''));
-        $major = trim((string) $request->query('major', ''));
-        $sort = (string) $request->query('sort', '');
-
-        $allowedSorts = ['name_asc', 'name_desc', 'newest', 'oldest'];
-        if (!in_array($sort, $allowedSorts, true)) {
-            $sort = '';
-        }
+        $filters = StudentFilter::fromRequest($request);
 
         $distinctOptions = function (string $column) {
             return Student::query()
@@ -42,38 +37,20 @@ class ConsultantDashboardController extends Controller
                 ->pluck($column);
         };
 
-        $students = Student::query()
-            ->when($search !== '', function ($query) use ($search) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%");
-                });
-            })
-            ->when($grade !== '', fn ($query) => $query->where('grade', $grade))
-            ->when($gender !== '', fn ($query) => $query->where('gender', $gender))
-            ->when($major !== '', fn ($query) => $query->where('major', $major))
-            ->when($sort === 'name_desc', fn ($query) => $query->orderByDesc('name'))
-            ->when($sort === 'newest', fn ($query) => $query->orderByDesc('created_at'))
-            ->when($sort === 'oldest', fn ($query) => $query->orderBy('created_at'))
-            ->when($sort === '' || $sort === 'name_asc', fn ($query) => $query->orderBy('name'))
+        $students = StudentFilter::apply(Student::query(), $filters)
             ->paginate(15)
             ->withQueryString();
 
-        $activeFilterCount = count(array_filter([$grade, $gender, $major, $sort]));
+        $activeFilterCount = StudentFilter::activeCount($filters);
 
         return view('consultant.dashboard', [
             'students' => $students,
-            'search' => $search,
+            'search' => $filters['search'],
             'username' => session('username', 'مدیر سیستم'),
             'gradeOptions' => $distinctOptions('grade'),
             'genderOptions' => $distinctOptions('gender'),
             'majorOptions' => $distinctOptions('major'),
-            'filters' => [
-                'grade' => $grade,
-                'gender' => $gender,
-                'major' => $major,
-                'sort' => $sort,
-            ],
+            'filters' => $filters,
             'activeFilterCount' => $activeFilterCount,
             'labels' => [
                 'dashboard_heading' => 'داشبورد مشاور',

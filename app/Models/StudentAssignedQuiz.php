@@ -17,7 +17,7 @@ class StudentAssignedQuiz extends Model
 
     protected $fillable = [
         'tenant_id', 'test_id', 'student_id', 'assigned_by_user_id',
-        'assigned_at', 'scheduled_at', 'status', 'is_completed',
+        'assigned_at', 'scheduled_at', 'status', 'is_completed', 'bulk_action_id',
     ];
 
     protected function casts(): array
