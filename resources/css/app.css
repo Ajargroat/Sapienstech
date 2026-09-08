@@ -3661,6 +3661,56 @@ select.settings-input option {
 
 .studio-section-move .fa-lock { color: var(--c-subtle); font-size: 12px; width: 24px; text-align: center; }
 
+/* Studio list control: repeater rows for item-valued content. The row chrome
+   reuses .sec-move; fields flow in a compact auto-fit grid so one row reads
+   as one card. */
+.studio-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  grid-column: 1 / -1;
+}
+
+.studio-list-rows { display: flex; flex-direction: column; gap: 8px; }
+
+.studio-list-row {
+  border: 1px solid var(--c-border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
+}
+
+.studio-list-row-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.studio-list-num { font-size: 12px; font-weight: 700; color: var(--c-subtle); min-width: 18px; }
+
+.studio-list-move { display: inline-flex; gap: 2px; }
+
+.studio-list-row-head .list-del { margin-inline-start: auto; }
+
+.studio-list-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 8px 12px;
+}
+
+.studio-list-cell { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+
+/* Typed rows: the discriminant select spans the row, and hidden cells must
+   actually disappear (.studio-list-cell's display would beat [hidden]). */
+.studio-list-cell--type { grid-column: 1 / -1; }
+
+.studio-list-cell[hidden] { display: none; }
+
+.studio-list-cell-label { font-size: 11px; color: var(--c-muted); }
+
+.studio-list-add { align-self: flex-start; }
+
 .studio-save-card { border-color: color-mix(in srgb, var(--c-primary) 30%, var(--c-border)); }
 
 .studio-save-actions {

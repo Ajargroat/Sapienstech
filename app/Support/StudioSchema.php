@@ -100,6 +100,75 @@ class StudioSchema
     }
 
     /**
+     * Wildcard validation rules for list fields: "path.*.key" => rules.
+     *
+     * Kept out of rules() so that array stays "one entry per form field" for
+     * the payload-building callers; StudioSaveRequest merges these in
+     * explicitly, applying the same admin-only group filter as the parent.
+     *
+     * Cells gated by `show_for` are deliberately absent: their requiredness
+     * depends on the row's type, and this Laravel resolves required_if
+     * parameters literally (no wildcard sibling lookup), so the request
+     * validates them as concrete per-row rules instead.
+     *
+     * @return array<string, array>
+     */
+    public static function itemRules(): array
+    {
+        $rules = [];
+
+        foreach (self::fields() as $path => $field) {
+            if (($field['control'] ?? '') !== 'list') {
+                continue;
+            }
+
+            foreach ((array) ($field['item'] ?? []) as $def) {
+                if (isset($def['show_for'])) {
+                    continue;
+                }
+
+                $rules[$path.'.*.'.$def['key']] = ($def['control'] ?? '') === 'toggle'
+                    ? ['nullable', 'boolean']
+                    : (array) ($def['rules'] ?? []);
+            }
+        }
+
+        return $rules;
+    }
+
+    /**
+     * The `discriminant` item key of a list field, or null when its rows are
+     * homogeneous. Shared by the request (per-row rules, emptiness check)
+     * and normalizeList (typed cell filtering).
+     */
+    public static function discriminantKey(array $field): ?string
+    {
+        foreach ((array) ($field['item'] ?? []) as $def) {
+            if (! empty($def['discriminant'])) {
+                return (string) $def['key'];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Whether an item def applies to a row of the given type. Ungated defs
+     * always apply; a gated row (unknown/missing type) keeps only its
+     * ungated cells, which validation then rejects on the type itself.
+     */
+    public static function cellApplies(array $def, ?string $discKey, mixed $type): bool
+    {
+        if (! isset($def['show_for'])) {
+            return true;
+        }
+
+        return $discKey !== null
+            && is_string($type)
+            && in_array($type, (array) $def['show_for'], true);
+    }
+
+    /**
      * The current value of a path from the resolved site config.
      *
      * @param  array  $resolved  the full resolved tree (site()->all())
@@ -197,6 +266,11 @@ class StudioSchema
                     array_map('strval', is_array($value) ? $value : []),
                     array_keys((array) ($field['options'] ?? [])),
                 ), $field),
+                // Lists arrive as a nested array of item rows (possibly keyed
+                // by browser-generated unique ids). Rebuild each row from the
+                // whitelisted item defs only, so an unknown key can never
+                // reach the stored layer.
+                'list' => self::normalizeList($value, $field),
                 // An emptied optional field means "stop overriding": '' becomes
                 // null so the writer forgets the key and the lower layers
                 // (tenant file / archetype / baseline) show through again.
@@ -237,6 +311,71 @@ class StudioSchema
         }
 
         return $free;
+    }
+
+    /**
+     * Normalize a submitted list of item rows against the field's `item`
+     * definitions: keep only whitelisted keys, coerce each to the shape its
+     * control declares, drop empty optional values (so a row the tenant never
+     * touched stays diff-free against the file-owned baseline even when the
+     * baseline omits that key), and re-index to a sequential list.
+     *
+     * An emptied list normalizes to null — "forget" — which restores the
+     * file-owned items; hiding individual items is what their `visible`
+     * toggle is for.
+     *
+     * @return array<array<string, mixed>>|null
+     */
+    protected static function normalizeList(mixed $value, array $field): ?array
+    {
+        if (! is_array($value)) {
+            return null;
+        }
+
+        $defs = (array) ($field['item'] ?? []);
+        $max  = (int) ($field['max'] ?? 20);
+        $disc = self::discriminantKey($field);
+        $out  = [];
+
+        foreach (array_slice(array_values($value), 0, $max) as $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+
+            // Typed rows: cells the row's type does not use are dropped, so
+            // values left behind by a type switch in the form (hidden inputs
+            // still submit) can never reach the stored layer.
+            $type = $disc !== null && isset($row[$disc]) && is_string($row[$disc])
+                ? trim($row[$disc])
+                : ($row[$disc] ?? null);
+
+            $clean = [];
+
+            foreach ($defs as $def) {
+                if ($def['key'] !== $disc && ! self::cellApplies($def, $disc, $type)) {
+                    continue;
+                }
+
+                $key = $def['key'];
+                $raw = $row[$key] ?? null;
+
+                $clean[$key] = match ($def['control'] ?? 'text') {
+                    // The row renderer pairs the checkbox with a hidden "0",
+                    // so anything that is not an explicit on-value is off.
+                    'toggle' => ! in_array((string) ($raw ?? '0'), ['0', ''], true),
+                    'number' => is_numeric($raw) ? (int) $raw : null,
+                    default  => is_string($raw) ? trim($raw) : $raw,
+                };
+
+                if ($clean[$key] === '' || $clean[$key] === null) {
+                    unset($clean[$key]);
+                }
+            }
+
+            $out[] = $clean;
+        }
+
+        return $out === [] ? null : $out;
     }
 
     /**
@@ -295,11 +434,43 @@ class StudioSchema
             return (bool) $a === (bool) $b;
         }
 
+        if (is_array($a) && is_array($b)) {
+            // Lists (section order, item rows) compare element-by-element so
+            // a stored row that differs from the baseline only by an empty or
+            // null optional key still counts as unchanged.
+            if (array_is_list($a) && array_is_list($b)) {
+                if (count($a) !== count($b)) {
+                    return false;
+                }
+
+                foreach ($a as $i => $item) {
+                    if (! self::looseEqual($item, $b[$i])) {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            if (! array_is_list($a) && ! array_is_list($b)) {
+                foreach (array_unique([...array_keys($a), ...array_keys($b)]) as $key) {
+                    if (! self::looseEqual($a[$key] ?? null, $b[$key] ?? null)) {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            return $a == $b;
+        }
+
         if (is_array($a) || is_array($b)) {
             return $a == $b;
         }
 
-        // Compare scalars as strings so "3" and 3 (number inputs) match.
+        // Compare scalars as strings so "3" and 3 (number inputs) match,
+        // and "" and null (an emptied optional) match as well.
         return (string) $a === (string) $b;
     }
 }

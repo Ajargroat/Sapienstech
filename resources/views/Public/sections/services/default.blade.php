@@ -3,6 +3,7 @@
     $s      = $cfg;
     $reveal = $anim['reveal'] ?? true;
     $cols   = $s['columns'] ?? 3;
+    $items  = array_values(array_filter($s['items'] ?? [], static fn ($i) => $i['visible'] ?? true));
 @endphp
 <section id="{{ $s['id'] ?? 'services' }}" class="lp-section">
     <div class="landing-container">
@@ -13,7 +14,7 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[repeat(var(--cols),minmax(0,1fr))] gap-[var(--grid-gap)]"
              style="--cols:{{ $cols }}">
-            @foreach ($s['items'] ?? [] as $i => $item)
+            @foreach ($items as $i => $item)
                 @php($accent = 'var(--c-' . ($item['accent'] ?? 'primary') . ')')
                 <div class="lp-card group {{ $reveal ? 'reveal' : '' }}"
                      style="{{ $reveal ? 'transition-delay:' . ($i % $cols) * (int) site('landing.stagger_ms', 100) . 'ms;' : '' }}">

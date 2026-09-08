@@ -40,11 +40,15 @@
     }
 
     // A failed save must reopen the rail on the group holding the error,
-    // overriding whatever tab the browser had remembered.
+    // overriding whatever tab the browser had remembered. List rows fail as
+    // "path.<key>.<field>", so the group check widens to the wildcard.
     $errorGroup = null;
     foreach ($studioGroups as $gKey => $g) {
         foreach ($g['fields'] as $f) {
-            if ($errors->has($f['path'])) { $errorGroup = $gKey; break 2; }
+            $hasError = $errors->has($f['path'])
+                || (($f['control'] ?? '') === 'list' && $errors->has($f['path'].'.*'));
+
+            if ($hasError) { $errorGroup = $gKey; break 2; }
         }
     }
     $initialGroup = $errorGroup ?? (array_key_first($studioGroups) ?? null);

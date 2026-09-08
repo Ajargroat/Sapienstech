@@ -565,9 +565,9 @@ return [
                 'text_side' => 'end',              // 'end' keeps the original layout
                 'visual'    => true,               // decorative orbiting-rings panel
                 'items' => [
-                    ['icon' => '✦', 'accent' => 'primary',   'label' => 'مشاوره تحصیلی مبتنی بر داده'],
-                    ['icon' => '✦', 'accent' => 'secondary', 'label' => 'محیط یادگیری شخصی‌سازی شده'],
-                    ['icon' => '✦', 'accent' => 'primary',   'label' => 'آماده‌سازی برای آینده یادگیری'],
+                    ['icon' => '✦', 'accent' => 'primary',   'label' => 'مشاوره تحصیلی مبتنی بر داده', 'visible' => true],
+                    ['icon' => '✦', 'accent' => 'secondary', 'label' => 'محیط یادگیری شخصی‌سازی شده', 'visible' => true],
+                    ['icon' => '✦', 'accent' => 'primary',   'label' => 'آماده‌سازی برای آینده یادگیری', 'visible' => true],
                 ],
             ],
 
@@ -579,7 +579,7 @@ return [
                 'columns'    => 3,
                 // One placeholder card; tenants supply their own list.
                 'items' => [
-                    ['icon' => 'fa-solid fa-bolt', 'accent' => 'primary', 'title' => 'عنوان خدمت', 'text' => 'توضیح کوتاه درباره این خدمت و مزیت آن برای دانش‌آموز.'],
+                    ['icon' => 'fa-solid fa-bolt', 'accent' => 'primary', 'title' => 'عنوان خدمت', 'text' => 'توضیح کوتاه درباره این خدمت و مزیت آن برای دانش‌آموز.', 'visible' => true],
                 ],
             ],
 
@@ -677,6 +677,15 @@ return [
                 'variant'    => 'default',
                 'columns'    => ['', 'روش سنتی', 'پلتفرم ما'],
                 'items'      => [],   // ['label' => '', 'cells' => [true, false, 'متن'], 'visible' => true]
+            ],
+
+            // Free-composition section: a vertical stack of tenant-authored
+            // blocks. Each row's `type` decides which keys it carries; the
+            // studio's list control renders the matching cells per row.
+            'blocks' => [
+                'id'      => 'blocks',
+                'variant' => 'default',
+                'items'   => [],   // ['type' => 'heading', 'title' => '', 'visible' => true]
             ],
         ],
 

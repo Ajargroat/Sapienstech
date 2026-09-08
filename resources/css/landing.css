@@ -679,3 +679,26 @@ body.landing :focus-visible {
 [data-reduce-motion="force-off"] .spin-15s,
 [data-reduce-motion="force-off"] .spin-15s-rev,
 [data-reduce-motion="force-off"] .spin-20s-rev { animation: none; }
+
+/* ---------- free blocks section ------------------------------------------------ */
+/* Tenant-composed stack (sections/blocks/default). The blocks themselves reuse
+   the shared primitives (.lp-card, .lp-btn, the icon chip); this only owns the
+   stacking and the two purely-layout block types. */
+.lp-blocks { display: flex; flex-direction: column; gap: 1.5rem; }
+
+.lp-blocks__text { color: var(--c-muted); line-height: 1.8; max-width: var(--measure); }
+.lp-blocks__text.is-center { margin-inline: auto; }
+
+.lp-blocks__buttons { display: flex; flex-wrap: wrap; gap: 1rem; }
+
+.lp-blocks__card { max-width: var(--measure); }
+
+.lp-blocks__image img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-card);
+  border: var(--surface-border-w) solid var(--c-border);
+}
+.lp-blocks__image figcaption { margin-block-start: 0.75rem; color: var(--c-subtle); font-size: 0.875rem; }
+
+.lp-blocks__divider { border: 0; border-block-start: var(--surface-border-w) solid var(--c-border); margin: 0; }

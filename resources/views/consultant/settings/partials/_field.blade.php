@@ -14,7 +14,7 @@
 
     // Controls that render several inputs (or none) can't be the target of a
     // single `for`; their group carries an aria-label instead.
-    $idless = in_array($control, ['select', 'archetype', 'sections'], true);
+    $idless = in_array($control, ['select', 'archetype', 'sections', 'list'], true);
 @endphp
 
 <div class="studio-field studio-field--{{ $control }} @if($isOverridden) is-overridden @endif"
@@ -187,6 +187,41 @@
                         <span>{{ $field['options'][$sec] }}</span>
                     </label>
                 @endforeach
+            </div>
+            @break
+
+        @case('list')
+            @php
+                $rows = is_array($value) ? array_values($value) : [];
+                $defs = $field['item'] ?? [];
+                $max  = (int) ($field['max'] ?? 20);
+            @endphp
+            {{-- One repeater row per item; the <template> holds the pristine
+                 row theme-studio.js clones for "add" (its __KEY__ placeholders
+                 become a unique browser-side key, so abandoned rows never
+                 collide with the stored indices). --}}
+            <div class="studio-list" data-studio-list data-max="{{ $max }}">
+                <div class="studio-list-rows" data-list-rows>
+                    @foreach($rows as $i => $row)
+                        @include('consultant.settings.partials._list-row', [
+                            'defs' => $defs, 'name' => $name, 'rowKey' => (string) $i, 'row' => (array) $row, 'num' => $i + 1,
+                        ])
+                    @endforeach
+                </div>
+                <template data-list-template>
+                    @include('consultant.settings.partials._list-row', [
+                        'defs' => $defs, 'name' => $name, 'rowKey' => '__KEY__', 'row' => [], 'num' => 0,
+                    ])
+                </template>
+                <button type="button" class="secondary-button studio-list-add" data-list-add @if(count($rows) >= $max) hidden @endif>
+                    <i class="fas fa-plus" aria-hidden="true"></i> افزودن مورد
+                </button>
+                {{-- Row failures arrive as "path.<key>.<field>"; a JS-added row's
+                     key is gone after a failed round-trip, so surface the first
+                     row error here rather than on a row that no longer exists. --}}
+                @if($errors->has($path.'.*'))
+                    <span class="settings-error">{{ $errors->first($path.'.*') }}</span>
+                @endif
             </div>
             @break
 

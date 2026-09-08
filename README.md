@@ -173,6 +173,13 @@ Shared primitives live in `sections/_heading`, `_button`, `_icon`,
 `.lp-btn`, …). Section templates no longer restate padding, radius, borders or
 hover.
 
+`blocks` is the exception to file-owned content: an optional section the
+tenant composes from typed rows (heading, text, button, card, image, spacer,
+divider) in the Theme Studio. The studio's list control renders only the
+cells each row's type owns, validation is per row type, and normalization
+drops everything else — so a forged or stale key can never reach the stored
+layer.
+
 ## Feature switches
 
 Per-tenant now. Set `features` in `config/tenants/{slug}.php`, or in

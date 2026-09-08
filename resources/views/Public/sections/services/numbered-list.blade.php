@@ -18,7 +18,7 @@
 
         <ol class="lp-numbered list-none p-0 m-0 grid gap-0"
             style="grid-template-columns:repeat(var(--cols),minmax(0,1fr));--cols:{{ $cols }}">
-            @foreach ($s['items'] ?? [] as $i => $item)
+            @foreach (array_values(array_filter($s['items'] ?? [], static fn ($i) => $i['visible'] ?? true)) as $i => $item)
                 @php($accent = 'var(--c-' . ($item['accent'] ?? 'primary') . ')')
                 <li class="lp-numbered__row {{ $reveal ? 'reveal' : '' }}">
                     <span class="lp-numbered__num" style="color:{{ $accent }}">

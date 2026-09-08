@@ -20,9 +20,9 @@
 |   - derived tokens (hovers, borders, glass, shadows, gradients, spacing) —
 |     ThemeTokens recomputes them from the primitives, and editing both ends
 |     of a derivation only creates confusion;
-|   - list-valued content (nav links, social links, section items, buttons) —
-|     the studio is a scalar-path editor; lists stay file-owned until a list
-|     control exists;
+|   - list-valued content that the `list` control does not cover yet — rows
+|     carrying image uploads (blog/logos items) or nested cell tables
+|     (comparison rows) stay file-owned until those shapes fit the control;
 |   - theme.custom.css and theme.assets.* — raw CSS/URLs are platform-admin
 |     escape hatches, never tenant-facing;
 |   - dead levers (brand.position, buttons.hover, i18n.calendar/date_format) —
@@ -39,9 +39,27 @@
 |   label    Persian field label
 |   hint     optional one-line Persian explanation rendered as an ⓘ bubble
 |            next to the label (hover on desktop, tap on touch)
-|   control  color | text | textarea | select | toggle | number | range | font | image | sections | archetype
-|   rules    Laravel validation rules for the scalar value
+|   control  color | text | textarea | select | toggle | number | range | font | image | sections | archetype | list
+|   rules    Laravel validation rules for the scalar value (for list: the
+|            whole-array rules; row values validate via `item` rules)
 |   options  [value => label] for select/sections
+|   item     list control: the per-row definitions (key, label, control,
+|            rules, options). Only these keys survive normalization — an
+|            unknown key in a submitted row is dropped. A row whose non-toggle
+|            fields are all empty is dropped before validation, so an
+|            abandoned "add row" is a no-op; clearing every row forgets the
+|            whole list override and the file-owned items show through again
+|            (hiding one item is what its `visible` toggle is for).
+|            A list may declare one item def `discriminant` (the row's type
+|            select) and mark other defs `show_for` => [types] — cells that
+|            only apply to those types. Hidden-for-the-type cells still
+|            submit, but are neither validated (StudioSaveRequest builds
+|            concrete per-row rules; this Laravel resolves required_if
+|            parameters literally) nor stored (normalizeList drops them).
+|            `required_for` => [types] on a show_for def makes the cell
+|            required exactly for those row types. A type with no content
+|            cells (spacer, divider) is never treated as an abandoned row.
+|   max      list control: the most rows a submission may carry
 |   locked   sections control: option keys pinned to their canonical slot
 |            (their index in `options`). They can never be moved or hidden —
 |            StudioSchema::pinSections() re-pins them on every render and
@@ -94,6 +112,46 @@ $bool    = ['nullable', 'boolean'];
 $weights = [
     'options' => ['300' => '۳۰۰', '400' => '۴۰۰', '500' => '۵۰۰', '600' => '۶۰۰', '700' => '۷۰۰', '800' => '۸۰۰', '900' => '۹۰۰'],
     'in'      => 'in:300,400,500,600,700,800,900',
+];
+
+// Shared option lists and rule fragments for the list control's item defs.
+// Every select here stays a whitelist: its value reaches a CSS class name or
+// a route() call, so free text is never acceptable.
+$accents = [
+    'primary'       => 'رنگ اصلی',
+    'secondary'     => 'رنگ ثانویه',
+    'accent_blue'   => 'تأکید آبی',
+    'accent_emerald' => 'تأکید زمردی',
+    'accent_orange' => 'تأکید نارنجی',
+    'accent_teal'   => 'تأکید فیروزه‌ای',
+    'accent_red'    => 'تأکید قرمز',
+    'accent_violet' => 'تأکید بنفش',
+    'accent_pink'   => 'تأکید صورتی',
+    'accent_lime'   => 'تأکید لیمویی',
+    'accent_cyan'   => 'تأکید آبی آسمانی',
+    'accent_amber'  => 'تأکید کهربایی',
+    'accent_rose'   => 'تأکید گل‌سرخی',
+];
+$accentsIn  = 'in:'.implode(',', array_keys($accents));
+$href       = ['required', 'string', 'max:2048', 'regex:/^(#|\/|https?:\/\/)[A-Za-z0-9 ._\/?%&#=:;\-]*$/'];
+$faClass    = ['nullable', 'string', 'max:255', 'regex:/^[A-Za-z0-9 \-]+$/'];
+$btnStyle   = ['solid' => 'پر', 'ghost' => 'شیشه‌ای کم‌رنگ', 'primary' => 'برند', 'outline' => 'خطی'];
+$btnIcon    = ['' => 'پیش‌فرض تم', 'none' => 'بدون', 'arrow' => 'پیکان (جهت متن)', 'arrow-ltr' => 'پیکان راست', 'arrow-down' => 'پیکان پایین', 'chevron' => 'شیور', 'plus' => 'بعلاوه', 'sparkle' => 'درخشش', 'download' => 'دانلود', 'play' => 'پخش'];
+$siteRoutes = ['login' => 'صفحه ورود', 'home' => 'صفحه اصلی', 'about' => 'درباره ما', 'contact' => 'تماس', 'student.login' => 'ورود دانش‌آموز'];
+
+// Typed-block variants of the shared fragments. The leading '' option on
+// every block select matters twice over: it keeps an untouched select
+// diff-free against a baseline row that omits the key (the radio-chip
+// contract always submits something), and normalizeList drops '' so the
+// renderer falls back to the theme default.
+$hrefOpt    = array_merge(['nullable'], array_slice($href, 1));
+$btnStyleOpt = ['' => 'پیش‌فرض تم'] + $btnStyle;
+$accentsOpt  = ['' => 'پیش‌فرض'] + $accents;
+$alignOpt    = ['' => 'خودکار', 'start' => 'ابتدا', 'center' => 'وسط', 'end' => 'پایان'];
+$imgSrc      = ['nullable', 'string', 'max:2048', 'regex:/^(https?:\/\/|\/)[A-Za-z0-9 ._\/?%&#=-]+$/'];
+$blockTypes  = [
+    'heading' => 'تیتر', 'text' => 'متن', 'button' => 'دکمه', 'card' => 'کارت',
+    'image' => 'تصویر', 'spacer' => 'فاصله', 'divider' => 'خط جدا',
 ];
 
 return [
@@ -402,6 +460,8 @@ return [
                     'options' => ['default' => 'پیش‌فرض']],
                 ['path' => 'public.landing.comparison.variant', 'label' => 'قالب مقایسه', 'control' => 'select', 'rules' => ['required', 'in:default'],
                     'options' => ['default' => 'پیش‌فرض']],
+                ['path' => 'public.landing.blocks.variant', 'label' => 'قالب بلوک‌ها', 'control' => 'select', 'rules' => ['required', 'in:default'],
+                    'options' => ['default' => 'پیش‌فرض']],
             ],
         ],
 
@@ -415,6 +475,7 @@ return [
                         'hero' => 'ویترین', 'advisor' => 'مشاور', 'ecosystem' => 'اکوسیستم', 'services' => 'خدمات',
                         'stats' => 'آمار', 'testimonials' => 'نظرات', 'blog' => 'وبلاگ', 'cta' => 'دعوت به اقدام',
                         'logos' => 'لوگوها', 'process' => 'فرآیند', 'faq' => 'پرسش‌ها', 'comparison' => 'مقایسه',
+                        'blocks' => 'بلوک‌های سفارشی',
                     ]],
                 ['path' => 'public.landing.meta.title', 'label' => 'عنوان متا (SEO)', 'control' => 'text', 'rules' => ['required', 'string', 'max:255']],
                 ['path' => 'public.landing.meta.description', 'label' => 'توضیحات متا', 'control' => 'textarea', 'rules' => ['required', 'string', 'max:2000']],
@@ -452,6 +513,14 @@ return [
                     'options' => ['mockup' => 'ماکت', 'photo' => 'تصویر اختصاصی', 'none' => 'بدون']],
                 ['path' => 'public.landing.hero.image', 'label' => 'تصویر ویترین', 'control' => 'image', 'folder' => 'hero', 'rules' => ['nullable', 'image', 'mimes:png,jpg,jpeg,svg,webp', 'max:2048']],
                 ['path' => 'public.landing.hero.image_alt', 'label' => 'متن جایگزین تصویر ویترین', 'control' => 'text', 'rules' => ['nullable', 'string', 'max:255']],
+                ['path' => 'public.landing.hero.buttons', 'label' => 'دکمه‌های ویترین', 'hint' => 'هر ردیف یک دکمه است؛ با «نمایش» می‌توان موقتاً پنهانش کرد. خالی‌کردن کامل فهرست، دکمه‌های پیش‌فرض فایل پایه را بازمی‌گرداند.', 'control' => 'list', 'max' => 4, 'rules' => ['nullable', 'array', 'max:4'],
+                    'item' => [
+                        ['key' => 'label', 'label' => 'متن', 'control' => 'text', 'rules' => ['required', 'string', 'max:255']],
+                        ['key' => 'href', 'label' => 'نشانی', 'control' => 'text', 'rules' => $href],
+                        ['key' => 'style', 'label' => 'سبک', 'control' => 'select', 'rules' => ['required', 'in:solid,ghost,primary,outline'], 'options' => $btnStyle],
+                        ['key' => 'icon', 'label' => 'آیکون', 'control' => 'select', 'rules' => ['nullable', 'string', 'max:20'], 'options' => $btnIcon],
+                        ['key' => 'visible', 'label' => 'نمایش', 'control' => 'toggle'],
+                    ]],
             ],
         ],
 
@@ -479,6 +548,13 @@ return [
                 ['path' => 'public.landing.advisor.image_size', 'label' => 'اندازه تصویر', 'control' => 'range', 'min' => 8, 'max' => 40, 'step' => 1, 'unit' => 'rem', 'rules' => $len],
                 ['path' => 'public.landing.advisor.spin_rings', 'label' => 'حلقه‌های چرخان دور تصویر', 'hint' => 'حلقه‌های تزئینی چرخان دور تصویر مشاور.', 'control' => 'toggle', 'rules' => $bool],
                 ['path' => 'public.landing.advisor.grayscale', 'label' => 'سیاه‌وسفید بودن تصویر', 'hint' => 'تصویر مشاور سیاه‌وسفید نمایش داده می‌شود.', 'control' => 'toggle', 'rules' => $bool],
+                ['path' => 'public.landing.advisor.buttons', 'label' => 'دکمه‌های مشاور', 'control' => 'list', 'max' => 3, 'rules' => ['nullable', 'array', 'max:3'],
+                    'item' => [
+                        ['key' => 'label', 'label' => 'متن', 'control' => 'text', 'rules' => ['required', 'string', 'max:255']],
+                        ['key' => 'href', 'label' => 'نشانی', 'control' => 'text', 'rules' => $href],
+                        ['key' => 'style', 'label' => 'سبک', 'control' => 'select', 'rules' => ['required', 'in:primary,ghost,solid,outline'], 'options' => $btnStyle],
+                        ['key' => 'visible', 'label' => 'نمایش', 'control' => 'toggle'],
+                    ]],
             ],
         ],
 
@@ -508,6 +584,93 @@ return [
                 ['path' => 'public.landing.faq.subheading', 'label' => 'پرسش‌ها: زیرتیتر', 'control' => 'text', 'rules' => ['nullable', 'string', 'max:2000']],
                 ['path' => 'public.landing.comparison.heading', 'label' => 'مقایسه: تیتر', 'control' => 'text', 'rules' => ['required', 'string', 'max:255']],
                 ['path' => 'public.landing.comparison.subheading', 'label' => 'مقایسه: زیرتیتر', 'control' => 'text', 'rules' => ['nullable', 'string', 'max:2000']],
+                ['path' => 'public.landing.services.items', 'label' => 'کارت‌های خدمات', 'hint' => 'افزودن، حذف و ترتیب کارت‌ها؛ «نمایش» هر کارت را یکی‌یکی خاموش/روشن می‌کند.', 'control' => 'list', 'max' => 12, 'rules' => ['nullable', 'array', 'max:12'],
+                    'item' => [
+                        ['key' => 'title', 'label' => 'عنوان', 'control' => 'text', 'rules' => ['required', 'string', 'max:255']],
+                        ['key' => 'text', 'label' => 'توضیح', 'control' => 'textarea', 'rules' => ['required', 'string', 'max:1000']],
+                        ['key' => 'icon', 'label' => 'آیکون (Font Awesome)', 'control' => 'text', 'rules' => $faClass],
+                        ['key' => 'accent', 'label' => 'رنگ', 'control' => 'select', 'rules' => ['required', $accentsIn], 'options' => $accents],
+                        ['key' => 'visible', 'label' => 'نمایش', 'control' => 'toggle'],
+                    ]],
+                ['path' => 'public.landing.ecosystem.items', 'label' => 'موارد اکوسیستم', 'control' => 'list', 'max' => 8, 'rules' => ['nullable', 'array', 'max:8'],
+                    'item' => [
+                        ['key' => 'label', 'label' => 'متن', 'control' => 'text', 'rules' => ['required', 'string', 'max:255']],
+                        ['key' => 'icon', 'label' => 'نماد', 'control' => 'text', 'rules' => ['nullable', 'string', 'max:8']],
+                        ['key' => 'accent', 'label' => 'رنگ', 'control' => 'select', 'rules' => ['required', $accentsIn], 'options' => $accents],
+                        ['key' => 'visible', 'label' => 'نمایش', 'control' => 'toggle'],
+                    ]],
+                ['path' => 'public.landing.stats.items', 'label' => 'شمارنده‌های آمار', 'control' => 'list', 'max' => 8, 'rules' => ['nullable', 'array', 'max:8'],
+                    'item' => [
+                        ['key' => 'label', 'label' => 'برچسب', 'control' => 'text', 'rules' => ['required', 'string', 'max:255']],
+                        ['key' => 'value', 'label' => 'مقدار', 'control' => 'number', 'rules' => ['required', 'integer', 'min:0', 'max:999999999']],
+                        ['key' => 'suffix', 'label' => 'پسوند', 'control' => 'text', 'rules' => ['nullable', 'string', 'max:10']],
+                        ['key' => 'gradient', 'label' => 'گرادیان', 'control' => 'toggle'],
+                        ['key' => 'visible', 'label' => 'نمایش', 'control' => 'toggle'],
+                    ]],
+                ['path' => 'public.landing.testimonials.items', 'label' => 'نقل‌قول‌های نظرات', 'control' => 'list', 'max' => 12, 'rules' => ['nullable', 'array', 'max:12'],
+                    'item' => [
+                        ['key' => 'name', 'label' => 'نام', 'control' => 'text', 'rules' => ['required', 'string', 'max:255']],
+                        ['key' => 'result', 'label' => 'نتیجه', 'control' => 'text', 'rules' => ['required', 'string', 'max:255']],
+                        ['key' => 'initials', 'label' => 'حروف اول', 'control' => 'text', 'rules' => ['required', 'string', 'max:10']],
+                        ['key' => 'text', 'label' => 'متن نقل‌قول', 'control' => 'textarea', 'rules' => ['required', 'string', 'max:1000']],
+                        ['key' => 'from', 'label' => 'گرادیان از', 'control' => 'select', 'rules' => ['required', $accentsIn], 'options' => $accents],
+                        ['key' => 'to', 'label' => 'گرادیان به', 'control' => 'select', 'rules' => ['required', $accentsIn], 'options' => $accents],
+                        ['key' => 'visible', 'label' => 'نمایش', 'control' => 'toggle'],
+                    ]],
+                ['path' => 'public.landing.faq.items', 'label' => 'پرسش‌های متداول', 'control' => 'list', 'max' => 20, 'rules' => ['nullable', 'array', 'max:20'],
+                    'item' => [
+                        ['key' => 'question', 'label' => 'پرسش', 'control' => 'text', 'rules' => ['required', 'string', 'max:255']],
+                        ['key' => 'answer', 'label' => 'پاسخ', 'control' => 'textarea', 'rules' => ['required', 'string', 'max:4000']],
+                        ['key' => 'visible', 'label' => 'نمایش', 'control' => 'toggle'],
+                    ]],
+                ['path' => 'public.landing.process.items', 'label' => 'مراحل فرآیند', 'control' => 'list', 'max' => 8, 'rules' => ['nullable', 'array', 'max:8'],
+                    'item' => [
+                        ['key' => 'title', 'label' => 'عنوان', 'control' => 'text', 'rules' => ['required', 'string', 'max:255']],
+                        ['key' => 'text', 'label' => 'توضیح', 'control' => 'textarea', 'rules' => ['required', 'string', 'max:1000']],
+                        ['key' => 'visible', 'label' => 'نمایش', 'control' => 'toggle'],
+                    ]],
+                ['path' => 'public.landing.cta.buttons', 'label' => 'دکمه‌های دعوت به اقدام', 'control' => 'list', 'max' => 3, 'rules' => ['nullable', 'array', 'max:3'],
+                    'item' => [
+                        ['key' => 'label', 'label' => 'متن', 'control' => 'text', 'rules' => ['required', 'string', 'max:255']],
+                        ['key' => 'route', 'label' => 'مقصد', 'control' => 'select', 'rules' => ['required', 'in:'.implode(',', array_keys($siteRoutes))], 'options' => $siteRoutes],
+                        ['key' => 'style', 'label' => 'سبک', 'control' => 'select', 'rules' => ['required', 'in:solid,ghost,primary,outline'], 'options' => $btnStyle],
+                        ['key' => 'visible', 'label' => 'نمایش', 'control' => 'toggle'],
+                    ]],
+            ],
+        ],
+
+        'blocks' => [
+            'label' => 'بلوک‌های سفارشی',
+            'icon'  => 'fa-cubes',
+            'hint'  => 'یک بخش آزاد که خودتان از تیتر، متن، دکمه، کارت، تصویر و فاصله می‌چینید. نوع هر ردیف مشخص می‌کند چه فیلدهایی داشته باشد؛ سپس بخش را از «ساختار صفحه اصلی» به صفحه اضافه کنید.',
+            'fields' => [
+                ['path' => 'public.landing.blocks.items', 'label' => 'بلوک‌ها', 'hint' => 'هر ردیف یک بلوک است؛ با «نمایش» می‌توان موقتاً پنهانش کرد. خالی‌کردن کامل فهرست، هیچ بلوکی در صفحه نشان نمی‌دهد.', 'control' => 'list', 'max' => 24, 'rules' => ['nullable', 'array', 'max:24'],
+                    'item' => [
+                        ['key' => 'type', 'label' => 'نوع بلوک', 'control' => 'select', 'discriminant' => true,
+                            'rules' => ['required', 'in:'.implode(',', array_keys($blockTypes))], 'options' => $blockTypes],
+                        ['key' => 'title', 'label' => 'عنوان / متن دکمه', 'control' => 'text', 'show_for' => ['heading', 'card', 'button'], 'required_for' => ['heading', 'card', 'button'],
+                            'rules' => ['nullable', 'string', 'max:255']],
+                        ['key' => 'text', 'label' => 'متن', 'control' => 'textarea', 'show_for' => ['heading', 'text', 'card', 'image'], 'required_for' => ['text'],
+                            'rules' => ['nullable', 'string', 'max:4000']],
+                        ['key' => 'href', 'label' => 'نشانی', 'control' => 'text', 'show_for' => ['button'], 'required_for' => ['button'],
+                            'rules' => $hrefOpt],
+                        ['key' => 'style', 'label' => 'سبک', 'control' => 'select', 'show_for' => ['button'],
+                            'rules' => ['nullable', 'in:'.implode(',', array_keys($btnStyleOpt))], 'options' => $btnStyleOpt],
+                        ['key' => 'icon', 'label' => 'آیکون', 'control' => 'select', 'show_for' => ['button'],
+                            'rules' => ['nullable', 'string', 'max:20', 'in:'.implode(',', array_keys($btnIcon))], 'options' => $btnIcon],
+                        ['key' => 'fa_icon', 'label' => 'آیکون کارت (Font Awesome)', 'control' => 'text', 'show_for' => ['card'],
+                            'rules' => $faClass],
+                        ['key' => 'accent', 'label' => 'رنگ تأکید', 'control' => 'select', 'show_for' => ['card'],
+                            'rules' => ['nullable', 'in:'.implode(',', array_keys($accentsOpt))], 'options' => $accentsOpt],
+                        ['key' => 'align', 'label' => 'تراز', 'control' => 'select', 'show_for' => ['heading', 'text'],
+                            'rules' => ['nullable', 'in:'.implode(',', array_keys($alignOpt))], 'options' => $alignOpt],
+                        ['key' => 'src', 'label' => 'نشانی تصویر', 'control' => 'text', 'show_for' => ['image'], 'required_for' => ['image'],
+                            'rules' => $imgSrc],
+                        ['key' => 'size', 'label' => 'اندازه فاصله', 'control' => 'select', 'show_for' => ['spacer'],
+                            'rules' => ['nullable', 'in:,sm,md,lg'],
+                            'options' => ['' => 'متوسط', 'sm' => 'کم', 'md' => 'متوسط', 'lg' => 'زیاد']],
+                        ['key' => 'visible', 'label' => 'نمایش', 'control' => 'toggle'],
+                    ]],
             ],
         ],
 
@@ -526,6 +689,12 @@ return [
                     'options' => ['glass' => 'شیشه‌ای', 'solid' => 'پر', 'outline' => 'خطی', 'gradient' => 'گرادیان']],
                 ['path' => 'public.nav.cta.label', 'label' => 'متن دکمه ورود', 'control' => 'text', 'rules' => ['required', 'string', 'max:255']],
                 ['path' => 'public.nav.cta.visible', 'label' => 'نمایش دکمه ورود', 'control' => 'toggle', 'rules' => $bool],
+                ['path' => 'public.nav.links', 'label' => 'لینک‌های منو', 'hint' => 'لینک‌های صفحهٔ اصلی معمولاً لنگر هستند؛ نشانی با #، / یا https معتبر است.', 'control' => 'list', 'max' => 8, 'rules' => ['nullable', 'array', 'max:8'],
+                    'item' => [
+                        ['key' => 'label', 'label' => 'متن', 'control' => 'text', 'rules' => ['required', 'string', 'max:255']],
+                        ['key' => 'href', 'label' => 'نشانی', 'control' => 'text', 'rules' => $href],
+                        ['key' => 'visible', 'label' => 'نمایش', 'control' => 'toggle'],
+                    ]],
             ],
         ],
 
@@ -541,6 +710,13 @@ return [
                     'options' => ['background' => 'پس‌زمینه سایت', 'surface' => 'سطح', 'gradient' => 'گرادیان برند']],
                 ['path' => 'public.footer.blurb', 'label' => 'متن برند', 'control' => 'textarea', 'rules' => ['required', 'string', 'max:2000']],
                 ['path' => 'public.footer.copyright', 'label' => 'متن کپی‌رایت (:name و :year مجاز)', 'hint' => '«:name» با نام مجموعه و «:year» با سال جاری جایگزین می‌شود.', 'control' => 'text', 'rules' => ['required', 'string', 'max:255']],
+                ['path' => 'public.footer.social', 'label' => 'شبکه‌های اجتماعی', 'control' => 'list', 'max' => 8, 'rules' => ['nullable', 'array', 'max:8'],
+                    'item' => [
+                        ['key' => 'label', 'label' => 'نام', 'control' => 'text', 'rules' => ['required', 'string', 'max:255']],
+                        ['key' => 'url', 'label' => 'نشانی', 'control' => 'text', 'rules' => $href],
+                        ['key' => 'icon', 'label' => 'آیکون (Font Awesome)', 'control' => 'text', 'rules' => ['required', 'string', 'max:255', 'regex:/^[A-Za-z0-9 \-]+$/']],
+                        ['key' => 'visible', 'label' => 'نمایش', 'control' => 'toggle'],
+                    ]],
             ],
         ],
 
