@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Student;
 use App\Models\StudentAssignedQuiz;
 use App\Models\Test;
+use App\Support\QuestionBankMeta;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -40,6 +41,9 @@ class StudentExamController extends Controller
     /** exam_type values that get the small-quiz badge; everything else is comprehensive. */
     private const QUIZ_TYPES = ['quiz', 'online_quiz', 'single_lesson'];
 
+    /** The only lessons a consultant may build an exam from; drives the chips UI. */
+    public const LESSONS = ['زیست‌شناسی', 'شیمی', 'فیزیک', 'ریاضی', 'زمین‌شناسی'];
+
     public function index(Request $request, Student $student): View
     {
         $this->assertStudentBelongsToTenant($student);
@@ -72,6 +76,8 @@ class StudentExamController extends Controller
             'total' => (int) $statusCounts->sum(),
             'status' => $status,
             'search' => $search,
+            'lessons' => self::LESSONS,
+            'pickerCorps' => $this->corpOptions($student),
         ]);
     }
 
@@ -83,10 +89,9 @@ class StudentExamController extends Controller
         $data = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'exam_type' => ['required', 'in:quiz,comprehensive'],
-            'lesson' => ['required', 'string', 'max:100'],
-            'question_count' => ['nullable', 'integer', 'min:1', 'max:500'],
+            'lesson' => ['required', 'array', 'min:1', 'max:5'],
+            'lesson.*' => ['required', 'string', 'in:'.implode(',', self::LESSONS)],
             'time_limit_minutes' => ['nullable', 'integer', 'min:1', 'max:1440'],
-            'total_marks' => ['nullable', 'numeric', 'min:1', 'max:1000'],
             'date' => ['required', 'string', 'max:32'],
             'date_jalali' => ['nullable', 'string', 'max:16'],
             'description' => ['nullable', 'string', 'max:2000'],
@@ -112,17 +117,21 @@ class StudentExamController extends Controller
 
         $scheduledAt = $scheduled->format('Y-m-d H:i:s');
         $userId = (int) $request->user()->id;
-        $totalMarks = (float) ($data['total_marks'] ?? 20);
+        // Scores are shown as percentages, so total_marks is no longer a form
+        // field; the fixed scale only keeps the legacy raw-score math working.
+        $totalMarks = 20.0;
+        $lesson = implode('، ', $data['lesson']);
 
-        DB::transaction(function () use ($student, $data, $scheduledAt, $userId, $ordered, $totalMarks) {
+        DB::transaction(function () use ($student, $data, $scheduledAt, $userId, $ordered, $totalMarks, $lesson) {
             $test = new Test();
             $test->test_title = $data['title'];
-            $test->lesson = $data['lesson'];
+            $test->lesson = $lesson;
             $test->exam_type = $data['exam_type'];
             $test->description = $data['description'] ?? null;
-            $test->question_count = $ordered->isNotEmpty() ? $ordered->count() : ($data['question_count'] ?? null);
+            // The count is always derived from the selection, never typed in.
+            $test->question_count = $ordered->count() ?: null;
             $test->time_limit_minutes = $data['time_limit_minutes'] ?? null;
-            $test->total_marks = $totalMarks ?: 20;
+            $test->total_marks = $totalMarks;
             $test->created_by_user_id = $userId;
             $test->save();
 
@@ -162,10 +171,20 @@ class StudentExamController extends Controller
             $difficulty = '';
         }
 
+        // The picker popup's chip rows; only canonical values may reach the query.
+        $lessons = array_values(array_intersect(
+            self::LESSONS,
+            array_map('strval', (array) $request->query('lessons', []))
+        ));
+        $corp = (string) $request->query('corp', '');
+        $corp = $corp !== '' ? (QuestionBankMeta::corp($corp) ?? '') : '';
+
         $bank = Question::query()
             ->with('answers')
             ->when($search !== '', fn ($q) => $q->where('question_text', 'like', "%{$search}%"))
             ->when($difficulty !== '', fn ($q) => $q->where('difficulty', $difficulty))
+            ->when($lessons !== [], fn ($q) => $q->whereIn('subject', $lessons))
+            ->when($corp !== '', fn ($q) => $q->where('corp', $corp))
             ->orderByDesc('id')
             ->paginate(6)
             ->withQueryString();
@@ -174,6 +193,7 @@ class StudentExamController extends Controller
             'bank' => $bank,
             'search' => $search,
             'difficulty' => $difficulty,
+            'corpColors' => $this->corpColors($student),
         ]);
     }
 
@@ -378,6 +398,51 @@ class StudentExamController extends Controller
         }
 
         return rtrim(rtrim($string, '0'), '.') ?: '0';
+    }
+
+    /**
+     * Companies present in this tenant's bank, spelling-variants merged,
+     * ordered by how many questions carry them — drives the picker filter.
+     *
+     * @return list<array{name: string, color: ?string}>
+     */
+    private function corpOptions(Student $student): array
+    {
+        $colors = $this->corpColors($student);
+        $merged = [];
+
+        Question::query()
+            ->whereNotNull('corp')
+            ->where('corp', '!=', '')
+            ->selectRaw('corp, COUNT(*) aggregate')
+            ->groupBy('corp')
+            ->pluck('aggregate', 'corp')
+            ->each(function (int $count, string $raw) use (&$merged, $colors) {
+                $name = QuestionBankMeta::corp($raw) ?? $raw;
+                $merged[$name] = ($merged[$name] ?? 0) + $count;
+            });
+
+        arsort($merged);
+
+        return array_map(
+            fn (string $name) => ['name' => $name, 'color' => $colors[$name] ?? null],
+            array_keys($merged)
+        );
+    }
+
+    /** canonical company name → badge color, from tenant exam_companies */
+    private function corpColors(Student $student): array
+    {
+        $colors = [];
+
+        foreach (DB::table('exam_companies')->where('tenant_id', $student->tenant_id)->get(['name', 'color']) as $company) {
+            $name = QuestionBankMeta::corp($company->name);
+            if ($name !== null) {
+                $colors[$name] = $company->color;
+            }
+        }
+
+        return $colors;
     }
 
     private function assertStudentBelongsToTenant(Student $student): void

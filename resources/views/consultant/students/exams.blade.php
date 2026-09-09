@@ -101,7 +101,13 @@
     </div>
 
     @if(session('success'))
-        <p class="exam-flash"><i class="fas fa-check-circle"></i> {{ session('success') }}</p>
+        <div class="exam-toast" role="status">
+            <i class="fas fa-check-circle"></i>
+            <span>{{ session('success') }}</span>
+            <button type="button" class="exam-toast-close" aria-label="بستن">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
     @endif
 
     <div data-router-region="results">
@@ -160,116 +166,162 @@
             @csrf
             <div id="exam-questions-inputs" data-selected='@json(old("questions", []))'></div>
 
+            <input type="hidden" name="date" id="exam-date-g" value="{{ old('date') }}">
+            <input type="hidden" name="time_limit_minutes" id="exam-duration-g" value="{{ old('time_limit_minutes') }}">
+
             <div class="exam-modal-head">
                 <h3><i class="fas fa-plus-circle"></i> ساخت آزمون جدید</h3>
-                <p>مشخصات را وارد کنید، سپس سوالات را از بانک انتخاب کنید.</p>
-                <div class="builder-steps" role="tablist">
-                    <button type="button" class="bstep is-active" data-step="1">
-                        <span>۱</span> مشخصات آزمون
-                    </button>
-                    <button type="button" class="bstep" data-step="2">
-                        <span>۲</span> انتخاب سوالات
-                        <em id="step2-count"></em>
-                    </button>
-                </div>
+                <p>مشخصات آزمون را کامل کنید و با دکمهٔ «انتخاب سوالات» آن‌ها را از بانک بردارید.</p>
             </div>
 
-            <div class="exam-modal-body bstep-pane" data-pane="1">
-                {{-- the existing fields, unchanged, plus a source toggle at the top: --}}
-                <div class="exam-field exam-field--wide">
-                    <label>منبع سوالات</label>
-                    <div class="source-toggle">
-                        <label><input type="radio" name="question_source" value="bank" checked> انتخاب از بانک سوالات</label>
-                        <label><input type="radio" name="question_source" value="manual"> فقط تعداد (بدون سوال)</label>
-                    </div>
-                </div>
+            <div class="exam-modal-body">
                 <div class="exam-field exam-field--wide">
                     <label for="exam-title">عنوان آزمون</label>
                     <input id="exam-title" name="title" type="text" required maxlength="255"
                            value="{{ old('title') }}" placeholder="مثلاً: آزمون جامع ریاضیات — نوبت دوم">
                     @error('title')<span class="exam-field-error">{{ $message }}</span>@enderror
                 </div>
-                <div class="exam-field">
-                    <label for="exam-type">نوع آزمون</label>
-                    <select id="exam-type" name="exam_type">
-                        <option value="quiz" @selected(old('exam_type') === 'quiz')>کوئیز کوتاه</option>
-                        <option value="comprehensive" @selected(old('exam_type', 'comprehensive') === 'comprehensive')>آزمون جامع</option>
-                    </select>
+
+                <div class="exam-field exam-field--wide">
+                    <label>نوع آزمون</label>
+                    <div class="chip-group" role="radiogroup" aria-label="نوع آزمون">
+                        <label class="chip">
+                            <input type="radio" name="exam_type" value="quiz" @checked(old('exam_type') === 'quiz')>
+                            <span>کوئیز کوتاه</span>
+                        </label>
+                        <label class="chip">
+                            <input type="radio" name="exam_type" value="comprehensive"
+                                   @checked(old('exam_type', 'comprehensive') === 'comprehensive')>
+                            <span>آزمون جامع</span>
+                        </label>
+                    </div>
                 </div>
-                <div class="exam-field">
-                    <label for="exam-lesson">درس / موضوع</label>
-                    <input id="exam-lesson" name="lesson" type="text" required maxlength="100"
-                           list="exam-lesson-options" value="{{ old('lesson') }}" placeholder="ریاضی">
-                    <datalist id="exam-lesson-options">
-                        @foreach(['ریاضی','فیزیک','شیمی','زیست‌شناسی','ادبیات فارسی','عربی','دین و زندگی','زبان انگلیسی','علوم تجربی + ریاضی'] as $lesson)
-                            <option value="{{ $lesson }}"></option>
-                        @endforeach
-                    </datalist>
-                    @error('lesson')<span class="exam-field-error">{{ $message }}</span>@enderror
-                </div>
-                <div class="exam-field">
-                    <label for="exam-questions">تعداد سوال</label>
-                    <input id="exam-questions" name="question_count" type="number" min="1" max="500"
-                           value="{{ old('question_count', 20) }}">
-                </div>
-                <div class="exam-field">
-                    <label for="exam-total">نمره از</label>
-                    <input id="exam-total" name="total_marks" type="number" min="1" step="0.5"
-                           value="{{ old('total_marks', 20) }}">
-                </div>
-                <div class="exam-field">
+
+                <div class="exam-field field-with-popup">
                     <label for="exam-date">تاریخ برگزاری</label>
-                    <input id="exam-date" name="date_jalali" type="text" dir="ltr" inputmode="numeric"
-                           maxlength="10" placeholder="۱۴۰۵/۰۶/۲۰" value="{{ old('date_jalali') }}" autocomplete="off">
-                    <input id="exam-date-g" name="date" type="hidden" value="{{ old('date') }}">
+                    <div class="popup-field">
+                        <input id="exam-date" name="date_jalali" type="text" dir="ltr" inputmode="numeric"
+                               maxlength="10" value="{{ old('date_jalali') }}" autocomplete="off">
+                        <button type="button" class="popup-field-btn" data-popup="jalali" aria-label="نمایش تقویم">
+                            <i class="fas fa-calendar-day"></i>
+                        </button>
+                    </div>
                     <p class="exam-field-error" id="exam-date-error" hidden></p>
                     @error('date')<span class="exam-field-error">{{ $message }}</span>@enderror
                 </div>
-                <div class="exam-field">
+
+                <div class="exam-field field-with-popup">
                     <label for="exam-time">ساعت شروع</label>
-                    <input id="exam-time" name="time" type="text" dir="ltr" inputmode="numeric"
-                           maxlength="5" placeholder="۰۸:۳۰" value="{{ old('time') }}">
+                    <div class="popup-field">
+                        <input id="exam-time" name="time" type="text" dir="ltr" inputmode="numeric"
+                               maxlength="5" value="{{ old('time') }}" autocomplete="off">
+                        <button type="button" class="popup-field-btn" data-popup="clock" aria-label="نمایش صفحه ساعت">
+                            <i class="far fa-clock"></i>
+                        </button>
+                    </div>
                 </div>
-                <div class="exam-field">
-                    <label for="exam-duration">مدت (دقیقه)</label>
-                    <input id="exam-duration" name="time_limit_minutes" type="number" min="5" step="5"
-                           value="{{ old('time_limit_minutes', 90) }}">
+
+                <div class="exam-field field-with-popup">
+                    <label for="exam-end-time">ساعت پایان</label>
+                    <div class="popup-field">
+                        <input id="exam-end-time" name="end_time" type="text" dir="ltr" inputmode="numeric"
+                               maxlength="5" value="{{ old('end_time') }}" autocomplete="off">
+                        <button type="button" class="popup-field-btn" data-popup="clock" aria-label="نمایش صفحه ساعت">
+                            <i class="far fa-clock"></i>
+                        </button>
+                    </div>
+                    <p class="exam-field-error" id="exam-time-error" hidden></p>
                 </div>
+
+                <div class="exam-field exam-field--wide">
+                    <label>سوالات آزمون</label>
+                    <button type="button" id="open-question-picker" class="question-pick-btn">
+                        <i class="fas fa-tasks"></i> انتخاب سوالات
+                        <em id="picked-count"></em>
+                    </button>
+                    <p class="exam-field-hint" id="lesson-summary">درس‌های آزمون و فیلترهای انتخاب را در پنجرهٔ «انتخاب سوالات» مشخص کنید.</p>
+                    @error('lesson')<span class="exam-field-error">برای ثبت آزمون، حداقل یک درس از پنجرهٔ انتخاب سوالات انتخاب کنید.</span>@enderror
+                    @error('questions')<span class="exam-field-error">{{ $message }}</span>@enderror
+                </div>
+
                 <div class="exam-field exam-field--wide">
                     <label for="exam-desc">توضیح مشاور</label>
                     <textarea id="exam-desc" name="description" rows="2" maxlength="2000"
                               placeholder="موضوعات پوشش‌داده‌شده و نکات مهم…">{{ old('description') }}</textarea>
                 </div>
-                @error('questions')<span class="exam-field-error exam-field--wide">{{ $message }}</span>@enderror
-            </div>
-
-            <div class="exam-modal-body bstep-pane picker-pane" data-pane="2" hidden>
-                <div class="picker-toolbar">
-                    <input type="search" id="picker-search" class="picker-search"
-                           placeholder="جستجو در متن سوالات…" value="{{ $search ?? '' }}">
-                    <select id="picker-difficulty" class="picker-difficulty">
-                        <option value="">همه سطوح</option>
-                        <option value="Easy">آسان</option>
-                        <option value="Medium">متوسط</option>
-                        <option value="Hard">سخت</option>
-                    </select>
-                </div>
-                <div id="picker-root"
-                     data-url="{{ route('consultant.student.exams.questions', $student) }}"
-                     class="picker-root"><p class="picker-empty">در حال بارگذاری…</p></div>
-                <div class="picker-tray-wrap">
-                    <p class="picker-tray-title">ترتیب سوالات در آزمون <small>(با ↑↓ جابه‌جا کنید)</small></p>
-                    <ol id="picker-tray" class="picker-tray"></ol>
-                </div>
             </div>
 
             <div class="exam-modal-foot">
-                <button type="button" id="builder-back" class="secondary-button" hidden>مرحله قبل</button>
-                <button type="button" id="builder-next" class="primary-button">مرحله بعد: انتخاب سوالات</button>
-                <button type="submit" id="builder-submit" class="primary-button" hidden>ثبت آزمون</button>
+                <button type="submit" class="primary-button">ثبت آزمون</button>
                 <button type="button" class="secondary-button exam-modal-cancel">انصراف</button>
             </div>
         </form>
+    </dialog>
+
+    {{-- Second popup: the question bank picker. Its lesson chips double as
+         the bank filter and as the exam's own lessons[] form input. --}}
+    <dialog id="pick-questions-modal" class="exam-modal exam-modal--picker">
+        <div class="exam-modal-head">
+            <h3><i class="fas fa-tasks"></i> انتخاب سوالات</h3>
+            <p>با چیپ‌های درس، سطح و شرکت، بانک را غربال کنید؛ کلیک روی هر کارت، آن سوال را به آزمون اضافه می‌کند.</p>
+        </div>
+        <div class="exam-modal-body picker-pane">
+            <div class="picker-toolbar">
+                <input type="search" id="picker-search" class="picker-search"
+                       placeholder="جستجو در متن سوالات…" value="{{ $search ?? '' }}">
+                <div class="pf-row">
+                    <span class="pf-label">درس‌ها <small>(چندتا هم‌زمان)</small></span>
+                    <div class="chip-group" id="lesson-chips">
+                        @php $oldLessons = (array) old('lesson', []); @endphp
+                        @foreach($lessons as $lesson)
+                            <label class="chip">
+                                <input type="checkbox" name="lesson[]" value="{{ $lesson }}"
+                                       form="create-exam-form" @checked(in_array($lesson, $oldLessons, true))>
+                                <span>{{ $lesson }}</span>
+                            </label>
+                        @endforeach
+                    </div>
+                </div>
+                <div class="pf-row">
+                    <span class="pf-label">سطح</span>
+                    <div class="chip-group" id="difficulty-chips">
+                        @foreach(['' => 'همه سطوح', 'Easy' => 'آسان', 'Medium' => 'متوسط', 'Hard' => 'سخت'] as $value => $label)
+                            <label class="chip">
+                                <input type="radio" name="picker_difficulty" value="{{ $value }}" @checked($value === '')>
+                                <span>{{ $label }}</span>
+                            </label>
+                        @endforeach
+                    </div>
+                </div>
+                <div class="pf-row">
+                    <span class="pf-label">شرکت</span>
+                    <div class="chip-group" id="corp-chips">
+                        <label class="chip">
+                            <input type="radio" name="picker_corp" value="" checked>
+                            <span>همه شرکت‌ها</span>
+                        </label>
+                        @foreach($pickerCorps as $corp)
+                            <label class="chip">
+                                <input type="radio" name="picker_corp" value="{{ $corp['name'] }}">
+                                @if($corp['color'])<span class="corp-dot" style="--corp-color: {{ $corp['color'] }}"></span>@endif
+                                <span>{{ $corp['name'] }}</span>
+                            </label>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+            <div id="picker-root"
+                 data-url="{{ route('consultant.student.exams.questions', $student) }}"
+                 class="picker-root"><p class="picker-empty">در حال بارگذاری…</p></div>
+            <div class="picker-tray-wrap">
+                <p class="picker-tray-title">ترتیب سوالات در آزمون <small>(با ↑↓ جابه‌جا کنید)</small></p>
+                <ol id="picker-tray" class="picker-tray"></ol>
+            </div>
+        </div>
+        <div class="exam-modal-foot">
+            <button type="button" id="picker-done" class="primary-button">ثبت انتخاب</button>
+            <button type="button" id="picker-cancel" class="secondary-button">بازگشت</button>
+        </div>
     </dialog>
 </div>
 @vite(['resources/js/features/consultant-exams.js'])

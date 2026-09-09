@@ -1435,18 +1435,35 @@ a {
   background: color-mix(in srgb, var(--c-primary) 20%, transparent);
 }
 
-.exam-flash {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0 0 16px;
-  padding: 10px 16px;
-  border-radius: 12px;
-  border: 1px solid color-mix(in srgb, var(--c-success) 30%, transparent);
-  background: color-mix(in srgb, var(--c-success) 12%, transparent);
-  color: var(--c-success);
-  font-size: 13px;
-  font-weight: 700;
+/* Success toast: floats in the top-right corner, self-dismisses after 5s
+   (timer lives in consultant-exams.js). Fixed, so it never reflows the page. */
+.exam-toast {
+  position: fixed; top: 20px; right: 20px; z-index: 90;
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px; border-radius: 14px;
+  background: var(--c-surface);
+  border: 1px solid color-mix(in srgb, var(--c-success) 35%, transparent);
+  box-shadow: 0 14px 40px rgba(2, 6, 23, 0.18);
+  color: var(--c-success); font-size: 13px; font-weight: 700;
+  animation: exam-toast-in 240ms cubic-bezier(0.25, 0.8, 0.35, 1);
+}
+.exam-toast.is-leaving { animation: exam-toast-out 280ms ease forwards; }
+.exam-toast > i { font-size: 16px; }
+.exam-toast-close {
+  border: 0; background: transparent; color: var(--c-muted);
+  cursor: pointer; font-size: 13px; padding: 3px 7px; border-radius: 8px; line-height: 1;
+}
+.exam-toast-close:hover { color: var(--c-text); background: var(--c-surface-alt); }
+@keyframes exam-toast-in {
+  from { opacity: 0; transform: translateY(-14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes exam-toast-out {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(-14px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .exam-toast, .exam-toast.is-leaving { animation: none; }
 }
 
 /* Card grid: bigger cards, fewer columns, collapses responsively. */
@@ -1864,52 +1881,215 @@ a {
 }
 
 /* ==========================================================================
-   EXAM BUILDER — two-step modal + question bank picker
+   EXAM BUILDER — create dialog with chip fields + Jalali/clock popups,
+   and a separate question-bank picker dialog.
    ========================================================================== */
 .exam-modal--builder { width: min(860px, calc(100% - 32px)); }
+.exam-modal--picker { width: min(760px, calc(100% - 32px)); }
 
-.builder-steps { display: flex; gap: 8px; margin-top: 14px; }
-.bstep {
-  display: inline-flex; align-items: center; gap: 8px;
+.exam-field label small { font-weight: 400; color: var(--c-muted); }
+
+/* Selectable pill buttons instead of dropdown/datalist fields. */
+.chip-group { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  position: relative; display: inline-flex; align-items: center; gap: 6px;
   padding: 8px 16px; border: 1px solid var(--c-border); border-radius: 999px;
-  background: transparent; color: var(--c-muted); font: inherit; font-size: 13px;
-  font-weight: 700; cursor: pointer; transition: all var(--animation-duration) ease;
+  background: var(--c-surface-alt); color: var(--c-muted);
+  font-size: 13px; font-weight: 700; cursor: pointer; user-select: none;
+  transition:
+    color var(--animation-duration) ease,
+    background var(--animation-duration) ease,
+    border-color var(--animation-duration) ease;
 }
-.bstep span {
-  display: grid; place-items: center; width: 22px; height: 22px;
-  border-radius: 50%; background: var(--c-surface-alt); font-size: 11px;
+.chip input { position: absolute; opacity: 0; pointer-events: none; }
+.chip:hover { border-color: var(--c-border-strong); color: var(--c-text); }
+.chip:has(input:checked) {
+  color: var(--c-primary); border-color: var(--c-primary);
+  background: color-mix(in srgb, var(--c-primary) 10%, transparent);
 }
-.bstep.is-active { color: var(--c-primary); border-color: var(--c-primary); background: color-mix(in srgb, var(--c-primary) 10%, transparent); }
-.bstep.is-active span { background: var(--c-primary); color: var(--c-surface); }
-.bstep em { font-style: normal; color: var(--c-primary); }
+.chip:has(input:checked)::before { content: '\2713'; font-size: 12px; line-height: 1; }
+.chip:has(input:focus-visible) { outline: 2px solid var(--c-primary); outline-offset: 2px; }
 
-.source-toggle { display: flex; gap: 16px; font-size: 13px; color: var(--c-text); }
-.source-toggle label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+/* Date/time fields that anchor a popup. The input is dir="ltr" while the page
+   is RTL, so its padding must match the icon's physical side: the button sits
+   at the RTL inline-end (physical left), hence padding-inline-start here. */
+.field-with-popup { position: relative; }
+.popup-field { position: relative; }
+.popup-field input { width: 100%; padding-inline-start: 40px; cursor: pointer; }
+.popup-field-btn {
+  position: absolute; inset-inline-end: 5px; top: 50%; transform: translateY(-50%);
+  display: grid; place-items: center; width: 30px; height: 30px;
+  border: 0; border-radius: 8px; background: transparent; color: var(--c-muted);
+  font-size: 15px; cursor: pointer; transition: color var(--animation-duration) ease;
+}
+.popup-field-btn:hover { color: var(--c-primary); }
+
+.exam-field-hint { margin: 2px 0 0; font-size: 11.5px; color: var(--c-muted); }
+
+/* The question-picker trigger button lives inside the create form. */
+.question-pick-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  align-self: start; padding: 10px 18px; border-radius: 12px; cursor: pointer;
+  border: 1px dashed var(--c-primary); color: var(--c-primary); font: inherit;
+  font-size: 13.5px; font-weight: 800;
+  background: color-mix(in srgb, var(--c-primary) 6%, transparent);
+  transition: background var(--animation-duration) ease;
+}
+.question-pick-btn:hover { background: color-mix(in srgb, var(--c-primary) 12%, transparent); }
+.question-pick-btn i { font-size: 14px; }
+.question-pick-btn em {
+  font-style: normal; font-size: 11.5px; font-weight: 700; padding: 2px 9px;
+  border-radius: 999px; background: color-mix(in srgb, var(--c-primary) 14%, transparent);
+}
+.question-pick-btn em:empty { display: none; }
+
+/* Jalali calendar popup (built by consultant-exams.js). */
+.jpop {
+  position: absolute; z-index: 40; top: calc(100% + 6px); inset-inline-start: 0;
+  width: 280px; padding: 12px; border-radius: 16px;
+  background: var(--c-surface); border: 1px solid var(--c-border);
+  box-shadow: 0 18px 40px rgba(2, 6, 23, 0.18);
+}
+.jpop-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; font-size: 13.5px; font-weight: 800; }
+.jpop-nav { display: flex; gap: 2px; }
+.jpop-head button, .jpop-foot button {
+  border: 0; background: transparent; color: var(--c-muted); font: inherit;
+  font-size: 13px; cursor: pointer; border-radius: 8px; padding: 4px 8px;
+}
+.jpop-head button:hover, .jpop-foot button:hover { color: var(--c-primary); background: var(--c-surface-alt); }
+.jpop-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; margin-top: 4px; }
+.jpop-dow span { text-align: center; font-size: 10.5px; font-weight: 700; color: var(--c-muted); padding: 4px 0; }
+.jpop-day {
+  display: grid; place-items: center; width: 100%; aspect-ratio: 1; border: 0;
+  border-radius: 10px; background: transparent; color: var(--c-text); font: inherit;
+  font-size: 12.5px; cursor: pointer; transition: background var(--animation-duration) ease;
+}
+.jpop-day:hover { background: var(--c-surface-alt); }
+.jpop-day.is-today { outline: 1px solid var(--c-primary); outline-offset: -1px; }
+.jpop-day.is-selected { background: var(--c-primary); color: var(--c-surface); font-weight: 800; }
+.jpop-foot { display: flex; justify-content: center; margin-top: 6px; border-top: 1px dashed var(--c-border); padding-top: 6px; }
+
+/* Clock-face time popup (Material-style dial). */
+.cpop {
+  position: absolute; z-index: 40; top: calc(100% + 6px); inset-inline-start: 0;
+  width: 264px; padding: 12px; border-radius: 16px;
+  background: var(--c-surface); border: 1px solid var(--c-border);
+  box-shadow: 0 18px 40px rgba(2, 6, 23, 0.18);
+  user-select: none;
+}
+.cpop-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+.cpop-display {
+  display: inline-flex; align-items: center; gap: 2px;
+  font-size: 22px; font-weight: 800; color: var(--c-text); font-variant-numeric: tabular-nums;
+}
+.cpop-colon { color: var(--c-muted); }
+.cpop-seg {
+  border: 0; background: transparent; color: var(--c-muted); font: inherit;
+  border-radius: 8px; padding: 3px 9px; cursor: pointer;
+  transition: color var(--animation-duration) ease, background var(--animation-duration) ease;
+}
+.cpop-seg.is-active { color: var(--c-primary); background: color-mix(in srgb, var(--c-primary) 10%, transparent); }
+.cpop-ampm { display: inline-flex; border: 1px solid var(--c-border); border-radius: 999px; overflow: hidden; }
+.cpop-ampm button {
+  border: 0; background: transparent; color: var(--c-muted); font: inherit;
+  font-size: 11px; font-weight: 700; padding: 4px 10px; cursor: pointer;
+  transition: color var(--animation-duration) ease, background var(--animation-duration) ease;
+}
+.cpop-ampm button.is-active { background: var(--c-primary); color: var(--c-surface); }
+.cpop-dial { display: block; margin: 0 auto; width: 224px; max-width: 100%; touch-action: none; cursor: pointer; }
+.cpop-face { fill: var(--c-surface-alt); stroke: var(--c-border); }
+.cpop-tick { stroke: var(--c-border-strong); stroke-width: 1; opacity: 0.5; }
+.cpop-tick.is-major { stroke: var(--c-muted); stroke-width: 2; opacity: 0.85; }
+/* The hand rotates as one group; eased for discrete picks (click, wheel,
+   arrow keys) and instant while dragging so it tracks the pointer. */
+.cpop-hand-g {
+  transform-origin: 110px 110px;
+  transition: transform 200ms cubic-bezier(0.25, 0.8, 0.35, 1);
+}
+.cpop.is-dragging .cpop-hand-g { transition: none; }
+.cpop-hand { stroke: var(--c-primary); stroke-width: 2; stroke-linecap: round; pointer-events: none; }
+.cpop-knob {
+  fill: color-mix(in srgb, var(--c-primary) 18%, transparent);
+  stroke: var(--c-primary); pointer-events: none;
+}
+.cpop-axis { fill: var(--c-primary); pointer-events: none; }
+.cpop-num {
+  font-size: 13.5px; font-weight: 700; fill: var(--c-muted); cursor: pointer;
+  transition: fill var(--animation-duration) ease;
+}
+.cpop-num:hover { fill: var(--c-text); }
+.cpop-num.is-picked { fill: var(--c-primary); }
+.cpop-foot {
+  display: flex; justify-content: space-between; margin-top: 2px;
+  border-top: 1px dashed var(--c-border); padding-top: 6px;
+}
+.cpop-foot button {
+  border: 0; background: transparent; color: var(--c-muted); font: inherit;
+  font-size: 12px; font-weight: 700; padding: 5px 12px; border-radius: 8px; cursor: pointer;
+  transition: color var(--animation-duration) ease, background var(--animation-duration) ease;
+}
+.cpop-foot button:hover { color: var(--c-primary); background: var(--c-surface-alt); }
+.cpop-foot [data-clock="ok"] { color: var(--c-primary); }
+@media (prefers-reduced-motion: reduce) {
+  .cpop-hand-g { transition: none; }
+}
 
 .picker-pane { grid-template-columns: 1fr; gap: 14px; max-height: 60vh; overflow-y: auto; }
-.picker-toolbar { display: flex; gap: 10px; position: sticky; top: 0; background: var(--c-surface); padding-bottom: 8px; z-index: 1; }
-.picker-search, .picker-difficulty {
+/* Sticky filter block: search + lesson/difficulty/corp chip rows. */
+.picker-toolbar {
+  display: flex; flex-direction: column; gap: 8px; position: sticky; top: 0;
+  background: var(--c-surface); padding-bottom: 10px; margin-bottom: 4px;
+  border-bottom: 1px dashed var(--c-border); z-index: 1;
+}
+.picker-search {
   background: var(--c-surface-alt); border: 1px solid var(--c-border);
   border-radius: 10px; padding: 9px 12px; color: var(--c-text); font: inherit; font-size: 13.5px;
 }
-.picker-search { flex: 1; }
+.pf-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; }
+.pf-label { font-size: 12px; font-weight: 800; color: var(--c-muted); white-space: nowrap; }
+.pf-label small { font-weight: 400; }
+.picker-toolbar .chip { padding: 6px 13px; font-size: 12.5px; }
+.corp-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--corp-color, var(--c-border-strong)); flex: 0 0 auto; }
 .picker-root { transition: opacity 160ms ease; }
 .picker-root.is-loading { opacity: .45; pointer-events: none; }
 
 .picker-list { display: flex; flex-direction: column; gap: 10px; }
+/* Whole card is the selection control; the round badge doubles as the
+   order-position number once the question is picked. */
 .picker-item {
-  display: flex; gap: 12px; align-items: center; padding: 10px 12px;
+  display: flex; gap: 12px; align-items: flex-start; padding: 12px;
   border: 1px solid var(--c-border); border-radius: 14px; cursor: pointer;
-  background: var(--c-surface-alt); transition: border-color var(--animation-duration) ease, background var(--animation-duration) ease;
+  background: var(--c-surface-alt);
+  transition: border-color var(--animation-duration) ease, background var(--animation-duration) ease;
 }
 .picker-item:hover { border-color: var(--c-border-strong); }
+.picker-item:focus-visible { outline: 2px solid var(--c-primary); outline-offset: 2px; }
 .picker-item.is-selected { border-color: var(--c-primary); background: color-mix(in srgb, var(--c-primary) 8%, transparent); }
-.picker-item .picker-check { accent-color: var(--c-primary); width: 18px; height: 18px; flex: 0 0 auto; }
-.picker-thumb { flex: 0 0 auto; background: #fff; }
-.picker-thumb--empty { display: grid; place-items: center; width: 64px; height: 64px; border-radius: 10px; border: 1px dashed var(--c-border); color: var(--c-muted); }
-.picker-item-body { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-.picker-q-text { font-size: 13px; line-height: 1.8; color: var(--c-text); }
-.picker-meta { display: flex; flex-wrap: wrap; gap: 10px; font-size: 11.5px; color: var(--c-muted); }
+.picker-pos {
+  flex: 0 0 auto; display: grid; place-items: center; width: 28px; height: 28px;
+  margin-top: 2px; border-radius: 50%; border: 2px solid var(--c-border-strong);
+  color: var(--c-muted); font-size: 12.5px; font-weight: 800; background: var(--c-surface);
+  transition: border-color var(--animation-duration) ease, background var(--animation-duration) ease, color var(--animation-duration) ease;
+}
+.picker-item:not(.is-selected):hover .picker-pos::after { content: '\2713'; color: var(--c-primary); }
+.picker-item.is-selected .picker-pos { border-color: var(--c-primary); background: var(--c-primary); color: var(--c-surface); }
+.picker-item-main { display: flex; flex-direction: column; gap: 8px; min-width: 0; flex: 1; }
+.picker-figure { max-width: 340px; }
+.picker-q-text { margin: 0; font-size: 13.5px; line-height: 1.9; color: var(--c-text); white-space: pre-line; }
+.picker-options {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px 16px;
+  font-size: 12.5px; color: var(--c-text);
+}
+.picker-options li { display: flex; align-items: flex-start; gap: 7px; min-width: 0; }
+.opt-label {
+  flex: 0 0 auto; display: grid; place-items: center; width: 20px; height: 20px;
+  border-radius: 6px; border: 1px solid var(--c-border); background: var(--c-surface);
+  font-size: 11px; font-weight: 800; color: var(--c-muted); margin-top: 1px;
+}
+.opt-text { min-width: 0; line-height: 1.7; }
+@media (max-width: 620px) { .picker-options { grid-template-columns: 1fr; } }
+.picker-meta { display: flex; flex-wrap: wrap; gap: 6px; font-size: 11.5px; color: var(--c-muted); }
 .picker-empty { text-align: center; color: var(--c-muted); font-size: 13px; padding: 24px 0; }
 
 .picker-pager { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 12px 0 2px; font-size: 12.5px; color: var(--c-muted); }
@@ -1932,6 +2112,20 @@ a {
 .diff--easy { color: var(--c-success); background: color-mix(in srgb, var(--c-success) 14%, transparent); }
 .diff--medium { color: var(--c-info); background: color-mix(in srgb, var(--c-info) 14%, transparent); }
 .diff--hard { color: var(--c-danger); background: color-mix(in srgb, var(--c-danger) 14%, transparent); }
+
+/* Card metadata tags; the corp one re-tints to its company badge color. */
+.tag-chip {
+  display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px;
+  border-radius: 999px; font-size: 11px; font-weight: 700;
+  border: 1px solid transparent; line-height: 1.7;
+}
+.tag--corp {
+  color: var(--corp-color, var(--c-muted));
+  background: color-mix(in srgb, var(--corp-color, var(--c-muted)) 12%, transparent);
+  border-color: color-mix(in srgb, var(--corp-color, var(--c-muted)) 34%, transparent);
+}
+.tag--lesson { color: var(--c-info); background: color-mix(in srgb, var(--c-info) 12%, transparent); }
+.tag--chapter { color: var(--c-muted); background: var(--c-surface); border-color: var(--c-border); }
 
 .exam-run-btn {
   display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px;
