@@ -138,8 +138,12 @@
                 @if($value)
                     <img src="{{ tenant_asset($value) }}" alt="" class="studio-image-preview">
                 @endif
-                <input type="file" id="studio-{{ md5($path) }}" name="{{ $name }}" accept="image/*" class="settings-file">
-                <span class="settings-hint">برای تغییر، فایلی انتخاب کنید؛ خالی بگذارید تا تغییر نکند.</span>
+                @include('consultant.partials.upload-tile', [
+                    'id' => 'studio-'.md5($path),
+                    'name' => $name,
+                    'text' => 'برای انتخاب تصویر کلیک کنید',
+                    'hint' => 'برای تغییر، فایلی انتخاب کنید؛ خالی بگذارید تا تغییر نکند.',
+                ])
             </div>
             @break
 

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
+use App\Support\RichText;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -54,6 +55,18 @@ class BlogPost extends Model
         return $this->status === self::STATUS_PUBLISHED;
     }
 
+    /** Display HTML for the post body (sanitized rich text, or nl2br for legacy plain text). */
+    public function renderedBody(): string
+    {
+        return RichText::render($this->body);
+    }
+
+    /** The body as the editor should prefill it: always HTML. */
+    public function editableBody(): string
+    {
+        return RichText::editable($this->body);
+    }
+
     /**
      * Shape matching the config-driven landing items, so the blog section
      * variants render DB posts through the exact same template.
@@ -65,7 +78,7 @@ class BlogPost extends Model
             'from'    => 'primary',
             'to'      => 'secondary',
             'title'   => $this->title,
-            'excerpt' => $this->excerpt ?: Str::limit(strip_tags((string) $this->body), 120),
+            'excerpt' => $this->excerpt ?: Str::limit(RichText::toPlainText($this->body), 120),
             'url'     => route('blog.show', $this->slug),
             'visible' => true,
         ];

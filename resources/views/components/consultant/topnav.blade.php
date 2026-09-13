@@ -1,3 +1,8 @@
+{{--
+    Tenant-resolved unread badge for the direct-chat nav item; live-updated
+    on the chat page by direct-chat.js. Shared partial keeps the topnav and
+    sidebar in lockstep with the student portal's nav.
+--}}
 <header class="consultant-topnav">
     <div class="topnav-inner">
         <a href="{{ route('consultant.dashboard') }}" class="brand">
@@ -14,8 +19,8 @@
             </a>
 
             <a
-                href="{{ route('consultant.settings.blog.index') }}"
-                class="topnav-link {{ request()->routeIs('consultant.settings.blog.*') ? 'active' : '' }}"
+                href="{{ route('consultant.blog.index') }}"
+                class="topnav-link {{ request()->routeIs('consultant.blog.*') ? 'active' : '' }}"
             >
                 {{ $labels['blog_management'] ?? 'وبلاگ' }}
             </a>
@@ -25,6 +30,7 @@
                 class="topnav-link {{ request()->routeIs('consultant.direct-chat') ? 'active' : '' }}"
             >
                 {{ $labels['direct_chat'] ?? 'گفتگوی مستقیم' }}
+                @include('partials.chat.unread-badge')
             </a>
 
             @if(site('features.bulk_actions', false))

@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "./landing.css";
+@import "./features/chat.css";
 
 /* =========================================
    0. Theme color tokens
@@ -718,6 +719,11 @@ a {
 
    .filter-carousel {
      overflow: hidden;
+     overflow-y: auto;
+     /* Assignment panels are taller than the general chips pages; keep the
+        popover on-screen and scroll its content instead of the page. */
+     max-height: min(calc(100vh - 220px), 560px);
+     scrollbar-width: thin;
      transition: height 320ms cubic-bezier(0.4, 0, 0.2, 1);
    }
 
@@ -740,6 +746,89 @@ a {
      text-align: center;
      font-size: 13px;
      color: var(--c-muted);
+   }
+
+   /* Bulk assignment section inside an exam/schedule filter page. */
+   .filter-assign {
+     margin-top: 4px;
+     padding-top: 14px;
+     border-top: 1px dashed var(--c-border);
+   }
+
+   .filter-assign-title {
+     margin: 0 0 6px;
+     font-size: 13px;
+     font-weight: 800;
+     color: var(--c-text);
+   }
+
+   .filter-assign-hint {
+     margin: 0 0 10px;
+     font-size: 11px;
+     line-height: 1.6;
+     color: var(--c-muted);
+   }
+
+   .filter-assign-field {
+     display: block;
+     margin-bottom: 10px;
+   }
+
+   .filter-assign-field > span {
+     display: block;
+     margin-bottom: 4px;
+     font-size: 11px;
+     font-weight: 700;
+     color: var(--c-muted);
+   }
+
+   .filter-assign-input {
+     width: 100%;
+     padding: 7px 9px;
+     border: 1px solid var(--c-border);
+     border-radius: 10px;
+     background: var(--c-surface);
+     color: var(--c-text);
+     font-size: 12px;
+     font-family: inherit;
+   }
+
+   .filter-assign-input:focus {
+     outline: none;
+     border-color: var(--c-primary);
+   }
+
+   input[type="color"].filter-assign-input {
+     height: 34px;
+     padding: 3px;
+   }
+
+   .filter-assign-row {
+     display: flex;
+     gap: 8px;
+   }
+
+   .filter-assign-row .filter-assign-field--half {
+     flex: 1;
+     min-width: 0;
+   }
+
+   .filter-assign-row .filter-assign-field--color {
+     flex: 0 0 52px;
+   }
+
+   .filter-assign-submit {
+     width: 100%;
+     margin-top: 4px;
+   }
+
+   .filter-assign-count {
+     margin-inline-start: 4px;
+     padding: 1px 7px;
+     border-radius: 999px;
+     background: rgba(255, 255, 255, 0.22);
+     font-size: 11px;
+     font-weight: 700;
    }
 
    .filter-dots {
@@ -3109,7 +3198,8 @@ body.landing ::selection { background: var(--c-selection-bg); color: var(--c-sel
    dark mode while inheriting the input's (light) text color. Paint the option
    list with theme tokens where the engine allows it (Chrome ≥129, Firefox);
    older engines ignore these rules and fall back to readable system colors. */
-select.settings-input option {
+select.settings-input option,
+.blog-editor-select option {
   background-color: var(--c-surface);
   color: var(--c-text);
 }
@@ -3223,42 +3313,8 @@ select.settings-input option {
 }
 
 /* ==========================================================================
-   BLOG MANAGEMENT — settings tab list/form + public blog pages
+   BLOG MANAGEMENT — top-nav section list/form + public blog pages
    ========================================================================== */
-.blog-source-switch {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.blog-source-state {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--c-muted);
-  padding: 9px 16px;
-  border-radius: 999px;
-  border: 1px solid var(--c-border);
-}
-
-.blog-source-state.is-on {
-  color: var(--c-primary);
-  border-color: color-mix(in srgb, var(--c-primary) 45%, transparent);
-  background: color-mix(in srgb, var(--c-primary) 10%, transparent);
-}
-
-.blog-list-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 18px;
-}
-
 .blog-filters {
   display: flex;
   gap: 8px;
@@ -3301,6 +3357,72 @@ select.settings-input option {
 }
 
 .blog-row:hover { border-color: var(--c-border-strong, var(--c-border)); }
+
+/* Drag-to-sort affordances (consultant-blog-sort.js). The grip only shows
+   on hover/focus on pointer devices, stays faintly visible on touch. */
+.blog-row-grip {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--c-subtle);
+  font-size: 14px;
+  cursor: grab;
+  opacity: 0;
+  touch-action: none;
+  transition: opacity 160ms ease, color 160ms ease, background 160ms ease;
+}
+
+.blog-row:hover .blog-row-grip,
+.blog-row-grip:focus-visible {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .blog-row-grip { opacity: 0.65; }
+}
+
+.blog-row-grip:hover {
+  color: var(--c-primary);
+  background: color-mix(in srgb, var(--c-primary) 8%, transparent);
+}
+
+.blog-row-grip:focus-visible {
+  outline: 2px solid var(--c-primary);
+  outline-offset: 1px;
+}
+
+.blog-row-grip:active { cursor: grabbing; }
+
+.blog-list.is-sorting { user-select: none; }
+
+.blog-list.is-sorting .blog-row { transition: none; }
+
+.blog-row.is-dragging {
+  position: relative;
+  z-index: 5;
+  border-color: var(--c-primary);
+  background: var(--c-surface-alt);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
+  cursor: grabbing;
+}
+
+.blog-row.is-dragging .blog-row-grip { opacity: 1; color: var(--c-primary); }
+
+.blog-sort-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 10px;
+  font-size: 12px;
+  color: var(--c-subtle);
+}
 
 .blog-row-cover {
   width: 52px;
@@ -3393,7 +3515,369 @@ select.settings-input option {
   background: color-mix(in srgb, var(--c-danger, #F87171) 12%, transparent);
 }
 
-.blog-form { max-width: 640px; }
+/* Two-column editor: the writing column gets the room, a fixed sidebar
+   carries status/cover/actions; collapses under 980px. */
+.blog-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 16px 36px;
+  align-items: start;
+  max-width: none;
+}
+
+.blog-form-main,
+.blog-form-side {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.blog-form-body { min-height: 340px; resize: vertical; line-height: 1.9; }
+
+/* Publish state: one round switch instead of a dropdown. The checkbox is
+   keyboard-focusable (visually hidden, not display:none) and the label wraps
+   it, so the whole row clicks; :has() paints every state off theme tokens. */
+.blog-status-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  align-self: flex-start;
+  cursor: pointer;
+  user-select: none;
+}
+
+.blog-status-toggle input[type="checkbox"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  margin: 0;
+}
+
+.blog-status-switch {
+  position: relative;
+  flex: none;
+  width: 46px;
+  height: 26px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--c-text) 14%, transparent);
+  border: 1px solid var(--c-border-strong, var(--c-border));
+  transition: background 180ms ease, border-color 180ms ease;
+}
+
+.blog-status-switch::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  inset-inline-start: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--c-surface);
+  box-shadow: 0 1px 3px rgba(2, 6, 23, 0.25);
+  transform: translateY(-50%);
+  transition: inset-inline-start 180ms ease;
+}
+
+.blog-status-toggle:has(input:checked) .blog-status-switch {
+  background: var(--c-primary);
+  border-color: var(--c-primary);
+}
+
+.blog-status-toggle:has(input:checked) .blog-status-switch::after {
+  inset-inline-start: 23px;
+}
+
+.blog-status-toggle:has(input[type="checkbox"]:focus-visible) .blog-status-switch {
+  outline: 2px solid var(--c-primary);
+  outline-offset: 2px;
+}
+
+.blog-status-state::before {
+  content: "پیش‌نویس";
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--c-muted);
+}
+
+.blog-status-toggle:has(input:checked) .blog-status-state::before {
+  content: "منتشرشده";
+  color: var(--c-primary);
+}
+
+/* --------------------------------------------------------------------------
+   Rich body editor (blog-editor.js). A toolbar strip glued on top of the
+   .settings-input surface — the surface keeps that class (and blog-form-body)
+   so field chrome, focus ring and dialog min-height rules all apply to it
+   unchanged. Everything here rides on the same theme tokens. */
+.blog-editor { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+
+.blog-editor .is-editor-hidden { display: none; }
+
+/* The modal's 422 pass marks the (hidden) textarea — let that leak into the
+   visible surface so the error is actually seeable. */
+.blog-editor:has(textarea.is-invalid) .blog-editor-surface {
+  border-color: var(--c-danger, #F87171);
+}
+
+.blog-editor-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 6px 8px;
+  background: var(--c-surface-alt, color-mix(in srgb, var(--c-text) 4%, transparent));
+  border: 1px solid var(--c-border);
+  border-bottom: none;
+  border-radius: var(--radius-input, 12px) var(--radius-input, 12px) 0 0;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.blog-editor-btn {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--c-muted);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 160ms ease;
+  flex: none;
+}
+
+.blog-editor-btn:hover { color: var(--c-text); background: color-mix(in srgb, var(--c-text) 8%, transparent); }
+
+.blog-editor-btn.is-active {
+  color: var(--c-primary);
+  background: var(--c-primary-soft, color-mix(in srgb, var(--c-primary) 14%, transparent));
+}
+
+.blog-editor-btn--danger:hover {
+  color: var(--c-danger, #F87171);
+  background: color-mix(in srgb, var(--c-danger, #F87171) 12%, transparent);
+}
+
+.blog-editor-sep {
+  width: 1px;
+  height: 22px;
+  background: var(--c-border);
+  margin: 0 4px;
+  flex: none;
+}
+
+.blog-editor-select {
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 9px;
+  border: 1px solid var(--c-border);
+  background: transparent;
+  color: var(--c-text);
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color 160ms ease;
+}
+
+.blog-editor-select:focus { outline: none; border-color: var(--c-primary); }
+
+/* Image-only tools surface while a picture in the body is selected. */
+.blog-editor-img-tools { display: none; align-items: center; gap: 4px; }
+.blog-editor.has-image .blog-editor-img-tools { display: inline-flex; }
+
+.blog-editor-count {
+  margin-inline-start: auto;
+  padding-inline: 6px;
+  font-size: 11px;
+  color: var(--c-subtle);
+  white-space: nowrap;
+}
+
+.blog-editor-surface {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  overflow: auto;
+  word-break: break-word;
+}
+
+.blog-editor-surface.is-drop-target {
+  box-shadow: inset 0 0 0 2px var(--c-primary);
+  background: color-mix(in srgb, var(--c-primary) 6%, transparent);
+}
+
+.blog-editor-uploading { font-size: 13px; color: var(--c-muted); }
+
+.blog-editor-surface img.is-selected {
+  outline: 2px solid var(--c-primary);
+  outline-offset: 2px;
+  cursor: pointer;
+}
+
+/* --------------------------------------------------------------------------
+   Rich body typography — one language shared by the editor surface and the
+   public post, so what the consultant writes is what the site shows. */
+.blog-editor-surface > :first-child,
+.blog-post-body > :first-child { margin-top: 0; }
+
+.blog-editor-surface p,
+.blog-post-body p { margin: 0 0 1.1em; }
+
+.blog-editor-surface h2,
+.blog-post-body h2 {
+  font-size: 1.45em;
+  font-weight: 800;
+  line-height: 1.8;
+  margin: 1.4em 0 0.6em;
+}
+
+.blog-editor-surface h3,
+.blog-post-body h3 {
+  font-size: 1.2em;
+  font-weight: 700;
+  line-height: 1.8;
+  margin: 1.3em 0 0.5em;
+}
+
+.blog-editor-surface h4,
+.blog-post-body h4 {
+  font-size: 1.05em;
+  font-weight: 700;
+  line-height: 1.8;
+  margin: 1.2em 0 0.4em;
+}
+
+.blog-editor-surface ul,
+.blog-post-body ul {
+  list-style: disc;
+  margin: 0 0 1.1em;
+  padding-inline-start: 1.7em;
+}
+
+.blog-editor-surface ol,
+.blog-post-body ol {
+  list-style: decimal;
+  margin: 0 0 1.1em;
+  padding-inline-start: 1.7em;
+}
+
+/* Preflight zeroed markers and padding; nested levels need their own shapes. */
+.blog-editor-surface ul ul,
+.blog-post-body ul ul { list-style: circle; }
+
+.blog-editor-surface ul ul ul,
+.blog-post-body ul ul ul { list-style: square; }
+
+.blog-editor-surface ol ol,
+.blog-post-body ol ol { list-style: lower-alpha; }
+
+.blog-editor-surface li,
+.blog-post-body li { margin-bottom: 0.35em; }
+
+.blog-editor-surface blockquote,
+.blog-post-body blockquote {
+  margin: 0 0 1.2em;
+  padding: 0.5em 1.2em;
+  border-inline-start: 3px solid var(--c-primary);
+  border-radius: calc(var(--radius-input, 12px) / 2);
+  background: color-mix(in srgb, var(--c-primary) 5%, transparent);
+  color: var(--c-muted);
+}
+
+.blog-editor-surface a,
+.blog-post-body a { color: var(--c-link, var(--c-primary)); text-decoration: underline; text-underline-offset: 3px; }
+
+.blog-editor-surface pre,
+.blog-post-body pre {
+  background: color-mix(in srgb, var(--c-text) 6%, transparent);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-input, 12px);
+  padding: 12px 14px;
+  overflow-x: auto;
+  font-size: 13px;
+  margin: 0 0 1.1em;
+}
+
+.blog-editor-surface img,
+.blog-post-body img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-card, 16px);
+  border: 1px solid var(--c-border);
+}
+
+.blog-editor-surface img.align-center,
+.blog-post-body img.align-center { display: block; margin: 1em auto; }
+
+.blog-editor-surface img.align-left,
+.blog-post-body img.align-left { float: left; margin: 0.4em 0 1.2em 1.4em; }
+
+.blog-editor-surface img.align-right,
+.blog-post-body img.align-right { float: right; margin: 0.4em 1.4em 1.2em 0; }
+
+.blog-editor-surface img.size-small,
+.blog-post-body img.size-small { width: 30%; min-width: 120px; }
+
+.blog-editor-surface img.size-medium,
+.blog-post-body img.size-medium { width: 50%; min-width: 180px; }
+
+.blog-editor-surface img.size-large,
+.blog-post-body img.size-large { width: 75%; }
+
+.blog-editor-surface img.size-full,
+.blog-post-body img.size-full { width: 100%; }
+
+/* Tables and highlighted runs — same tokens as everywhere else, so the
+   editor surface and the public post stay one visual language. */
+.blog-editor-surface table,
+.blog-post-body table {
+  width: 100%;
+  max-width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 1.2em;
+  display: block;      /* wide tables scroll instead of bursting the column */
+  overflow-x: auto;
+}
+
+.blog-editor-surface th,
+.blog-editor-surface td,
+.blog-post-body th,
+.blog-post-body td {
+  border: 1px solid var(--c-border);
+  padding: 0.55em 0.9em;
+  text-align: start;
+  vertical-align: top;
+}
+
+.blog-editor-surface th,
+.blog-post-body th {
+  background: color-mix(in srgb, var(--c-primary) 9%, transparent);
+  font-weight: 800;
+}
+
+.blog-editor-surface mark,
+.blog-post-body mark {
+  background: color-mix(in srgb, var(--c-secondary, #fbbf24) 40%, transparent);
+  color: inherit;
+  padding: 0.05em 0.28em;
+  border-radius: 0.3em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+/* Floats must not leak past the text block (public footer buttons too). */
+.blog-editor-surface::after,
+.blog-post-body::after { content: ""; display: table; clear: both; }
+
+@media (max-width: 980px) {
+  .blog-form { grid-template-columns: minmax(0, 1fr); }
+}
 
 .settings-field-row {
   display: flex;
@@ -3408,9 +3892,81 @@ select.settings-input option {
   color: var(--c-subtle);
 }
 
-.settings-file {
-  font-size: 13px;
-  color: var(--c-muted);
+/* Upload tile — one language for every file field (blog cover, studio
+   images). The dashed box is the control: the native input lies
+   transparent on top of it, so click/drag-drop/keyboard stay native and
+   :has() drives all visual state. Icon geometry: Uiverse, Yaya12085. */
+.settings-upload {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 26px 18px;
+  border: 1.5px dashed var(--c-border-strong);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--c-text) 4%, transparent);
+  text-align: center;
+  transition: border-color 160ms ease, background 160ms ease;
+}
+
+.settings-upload:hover {
+  border-color: var(--c-primary);
+  background: color-mix(in srgb, var(--c-primary) 7%, transparent);
+}
+
+.settings-upload:has(.settings-upload-input:focus-visible) {
+  border-color: var(--c-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-primary) 25%, transparent);
+}
+
+.settings-upload:has(.settings-upload-input.is-invalid) {
+  border-color: var(--c-danger);
+}
+
+.settings-upload.has-file {
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--c-primary) 55%, var(--c-border));
+  background: color-mix(in srgb, var(--c-primary) 9%, transparent);
+}
+
+.settings-upload-icon {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--c-primary) 14%, transparent);
+  color: var(--c-primary);
+  margin-bottom: 4px;
+  transition: transform 160ms ease;
+}
+
+.settings-upload:hover .settings-upload-icon { transform: translateY(-2px) scale(1.05); }
+
+.settings-upload-icon svg { width: 22px; height: 22px; display: block; }
+
+.settings-upload-text {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--c-text);
+  overflow-wrap: anywhere;
+}
+
+.settings-upload-hint {
+  font-size: 11.5px;
+  color: var(--c-subtle);
+}
+
+.settings-upload-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
 }
 
 .blog-cover-preview {
@@ -3440,6 +3996,86 @@ select.settings-input option {
   display: flex;
   gap: 12px;
   align-items: center;
+}
+
+/* The editor dialog (consultant-blog-modal.js). It reuses .exam-modal for
+   the frame/backdrop/pop-in; these rules make it a wide, scrolling shell
+   that hosts the full two-column form fragment. Declared after
+   .exam-modal so the width override wins on equal specificity. */
+.blog-form-modal {
+  width: min(1240px, calc(100% - 40px));
+  max-height: min(900px, 94vh);
+  overflow: hidden;
+}
+
+/* display:flex must live under [open]: an author-level display on the bare
+   class beats the UA's dialog:not([open]){display:none}, which would leave
+   the closed dialog sitting on the page as a stray centered box. */
+.blog-form-modal[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.blog-form-modal-head {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 24px 6px;
+}
+
+.blog-form-modal-head h3 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 800;
+}
+
+.blog-form-modal-head h3 i {
+  color: var(--c-primary);
+  margin-inline-end: 6px;
+}
+
+.blog-form-modal-x {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--c-muted);
+  font-size: 16px;
+  cursor: pointer;
+  transition: color 160ms ease, background 160ms ease;
+}
+
+.blog-form-modal-x:hover {
+  color: var(--c-text);
+  background: color-mix(in srgb, var(--c-text) 7%, transparent);
+}
+
+.blog-form-modal-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 14px 24px 24px;
+}
+
+.blog-form-modal-loading {
+  margin: 0;
+  padding: 40px 0;
+  text-align: center;
+  font-size: 13px;
+  color: var(--c-muted);
+}
+
+/* The dialog is shorter than the page: the writing column breathes less. */
+.blog-form-modal-body .blog-form-body { min-height: 220px; }
+
+@media (max-width: 640px) {
+  .blog-form-modal-head,
+  .blog-form-modal-body { padding-inline: 16px; }
 }
 
 /* Public blog pages */

@@ -117,8 +117,11 @@ class BulkExamController extends Controller
             $action->update(['affected_count' => 0]);
         }
 
+        // Land where the assignment was launched from: the dashboard's exam
+        // panel or the dedicated bulk page. The fallback keeps no-referer
+        // posts landing on the (filtered) dashboard instead of the bulk tab.
         return redirect()
-            ->route('consultant.bulk.history')
+            ->back(302, [], (string) route('consultant.dashboard'))
             ->with('success', sprintf(
                 '%d دانش‌آموز به آزمون «%s» اضافه شدند%s.',
                 count($new),

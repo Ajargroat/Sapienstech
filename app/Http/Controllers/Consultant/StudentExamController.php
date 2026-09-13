@@ -7,6 +7,7 @@ use App\Models\Student;
 use App\Models\StudentAssignedQuiz;
 use App\Models\Test;
 use App\Support\QuestionBankMeta;
+use App\Support\StudentFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -30,19 +31,13 @@ use App\Models\StudentTestAttempt;
 class StudentExamController extends Controller
 {
     /** Keys match the student_assigned_quizzes.status enum. */
-    private const STATUSES = [
-        'completed' => 'انجام‌شده',
-        'grading' => 'در حال تصحیح',
-        'in_progress' => 'در حال برگزاری',
-        'scheduled' => 'برگزارنشده',
-        'missed' => 'غیبت',
-    ];
+    private const STATUSES = StudentFilter::EXAM_STATUSES;
 
     /** exam_type values that get the small-quiz badge; everything else is comprehensive. */
-    private const QUIZ_TYPES = ['quiz', 'online_quiz', 'single_lesson'];
+    private const QUIZ_TYPES = StudentFilter::QUIZ_TYPE_VALUES;
 
     /** The only lessons a consultant may build an exam from; drives the chips UI. */
-    public const LESSONS = ['زیست‌شناسی', 'شیمی', 'فیزیک', 'ریاضی', 'زمین‌شناسی'];
+    public const LESSONS = StudentFilter::EXAM_LESSONS;
 
     public function index(Request $request, Student $student): View
     {

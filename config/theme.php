@@ -48,6 +48,11 @@ return [
         'blog_management' => true,
         'direct_chat' => true,
 
+        // Student-portal side of direct chat. Consultant threads always exist
+        // tenant-wide; this switch decides whether students can open the
+        // chat panel and reply at all.
+        'student_chat' => true,
+
         /*
         |--------------------------------------------------------------------------
         | Settings hub (topnav user dropdown: Profile | Blog | Appearance | Chat)
@@ -88,6 +93,89 @@ return [
         'book_access'         => true,
         'create_post_action'  => true,
 
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Chat
+    |--------------------------------------------------------------------------
+    |
+    | Tenant-resolved behavior of the direct-chat feature (site('chat.*')).
+    | Every knob is overridable per tenant through the same four layers as
+    | everything else (archetype -> tenant file -> studio/DB -> personal),
+    | and the curated subset is editable in Settings → Chat without a
+    | deploy. Realtime is transport-pluggable: with a websocket broadcaster
+    | configured (Reverb/Pusher) chat is push-based; without it the client
+    | transparently falls back to the poll intervals below.
+    |
+    */
+    'chat' => [
+
+        'enabled' => true,
+
+        // Message shape.
+        'message_max_length' => 4000,
+        'rate_limit_per_minute' => 30,
+        'page_size' => 40,
+
+        // Receipts / presence niceties. They only animate when a realtime
+        // transport is connected; with polling they still update, just at
+        // the thread's poll cadence.
+        'read_receipts' => true,
+        'typing_indicator' => true,
+
+        // Staff can close a thread (read-only history); 0 disables the
+        // close/reopen control entirely.
+        'close_threads' => true,
+
+        // Consultant-created group rooms: one consultant, N of their
+        // students. Students can never create or join anything by themselves.
+        'groups' => [
+            'enabled' => true,
+            'max_members' => 50,
+        ],
+
+        // Attachments land under public/tenants/{slug}/{folder}/ (TenantUploads).
+        'attachments' => [
+            'enabled' => true,
+            'max_kb' => 5120,
+            'types' => ['image', 'pdf'],
+            'folder' => 'chat',
+        ],
+
+        // Windows for message lifecycle, in minutes. edit_window: 0 or null
+        // = editing disabled; platform rule is one week (10080). Tenants may
+        // override via the chat settings tab. delete_window null = no time
+        // limit for authors.
+        'edit_window_minutes' => 10080,
+        'delete_window_minutes' => null,
+
+        // Fallback poll cadences (ms) when no websocket is available.
+        'poll_interval_ms' => [
+            'thread' => 4000,
+            'list' => 15000,
+            'badge' => 30000,
+        ],
+
+        // Auto-close threads idle for N days via the scheduler; 0 disables.
+        'idle_autoclose_days' => 0,
+
+        // Closed direct threads: students may still write (consultant-side
+        // stays responsible for reopening). false = fully read-only.
+        'closed_threads_readable_by_students' => false,
+
+        // UI copy (RTL-safe, per tenant).
+        'greeting_text' => null,
+        'placeholder_text' => 'پیام خود را بنویسید…',
+        'empty_text' => 'هنوز پیامی نیست؛ گفتگو را شروع کنید.',
+
+        // Notices inserted into a thread on lifecycle events.
+        'system_messages' => [
+            'thread_opened' => 'گفتگوی مستقیم شروع شد.',
+            'group_created' => 'گروه گفتگو توسط مشاور ایجاد شد.',
+            'thread_closed' => 'گفتگو بسته شد.',
+            'thread_reopened' => 'گفتگو دوباره باز شد.',
+        ],
     ],
 
     /*
@@ -435,10 +523,28 @@ return [
         'direct_chat'     => 'گفتگوی مستقیم',
         'bulk_actions'    => 'اقدامات گروهی',
 
+        // Chat workspace
+        'student_chat'            => 'گفتگو',
+        'chat_new_conversation'   => 'گفتگوی تازه',
+        'chat_new_group'          => 'ساخت گروه',
+        'chat_search_hint'        => 'جستجو در گفتگوها…',
+        'chat_empty_list'         => 'هنوز گفتگویی ندارید.',
+        'chat_pick_students'      => 'انتخاب دانش‌آموزان',
+        'chat_group_name'         => 'نام گروه',
+        'chat_closed'             => 'بسته شده',
+        'chat_open_thread'        => 'بازکردن گفتگو',
+        'chat_close_thread'       => 'بستن گفتگو',
+        'chat_typing'             => 'در حال نوشتن…',
+        'chat_delete_message'     => 'حذف پیام',
+        'chat_edit_message'       => 'ویرایش پیام',
+        'chat_saved'              => 'ویرایش شد',
+        'chat_deleted'            => 'پیام حذف شد',
+        'chat_attach'             => 'پیوست فایل',
+        'chat_send'               => 'ارسال',
+
         // Settings hub (topnav user dropdown + tab bar)
         'settings'             => 'تنظیمات',
         'settings_profile'     => 'پروفایل',
-        'settings_blog'        => 'وبلاگ',
         'settings_appearance'  => 'ظاهر',
         'settings_chat'        => 'گفتگو',
 
@@ -606,21 +712,16 @@ return [
 
             'blog' => [
                 'variant'    => 'default',           // default | list
-                // config = render the items below; database = render the
-                // tenant's latest published BlogPosts (set from the blog
-                // settings tab; stored in website_configs.layout_config).
-                'source'     => 'config',            // config | database
+                // The section is fed by the tenant's published BlogPosts
+                // (blog management, top nav); the composer in
+                // ViewServiceProvider injects `items` at render time and
+                // hides the section entirely when there are none.
                 'count'      => 3,
                 'id'         => 'blog',
                 'heading'    => 'آخرین مقالات',
                 'subheading' => 'تازه‌ترین متدهای یادگیری و تکنولوژی آموزشی.',
                 'see_all'    => ['label' => 'مشاهده همه', 'href' => '#', 'visible' => true],
                 'columns'    => 3,
-                'items' => [
-                    ['image' => 'images/blog-placeholder.png', 'from' => 'primary', 'to' => 'secondary',
-                     'title' => 'عنوان مقاله',
-                     'excerpt' => 'چکیده‌ای کوتاه از آنچه این مقاله پوشش می‌دهد.', 'url' => '#', 'visible' => true],
-                ],
             ],
 
             'cta' => [

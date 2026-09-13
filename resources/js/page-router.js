@@ -55,6 +55,16 @@ let barTimer = null;
 window.sapienstechRouter = {
     preload: (href) => preload(href),
     navigate: (href) => navigate(() => load(new URL(href, window.location.href))),
+    /**
+     * Re-fetch a path after a mutation that bypassed onSubmit (e.g. the blog
+     * editor dialog saving as JSON): drop its cached copies first, so the
+     * swap shows the server's new state instead of a hover-prefetched one.
+     */
+    refresh: (href) => {
+        const url = new URL(href, window.location.href);
+        bustCache(url.pathname);
+        return navigate(() => load(url), { mode: 'replace' });
+    },
 };
 
 /** Thrown when a response cannot be swapped in; the caller reloads for real. */

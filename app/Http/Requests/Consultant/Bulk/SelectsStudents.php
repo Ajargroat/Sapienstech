@@ -18,6 +18,17 @@ trait SelectsStudents
             'grade' => ['nullable', 'string', 'max:50'],
             'gender' => ['nullable', 'string', 'max:50'],
             'major' => ['nullable', 'string', 'max:100'],
+            // Domain filter pages of the dashboard carousel ride along on the
+            // POST so server-side select_all re-derives the exact displayed
+            // set; StudentFilter::fromRequest whitelists every value anyway.
+            'exam_status' => ['nullable', 'string', 'max:50'],
+            'exam_lesson' => ['nullable', 'string', 'max:100'],
+            'exam_type' => ['nullable', 'string', 'max:50'],
+            'report_source' => ['nullable', 'string', 'max:100'],
+            'report_status' => ['nullable', 'string', 'max:50'],
+            'schedule_day' => ['nullable', 'string', 'max:2'],
+            'schedule_done' => ['nullable', 'string', 'max:10'],
+            'filter_open' => ['nullable', 'string', 'max:32'],
         ];
     }
 

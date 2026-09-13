@@ -74,6 +74,16 @@ class Student extends Authenticatable
             ->withPivot('created_at');
     }
 
+    public function scheduleItems(): HasMany
+    {
+        return $this->hasMany(ScheduleItem::class, 'student_id');
+    }
+
+    public function companyExamResults(): HasMany
+    {
+        return $this->hasMany(CompanyExamResult::class, 'student_id');
+    }
+
     /**
      * The domain this student logs in through. Mirrors User::domain();
      * enforcement kicks in once student authentication exists.

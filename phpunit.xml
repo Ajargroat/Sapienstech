@@ -13,5 +13,6 @@
         <env name="CACHE_STORE" value="array"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
+        <env name="BROADCAST_CONNECTION" value="null"/>
     </php>
 </phpunit>

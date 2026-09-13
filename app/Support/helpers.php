@@ -1,5 +1,6 @@
 <?php
 
+use App\Support\ChatActor;
 use App\Support\SiteConfig;
 
 if (! function_exists('site')) {
@@ -57,6 +58,30 @@ if (! function_exists('tenant_asset')) {
         }
 
         return asset($path);
+    }
+}
+
+if (! function_exists('chat_session_actors')) {
+    /**
+     * Every chat actor the current session authenticates.
+     *
+     * The two guards share one session store, so a browser can legitimately
+     * hold both a consultant (web) and a student (student) login; broadcast
+     * channel authorization therefore checks membership for all of them.
+     *
+     * @return list<ChatActor>
+     */
+    function chat_session_actors(): array
+    {
+        $actors = [];
+
+        foreach ([\Illuminate\Support\Facades\Auth::user(), \Illuminate\Support\Facades\Auth::guard('student')->user()] as $model) {
+            if ($model) {
+                $actors[] = ChatActor::make($model);
+            }
+        }
+
+        return $actors;
     }
 }
 

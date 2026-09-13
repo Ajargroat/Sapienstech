@@ -27,10 +27,9 @@
 
     {{-- Current filters, posted back for server-side select_all --}}
     <div hidden data-router-region="picker">
-        <input type="hidden" name="search" value="{{ $filters['search'] }}">
-        <input type="hidden" name="grade" value="{{ $filters['grade'] }}">
-        <input type="hidden" name="gender" value="{{ $filters['gender'] }}">
-        <input type="hidden" name="major" value="{{ $filters['major'] }}">
+        @foreach($filters as $filterKey => $filterValue)
+            <input type="hidden" name="{{ $filterKey }}" value="{{ $filterValue }}">
+        @endforeach
     </div>
 
     <div class="bulk-filterbar" data-router-region="picker">
