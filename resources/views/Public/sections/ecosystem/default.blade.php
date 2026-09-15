@@ -31,7 +31,7 @@
             <h2 style="font-size:var(--h2-size);font-weight:var(--heading-weight);line-height:var(--heading-line-height);letter-spacing:var(--heading-letter-spacing);text-transform:var(--heading-transform)">{{ $eco['heading'] }}</h2>
             <p class="text-lg leading-relaxed" style="color:var(--c-muted);max-width:var(--measure)">{{ $eco['text'] }}</p>
             <ul class="flex flex-col gap-4 mt-4 list-none p-0 m-0">
-                @foreach ($eco['items'] ?? [] as $item)
+                @foreach (array_filter($eco['items'] ?? [], static fn ($i) => $i['visible'] ?? true) as $item)
                     @php($accent = 'var(--c-' . ($item['accent'] ?? 'primary') . ')')
                     <li class="flex items-center gap-3">
                         <div class="w-6 h-6 rounded-full flex items-center justify-center text-sm"

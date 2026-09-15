@@ -9,14 +9,7 @@ class ConsultantFeatureController extends Controller
     public function show(string $feature)
     {
         $pages = [
-            'blog' => [
-                'title' => 'مدیریت وبلاگ',
-                'description' => 'مدیریت نوشته‌ها و محتوای آموزشی. این بخش به‌زودی راه‌اندازی می‌شود.',
-            ],
-            'direct-chat' => [
-                'title' => 'گفتگوی مستقیم',
-                'description' => 'گفتگوی مستقیم با دانش‌آموزان. این بخش به‌زودی راه‌اندازی می‌شود.',
-            ],
+            // direct-chat moved to the real ChatController workspace.
 
             // Legacy top-level placeholders kept for backward compatibility.
             // These are no longer linked from the top navigation (the

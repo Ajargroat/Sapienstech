@@ -24,8 +24,8 @@
         </a>
 
         <a
-            href="{{ route('consultant.settings.blog.index') }}"
-            class="sidebar-link {{ request()->routeIs('consultant.settings.blog.*') ? 'active' : '' }}"
+            href="{{ route('consultant.blog.index') }}"
+            class="sidebar-link {{ request()->routeIs('consultant.blog.*') ? 'active' : '' }}"
         >
             <i class="fas fa-newspaper" aria-hidden="true"></i>
             <span>{{ $labels['blog_management'] ?? 'وبلاگ' }}</span>
@@ -37,6 +37,7 @@
         >
             <i class="fas fa-comments" aria-hidden="true"></i>
             <span>{{ $labels['direct_chat'] ?? 'گفتگوی مستقیم' }}</span>
+            @include('partials.chat.unread-badge')
         </a>
 
         @if(site('features.bulk_actions', false))

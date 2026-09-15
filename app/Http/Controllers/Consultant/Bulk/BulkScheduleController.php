@@ -107,8 +107,10 @@ class BulkScheduleController extends Controller
             $action->update(['affected_count' => count($rows)]);
         });
 
+        // Land where the assignment was launched from (dashboard panel or
+        // the dedicated bulk page); see BulkExamController::store.
         return redirect()
-            ->route('consultant.bulk.history')
+            ->back(302, [], (string) route('consultant.dashboard'))
             ->with('success', sprintf('بلوک «%s» برای %d دانش‌آموز ثبت شد.', $data['title'], count($ids)));
     }
 

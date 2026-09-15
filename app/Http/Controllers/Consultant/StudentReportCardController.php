@@ -10,6 +10,7 @@ use App\Models\StudentAssignedQuiz;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use App\Support\StudentFilter;
 use Illuminate\View\View;
 
 /**
@@ -34,19 +35,14 @@ use Illuminate\View\View;
 class StudentReportCardController extends Controller
 {
     /** Shared status vocabulary; the internal 'missed' maps onto 'absent'. */
-    private const STATUSES = [
-        'completed' => 'انجام‌شده',
-        'grading' => 'در حال تصحیح',
-        'pending' => 'در انتظار نتیجه',
-        'absent' => 'غیبت',
-    ];
+    private const STATUSES = StudentFilter::REPORT_STATUSES;
 
     /** Assignment statuses that count as a finished exam. */
-    private const FINISHED_STATUSES = ['completed', 'grading', 'missed'];
+    private const FINISHED_STATUSES = StudentFilter::REPORT_FINISHED_STATUSES;
 
-    private const INTERNAL_KEY = 'internal';
+    private const INTERNAL_KEY = StudentFilter::REPORT_INTERNAL;
 
-    private const INTERNAL_LABEL = 'درون‌ساز';
+    private const INTERNAL_LABEL = StudentFilter::REPORT_INTERNAL_LABEL;
 
     public function index(Request $request, Student $student): View
     {

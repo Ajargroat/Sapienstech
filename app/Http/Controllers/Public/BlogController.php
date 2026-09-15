@@ -19,8 +19,11 @@ class BlogController extends Controller
     public function index(): View
     {
         $posts = BlogPost::published()
-            ->orderByDesc('sort_order')
+            // Same drag order the consultant curates (reorder() keeps
+            // sort_order dense); fresh zero-tied posts fall back to newest.
+            ->orderBy('sort_order')
             ->orderByDesc('published_at')
+            ->orderByDesc('id')
             ->paginate(9);
 
         return view('public.blog.index', [

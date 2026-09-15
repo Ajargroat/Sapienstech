@@ -26,7 +26,6 @@ class SettingsTabs
     {
         return [
             ['key' => 'profile',    'label_key' => 'settings_profile',    'fallback' => 'پروفایل', 'route' => 'consultant.settings.profile',    'feature' => 'settings_profile'],
-            ['key' => 'blog',       'label_key' => 'settings_blog',       'fallback' => 'وبلاگ',   'route' => 'consultant.settings.blog.index', 'feature' => 'blog_management'],
             ['key' => 'appearance', 'label_key' => 'settings_appearance', 'fallback' => 'ظاهر',    'route' => 'consultant.settings.appearance', 'feature' => 'theme_studio'],
             ['key' => 'chat',       'label_key' => 'settings_chat',       'fallback' => 'گفتگو',   'route' => 'consultant.settings.chat',       'feature' => 'settings_chat'],
         ];

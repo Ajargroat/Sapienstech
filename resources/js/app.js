@@ -12,6 +12,26 @@ document.addEventListener('click', (event) => {
 });
 
 /*
+ * Upload tiles (consultant/partials/upload-tile): the native file input is
+ * a transparent layer over the dashed box, so echo the picked file's name
+ * into the tile's text line and mark the box as filled. Delegated at
+ * document level: tiles appear on settings-studio pages and inside the
+ * blog dialog's injected fragments alike, none of which re-run page bundles.
+ */
+document.addEventListener('change', (event) => {
+    const input = event.target.closest?.('.settings-upload-input');
+    if (!input) return;
+
+    const tile = input.closest('.settings-upload');
+    const label = tile?.querySelector('[data-upload-name]');
+    if (!label) return;
+
+    const file = input.files?.[0];
+    label.textContent = file ? file.name : (label.dataset.default ?? '');
+    tile.classList.toggle('has-file', Boolean(file));
+});
+
+/*
  * Topnav user dropdown (settings hub). Delegated at document level like the
  * filter popover: the nav lives outside the router region and persists across
  * page swaps, so one listener covers every page.
@@ -68,9 +88,58 @@ armFlashDismissal(document);
 onPageRender(armFlashDismissal);
 
 /*
+ * The filter popover's forms mirror each other.
+ *
+ * Every panel form (and the dashboard search box) carries the whole filter
+ * stack, so applying on one page never drops filters set on another and a
+ * bulk assignment POST re-derives exactly the set the UI displayed. Popover
+ * DOM survives the router's partial swaps, so server-rendered hidden values
+ * go stale as soon as anything is clicked; refresh every mirror from the
+ * live control state right before submit. Delegated once for the whole
+ * shell, like the outside-click dismissal above.
+ */
+const FILTER_FIELDS = [
+    'search', 'grade', 'gender', 'major', 'sort',
+    'exam_status', 'exam_lesson', 'exam_type',
+    'report_source', 'report_status',
+    'schedule_day', 'schedule_done',
+];
+
+document.addEventListener('submit', (event) => {
+    const form = event.target;
+    if (!form.matches?.('form[data-filter-sync]')) return;
+
+    const scope = form.closest('[data-filter-popover]') ?? document;
+    const query = new URLSearchParams(window.location.search);
+
+    form.querySelectorAll('input[type="hidden"]').forEach((input) => {
+        if (!FILTER_FIELDS.includes(input.name)) return;
+        // Real (non-hidden) controls own their own field.
+        if (form.querySelector(`input:not([type="hidden"])[name="${input.name}"]`)) return;
+
+        if (input.name === 'search') {
+            const searchInput = document.querySelector('.search-reveal-input');
+            input.value = searchInput
+                ? searchInput.value.trim()
+                : (query.get('search') ?? '');
+            return;
+        }
+
+        const checked = scope.querySelector(
+            `input[name="${input.name}"]:checked:not([type="hidden"])`
+        );
+        input.value = checked ? checked.value : (query.get(input.name) ?? '');
+    });
+}, true); // capture: must run before the page-router serializes the form
+
+/*
  * Filter popover carousel: general / exam / report-card / schedule pages.
  * Registered through the router so it boots on the first page and on every
  * swapped-in page; the returned cleanup detaches the window listeners.
+ *
+ * The popover itself lives outside the swapped regions, so this behavior
+ * re-runs against the same DOM on every partial swap: the active page is
+ * read back from data-filter-current instead of resetting to 0.
  */
 onPageRender((region) => {
     const carousel = region.querySelector('[data-filter-carousel]');
@@ -82,7 +151,12 @@ onPageRender((region) => {
     const prevBtn = region.querySelector('[data-filter-prev]');
     const nextBtn = region.querySelector('[data-filter-next]');
     const dots = Array.from(region.querySelectorAll('[data-filter-dot]'));
-    let current = 0;
+    const applyBtn = region.querySelector('[data-filter-apply]');
+    const pageCount = pages.length;
+    let current = Math.max(0, Math.min(
+        Number(carousel.dataset.filterCurrent ?? carousel.dataset.filterPage ?? 0) || 0,
+        pageCount - 1,
+    ));
 
     const activate = (index) => {
         pages.forEach((page, i) => {
@@ -98,10 +172,20 @@ onPageRender((region) => {
         carousel.style.height = pages[current].offsetHeight + 'px';
     };
 
+    // One shared "اعمال" button drives whichever panel's GET filter form is
+    // currently visible (HTML5 form attribute on a button outside the form).
+    const setApplyTarget = () => {
+        if (!applyBtn) return;
+        const form = pages[current].querySelector('form[data-filter-form]');
+        applyBtn.setAttribute('form', form ? form.id : '');
+        applyBtn.hidden = !form;
+    };
+
     const setPage = (index) => {
-        const target = Math.max(0, Math.min(index, pages.length - 1));
+        const target = Math.max(0, Math.min(index, pageCount - 1));
         if (target === current) return;
         current = target;
+        carousel.dataset.filterCurrent = current;
 
         track.style.setProperty('--filter-page', current);
         size();
@@ -117,6 +201,7 @@ onPageRender((region) => {
         }, 140);
 
         activate(current);
+        setApplyTarget();
     };
 
     prevBtn.addEventListener('click', () => setPage(current - 1));
@@ -152,7 +237,12 @@ onPageRender((region) => {
     window.addEventListener('resize', size);
 
     size();
-    activate(0);
+    activate(current);
+    dots.forEach((dot, i) => dot.classList.toggle('is-active', i === current));
+    prevBtn.classList.toggle('is-disabled', current === 0);
+    nextBtn.classList.toggle('is-disabled', current === pageCount - 1);
+    title.textContent = pages[current].dataset.filterName;
+    setApplyTarget();
 
     return () => {
         popover.removeEventListener('wheel', onWheel);

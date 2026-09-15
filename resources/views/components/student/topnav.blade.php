@@ -14,6 +14,16 @@
             >
                 داشبورد
             </a>
+
+            @if(site('features.student_chat', false) && \Illuminate\Support\Facades\Route::has('student.direct-chat.page'))
+                <a
+                    href="{{ route('student.direct-chat.page') }}"
+                    class="topnav-link {{ request()->routeIs('student.direct-chat*') ? 'active' : '' }}"
+                >
+                    {{ $labels['student_chat'] ?? 'گفتگو' }}
+                    @include('partials.chat.unread-badge', ['chatActorKey' => 'student'])
+                </a>
+            @endif
         </nav>
 
         <div class="topnav-user">

@@ -16,7 +16,8 @@ class Question extends Model
     protected $fillable = [
         'tenant_id', 'chapter_id', 'topic_id', 'question_text', 'question_image_path',
         'solution_text', 'solution_image_path', 'question_number_in_book',
-        'difficulty', 'question_type', 'supabase_id', 'question_image_bbox'
+        'difficulty', 'question_type', 'supabase_id', 'question_image_bbox',
+        'subject', 'corp', 'chapter_label',
     ];
 
     protected function casts(): array

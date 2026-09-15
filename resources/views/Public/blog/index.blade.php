@@ -29,7 +29,7 @@
                             </div>
                             <h3 class="text-xl font-bold mb-3">{{ $post->title }}</h3>
                             <p class="text-sm mb-4 line-clamp-2" style="color:var(--c-muted)">
-                                {{ $post->excerpt ?: \Illuminate\Support\Str::limit(strip_tags((string) $post->body), 120) }}
+                                {{ $post->excerpt ?: \Illuminate\Support\Str::limit(\App\Support\RichText::toPlainText((string) $post->body), 120) }}
                             </p>
                             @if($post->published_at)
                                 <time class="text-xs" style="color:var(--c-subtle)" datetime="{{ $post->published_at->toAtomString() }}">

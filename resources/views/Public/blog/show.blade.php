@@ -26,7 +26,7 @@
         @endif
 
         <div class="blog-post-body">
-            {!! nl2br(e($post->body)) !!}
+            {!! $post->renderedBody() !!}
         </div>
 
         <a href="{{ route('blog.index') }}" class="secondary-button" style="margin-top:2rem">

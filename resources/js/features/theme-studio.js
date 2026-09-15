@@ -1,12 +1,16 @@
 // Appearance studio: color picker <-> hex text sync, per-field reset (posts
 // the hidden reset form), section reorder (moves rows so the checkbox array
-// submits in the new order, never across a locked row), toggle label text,
-// range bars that compose "<number><unit>" into their text input, a tabbed
-// inspector rail (opening a group closes the rest; the active tab persists
-// per browser), ⓘ hint bubbles that tap-to-pin on touch devices, and the
-// live preview: a debounced POST to the studio's `live` endpoint whose token
-// map is painted into the panel and the preview iframe without a reload —
-// only structural changes reload it. The preview emulates desktop and mobile
+// submits in the new order, never across a locked row), list repeaters (add /
+// delete / reorder item rows; the whole list submits as one nested array and
+// the server re-indexes it), toggle label text, range bars that compose
+// "<number><unit>" into their text input, a tabbed inspector rail (opening a
+// group closes the rest; the active tab persists per browser), ⓘ hint bubbles
+// that tap-to-pin on touch devices, and the live preview: a debounced POST to
+// the studio's `live` endpoint whose token map is painted into the panel and
+// the preview iframe without a reload. Structural changes hot-swap the
+// frame: a hidden twin iframe loads the new page while the current one
+// stays on screen, then they trade places — no white-flash reload.
+// The preview emulates desktop and mobile
 // viewports (device buttons), can be maximized to the full window, and while
 // it is open on wide screens the page itself becomes a design studio: the
 // preview is the main content and the settings dock beside it as a bar.
@@ -19,6 +23,7 @@ export default function init() {
     initToggles(form);
     initReset(form);
     initSections(form);
+    initLists(form);
     initRanges(form);
     initGroups();
     initHints();
@@ -77,6 +82,94 @@ function initSections(form) {
                 const next = row.nextElementSibling;
                 if (next && !isLocked(next)) list.insertBefore(next, row);
             });
+        });
+    });
+}
+
+// Lists: repeater rows for item-valued content (cards, buttons, links).
+// "Add" clones the <template> row, swapping its __KEY__ placeholders for a
+// unique browser-side key so a fresh row can never collide with a stored
+// index; delete/move just edit the DOM, and the submitted nested array's key
+// order carries the result (StudioSchema::normalizeList re-indexes it). An
+// abandoned empty row is dropped server-side before validation, and clearing
+// every row forgets the list override so the file-owned items show through.
+function initLists(form) {
+    form.querySelectorAll('[data-studio-list]').forEach((wrap) => {
+        const rows = wrap.querySelector('[data-list-rows]');
+        const tpl = wrap.querySelector('[data-list-template]');
+        const addBtn = wrap.querySelector('[data-list-add]');
+        if (!rows || !tpl) return;
+
+        const max = parseInt(wrap.dataset.max || '20', 10);
+        let seq = 0;
+
+        const rowList = () => Array.from(rows.querySelectorAll('[data-list-row]'));
+
+        const refresh = (notify) => {
+            rowList().forEach((row, i) => {
+                const num = row.querySelector('[data-list-num]');
+                if (num) num.textContent = i + 1;
+            });
+            if (addBtn) addBtn.hidden = rowList().length >= max;
+            // Structural change: bubble an input event so the live preview
+            // (which listens on the form) re-renders the site.
+            if (notify) form.dispatchEvent(new Event('input', { bubbles: true }));
+        };
+
+        const wireRow = (row) => {
+            // Typed rows: only show the cells the selected block type uses.
+            // Hidden inputs still submit; the server drops values the row's
+            // type does not own, so switching back restores what was typed.
+            const typeGroup = row.querySelector('[data-list-type]');
+            if (typeGroup) {
+                const applyType = () => {
+                    const checked = typeGroup.querySelector('input:checked');
+                    const type = checked ? checked.value : '';
+                    row.querySelectorAll('[data-show-for]').forEach((cell) => {
+                        cell.hidden = !cell.dataset.showFor.split(' ').includes(type);
+                    });
+                };
+                typeGroup.addEventListener('change', applyType);
+                applyType();
+            }
+
+            row.querySelector('.list-move-up')?.addEventListener('click', () => {
+                const prev = row.previousElementSibling;
+                if (prev) rows.insertBefore(row, prev);
+                refresh(true);
+            });
+            row.querySelector('.list-move-down')?.addEventListener('click', () => {
+                const next = row.nextElementSibling;
+                if (next) rows.insertBefore(next, row);
+                refresh(true);
+            });
+            row.querySelector('[data-list-del]')?.addEventListener('click', () => {
+                row.remove();
+                refresh(true);
+            });
+        };
+
+        rowList().forEach(wireRow);
+        refresh(false);
+
+        addBtn?.addEventListener('click', () => {
+            const key = 'n' + (++seq) + '-' + Math.random().toString(36).slice(2, 8);
+            const node = tpl.content.firstElementChild?.cloneNode(true);
+            if (!node) return;
+
+            node.querySelectorAll('[name],[id],[for]').forEach((el) => {
+                ['name', 'id', 'for'].forEach((attr) => {
+                    const v = el.getAttribute(attr);
+                    if (v && v.includes('__KEY__')) el.setAttribute(attr, v.replaceAll('__KEY__', key));
+                });
+            });
+
+            rows.appendChild(node);
+            wireRow(node);
+            // Label sync for the new row's toggles (re-binding old ones is a
+            // no-op: the handler only rewrites the label text).
+            initToggles(form);
+            refresh(true);
         });
     });
 }
@@ -214,6 +307,70 @@ function initHints() {
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAll(); });
 }
 
+// Paints the derived token map into a document as a trailing <style>.
+// Shared by the panel and every preview frame: after a hot-swap the
+// incoming document is fresh and must be re-painted.
+const paintVars = (doc, vars, schemes) => {
+    if (!doc || !doc.head) return;
+    let style = doc.getElementById('studio-live-vars');
+    if (!style) {
+        style = doc.createElement('style');
+        style.id = 'studio-live-vars';
+        doc.head.appendChild(style);
+    }
+    const block = (map) => Object.entries(map || {})
+        .map(([name, value]) => `--${name}:${value};`).join('');
+    let css = `:root{${block(vars)}}`;
+    for (const [scheme, schemeVars] of Object.entries(schemes || {})) {
+        css += `[data-color-scheme="${scheme}"]{${block(schemeVars)}}`;
+    }
+    style.textContent = css;
+};
+
+// The previewed page scrolls, and in RTL its scrollbar sits on the left
+// edge of the device — a stray white bar inside the mock. The frames are
+// same-origin, so hide it from every frame document on each load.
+//
+// Hiding the bar alone breaks scrolling: the frame renders at device
+// width and is scaled down with a CSS transform, and wheel input over a
+// transform-scaled iframe is unreliable (the event reaches the frame but
+// the native scroll often never fires — the bar was the only affordance
+// that worked). So we also drive the scroll ourselves: preventDefault
+// suppresses the flaky native attempt (no double-scroll where it does
+// work) and the matching scroller is moved by hand — an inner scrollable
+// region first, then the page itself, like native chaining.
+const tameFrameScrolling = (frame) => {
+    try {
+        const doc = frame.contentDocument;
+        const win = frame.contentWindow;
+        if (!doc?.head || !win || doc.getElementById('studio-preview-no-scroll')) return;
+        const style = doc.createElement('style');
+        style.id = 'studio-preview-no-scroll';
+        style.textContent = 'html,body{scrollbar-width:none}'
+            + 'html::-webkit-scrollbar,body::-webkit-scrollbar{display:none;width:0;height:0}';
+        doc.head.appendChild(style);
+
+        doc.addEventListener('wheel', (e) => {
+            if (e.ctrlKey || !(e.deltaY || e.deltaX)) return; // leave pinch-zoom alone
+            e.preventDefault();
+            const px = (d, mode) => d * (mode === 1 ? 16 : mode === 2 ? win.innerHeight : 1);
+            const dy = px(e.deltaY, e.deltaMode);
+            const dx = px(e.deltaX, e.deltaMode);
+            for (let n = e.target?.nodeType === 1 ? e.target : null; n && n !== doc.documentElement; n = n.parentElement) {
+                const maxY = n.scrollHeight - n.clientHeight;
+                const maxX = n.scrollWidth - n.clientWidth;
+                if (maxY <= 0 && maxX <= 0) continue;
+                const beforeY = n.scrollTop;
+                const beforeX = n.scrollLeft;
+                if (dy && maxY > 0) n.scrollTop = Math.max(0, Math.min(maxY, beforeY + dy));
+                if (dx && maxX > 0) n.scrollLeft = Math.max(0, Math.min(maxX, beforeX + dx));
+                if (n.scrollTop !== beforeY || n.scrollLeft !== beforeX) return;
+            }
+            win.scrollBy(dx, dy);
+        }, { passive: false });
+    } catch { /* cross-origin */ }
+};
+
 // Preview chrome: a desktop/mobile device switch plus a maximize button.
 // The iframe always renders at the *device's* CSS width (1440 or 390 px)
 // and is scaled down to fit the pane — otherwise a narrow pane would
@@ -243,17 +400,23 @@ function initPreviewChrome(pane, frame) {
         // internal size (not stageHeight/scale) keeps svh units and the
         // hero's proportions honest, exactly like browser device mode.
         const scale = Math.min(1, w / dev.w, h / dev.h);
-        frame.style.width = dev.w + 'px';
-        frame.style.height = dev.h + 'px';
-        frame.style.transform = `scale(${scale})`;
-        frame.style.left = Math.max(0, (w - dev.w * scale) / 2) + 'px';
-        frame.style.top = Math.max(0, (h - dev.h * scale) / 2) + 'px';
+        // Size every frame in the stage, not just the visible one: the
+        // hot-swap twin must already be laid out when it trades places
+        // (theme-studio.js initLive).
+        stage.querySelectorAll('[data-studio-preview-frame]').forEach((f) => {
+            f.style.width = dev.w + 'px';
+            f.style.height = dev.h + 'px';
+            f.style.transform = `scale(${scale})`;
+            f.style.left = Math.max(0, (w - dev.w * scale) / 2) + 'px';
+            f.style.top = Math.max(0, (h - dev.h * scale) / 2) + 'px';
+        });
 
         // Arm the device-switch morph only after the frame has been sized
         // once, so the initial reveal lands at full size instead of
         // animating out of the iframe's default 300x150 box.
         if (!frame.classList.contains('is-device-anim')) {
-            requestAnimationFrame(() => frame.classList.add('is-device-anim'));
+            requestAnimationFrame(() => stage.querySelectorAll('[data-studio-preview-frame]')
+                .forEach((f) => f.classList.add('is-device-anim')));
         }
     };
 
@@ -298,22 +461,7 @@ function initPreviewChrome(pane, frame) {
     if (window.ResizeObserver) new ResizeObserver(fit).observe(stage);
     window.addEventListener('resize', fit);
 
-    // The previewed page scrolls, and in RTL its scrollbar sits on the left
-    // edge of the device — a stray bar inside the mock. The frame is
-    // same-origin, so hide it from the frame document on every load
-    // (scrolling itself keeps working).
-    const hideScrollbars = () => {
-        try {
-            const doc = frame.contentDocument;
-            if (!doc?.head || doc.getElementById('studio-preview-no-scroll')) return;
-            const style = doc.createElement('style');
-            style.id = 'studio-preview-no-scroll';
-            style.textContent = 'html,body{scrollbar-width:none}'
-                + 'html::-webkit-scrollbar,body::-webkit-scrollbar{display:none;width:0;height:0}';
-            doc.head.appendChild(style);
-        } catch { /* cross-origin */ }
-    };
-    frame.addEventListener('load', hideScrollbars);
+    frame.addEventListener('load', () => tameFrameScrolling(frame));
 
     apply();
 
@@ -325,12 +473,13 @@ function initPreviewChrome(pane, frame) {
 // the fully derived token map, which is painted into the panel and the
 // iframe as a trailing <style> — instant, no reload. Fields the schema
 // classifies as structural (data-live="reload": variants, copy, nav...)
-// change markup, not just variables, so the iframe reloads for those.
+// change markup, not just variables, so for those the frame is hot-swapped
+// with a freshly loaded twin instead of navigating in place.
 function initLive(form) {
     const toggle = document.querySelector('[data-studio-live]');
     const split = document.getElementById('studio-split');
     const pane = document.getElementById('studio-preview-pane');
-    const frame = pane?.querySelector('[data-studio-preview-frame]');
+    let frame = pane?.querySelector('[data-studio-preview-frame]');
     const dot = pane?.querySelector('[data-studio-live-dot]');
     const reloadBtn = pane?.querySelector('[data-studio-preview-reload]');
     if (!toggle || !split || !pane || !frame) return;
@@ -347,8 +496,16 @@ function initLive(form) {
     });
 
     let syncTimer = null;
-    let reloadTimer = null;
+    let swapTimer = null;
     let inflight = null;
+
+    // Hot-swap state: at most two frame documents ever exist; they trade
+    // roles on every structural change. lastTokens remembers the newest
+    // derived map so a freshly loaded twin never flashes unstyled vars.
+    let twin = null;
+    let swapping = false;
+    let swapQueued = false;
+    let lastTokens = null;
 
     const setDot = (state) => { if (dot) dot.dataset.state = state; };
 
@@ -356,30 +513,44 @@ function initLive(form) {
         try { return frame.contentDocument; } catch { return null; } // cross-origin
     };
 
-    const paintVars = (doc, vars, schemes) => {
-        if (!doc || !doc.head) return;
-        let style = doc.getElementById('studio-live-vars');
-        if (!style) {
-            style = doc.createElement('style');
-            style.id = 'studio-live-vars';
-            doc.head.appendChild(style);
+    // Swap the preview instead of navigating it. Setting `frame.src` blanks
+    // the iframe to white for the whole request — the blink. Here a hidden
+    // twin loads the same URL while the current frame stays on screen, and
+    // on load the two trade places with the scroll position carried over.
+    // It is still a real navigation, so the page's own scripts run fresh.
+    const swapFrame = () => {
+        if (swapping) { swapQueued = true; return; }
+        const current = frame;
+        if (!twin) {
+            twin = current.cloneNode(false); // attrs/classes only, no document
+            twin.removeAttribute('src');
+            twin.removeAttribute('data-loaded');
+            twin.style.visibility = 'hidden';
+            twin.setAttribute('aria-hidden', 'true');
+            current.parentElement.appendChild(twin);
         }
-        const block = (map) => Object.entries(map || {})
-            .map(([name, value]) => `--${name}:${value};`).join('');
-        let css = `:root{${block(vars)}}`;
-        for (const [scheme, schemeVars] of Object.entries(schemes || {})) {
-            css += `[data-color-scheme="${scheme}"]{${block(schemeVars)}}`;
-        }
-        style.textContent = css;
-    };
-
-    const reloadFrame = () => {
-        let y = 0;
-        try { y = frame.contentWindow.scrollY; } catch { /* cross-origin */ }
-        frame.addEventListener('load', () => {
-            try { frame.contentWindow.scrollTo(0, y); } catch { /* cross-origin */ }
-        }, { once: true });
-        frame.src = homeUrl;
+        swapping = true;
+        const incoming = twin;
+        const onLoaded = () => {
+            incoming.removeEventListener('load', onLoaded);
+            tameFrameScrolling(incoming);
+            if (lastTokens) paintVars(incoming.contentDocument, lastTokens.vars, lastTokens.schemes);
+            let y = 0;
+            try { y = current.contentWindow.scrollY; } catch { /* cross-origin */ }
+            try { incoming.contentWindow.scrollTo(0, y); } catch { /* cross-origin */ }
+            current.style.visibility = 'hidden';
+            current.setAttribute('aria-hidden', 'true');
+            delete current.dataset.loaded;
+            incoming.style.visibility = '';
+            incoming.removeAttribute('aria-hidden');
+            incoming.dataset.loaded = '1';
+            twin = current;   // the outgoing frame becomes the next buffer
+            frame = incoming;
+            swapping = false;
+            if (swapQueued) { swapQueued = false; swapFrame(); }
+        };
+        incoming.addEventListener('load', onLoaded);
+        incoming.src = homeUrl;
     };
 
     const sync = () => {
@@ -406,14 +577,18 @@ function initLive(form) {
             return res.json();
         }).then((json) => {
             if (!json) return;
+            lastTokens = { vars: json.vars, schemes: json.schemes };
             paintVars(document, json.vars, json.schemes);
             paintVars(frameDoc(), json.vars, json.schemes);
             setDot('ok');
 
             const structural = (json.changed || []).some((path) => modes[path] !== 'token');
             if (structural) {
-                clearTimeout(reloadTimer);
-                reloadTimer = setTimeout(reloadFrame, 1200);
+                // Shorter than the old reload debounce: the swap is
+                // invisible, so the only cost of firing early is one more
+                // background page load.
+                clearTimeout(swapTimer);
+                swapTimer = setTimeout(swapFrame, 500);
             }
         }).catch((err) => {
             if (err?.name !== 'AbortError') setDot('error');
@@ -451,7 +626,7 @@ function initLive(form) {
     };
 
     toggle.addEventListener('change', () => setLive(toggle.checked));
-    reloadBtn?.addEventListener('click', reloadFrame);
+    reloadBtn?.addEventListener('click', swapFrame);
 
     try {
         if (localStorage.getItem('studio.live') === '1') setLive(true);

@@ -9,7 +9,7 @@
     $s      = $cfg;
     $reveal = $anim['reveal'] ?? true;
     $cols   = $s['columns'] ?? 3;
-    $items  = array_values($s['items'] ?? []);
+    $items  = array_values(array_filter($s['items'] ?? [], static fn ($i) => $i['visible'] ?? true));
 @endphp
 <section id="{{ $s['id'] ?? 'services' }}" class="lp-section">
     <div class="landing-container">

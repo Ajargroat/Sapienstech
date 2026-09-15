@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Answer;
 use App\Models\Question;
+use App\Support\QuestionBankMeta;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
@@ -55,7 +56,8 @@ class ImportSupabaseQuestions extends Command
 
         $params = [
             'select' => 'id,source_id,question_number,question_text,options,difficulty,'
-                .'has_diagram,diagram_url,diagram_bbox,correct_option_label,correct_option_text',
+                .'has_diagram,diagram_url,diagram_bbox,correct_option_label,correct_option_text,'
+                .'subject,corp,topic,grade',
             'order' => 'created_at.asc',
             'limit' => (int) $this->option('limit'),
         ];
@@ -109,6 +111,13 @@ class ImportSupabaseQuestions extends Command
                     ? (string) $row['question_number'] : null,
                 'difficulty' => $this->mapDifficulty($row['difficulty'] ?? null),
                 'question_type' => 'multiple_choice',
+                // Normalized so the picker's lesson/corp/chapter filters and
+                // tags work off canonical strings (see QuestionBankMeta).
+                'subject' => QuestionBankMeta::subject($row['subject'] ?? null),
+                'corp' => QuestionBankMeta::corp($row['corp'] ?? null),
+                'chapter_label' => QuestionBankMeta::chapterLabel(
+                    $row['topic'] ?? null, $row['grade'] ?? null
+                ),
             ]);
 
             foreach ($this->parseOptions($row) as $opt) {

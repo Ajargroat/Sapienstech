@@ -18,6 +18,17 @@
             <i class="fas fa-gauge-high" aria-hidden="true"></i>
             <span>داشبورد</span>
         </a>
+
+        @if(site('features.student_chat', false) && \Illuminate\Support\Facades\Route::has('student.direct-chat.page'))
+            <a
+                href="{{ route('student.direct-chat.page') }}"
+                class="sidebar-link {{ request()->routeIs('student.direct-chat*') ? 'active' : '' }}"
+            >
+                <i class="fas fa-comments" aria-hidden="true"></i>
+                <span>{{ $labels['student_chat'] ?? 'گفتگو' }}</span>
+                @include('partials.chat.unread-badge', ['chatActorKey' => 'student'])
+            </a>
+        @endif
     </nav>
 
     <div class="sidebar-user topnav-user">

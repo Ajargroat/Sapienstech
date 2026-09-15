@@ -2,13 +2,15 @@
 
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\StudentLoginController;
+use App\Http\Controllers\Consultant\ChatController as ConsultantChatController;
 use App\Http\Controllers\Consultant\ConsultantDashboardController;
 use App\Http\Controllers\Consultant\ConsultantFeatureController;
+use App\Http\Controllers\Consultant\Settings\ChatSettingsController as ConsultantChatSettingsController;
 use App\Http\Controllers\Consultant\Bulk\BulkExamController;
 use App\Http\Controllers\Consultant\Bulk\BulkHistoryController;
 use App\Http\Controllers\Consultant\Bulk\BulkScheduleController;
 use App\Http\Controllers\Consultant\Settings\AppearanceController;
-use App\Http\Controllers\Consultant\Settings\BlogController as ConsultantBlogController;
+use App\Http\Controllers\Consultant\BlogController as ConsultantBlogController;
 use App\Http\Controllers\Consultant\Settings\ProfileController as ConsultantProfileController;
 use App\Http\Controllers\Consultant\StudentExamController;
 use App\Http\Controllers\Consultant\StudentFeatureController;
@@ -16,6 +18,7 @@ use App\Http\Controllers\Consultant\StudentReportCardController;
 use App\Http\Controllers\Consultant\StudentScheduleController;
 use App\Http\Controllers\Public\BlogController as PublicBlogController;
 use App\Http\Controllers\Public\PageController;
+use App\Http\Controllers\Student\ChatController as StudentChatController;
 use App\Http\Controllers\Student\Settings\ProfileController as StudentProfileController;
 use App\Http\Controllers\Student\StudentDashboardController;
 use App\Support\SettingsTabs;
@@ -65,29 +68,45 @@ Route::middleware('auth')->prefix('consultant')->name('consultant.')->group(func
         ->middleware('consultant.feature:dashboard')
         ->name('dashboard');
 
-    Route::get('/blog', [ConsultantFeatureController::class, 'show'])
-        ->defaults('feature', 'blog')
-        ->middleware('consultant.feature:blog_management')
-        ->name('blog');
-
-    Route::get('/direct-chat', [ConsultantFeatureController::class, 'show'])
-        ->defaults('feature', 'direct-chat')
-        ->middleware('consultant.feature:direct_chat')
-        ->name('direct-chat');
-
     /*
-    | Blog management — the settings-hub Blog tab. Gated by the same
-    | blog_management flag as the legacy placeholder route above.
+    | Blog management — a first-class top-nav section (dashboard | blog |
+    | direct chat). Gated by the blog_management flag.
     */
-    Route::prefix('settings/blog')->name('settings.blog.')->middleware('consultant.feature:blog_management')->group(function () {
+    Route::prefix('blog')->name('blog.')->middleware('consultant.feature:blog_management')->group(function () {
         Route::get('/', [ConsultantBlogController::class, 'index'])->name('index');
+        Route::put('/reorder', [ConsultantBlogController::class, 'reorder'])->name('reorder');
         Route::get('/create', [ConsultantBlogController::class, 'create'])->name('create');
         Route::post('/', [ConsultantBlogController::class, 'store'])->name('store');
-        Route::put('/landing', [ConsultantBlogController::class, 'setLandingSource'])->name('landing');
+        Route::post('/media', [ConsultantBlogController::class, 'media'])->name('media');
         Route::get('/{post}/edit', [ConsultantBlogController::class, 'edit'])->name('edit');
         Route::patch('/{post}', [ConsultantBlogController::class, 'update'])->name('update');
         Route::delete('/{post}', [ConsultantBlogController::class, 'destroy'])->name('destroy');
     });
+
+    /*
+    | Direct chat — realtime threads + consultant-created group rooms.
+    | Everything (page and JSON) sits behind the tenant-resolved
+    | `direct_chat` flag; see App\Http\Controllers\Consultant\ChatController.
+    */
+    Route::prefix('direct-chat')->name('direct-chat.')->middleware('consultant.feature:direct_chat')->group(function () {
+        Route::get('students', [ConsultantChatController::class, 'students'])->name('students');
+        Route::get('conversations', [ConsultantChatController::class, 'conversations'])->name('conversations');
+        Route::post('conversations', [ConsultantChatController::class, 'store'])->name('conversations.store');
+        Route::post('groups', [ConsultantChatController::class, 'storeGroup'])->name('groups.store');
+        Route::get('conversations/{conversation}', [ConsultantChatController::class, 'show'])->name('conversations.show');
+        Route::patch('conversations/{conversation}', [ConsultantChatController::class, 'update'])->name('conversations.update');
+        Route::get('conversations/{conversation}/messages', [ConsultantChatController::class, 'messages'])->name('conversations.messages');
+        Route::post('conversations/{conversation}/messages', [ConsultantChatController::class, 'sendMessage'])->name('conversations.messages.store');
+        Route::post('conversations/{conversation}/read', [ConsultantChatController::class, 'read'])->name('conversations.read');
+        Route::post('conversations/{conversation}/typing', [ConsultantChatController::class, 'typing'])->name('conversations.typing');
+        Route::put('messages/{message}', [ConsultantChatController::class, 'updateMessage'])->name('messages.update');
+        Route::delete('messages/{message}', [ConsultantChatController::class, 'destroyMessage'])->name('messages.destroy');
+        Route::get('unread', [ConsultantChatController::class, 'unread'])->name('unread');
+    });
+
+    Route::get('/direct-chat', [ConsultantChatController::class, 'index'])
+        ->middleware('consultant.feature:direct_chat')
+        ->name('direct-chat');
 
     /*
     | Settings hub — reached from the topnav user dropdown. Each tab is its
@@ -112,12 +131,12 @@ Route::middleware('auth')->prefix('consultant')->name('consultant.')->group(func
             ->middleware('consultant.feature:settings_profile')
             ->name('profile.avatar.delete');
 
-        Route::get('chat', fn () => view('consultant.settings.chat', [
-            'tabs' => SettingsTabs::visible('consultant'),
-            'activeTab' => 'chat',
-        ]))
+        Route::get('chat', [ConsultantChatSettingsController::class, 'index'])
             ->middleware('consultant.feature:settings_chat')
             ->name('chat');
+        Route::post('chat', [ConsultantChatSettingsController::class, 'save'])
+            ->middleware('consultant.feature:settings_chat')
+            ->name('chat.save');
 
         /*
         | Appearance studio — schema-driven editor over the tenant's runtime
@@ -216,6 +235,24 @@ Route::middleware('guest:student')->prefix('student')->name('student.')->group(f
 Route::middleware('auth:student')->prefix('student')->name('student.')->group(function () {
     Route::post('logout', [StudentLoginController::class, 'logout'])->name('logout');
     Route::get('dashboard', [StudentDashboardController::class, 'index'])->name('dashboard');
+
+    /*
+    | Student side of direct chat: read + reply in the threads a consultant
+    | opened (direct or group). Creating threads or groups is consultant-only
+    | — there is deliberately no POST endpoint here.
+    */
+    Route::prefix('direct-chat')->name('direct-chat.')->middleware('student.feature:student_chat')->group(function () {
+        Route::get('/', [StudentChatController::class, 'index'])->name('page');
+        Route::get('conversations', [StudentChatController::class, 'conversations'])->name('conversations');
+        Route::get('conversations/{conversation}', [StudentChatController::class, 'show'])->name('conversations.show');
+        Route::get('conversations/{conversation}/messages', [StudentChatController::class, 'messages'])->name('conversations.messages');
+        Route::post('conversations/{conversation}/messages', [StudentChatController::class, 'sendMessage'])->name('conversations.messages.store');
+        Route::post('conversations/{conversation}/read', [StudentChatController::class, 'read'])->name('conversations.read');
+        Route::post('conversations/{conversation}/typing', [StudentChatController::class, 'typing'])->name('conversations.typing');
+        Route::put('messages/{message}', [StudentChatController::class, 'updateMessage'])->name('messages.update');
+        Route::delete('messages/{message}', [StudentChatController::class, 'destroyMessage'])->name('messages.destroy');
+        Route::get('unread', [StudentChatController::class, 'unread'])->name('unread');
+    });
 
     Route::prefix('settings')->name('settings.')->group(function () {
         Route::redirect('/', '/student/settings/profile');
