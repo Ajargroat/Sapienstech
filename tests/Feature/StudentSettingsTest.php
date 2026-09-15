@@ -41,10 +41,41 @@ class StudentSettingsTest extends TestCase
         [$tenant, $host] = $this->tenantWithDomain();
         $student = $this->studentFor($tenant);
 
-        $this->actingAs($student, 'student')
+        // The hub home is the Telegram-style identity page: hero, info rows
+        // and a settings list (edit, password) — the forms themselves are
+        // separate ?tab= sections, not inline boxes.
+        $html = $this->actingAs($student, 'student')
             ->get("http://{$host}/student/settings/profile")
             ->assertOk()
-            ->assertSee('تنظیمات');
+            ->assertSee('پروفایل')
+            ->assertSee('ویرایش پروفایل')
+            ->assertSee('رمز عبور')
+            ->getContent();
+
+        $this->assertStringNotContainsString('name="name"', $html);
+    }
+
+    public function test_student_edit_and_password_sections_load_through_the_hub(): void
+    {
+        [$tenant, $host] = $this->tenantWithDomain();
+        $student = $this->studentFor($tenant);
+
+        $edit = $this->actingAs($student, 'student')
+            ->get("http://{$host}/student/settings/profile?tab=edit")
+            ->assertOk()
+            ->getContent();
+        $this->assertStringContainsString('name="name"', $edit);
+
+        $password = $this->actingAs($student, 'student')
+            ->get("http://{$host}/student/settings/profile?tab=password")
+            ->assertOk()
+            ->getContent();
+        $this->assertStringContainsString('name="current_password"', $password);
+
+        // Same gating vocabulary as the consultant hub.
+        $this->actingAs($student, 'student')
+            ->get("http://{$host}/student/settings/profile?tab=bogus")
+            ->assertNotFound();
     }
 
     public function test_student_logout_moved_out_of_topnav(): void
@@ -58,7 +89,9 @@ class StudentSettingsTest extends TestCase
             ->getContent();
 
         $this->assertStringNotContainsString('action="http://'.$host.'/student/logout"', $html);
-        $this->assertStringContainsString('data-topnav-dropdown', $html);
+        $this->assertStringContainsString('topnav-profile', $html);
+        $this->assertStringContainsString('/student/settings/profile', $html);
+        $this->assertStringNotContainsString('data-topnav-dropdown', $html);
     }
 
     public function test_student_can_update_profile_and_password(): void

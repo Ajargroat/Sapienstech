@@ -13,20 +13,57 @@ use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 /**
- * The consultant's own account settings — the Profile tab of the settings
- * hub. Tenant-level identity (site name, logo, colors) is *not* here; that
- * belongs to the appearance studio. This page is per-user only, which is
- * also why logout lives here rather than in the top navigation.
+ * The profile hub: the one page the top navigation's profile button leads
+ * to. Its home is the Telegram-style identity page (centered avatar, quick
+ * actions, info rows, a settings list) shared by both portals, and every
+ * personal part of the consultant area — profile edit, password, the
+ * appearance studio, chat settings — renders *through* this route with a
+ * `?tab=<section>` selector instead of owning a page route. The save
+ * endpoints stay separate; only the browsing surface is unified.
+ *
+ * Section visibility (and therefore `?tab=` access) is decided by
+ * App\Support\SettingsTabs from the same `features.*` switches the old
+ * per-tab route middleware read, so a disabled section 404s exactly like it
+ * used to.
  */
 class ProfileController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request, AppearanceController $appearance, ChatSettingsController $chat): View
     {
-        return view('consultant.settings.profile', [
-            'user' => $request->user(),
-            'tabs' => SettingsTabs::visible('consultant'),
-            'activeTab' => 'profile',
-        ]);
+        $sections = collect(SettingsTabs::visible('consultant'))->keyBy('key');
+
+        abort_if($sections->isEmpty(), 404);
+
+        $tab = (string) $request->query('tab', '');
+
+        // An explicit tab must be one the tenant can actually see — the
+        // equivalent of the `consultant.feature:*` middleware that used to
+        // sit on each standalone tab route.
+        abort_if($tab !== '' && ! $sections->has($tab), 404);
+
+        if ($tab === '') {
+            $tab = $sections->has('profile') ? 'profile' : $sections->keys()->first();
+        }
+
+        return match ($tab) {
+            'appearance' => $appearance->index($request),
+            'chat' => $chat->index($request),
+            'edit' => view('consultant.settings.edit', [
+                'user' => $request->user(),
+                'tabs' => SettingsTabs::visible('consultant'),
+                'activeTab' => 'edit',
+            ]),
+            'password' => view('consultant.settings.password', [
+                'user' => $request->user(),
+                'tabs' => SettingsTabs::visible('consultant'),
+                'activeTab' => 'password',
+            ]),
+            default => view('consultant.settings.profile', [
+                'user' => $request->user(),
+                'tabs' => SettingsTabs::visible('consultant'),
+                'activeTab' => 'profile',
+            ]),
+        };
     }
 
     public function update(UpdateProfileRequest $request): RedirectResponse

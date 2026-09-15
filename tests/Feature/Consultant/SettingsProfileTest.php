@@ -12,8 +12,10 @@ use Illuminate\Support\Str;
 use Tests\TestCase;
 
 /**
- * The settings hub: profile tab CRUD, the moved logout, feature gating, and
- * the per-user ("just for me") config layer applied by ApplyPersonalTheme.
+ * The profile hub: the Telegram-style home (hero, action tiles, info rows,
+ * settings list), its edit/password/appearance/chat sections on the one
+ * profile route, the moved logout, feature gating, and the per-user
+ * ("just for me") config layer applied by ApplyPersonalTheme.
  */
 class SettingsProfileTest extends TestCase
 {
@@ -42,27 +44,77 @@ class SettingsProfileTest extends TestCase
         ]);
     }
 
-    public function test_profile_tab_loads(): void
+    public function test_profile_home_shows_the_identity_page_not_the_forms(): void
     {
         [$tenant, $host] = $this->tenantWithDomain();
         $user = $this->consultantFor($tenant);
 
-        $this->actingAs($user)
+        $html = $this->actingAs($user)
             ->get("http://{$host}/consultant/settings/profile")
             ->assertOk()
+            ->assertSee('پروفایل')
             ->assertSee('تنظیمات')
-            ->assertSee('پروفایل');
+            ->assertSee('ویرایش پروفایل')
+            ->assertSee('رمز عبور')
+            ->assertSee($user->email)
+            ->getContent();
+
+        // The home page only shows identity data and routes to sections;
+        // editing lives behind the settings-list rows (raw attribute
+        // checks: assertSee escapes quotes by default).
+        $this->assertStringNotContainsString('name="name"', $html);
+        $this->assertStringNotContainsString('name="current_password"', $html);
+
+        // Action tiles carry the main features the topnav knows.
+        $this->assertStringContainsString('/consultant/direct-chat', $html);
     }
 
-    public function test_chat_tab_loads(): void
+    public function test_edit_and_password_sections_render_forms_through_the_hub(): void
+    {
+        [$tenant, $host] = $this->tenantWithDomain();
+        $user = $this->consultantFor($tenant);
+
+        $edit = $this->actingAs($user)
+            ->get("http://{$host}/consultant/settings/profile?tab=edit")
+            ->assertOk()
+            ->assertSee($user->name)
+            ->getContent();
+
+        $this->assertStringContainsString('name="name"', $edit);
+        $this->assertStringContainsString('name="bio"', $edit);
+
+        $password = $this->actingAs($user)
+            ->get("http://{$host}/consultant/settings/profile?tab=password")
+            ->assertOk()
+            ->getContent();
+
+        $this->assertStringContainsString('name="current_password"', $password);
+    }
+
+    public function test_unknown_tab_is_a_not_found(): void
     {
         [$tenant, $host] = $this->tenantWithDomain();
         $user = $this->consultantFor($tenant);
 
         $this->actingAs($user)
-            ->get("http://{$host}/consultant/settings/chat")
+            ->get("http://{$host}/consultant/settings/profile?tab=bogus")
+            ->assertNotFound();
+    }
+
+    public function test_chat_section_loads_inside_the_profile_hub(): void
+    {
+        [$tenant, $host] = $this->tenantWithDomain();
+        $user = $this->consultantFor($tenant);
+
+        $this->actingAs($user)
+            ->get("http://{$host}/consultant/settings/profile?tab=chat")
             ->assertOk()
             ->assertSee('گفتگو');
+
+        // The old standalone tab URL redirects into the hub section.
+        $this->actingAs($user)
+            ->get("http://{$host}/consultant/settings/chat")
+            ->assertRedirect('/consultant/settings/profile?tab=chat');
     }
 
     public function test_logout_is_no_longer_in_the_top_navigation(): void
@@ -75,10 +127,13 @@ class SettingsProfileTest extends TestCase
             ->assertOk()
             ->getContent();
 
-        // The logout form moved to the profile tab; the nav keeps no action
-        // pointing at it.
+        // The logout form lives in the hub's account section; the nav keeps
+        // no action pointing at it, and its profile button is a direct link
+        // into the hub (the dropdown is gone).
         $this->assertStringNotContainsString('action="http://'.$host.'/logout"', $html);
-        $this->assertStringContainsString('data-topnav-dropdown', $html);
+        $this->assertStringContainsString('topnav-profile', $html);
+        $this->assertStringContainsString('/consultant/settings/profile', $html);
+        $this->assertStringNotContainsString('data-topnav-dropdown', $html);
     }
 
     public function test_profile_name_and_email_update(): void
@@ -152,16 +207,26 @@ class SettingsProfileTest extends TestCase
         $this->assertNull($user->fresh()->avatar);
     }
 
-    public function test_disabled_feature_flag_hides_the_tab_and_blocks_the_route(): void
+    public function test_disabled_feature_flag_hides_the_section_and_blocks_the_tab(): void
     {
         [$tenant, $host] = $this->tenantWithDomain();
         $user = $this->consultantFor($tenant);
 
         site_override(['features' => ['settings_profile' => false]]);
 
+        // The account home and its edit/password children all 404, exactly
+        // like the old standalone routes did…
+        $this->actingAs($user)
+            ->get("http://{$host}/consultant/settings/profile?tab=profile")
+            ->assertNotFound();
+        $this->actingAs($user)
+            ->get("http://{$host}/consultant/settings/profile?tab=edit")
+            ->assertNotFound();
+
+        // …while the hub itself falls through to a section that is enabled.
         $this->actingAs($user)
             ->get("http://{$host}/consultant/settings/profile")
-            ->assertNotFound();
+            ->assertOk();
     }
 
     /**

@@ -2,52 +2,73 @@
 
 namespace App\Support;
 
-use Illuminate\Support\Facades\Route;
-
 /**
- * Single source of truth for the settings-hub tab bar.
+ * Single source of truth for the profile hub's sections.
  *
- * Both portals build their tabs here so the consultant and student shells
- * stay visually and structurally identical, and so a tab disappears as soon
- * as its feature flag is off or its route has not been registered yet —
- * which lets the hub ship incrementally (profile first, blog/appearance as
- * those phases land) without the view hard-coding a list that can go stale.
+ * The hub is ONE route (`…settings.profile`); every personal part —
+ * account details, edit, password, the appearance studio, chat settings —
+ * renders through it with a `?tab=` selector instead of owning a route of
+ * its own, so the top navigation needs nothing but a direct link to the
+ * profile. Sections still disappear the moment their feature flag is off,
+ * which keeps the home page's settings list and the actual access control
+ * (enforced in the hub controller) in sync.
  *
- * `feature` is a `features.*` key resolved through site(), matching the
- * `consultant.feature:*` middleware gating the routes themselves; the tab
- * list and the actual access control can therefore never disagree.
+ * Both portals build their sections here so the consultant and student
+ * shells stay visually and structurally identical.
+ *
+ * The hub home itself is a section (`profile`): the Telegram-style identity
+ * page whose settings list links to every other section. Home is never a
+ * row in that list, which is why the home views filter `key === 'profile'`
+ * out of `visible()`.
+ *
+ * `feature` is a `features.*` key resolved through site(); students have no
+ * studio/chat section yet, which is why their list is shorter — not a
+ * different mechanism. `icon` feeds the settings-list rows (FontAwesome).
  */
 class SettingsTabs
 {
+    /** Route name of the one page that hosts every section. */
+    public static function hub(string $portal = 'consultant'): string
+    {
+        return $portal === 'student'
+            ? 'student.settings.profile'
+            : 'consultant.settings.profile';
+    }
+
     /**
-     * @return list<array{key: string, label_key: string, fallback: string, route: string, feature: string}>
+     * @return list<array{key: string, label_key: string, fallback: string, feature: string, icon: string}>
      */
     public static function forConsultant(): array
     {
         return [
-            ['key' => 'profile',    'label_key' => 'settings_profile',    'fallback' => 'پروفایل', 'route' => 'consultant.settings.profile',    'feature' => 'settings_profile'],
-            ['key' => 'appearance', 'label_key' => 'settings_appearance', 'fallback' => 'ظاهر',    'route' => 'consultant.settings.appearance', 'feature' => 'theme_studio'],
-            ['key' => 'chat',       'label_key' => 'settings_chat',       'fallback' => 'گفتگو',   'route' => 'consultant.settings.chat',       'feature' => 'settings_chat'],
+            ['key' => 'profile',    'label_key' => 'settings_profile',     'fallback' => 'پروفایل',          'feature' => 'settings_profile', 'icon' => 'fa-user'],
+            ['key' => 'edit',       'label_key' => 'settings_profile_edit', 'fallback' => 'ویرایش پروفایل',  'feature' => 'settings_profile', 'icon' => 'fa-user-pen'],
+            ['key' => 'password',   'label_key' => 'settings_password',    'fallback' => 'رمز عبور',         'feature' => 'settings_profile', 'icon' => 'fa-key'],
+            ['key' => 'appearance', 'label_key' => 'settings_appearance',  'fallback' => 'ظاهر',             'feature' => 'theme_studio',     'icon' => 'fa-palette'],
+            ['key' => 'chat',       'label_key' => 'settings_chat',        'fallback' => 'گفتگو',            'feature' => 'settings_chat',    'icon' => 'fa-comments'],
         ];
     }
 
     /**
-     * The student portal joins the same hub later; profile is its only tab
-     * for now, but the dropdown and layout are already shared.
+     * The student portal has no studio/chat section yet; account, edit and
+     * password are the same mechanism. Dropping another entry in here gives
+     * it a row, a feature gate and a URL in one move.
      *
-     * @return list<array{key: string, label_key: string, fallback: string, route: string, feature: string}>
+     * @return list<array{key: string, label_key: string, fallback: string, feature: string, icon: string}>
      */
     public static function forStudent(): array
     {
         return [
-            ['key' => 'profile', 'label_key' => 'settings_profile', 'fallback' => 'پروفایل', 'route' => 'student.settings.profile', 'feature' => 'settings_profile'],
+            ['key' => 'profile',  'label_key' => 'settings_profile',      'fallback' => 'پروفایل',         'feature' => 'settings_profile', 'icon' => 'fa-user'],
+            ['key' => 'edit',     'label_key' => 'settings_profile_edit', 'fallback' => 'ویرایش پروفایل', 'feature' => 'settings_profile', 'icon' => 'fa-user-pen'],
+            ['key' => 'password', 'label_key' => 'settings_password',     'fallback' => 'رمز عبور',        'feature' => 'settings_profile', 'icon' => 'fa-key'],
         ];
     }
 
     /**
-     * Tabs that are both feature-enabled and actually routable.
+     * Feature-enabled sections with their absolute tab URLs and row icons.
      *
-     * @return list<array{key: string, label: string, route: string}>
+     * @return list<array{key: string, label: string, url: string, icon: string}>
      */
     public static function visible(string $portal = 'consultant'): array
     {
@@ -56,10 +77,6 @@ class SettingsTabs
         $visible = [];
 
         foreach ($tabs as $tab) {
-            if (! Route::has($tab['route'])) {
-                continue;
-            }
-
             if (! (bool) site("features.{$tab['feature']}", false)) {
                 continue;
             }
@@ -67,7 +84,10 @@ class SettingsTabs
             $visible[] = [
                 'key'   => $tab['key'],
                 'label' => (string) site("labels.{$tab['label_key']}", $tab['fallback']),
-                'route' => $tab['route'],
+                'icon'  => $tab['icon'],
+                'url'   => $tab['key'] === 'profile'
+                    ? route(self::hub($portal))
+                    : route(self::hub($portal), ['tab' => $tab['key']]),
             ];
         }
 

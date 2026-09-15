@@ -12,11 +12,12 @@ use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
 
 /**
- * The student's own account settings — the student-side counterpart of the
- * consultant ProfileController, kept deliberately minimal (name, email,
- * password, avatar, logout). It exists so the shared settings skeleton
- * (SettingsTabs, ApplyPersonalTheme, the tab layout) is exercised end-to-end
- * for the student guard, not just designed for it.
+ * The student-side profile hub — the counterpart of the consultant
+ * ProfileController: same single route with `?tab=` section dispatch and
+ * the same SettingsTabs gating (account, edit, password), so both portals
+ * browse identically and a disabled feature 404s a tab exactly like the
+ * consultant shell. ApplyPersonalTheme gives the student guard the same
+ * per-user theme machinery.
  *
  * Email uniqueness is scoped to the students table within the tenant, mirroring
  * the (tenant_id, email) constraint on that table.
@@ -25,11 +26,39 @@ class ProfileController extends Controller
 {
     public function index(Request $request): View
     {
-        return view('student.settings.profile', [
-            'student' => $request->user('student'),
-            'tabs' => SettingsTabs::visible('student'),
-            'activeTab' => 'profile',
-        ]);
+        $sections = collect(SettingsTabs::visible('student'))->keyBy('key');
+
+        abort_if($sections->isEmpty(), 404);
+
+        $tab = (string) $request->query('tab', '');
+
+        // An explicit tab must be one the tenant can actually see — same
+        // rule the consultant hub applies through SettingsTabs.
+        abort_if($tab !== '' && ! $sections->has($tab), 404);
+
+        if ($tab === '') {
+            $tab = $sections->has('profile') ? 'profile' : $sections->keys()->first();
+        }
+
+        $student = $request->user('student');
+
+        return match ($tab) {
+            'edit' => view('student.settings.edit', [
+                'student' => $student,
+                'tabs' => SettingsTabs::visible('student'),
+                'activeTab' => 'edit',
+            ]),
+            'password' => view('student.settings.password', [
+                'student' => $student,
+                'tabs' => SettingsTabs::visible('student'),
+                'activeTab' => 'password',
+            ]),
+            default => view('student.settings.profile', [
+                'student' => $student,
+                'tabs' => SettingsTabs::visible('student'),
+                'activeTab' => 'profile',
+            ]),
+        };
     }
 
     public function update(Request $request): RedirectResponse
@@ -38,12 +67,16 @@ class ProfileController extends Controller
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            // Email uniqueness is scoped to the students table within the tenant,
+            // mirroring the (tenant_id, email) constraint on that table.
             'email' => [
                 'required', 'email', 'max:255',
                 Rule::unique('students', 'email')
                     ->where(fn ($q) => $q->where('tenant_id', $student->tenant_id))
                     ->ignore($student->id),
             ],
+            // The bio line shown under the name in the profile header.
+            'bio' => ['nullable', 'string', 'max:500'],
         ]);
 
         $student->fill($data)->save();

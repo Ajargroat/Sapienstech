@@ -4,7 +4,15 @@
     Rendered by App\Http\Controllers\Student\StudentDashboardController::index()
     through the `student.dashboard` route. Mirrors the consultant dashboard's
     design language (layouts.student reuses the consultant shell), showing the
-    student's weekly schedule, upcoming exams and recent results.
+    student's weekly schedule, next month's upcoming exams and recent results.
+
+    The schedule renders as read-only colored boxes (the same visual language
+    as the consultant calendar's event cards, without the grid): clicking a box
+    opens a details dialog populated from a per-item <template> and wired by
+    resources/js/features/student-dashboard.js. Exam cards reuse the
+    consultant exams workspace (.exam-grid/.exam-card), and finished exams link
+    to the student-side result review page (student.exams.result). The old
+    "کارنامه" teaser panel moved to its own student.report-card page/tab.
 
     Jalali dates render server-side as a Gregorian fallback inside
     <time class="fa-date"> and are rewritten by
@@ -77,7 +85,7 @@
     </div>
 </div>
 
-<div class="student-columns">
+<div class="student-side">
     <section class="panel student-panel">
         <header class="student-panel-head">
             <h2><i class="fas fa-calendar-week"></i> برنامه هفتگی</h2>
@@ -85,39 +93,56 @@
         </header>
 
         @if($weekItems->isNotEmpty())
-            <ul class="week-list" data-stagger>
-                @foreach($weekItems as $item)
-                    <li class="week-item @if($item->is_completed) is-done @endif">
-                        <span class="week-item-bar" style="--bar: {{ $item->color ?: 'var(--c-primary)' }}"></span>
-                        <div class="week-item-body">
-                            <h3>{{ $item->title }}</h3>
-                            <p class="week-item-meta">
-                                <span>
-                                    <i class="fas fa-calendar-day"></i>
-                                    <span class="fa-weekday" data-fa-weekday="{{ $item->start_datetime->format('Y-m-d\TH:i') }}Z"></span>
-                                    <time class="fa-date" datetime="{{ $item->start_datetime->format('Y-m-d\TH:i') }}Z">{{ persian_digits($item->start_datetime->format('Y/m/d')) }}</time>
+            {{-- Saturday-anchored Persian week, one day-header row of colored
+                 boxes per day. Boxes are styled like the consultant calendar's
+                 event cards (16% tint of the category color + solid accent
+                 border) but are strictly read-only. --}}
+            @foreach($weekItems->groupBy(fn ($item) => $item->start_datetime->toDateString()) as $dayItems)
+                @php $dayStart = $dayItems->first()->start_datetime; @endphp
+                <div class="sched-day">
+                    <h3 class="sched-day-head">
+                        <span class="fa-weekday" data-fa-weekday="{{ $dayStart->format('Y-m-d\TH:i') }}Z"></span>
+                        <time class="fa-date" datetime="{{ $dayStart->format('Y-m-d\TH:i') }}Z">{{ persian_digits($dayStart->format('Y/m/d')) }}</time>
+                    </h3>
+                    <div class="sched-boxes">
+                        @foreach($dayItems as $item)
+                            @php
+                                $isPersonal = $item->item_type === 'student_personal_block';
+                                $accent = $item->color ?: 'var(--c-primary)';
+                            @endphp
+                            <button
+                                type="button"
+                                class="sched-box @if($isPersonal) sched-box--personal @endif @if($item->is_completed) sched-box--done @endif"
+                                style="--accent: {{ $accent }}"
+                                data-sched-item="sched-tpl-{{ $item->id }}"
+                                data-sched-title="{{ $item->title }}"
+                                aria-haspopup="dialog"
+                            >
+                                <span class="sched-box-time">
+                                    <span>{{ persian_digits($item->start_datetime->format('H:i')) }} – {{ persian_digits($item->end_datetime->format('H:i')) }}</span>
+                                    @if($item->is_completed)
+                                        <i class="fas fa-check-circle" title="تکمیل شد"></i>
+                                    @endif
                                 </span>
-                                <span>
-                                    <i class="far fa-clock"></i>
-                                    {{ persian_digits($item->start_datetime->format('H:i')) }} – {{ persian_digits($item->end_datetime->format('H:i')) }}
-                                </span>
-                                @if($item->book_name)
-                                    <span>
-                                        <i class="fas fa-book"></i>
-                                        {{ $item->book_name }}
-                                        @if($item->page_count) — {{ persian_digits($item->page_count) }} صفحه @endif
+                                <span class="sched-box-title">{{ $item->title }}</span>
+                                @if($item->book_name || $item->page_count || $item->test_count)
+                                    <span class="sched-box-tags">
+                                        @if($item->book_name)
+                                            <span><i class="fas fa-book"></i> {{ $item->book_name }}</span>
+                                        @endif
+                                        @if($item->page_count)
+                                            <span><i class="fas fa-file-alt"></i> {{ persian_digits($item->page_count) }} صفحه</span>
+                                        @endif
+                                        @if($item->test_count)
+                                            <span><i class="fas fa-check-square"></i> {{ persian_digits($item->test_count) }} تست</span>
+                                        @endif
                                     </span>
                                 @endif
-                            </p>
-                        </div>
-                        @if($item->is_completed)
-                            <span class="week-item-done" title="تکمیل شد">
-                                <i class="fas fa-check-circle"></i>
-                            </span>
-                        @endif
-                    </li>
-                @endforeach
-            </ul>
+                            </button>
+                        @endforeach
+                    </div>
+                </div>
+            @endforeach
         @else
             <div class="empty-state empty-state--compact">
                 <i class="far fa-calendar"></i>
@@ -127,52 +152,80 @@
         @endif
     </section>
 
-    <div class="student-side">
-        <section class="panel student-panel">
-            <header class="student-panel-head">
-                <h2><i class="fas fa-tasks"></i> آزمون‌های پیش‌رو</h2>
-                @if($stats['upcoming_exams'] > 0)
-                    <span class="count-badge">{{ persian_digits($stats['upcoming_exams']) }}</span>
-                @endif
-            </header>
-
+    <section class="panel student-panel">
+        <header class="student-panel-head">
+            <h2><i class="fas fa-tasks"></i> آزمون‌های پیش‌رو</h2>
             @if($upcomingExams->isNotEmpty())
-                <ul class="mini-list">
-                    @foreach($upcomingExams as $exam)
-                        <li class="mini-item">
-                            <span class="mini-item-icon"><i class="fas fa-file-alt"></i></span>
-                            <div class="mini-item-main">
-                                <span class="mini-item-title">{{ $exam->test->test_title }}</span>
-                                <span class="mini-item-sub">
-                                    {{ $exam->test->lesson ?: '—' }}
-                                    @if($exam->scheduled_at)
-                                        ·
-                                        <time class="fa-date" datetime="{{ $exam->scheduled_at->format('Y-m-d\TH:i') }}Z">{{ persian_digits($exam->scheduled_at->format('Y/m/d')) }}</time>
-                                        — {{ persian_digits($exam->scheduled_at->format('H:i')) }}
-                                    @endif
-                                </span>
-                            </div>
-                            <span class="exam-status exam-status--{{ $exam->status }}">{{ $statuses[$exam->status] ?? $exam->status }}</span>
-                        </li>
-                    @endforeach
-                </ul>
-            @else
-                <p class="student-panel-note">آزمون زمان‌بندی‌شده‌ای ندارید.</p>
+                <span class="count-badge">{{ persian_digits($upcomingExams->count()) }} آزمون</span>
             @endif
-        </section>
+        </header>
 
-        <section class="panel student-panel">
-            <header class="student-panel-head">
-                <h2><i class="fas fa-chart-line"></i> آخرین نتایج</h2>
-                @if($stats['completed_exams'] > 0)
-                    <span class="count-badge">{{ persian_digits($stats['completed_exams']) }} آزمون</span>
-                @endif
-            </header>
+        @if($upcomingExams->isNotEmpty())
+            {{-- Same card anatomy as the consultant exams workspace
+                 (.exam-grid/.exam-card), minus the run button. --}}
+            @php
+                $typeSvg = [
+                    'quiz' => '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M13 34l2-6.5L31 11.5l5.5 5.5L20.5 33 13 34z"/>
+                        <path d="M27.5 15.5l5 5"/>
+                        <path d="M12 40h24"/>
+                    </svg>',
+                    'comprehensive' => '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <rect x="11" y="7" width="26" height="34" rx="6" fill="currentColor" fill-opacity=".12"/>
+                        <rect x="11" y="7" width="26" height="34" rx="6"/>
+                        <path d="M18 17h12M18 24h12M18 31h7"/>
+                    </svg>',
+                ];
+                $typeLabels = ['quiz' => 'تمرینی', 'comprehensive' => 'آزمون'];
+            @endphp
+            <div class="exam-grid" data-stagger>
+                @foreach($upcomingExams as $exam)
+                    @php
+                        $test = $exam->test;
+                        $type = in_array($test->exam_type, $quizTypes, true) ? 'quiz' : 'comprehensive';
+                    @endphp
+                    <article class="exam-card">
+                        <div class="exam-card-icon exam-card-icon--{{ $type }}">
+                            <span class="exam-status exam-status--{{ $exam->status }}">{{ $statuses[$exam->status] ?? $exam->status }}</span>
+                            {!! $typeSvg[$type] !!}
+                            <span class="exam-card-icon-label">{{ $typeLabels[$type] }}</span>
+                        </div>
+                        <div class="exam-card-body">
+                            <h3 class="exam-card-title">{{ $test->test_title }}</h3>
+                            <ul class="exam-card-facts">
+                                <li><i class="fas fa-layer-group"></i>{{ $test->lesson ?: '—' }}</li>
+                                <li><i class="fas fa-circle-question"></i>{{ persian_digits((int) ($test->questions_count ?: 0)) }} سوال</li>
+                                @if($test->time_limit_minutes)
+                                    <li><i class="fas fa-hourglass-half"></i>{{ persian_digits((int) $test->time_limit_minutes) }} دقیقه</li>
+                                @endif
+                                <li>
+                                    <i class="fas fa-calendar-day"></i>
+                                    <time class="fa-date" datetime="{{ $exam->scheduled_at->format('Y-m-d\TH:i') }}Z">{{ persian_digits($exam->scheduled_at->format('Y/m/d')) }}</time>
+                                    — {{ persian_digits($exam->scheduled_at->format('H:i')) }}
+                                </li>
+                            </ul>
+                        </div>
+                    </article>
+                @endforeach
+            </div>
+        @else
+            <p class="student-panel-note">آزمونی برای ماه آینده زمان‌بندی نشده است.</p>
+        @endif
+    </section>
 
-            @if($recentResults->isNotEmpty())
-                <ul class="mini-list">
-                    @foreach($recentResults as $exam)
-                        <li class="mini-item">
+    <section class="panel student-panel">
+        <header class="student-panel-head">
+            <h2><i class="fas fa-chart-line"></i> آخرین نتایج</h2>
+            @if($stats['completed_exams'] > 0)
+                <span class="count-badge">{{ persian_digits($stats['completed_exams']) }} آزمون</span>
+            @endif
+        </header>
+
+        @if($recentResults->isNotEmpty())
+            <ul class="mini-list">
+                @foreach($recentResults as $exam)
+                    <li>
+                        <a class="mini-item mini-item--link" href="{{ route('student.exams.result', $exam) }}">
                             <span class="mini-item-icon mini-item-icon--success"><i class="fas fa-check-double"></i></span>
                             <div class="mini-item-main">
                                 <span class="mini-item-title">{{ $exam->test->test_title }}</span>
@@ -188,23 +241,80 @@
                                 {{ persian_digits((float) $exam->latestAttempt->score_raw) }}
                                 <small>از {{ persian_digits((float) $exam->test->total_marks) }}</small>
                             </span>
-                        </li>
-                    @endforeach
-                </ul>
-            @else
-                <p class="student-panel-note">هنوز نتیجه‌ای ثبت نشده است.</p>
-            @endif
-        </section>
-
-        <section class="panel student-panel student-soon">
-            <span class="student-soon-icon"><i class="fas fa-chart-pie"></i></span>
-            <div>
-                <h3>کارنامه</h3>
-                <p>کارنامه تحصیلی شما به‌زودی در همین پنل در دسترس خواهد بود.</p>
-            </div>
-        </section>
-    </div>
+                            <span class="mini-item-open" aria-hidden="true"><i class="fas fa-chevron-left"></i></span>
+                        </a>
+                    </li>
+                @endforeach
+            </ul>
+        @else
+            <p class="student-panel-note">هنوز نتیجه‌ای ثبت نشده است.</p>
+        @endif
+    </section>
 </div>
+
+{{-- Read-only schedule item details: cloned into the dialog by
+     student-dashboard.js when a box is clicked. --}}
+@foreach($weekItems as $item)
+    <template id="sched-tpl-{{ $item->id }}">
+        <div class="exam-field">
+            <label>روز و تاریخ</label>
+            <span class="sched-modal-value">
+                <span class="fa-weekday" data-fa-weekday="{{ $item->start_datetime->format('Y-m-d\TH:i') }}Z"></span>
+                <time class="fa-date" datetime="{{ $item->start_datetime->format('Y-m-d\TH:i') }}Z">{{ persian_digits($item->start_datetime->format('Y/m/d')) }}</time>
+            </span>
+        </div>
+        <div class="exam-field">
+            <label>ساعت</label>
+            <span class="sched-modal-value">{{ persian_digits($item->start_datetime->format('H:i')) }} – {{ persian_digits($item->end_datetime->format('H:i')) }}</span>
+        </div>
+        @if($item->book_name)
+            <div class="exam-field">
+                <label>کتاب</label>
+                <span class="sched-modal-value">{{ $item->book_name }}</span>
+            </div>
+        @endif
+        @if($item->page_count)
+            <div class="exam-field">
+                <label>تعداد صفحه</label>
+                <span class="sched-modal-value">{{ persian_digits($item->page_count) }}</span>
+            </div>
+        @endif
+        @if($item->test_count)
+            <div class="exam-field">
+                <label>تعداد تست</label>
+                <span class="sched-modal-value">{{ persian_digits($item->test_count) }}</span>
+            </div>
+        @endif
+        <div class="exam-field">
+            <label>وضعیت انجام</label>
+            <span class="sched-modal-value @if($item->is_completed) is-done @endif">
+                @if($item->is_completed)<i class="fas fa-check-circle"></i> تکمیل‌شده@else <i class="far fa-circle"></i> انجام‌نشده @endif
+            </span>
+        </div>
+        @if($item->link_url)
+            <div class="exam-field exam-field--wide">
+                <label>لینک محتوا / آزمون</label>
+                <a class="sched-modal-link" href="{{ $item->link_url }}" target="_blank" rel="noopener noreferrer">
+                    <i class="fas fa-external-link-alt"></i> {{ $item->link_url }}
+                </a>
+            </div>
+        @endif
+        <div class="exam-field exam-field--wide">
+            <label>{{ $item->item_type === 'student_personal_block' ? 'توضیحات' : 'توضیحات مشاور' }}</label>
+            <p class="sched-modal-desc">{{ $item->description ?: '—' }}</p>
+        </div>
+    </template>
+@endforeach
+
+<dialog id="schedule-detail-modal" class="exam-modal" aria-labelledby="sched-modal-title">
+    <div class="exam-modal-head sched-modal-head">
+        <h3 id="sched-modal-title"><i class="fas fa-calendar-check"></i> <span></span></h3>
+        <button type="button" class="sched-modal-close" aria-label="بستن" data-sched-close>
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+    <div class="sched-modal-body"></div>
+</dialog>
 
 @vite(['resources/js/features/student-dashboard.js'])
 @endsection

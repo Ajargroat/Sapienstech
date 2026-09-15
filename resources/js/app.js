@@ -2,8 +2,10 @@ import './theme';
 import './landing';
 import { onPageRender } from './page-router';
 
-// Closing the popover on an outside click is delegated once for the whole
-// shell, so it keeps working across router swaps without stacking listeners.
+// Closing any open filter surface on an outside click is delegated once for
+// the whole shell, so it keeps working across router swaps without stacking
+// listeners. Unchecking the toggle inputs collapses every CSS-driven popover
+// (the dashboard modal and the simple status menus alike).
 document.addEventListener('click', (event) => {
     if (event.target.closest?.('.filter-wrap')) return;
     document.querySelectorAll('.filter-toggle-input:checked').forEach((input) => {
@@ -32,40 +34,6 @@ document.addEventListener('change', (event) => {
 });
 
 /*
- * Topnav user dropdown (settings hub). Delegated at document level like the
- * filter popover: the nav lives outside the router region and persists across
- * page swaps, so one listener covers every page.
- */
-const closeTopnavDropdown = (wrap) => {
-    wrap.classList.remove('is-open');
-    wrap.querySelector('button')?.setAttribute('aria-expanded', 'false');
-};
-
-document.addEventListener('click', (event) => {
-    const toggle = event.target.closest?.('[data-topnav-dropdown] > button');
-    const openWrap = document.querySelector('[data-topnav-dropdown].is-open');
-
-    if (openWrap && !openWrap.contains(event.target)) closeTopnavDropdown(openWrap);
-
-    if (toggle) {
-        const wrap = toggle.closest('[data-topnav-dropdown]');
-        if (wrap.classList.contains('is-open')) {
-            closeTopnavDropdown(wrap);
-        } else {
-            wrap.classList.add('is-open');
-            toggle.setAttribute('aria-expanded', 'true');
-        }
-    } else if (openWrap && event.target.closest('.topnav-dropdown-link')) {
-        closeTopnavDropdown(openWrap);
-    }
-});
-
-document.addEventListener('keydown', (event) => {
-    if (event.key !== 'Escape') return;
-    document.querySelectorAll('[data-topnav-dropdown].is-open').forEach(closeTopnavDropdown);
-});
-
-/*
  * Success flashes are transient notifications, not permanent page
  * furniture: they fade out and remove themselves a few seconds after
  * appearing. Error flashes stay put — role="alert" means the user has to
@@ -88,15 +56,20 @@ armFlashDismissal(document);
 onPageRender(armFlashDismissal);
 
 /*
- * The filter popover's forms mirror each other.
+ * The filter surfaces' forms mirror each other.
  *
  * Every panel form (and the dashboard search box) carries the whole filter
- * stack, so applying on one page never drops filters set on another and a
- * bulk assignment POST re-derives exactly the set the UI displayed. Popover
+ * stack, so applying on one tab never drops filters set on another and a
+ * bulk assignment POST re-derives exactly the set the UI displayed. Modal
  * DOM survives the router's partial swaps, so server-rendered hidden values
  * go stale as soon as anything is clicked; refresh every mirror from the
  * live control state right before submit. Delegated once for the whole
  * shell, like the outside-click dismissal above.
+ *
+ * Each panel's filter fields are rendered as themed dropdowns whose hidden
+ * input (marked with `data-filter-value`) IS the live control; radio chips
+ * and native selects (still used on settings pages) work too, so the same
+ * sync handles every current and future surface.
  */
 const FILTER_FIELDS = [
     'search', 'grade', 'gender', 'major', 'sort',
@@ -104,6 +77,11 @@ const FILTER_FIELDS = [
     'report_source', 'report_status',
     'schedule_day', 'schedule_done',
 ];
+
+const isLiveFilterControl = (name) =>
+    `[data-filter-value][name="${name}"]` +
+    `, input:not([type="hidden"])[name="${name}"]` +
+    `, select[name="${name}"]`;
 
 document.addEventListener('submit', (event) => {
     const form = event.target;
@@ -114,8 +92,11 @@ document.addEventListener('submit', (event) => {
 
     form.querySelectorAll('input[type="hidden"]').forEach((input) => {
         if (!FILTER_FIELDS.includes(input.name)) return;
-        // Real (non-hidden) controls own their own field.
-        if (form.querySelector(`input:not([type="hidden"])[name="${input.name}"]`)) return;
+        // The dropdown's own value-holder is a live control, not a mirror.
+        if (input.hasAttribute('data-filter-value')) return;
+        // Another real control in this form owns the field (dropdown holder,
+        // checked radio, or select). Skip mirroring.
+        if (form.querySelector(isLiveFilterControl(input.name))) return;
 
         if (input.name === 'search') {
             const searchInput = document.querySelector('.search-reveal-input');
@@ -125,42 +106,229 @@ document.addEventListener('submit', (event) => {
             return;
         }
 
-        const checked = scope.querySelector(
-            `input[name="${input.name}"]:checked:not([type="hidden"])`
-        );
-        input.value = checked ? checked.value : (query.get(input.name) ?? '');
+        const live = scope.querySelector(isLiveFilterControl(input.name));
+        input.value = live ? live.value : (query.get(input.name) ?? '');
     });
 }, true); // capture: must run before the page-router serializes the form
 
 /*
- * Filter popover carousel: general / exam / report-card / schedule pages.
- * Registered through the router so it boots on the first page and on every
- * swapped-in page; the returned cleanup detaches the window listeners.
+ * Themed dropdowns (.filter-select) — one component, three option kinds:
  *
- * The popover itself lives outside the swapped regions, so this behavior
- * re-runs against the same DOM on every partial swap: the active page is
- * read back from data-filter-current instead of resetting to 0.
+ *   button[data-value]  the dashboard filter panels' listbox; a JS-set
+ *                       hidden input (data-filter-value) is the control.
+ *   label > input[type=radio]  studio's select/archetype/list-type groups:
+ *                       the radios stay the real form controls (theme-studio
+ *                       keeps listening for bubbled change events and reads
+ *                       `input:checked`), the dropdown only folds the option
+ *                       list into a themed panel.
+ *   a[href]             the bulk picker's filter links: navigation proceeds
+ *                       natively; we only mirror the label and close.
+ *
+ * Wrappers marked [data-select-multi] (studio's sections control) keep the
+ * panel open while boxes are ticked and show a checked-count instead of a
+ * single label.
+ *
+ * The list is fixed-positioned (via openFilterSelect's inline styles) so it
+ * escapes every ancestor's clip — the modal card, the studio rail, the
+ * picker; [data-select-auto-width] panels keep their natural content width.
+ * Every event that could invalidate the anchor — outside clicks, tab change,
+ * viewport resize, Escape — closes it. Delegated once for the whole shell,
+ * mirroring the pattern used for the popover itself and the topnav dropdown.
+ */
+const faDigits = (n) => String(n).replace(/\d/g, (d) => '۰۱۲۳۴۵۶۷۸۹'[d]);
+
+const closeFilterSelect = (wrap) => {
+    if (!wrap.classList.contains('is-open')) return;
+    wrap.classList.remove('is-open');
+    wrap.querySelector('[data-filter-select-trigger]')?.setAttribute('aria-expanded', 'false');
+};
+
+const closeAllFilterSelects = () => {
+    document.querySelectorAll('.filter-select.is-open').forEach(closeFilterSelect);
+};
+
+const openFilterSelect = (wrap) => {
+    const trigger = wrap.querySelector('[data-filter-select-trigger]');
+    const list = wrap.querySelector('[data-filter-select-list]');
+    if (!trigger || !list) return;
+
+    closeAllFilterSelects();
+
+    const rect = trigger.getBoundingClientRect();
+    const viewportPad = 12;
+    const spaceBelow = window.innerHeight - rect.bottom - viewportPad;
+    const spaceAbove = rect.top - viewportPad;
+    const preferAbove = spaceBelow < 180 && spaceAbove > spaceBelow;
+
+    list.style.position = 'fixed';
+    list.style.top = preferAbove ? 'auto' : (rect.bottom + 4) + 'px';
+    list.style.bottom = preferAbove ? (window.innerHeight - rect.top + 4) + 'px' : 'auto';
+    list.style.maxHeight = Math.max(140, (preferAbove ? spaceAbove : spaceBelow) - 8) + 'px';
+
+    if (wrap.hasAttribute('data-select-auto-width')) {
+        // Wider-than-trigger panels (link menus, section trays) grow towards
+        // the inline start, anchored on the trigger's end edge.
+        list.style.width = '';
+        list.style.left = '';
+        list.style.right = Math.max(viewportPad, window.innerWidth - rect.right) + 'px';
+        list.style.minWidth = rect.width + 'px';
+        list.style.maxWidth = Math.min(360, window.innerWidth - 2 * viewportPad) + 'px';
+    } else {
+        list.style.left = Math.max(viewportPad, rect.left) + 'px';
+        list.style.right = '';
+        list.style.width = rect.width + 'px';
+    }
+
+    wrap.classList.add('is-open');
+    trigger.setAttribute('aria-expanded', 'true');
+};
+
+const setSelectDisplay = (wrap, label, isPlaceholder = false) => {
+    const display = wrap.querySelector('[data-filter-select-display]');
+    const trigger = wrap.querySelector('[data-filter-select-trigger]');
+    if (display) display.textContent = label;
+    trigger?.classList.toggle('is-placeholder', Boolean(isPlaceholder));
+};
+
+const syncSelectDisplayFromChecked = (wrap) => {
+    const checked = wrap.querySelector('[data-filter-select-option] input:checked');
+    if (!checked) return;
+    setSelectDisplay(wrap, checked.closest('[data-filter-select-option]').dataset.label ?? '');
+};
+
+const syncSelectCount = (wrap) => {
+    const count = wrap.querySelectorAll('input:checked, [data-section-locked]').length;
+    setSelectDisplay(wrap, `${faDigits(count)} ${wrap.dataset.countUnit ?? 'مورد'}`);
+};
+
+document.addEventListener('click', (event) => {
+    // Option click must run before the trigger-toggle branch, since options
+    // live inside the same .filter-select wrapper as the trigger.
+    const option = event.target.closest?.('[data-filter-select-option]');
+    if (option) {
+        const wrap = option.closest('.filter-select');
+        if (!wrap) return;
+
+        if (option.tagName === 'A') {
+            // Bulk-picker filter link: navigation is the point; mirror the
+            // label and fold the menu back while the router swaps results.
+            setSelectDisplay(
+                wrap,
+                option.dataset.label ?? option.textContent ?? '',
+                option.hasAttribute('data-placeholder'),
+            );
+            closeFilterSelect(wrap);
+            return;
+        }
+
+        if (option.querySelector('input')) {
+            // Radio/checkbox option row: the native control updates itself;
+            // the bubbled 'change' handler below re-reads the display. A
+            // multi tray stays open while several values are picked.
+            if (!wrap.hasAttribute('data-select-multi')) {
+                setSelectDisplay(wrap, option.dataset.label ?? option.textContent ?? '');
+                closeFilterSelect(wrap);
+            }
+            return;
+        }
+
+        // Button option (dashboard listbox): hidden holder is the control.
+        const value = option.dataset.value ?? '';
+        const holder = wrap.querySelector('[data-filter-value]');
+        if (holder) holder.value = value;
+        setSelectDisplay(wrap, option.dataset.label ?? option.textContent ?? '', value === '');
+
+        wrap.querySelectorAll('[data-filter-select-option]').forEach((el) => {
+            const active = el === option;
+            el.classList.toggle('is-active', active);
+            el.setAttribute('aria-selected', active ? 'true' : 'false');
+        });
+
+        closeFilterSelect(wrap);
+        return;
+    }
+
+    const trigger = event.target.closest?.('[data-filter-select-trigger]');
+    if (trigger) {
+        const wrap = trigger.closest('.filter-select');
+        if (!wrap) return;
+        if (wrap.classList.contains('is-open')) {
+            closeFilterSelect(wrap);
+        } else {
+            openFilterSelect(wrap);
+        }
+        return;
+    }
+
+    // Clicks anywhere else inside an open panel (rows, move buttons) are the
+    // tray's own business; anything outside closes every open dropdown.
+    if (event.target.closest?.('.filter-select.is-open')) return;
+    closeAllFilterSelects();
+});
+
+// Keyboard picks (arrows through radios, Space on checkboxes) never produce
+// a click, so the display/count mirrors ride the bubbled change event too.
+document.addEventListener('change', (event) => {
+    const input = event.target;
+    if (!input.matches?.('input[type="radio"], input[type="checkbox"]')) return;
+    const wrap = input.closest('.filter-select');
+    if (!wrap) return;
+
+    if (wrap.hasAttribute('data-select-multi')) syncSelectCount(wrap);
+    else if (input.type === 'radio') syncSelectDisplayFromChecked(wrap);
+});
+
+// Any scroll or resize shifts a fixed list away from its (moving) trigger,
+// so close — except scrolling inside the tray itself, which must stay open.
+document.addEventListener('scroll', (event) => {
+    const target = event.target;
+    if (target instanceof Element && target.closest('.filter-select.is-open')) return;
+    closeAllFilterSelects();
+}, true);
+window.addEventListener('resize', closeAllFilterSelects);
+document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    const open = document.querySelector('.filter-select.is-open');
+    if (open) {
+        closeFilterSelect(open);
+        return;
+    }
+    // No dropdown open: Escape closes the filter modal (its checkbox is the
+    // single source of truth for the popover state).
+    document
+        .querySelectorAll('.filter-toggle-input[data-filter-modal-input]:checked')
+        .forEach((input) => { input.checked = false; });
+});
+
+/*
+ * Filter modal: the four filter groups (general / exam / report-card /
+ * schedule) live in tabs on the side of the dialog instead of the old
+ * hover drawer's prev/next carousel. The popover opens on click only — its
+ * checkbox (data-filter-modal-input) drives both the button rotation and
+ * the overlay's visibility in pure CSS.
+ *
+ * Registered through the router so it boots on the first page and survives
+ * every partial swap: the modal DOM is never swapped (only the results
+ * regions are), hence the dataset guard that keeps listeners attached once.
  */
 onPageRender((region) => {
-    const carousel = region.querySelector('[data-filter-carousel]');
-    if (!carousel) return;
+    const modal = region.querySelector('[data-filter-modal]');
+    if (!modal || modal.dataset.tabsBooted === '1') return;
+    modal.dataset.tabsBooted = '1';
 
-    const track = carousel.querySelector('.filter-carousel-track');
-    const pages = Array.from(carousel.querySelectorAll('.filter-page'));
-    const title = region.querySelector('[data-filter-title]');
-    const prevBtn = region.querySelector('[data-filter-prev]');
-    const nextBtn = region.querySelector('[data-filter-next]');
-    const dots = Array.from(region.querySelectorAll('[data-filter-dot]'));
-    const applyBtn = region.querySelector('[data-filter-apply]');
-    const pageCount = pages.length;
-    let current = Math.max(0, Math.min(
-        Number(carousel.dataset.filterCurrent ?? carousel.dataset.filterPage ?? 0) || 0,
-        pageCount - 1,
-    ));
+    const tabs = Array.from(modal.querySelectorAll('[data-filter-tab]'));
+    const panels = Array.from(modal.querySelectorAll('.filter-page'));
+    const applyBtn = modal.querySelector('[data-filter-apply]');
+    const toggle = modal
+        .closest('.filter-wrap')
+        ?.querySelector('.filter-toggle-input[data-filter-modal-input]');
+    const pageCount = panels.length;
+    let current = -1;
 
     const activate = (index) => {
-        pages.forEach((page, i) => {
+        panels.forEach((page, i) => {
             const active = i === index;
+            page.classList.toggle('is-active', active);
             page.setAttribute('aria-hidden', String(!active));
             page.querySelectorAll('select, input, button, a').forEach((el) => {
                 el.tabIndex = active ? 0 : -1;
@@ -168,84 +336,49 @@ onPageRender((region) => {
         });
     };
 
-    const size = () => {
-        carousel.style.height = pages[current].offsetHeight + 'px';
-    };
-
-    // One shared "اعمال" button drives whichever panel's GET filter form is
+    // One shared "اعمال" button drives whichever tab's GET filter form is
     // currently visible (HTML5 form attribute on a button outside the form).
     const setApplyTarget = () => {
         if (!applyBtn) return;
-        const form = pages[current].querySelector('form[data-filter-form]');
+        const form = panels[current]?.querySelector('form[data-filter-form]');
         applyBtn.setAttribute('form', form ? form.id : '');
         applyBtn.hidden = !form;
     };
 
-    const setPage = (index) => {
+    const setTab = (index) => {
         const target = Math.max(0, Math.min(index, pageCount - 1));
         if (target === current) return;
+        // Fixed-positioned dropdowns must not float over the wrong tab.
+        closeAllFilterSelects();
         current = target;
-        carousel.dataset.filterCurrent = current;
+        modal.dataset.filterCurrent = current;
 
-        track.style.setProperty('--filter-page', current);
-        size();
-        dots.forEach((dot, i) => dot.classList.toggle('is-active', i === current));
-        prevBtn.classList.toggle('is-disabled', current === 0);
-        nextBtn.classList.toggle('is-disabled', current === pages.length - 1);
-
-        // Crossfade the title while the track slides underneath it.
-        title.classList.add('is-swapping');
-        setTimeout(() => {
-            title.textContent = pages[current].dataset.filterName;
-            title.classList.remove('is-swapping');
-        }, 140);
+        tabs.forEach((tab, i) => {
+            const active = i === current;
+            tab.classList.toggle('is-active', active);
+            tab.setAttribute('aria-selected', active ? 'true' : 'false');
+        });
 
         activate(current);
         setApplyTarget();
     };
 
-    prevBtn.addEventListener('click', () => setPage(current - 1));
-    nextBtn.addEventListener('click', () => setPage(current + 1));
-    dots.forEach((dot) =>
-        dot.addEventListener('click', () => setPage(Number(dot.dataset.filterDot)))
+    tabs.forEach((tab) =>
+        tab.addEventListener('click', () => setTab(Number(tab.dataset.filterTab)))
     );
 
-    // Wheel over the open menu flips between filter pages.
-    const popover = carousel.closest('.filter-popover');
-    let wheelLock = false;
+    // Close: the ✕ button, the backdrop (a click that lands on the overlay
+    // itself, not on the card inside it), or any link that navigates away.
+    modal.querySelectorAll('[data-filter-close]').forEach((btn) =>
+        btn.addEventListener('click', () => { if (toggle) toggle.checked = false; })
+    );
+    modal.addEventListener('click', (event) => {
+        if (event.target !== modal || !toggle) return;
+        toggle.checked = false;
+    });
 
-    const onWheel = (event) => {
-        const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY)
-            ? event.deltaX
-            : event.deltaY;
-
-        const atEdge =
-            (delta > 0 && current === pages.length - 1) ||
-            (delta < 0 && current === 0);
-
-        // Below threshold, mid-animation, or at a carousel edge →
-        // let the page scroll through normally.
-        if (Math.abs(delta) < 6 || atEdge || wheelLock) return;
-
-        event.preventDefault();
-        wheelLock = true;
-        window.setTimeout(() => { wheelLock = false; }, 420);
-        setPage(current + (delta > 0 ? 1 : -1));
-    };
-
-    popover.addEventListener('wheel', onWheel, { passive: false });
-    window.addEventListener('resize', size);
-
-    size();
-    activate(current);
-    dots.forEach((dot, i) => dot.classList.toggle('is-active', i === current));
-    prevBtn.classList.toggle('is-disabled', current === 0);
-    nextBtn.classList.toggle('is-disabled', current === pageCount - 1);
-    title.textContent = pages[current].dataset.filterName;
-    setApplyTarget();
-
-    return () => {
-        popover.removeEventListener('wheel', onWheel);
-        window.removeEventListener('resize', size);
-    };
+    setTab(Math.max(0, Math.min(
+        Number(modal.dataset.filterCurrent ?? modal.dataset.filterPage ?? 0) || 0,
+        pageCount - 1,
+    )));
 });

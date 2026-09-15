@@ -11,8 +11,6 @@
         wide, so publishing is admin-gated on the server regardless.
     --}}
     <section class="settings-card">
-        <h3 class="settings-card-title">{{ $labels['settings_chat'] ?? 'گفتگو' }}</h3>
-
         @if(!$isTenantAdmin)
             <div class="settings-flash settings-flash--success" role="note">
                 این تنظیمات سراسری هستند و فقط مدیر مجموعه می‌تواند آن‌ها را تغییر دهد.
@@ -147,7 +145,7 @@
             </label>
 
             @if($isTenantAdmin)
-                <div class="profile-avatar-actions" style="margin-top:1rem">
+                <div style="margin-top:1rem">
                     <button type="submit" class="primary-button">ذخیره تنظیمات</button>
                 </div>
             @endif
@@ -158,7 +156,7 @@
         <h3 class="settings-card-title">ظاهر گفتگو</h3>
         <p class="settings-help">
             رنگ، قلم و شکل حباب پیام‌ها از همان پوسته‌ی tenant شما می‌آید؛ برای تغییر
-            ظاهر گفتگو به <a href="{{ route('consultant.settings.appearance') }}">استودیوی ظاهر</a>
+            ظاهر گفتگو به <a href="{{ route('consultant.settings.profile', ['tab' => 'appearance']) }}">استودیوی ظاهر</a>
             بروید (گروه «گفتگو» در همان‌جا رفتار ظاهری را هم تنظیم می‌کند).
         </p>
     </section>

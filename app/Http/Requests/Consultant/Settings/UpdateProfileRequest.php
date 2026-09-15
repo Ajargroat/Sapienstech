@@ -26,6 +26,8 @@ class UpdateProfileRequest extends FormRequest
                     ->where(fn ($query) => $query->where('tenant_id', $this->user()->tenant_id))
                     ->ignore($this->user()->id),
             ],
+            // Shown under the name in the profile hub's identity header.
+            'bio' => ['nullable', 'string', 'max:500'],
         ];
     }
 

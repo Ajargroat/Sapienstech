@@ -1,10 +1,10 @@
 @extends('layouts.consultant')
 
 @php
-    // The carousel always has its four pages (the track width is CSS-bound to
-    // 4); a page whose feature is switched off says so instead of filtering.
-    // old('filter_open') is flashed back by a failed assignment POST, so the
-    // popover reopens exactly on the page that produced the errors.
+    // The filter modal always has its four tabs (general / exams / reports /
+    // schedule); a tab whose feature is switched off says so instead of
+    // filtering. old('filter_open') is flashed back by a failed assignment
+    // POST, so the modal reopens exactly on the tab that produced the errors.
     $panelKeys = ['general', 'exams', 'reports', 'schedule'];
     $initialPanel = array_search((string) old('filter_open', ''), $panelKeys, true);
     $initialPanel = $initialPanel === false ? 0 : $initialPanel;
@@ -56,73 +56,99 @@
         </div>
 
         <div class="filter-wrap">
-            <input type="checkbox" id="filter-toggle" class="filter-toggle-input" @checked($activeFilterCount > 0 || $openOnError)>
-            <label for="filter-toggle" class="filter-toggle-btn" aria-label="{{ $labels['filter_button'] }}">
+            <input type="checkbox" id="filter-toggle" class="filter-toggle-input" data-filter-modal-input @checked($openOnError)>
+            <label for="filter-toggle" class="filter-toggle-btn" aria-label="{{ $labels['filter_button'] }}" title="{{ $labels['filter_button'] }}">
                 <i class="fas fa-sliders-h"></i>
-                <span class="filter-toggle-label">{{ $labels['filter_button'] }}</span>
             </label>
 
             {{-- Always rendered (hidden when empty) so the router's region
                  pairing stays stable across partial swaps. --}}
             <span class="filter-count" data-router-region="results" @if($activeFilterCount === 0) hidden @endif>{{ persian_digits($activeFilterCount) }}</span>
 
-            <div class="filter-popover" data-filter-popover>
-                <div class="filter-carousel-head">
-                    <button type="button" class="filter-page-btn filter-page-prev" data-filter-prev aria-label="گروه فیلتر قبلی">
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
-                    <p class="filter-popover-title" data-filter-title>{{ $labels['filter_title'] }}</p>
-                    <button type="button" class="filter-page-btn filter-page-next" data-filter-next aria-label="گروه فیلتر بعدی">
-                        <i class="fas fa-chevron-left"></i>
-                    </button>
-                </div>
+            <div class="filter-popover filter-popover--modal" data-filter-popover data-filter-modal data-filter-page="{{ $initialPanel }}"
+                 role="dialog" aria-modal="true" aria-label="{{ $labels['filter_title'] }}">
+                <div class="filter-modal-card">
+                    <div class="filter-modal-head">
+                        <p class="filter-modal-title">
+                            <i class="fas fa-sliders-h" aria-hidden="true"></i>
+                            {{ $labels['filter_title'] }}
+                        </p>
+                        <button type="button" class="filter-modal-x" data-filter-close aria-label="بستن">
+                            <i class="fas fa-times" aria-hidden="true"></i>
+                        </button>
+                    </div>
 
-                <div class="filter-carousel" data-filter-carousel data-filter-page="{{ $initialPanel }}">
-                    <div class="filter-carousel-track">
+                    <div class="filter-modal-body">
+                        <div class="filter-modal-tabs" role="tablist" aria-label="{{ $labels['filter_title'] }}">
+                            <button type="button" role="tab" id="filter-tab-general" aria-controls="filter-panel-general"
+                                    class="filter-modal-tab @if($initialPanel === 0) is-active @endif"
+                                    aria-selected="@if($initialPanel === 0) true @else false @endif" data-filter-tab="0">
+                                <i class="fas fa-user-graduate" aria-hidden="true"></i>{{ $labels['filter_title'] }}
+                            </button>
+                            <button type="button" role="tab" id="filter-tab-exams" aria-controls="filter-panel-exams"
+                                    class="filter-modal-tab @if($initialPanel === 1) is-active @endif"
+                                    aria-selected="@if($initialPanel === 1) true @else false @endif" data-filter-tab="1">
+                                <i class="fas fa-tasks" aria-hidden="true"></i>{{ $labels['panel_exams'] }}
+                            </button>
+                            <button type="button" role="tab" id="filter-tab-reports" aria-controls="filter-panel-reports"
+                                    class="filter-modal-tab @if($initialPanel === 2) is-active @endif"
+                                    aria-selected="@if($initialPanel === 2) true @else false @endif" data-filter-tab="2">
+                                <i class="fas fa-chart-line" aria-hidden="true"></i>{{ $labels['panel_reports'] }}
+                            </button>
+                            <button type="button" role="tab" id="filter-tab-schedule" aria-controls="filter-panel-schedule"
+                                    class="filter-modal-tab @if($initialPanel === 3) is-active @endif"
+                                    aria-selected="@if($initialPanel === 3) true @else false @endif" data-filter-tab="3">
+                                <i class="fas fa-calendar-alt" aria-hidden="true"></i>{{ $labels['panel_schedule'] }}
+                            </button>
+                        </div>
+
+                        <div class="filter-modal-panels">
                         {{-- 0. General student filters --}}
-                        <div class="filter-page" data-filter-name="{{ $labels['filter_title'] }}">
+                        <div class="filter-page @if($initialPanel === 0) is-active @endif" id="filter-panel-general" role="tabpanel" aria-labelledby="filter-tab-general">
                             <form method="GET" action="{{ route('consultant.dashboard') }}" id="filter-form-general" data-filter-form data-filter-sync>
                                 <input type="hidden" name="search" value="{{ $search }}">
 
-                                @include('consultant.partials._filter_chips', [
-                                    'name' => 'grade',
-                                    'idPrefix' => 'grade',
-                                    'label' => $labels['filter_grade'],
-                                    'options' => $gradeOptions->mapWithKeys(fn ($o) => [(string) $o => $o]),
-                                    'selected' => $filters['grade'],
-                                    'labels' => $labels,
-                                ])
-                                @include('consultant.partials._filter_chips', [
-                                    'name' => 'gender',
-                                    'idPrefix' => 'gender',
-                                    'label' => $labels['filter_gender'],
-                                    'options' => $genderOptions->mapWithKeys(fn ($o) => [(string) $o => $o]),
-                                    'selected' => $filters['gender'],
-                                    'labels' => $labels,
-                                ])
-                                @include('consultant.partials._filter_chips', [
-                                    'name' => 'major',
-                                    'idPrefix' => 'major',
-                                    'label' => $labels['filter_major'],
-                                    'options' => $majorOptions->mapWithKeys(fn ($o) => [(string) $o => $o]),
-                                    'selected' => $filters['major'],
-                                    'labels' => $labels,
-                                ])
+                                <div class="filter-fields">
+                                    @include('consultant.partials._filter_select', [
+                                        'name' => 'grade',
+                                        'idPrefix' => 'grade',
+                                        'label' => $labels['filter_grade'],
+                                        'options' => $gradeOptions->mapWithKeys(fn ($o) => [(string) $o => $o]),
+                                        'selected' => $filters['grade'],
+                                        'labels' => $labels,
+                                    ])
+                                    @include('consultant.partials._filter_select', [
+                                        'name' => 'gender',
+                                        'idPrefix' => 'gender',
+                                        'label' => $labels['filter_gender'],
+                                        'options' => $genderOptions->mapWithKeys(fn ($o) => [(string) $o => $o]),
+                                        'selected' => $filters['gender'],
+                                        'labels' => $labels,
+                                    ])
+                                    @include('consultant.partials._filter_select', [
+                                        'name' => 'major',
+                                        'idPrefix' => 'major',
+                                        'label' => $labels['filter_major'],
+                                        'options' => $majorOptions->mapWithKeys(fn ($o) => [(string) $o => $o]),
+                                        'selected' => $filters['major'],
+                                        'labels' => $labels,
+                                    ])
 
-                                @php($sortOptions = [
-                                    'name_asc' => $labels['sort_name_asc'],
-                                    'name_desc' => $labels['sort_name_desc'],
-                                    'newest' => $labels['sort_newest'],
-                                    'oldest' => $labels['sort_oldest'],
-                                ])
-                                @include('consultant.partials._filter_chips', [
-                                    'name' => 'sort',
-                                    'idPrefix' => 'sort',
-                                    'label' => $labels['filter_sort'],
-                                    'options' => $sortOptions,
-                                    'selected' => $filters['sort'],
-                                    'labels' => $labels,
-                                ])
+                                    @php($sortOptions = [
+                                        'name_asc' => $labels['sort_name_asc'],
+                                        'name_desc' => $labels['sort_name_desc'],
+                                        'newest' => $labels['sort_newest'],
+                                        'oldest' => $labels['sort_oldest'],
+                                    ])
+                                    @include('consultant.partials._filter_select', [
+                                        'name' => 'sort',
+                                        'idPrefix' => 'sort',
+                                        'label' => $labels['filter_sort'],
+                                        'options' => $sortOptions,
+                                        'selected' => $filters['sort'],
+                                        'labels' => $labels,
+                                    ])
+                                </div>
 
                                 {{-- Keep the other panels' live selections when applying here. --}}
                                 @include('consultant.partials._filter_hiddens', ['visible' => ['grade', 'gender', 'major', 'sort']])
@@ -131,35 +157,37 @@
 
                         {{-- 1. Exams: filter students by their exam assignments,
                              plus the bulk exam assignment (was «آزمون گروهی»). --}}
-                        <div class="filter-page" data-filter-name="{{ $labels['panel_exams'] }}">
+                        <div class="filter-page @if($initialPanel === 1) is-active @endif" id="filter-panel-exams" role="tabpanel" aria-labelledby="filter-tab-exams">
                             @if(!$panelFlags['exams'])
                                 <p class="filter-page-placeholder">{{ $labels['panel_disabled'] }}</p>
                             @else
                                 <form method="GET" action="{{ route('consultant.dashboard') }}" id="filter-form-exams" data-filter-form data-filter-sync>
-                                    @include('consultant.partials._filter_chips', [
-                                        'name' => 'exam_status',
-                                        'idPrefix' => 'exam-status',
-                                        'label' => $labels['filter_exam_status'],
-                                        'options' => $examStatuses,
-                                        'selected' => $filters['exam_status'],
-                                        'labels' => $labels,
-                                    ])
-                                    @include('consultant.partials._filter_chips', [
-                                        'name' => 'exam_lesson',
-                                        'idPrefix' => 'exam-lesson',
-                                        'label' => $labels['filter_exam_lesson'],
-                                        'options' => array_combine($examLessons, $examLessons),
-                                        'selected' => $filters['exam_lesson'],
-                                        'labels' => $labels,
-                                    ])
-                                    @include('consultant.partials._filter_chips', [
-                                        'name' => 'exam_type',
-                                        'idPrefix' => 'exam-type',
-                                        'label' => $labels['filter_exam_type'],
-                                        'options' => $examTypes,
-                                        'selected' => $filters['exam_type'],
-                                        'labels' => $labels,
-                                    ])
+                                    <div class="filter-fields">
+                                        @include('consultant.partials._filter_select', [
+                                            'name' => 'exam_status',
+                                            'idPrefix' => 'exam-status',
+                                            'label' => $labels['filter_exam_status'],
+                                            'options' => $examStatuses,
+                                            'selected' => $filters['exam_status'],
+                                            'labels' => $labels,
+                                        ])
+                                        @include('consultant.partials._filter_select', [
+                                            'name' => 'exam_lesson',
+                                            'idPrefix' => 'exam-lesson',
+                                            'label' => $labels['filter_exam_lesson'],
+                                            'options' => array_combine($examLessons, $examLessons),
+                                            'selected' => $filters['exam_lesson'],
+                                            'labels' => $labels,
+                                        ])
+                                        @include('consultant.partials._filter_select', [
+                                            'name' => 'exam_type',
+                                            'idPrefix' => 'exam-type',
+                                            'label' => $labels['filter_exam_type'],
+                                            'options' => $examTypes,
+                                            'selected' => $filters['exam_type'],
+                                            'labels' => $labels,
+                                        ])
+                                    </div>
 
                                     @include('consultant.partials._filter_hiddens', ['visible' => ['exam_status', 'exam_lesson', 'exam_type']])
                                 </form>
@@ -172,20 +200,22 @@
                                             <p class="filter-assign-hint">{{ $labels['assign_exam_none'] }}</p>
                                         @else
                                             <p class="filter-assign-hint">{{ $labels['assign_exam_hint'] }}</p>
-                                            <label class="filter-assign-field">
-                                                <span>{{ $labels['assign_exam_test'] }}</span>
-                                                <select name="test_id" class="filter-assign-input" required>
-                                                    @foreach($tests as $test)
-                                                        <option value="{{ $test->id }}" @selected(old('filter_open') === 'exams' && old('test_id') == $test->id)>
-                                                            {{ $test->test_title }}{{ $test->lesson ? ' — '.$test->lesson : '' }}
-                                                        </option>
-                                                    @endforeach
-                                                </select>
-                                            </label>
-                                            <label class="filter-assign-field">
-                                                <span>{{ $labels['assign_exam_date'] }}</span>
-                                                <input type="datetime-local" name="scheduled_at" value="{{ old('filter_open') === 'exams' ? old('scheduled_at') : '' }}" class="filter-assign-input">
-                                            </label>
+                                            <div class="filter-fields">
+                                                <label class="filter-field">
+                                                    <span class="filter-field-name">{{ $labels['assign_exam_test'] }}</span>
+                                                    <select name="test_id" class="filter-input" required>
+                                                        @foreach($tests as $test)
+                                                            <option value="{{ $test->id }}" @selected(old('filter_open') === 'exams' && old('test_id') == $test->id)>
+                                                                {{ $test->test_title }}{{ $test->lesson ? ' — '.$test->lesson : '' }}
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                </label>
+                                                <label class="filter-field">
+                                                    <span class="filter-field-name">{{ $labels['assign_exam_date'] }}</span>
+                                                    <input type="datetime-local" name="scheduled_at" value="{{ old('filter_open') === 'exams' ? old('scheduled_at') : '' }}" class="filter-input">
+                                                </label>
+                                            </div>
                                         @endif
 
                                         {{-- The whole filter stack, mirrored for the
@@ -209,27 +239,29 @@
                         {{-- 2. Report cards: filter students by what their
                              کارنامه shows. No assignment section — creating
                              report-card entries doesn't exist yet. --}}
-                        <div class="filter-page" data-filter-name="{{ $labels['panel_reports'] }}">
+                        <div class="filter-page @if($initialPanel === 2) is-active @endif" id="filter-panel-reports" role="tabpanel" aria-labelledby="filter-tab-reports">
                             @if(!$panelFlags['reports'])
                                 <p class="filter-page-placeholder">{{ $labels['panel_disabled'] }}</p>
                             @else
                                 <form method="GET" action="{{ route('consultant.dashboard') }}" id="filter-form-reports" data-filter-form data-filter-sync>
-                                    @include('consultant.partials._filter_chips', [
-                                        'name' => 'report_source',
-                                        'idPrefix' => 'report-source',
-                                        'label' => $labels['filter_report_source'],
-                                        'options' => $reportSources,
-                                        'selected' => $filters['report_source'],
-                                        'labels' => $labels,
-                                    ])
-                                    @include('consultant.partials._filter_chips', [
-                                        'name' => 'report_status',
-                                        'idPrefix' => 'report-status',
-                                        'label' => $labels['filter_report_status'],
-                                        'options' => $reportStatuses,
-                                        'selected' => $filters['report_status'],
-                                        'labels' => $labels,
-                                    ])
+                                    <div class="filter-fields">
+                                        @include('consultant.partials._filter_select', [
+                                            'name' => 'report_source',
+                                            'idPrefix' => 'report-source',
+                                            'label' => $labels['filter_report_source'],
+                                            'options' => $reportSources,
+                                            'selected' => $filters['report_source'],
+                                            'labels' => $labels,
+                                        ])
+                                        @include('consultant.partials._filter_select', [
+                                            'name' => 'report_status',
+                                            'idPrefix' => 'report-status',
+                                            'label' => $labels['filter_report_status'],
+                                            'options' => $reportStatuses,
+                                            'selected' => $filters['report_status'],
+                                            'labels' => $labels,
+                                        ])
+                                    </div>
 
                                     @include('consultant.partials._filter_hiddens', ['visible' => ['report_source', 'report_status']])
                                 </form>
@@ -238,27 +270,29 @@
 
                         {{-- 3. Weekly schedule: filter by existing blocks, plus
                              the bulk block creator (was «برنامه گروهی»). --}}
-                        <div class="filter-page" data-filter-name="{{ $labels['panel_schedule'] }}">
+                        <div class="filter-page @if($initialPanel === 3) is-active @endif" id="filter-panel-schedule" role="tabpanel" aria-labelledby="filter-tab-schedule">
                             @if(!$panelFlags['schedule'])
                                 <p class="filter-page-placeholder">{{ $labels['panel_disabled'] }}</p>
                             @else
                                 <form method="GET" action="{{ route('consultant.dashboard') }}" id="filter-form-schedule" data-filter-form data-filter-sync>
-                                    @include('consultant.partials._filter_chips', [
-                                        'name' => 'schedule_day',
-                                        'idPrefix' => 'schedule-day',
-                                        'label' => $labels['filter_schedule_day'],
-                                        'options' => collect($scheduleDays)->mapWithKeys(fn ($d, $i) => [(string) $i => $d]),
-                                        'selected' => $filters['schedule_day'],
-                                        'labels' => $labels,
-                                    ])
-                                    @include('consultant.partials._filter_chips', [
-                                        'name' => 'schedule_done',
-                                        'idPrefix' => 'schedule-done',
-                                        'label' => $labels['filter_schedule_done'],
-                                        'options' => $scheduleDoneOptions,
-                                        'selected' => $filters['schedule_done'],
-                                        'labels' => $labels,
-                                    ])
+                                    <div class="filter-fields">
+                                        @include('consultant.partials._filter_select', [
+                                            'name' => 'schedule_day',
+                                            'idPrefix' => 'schedule-day',
+                                            'label' => $labels['filter_schedule_day'],
+                                            'options' => collect($scheduleDays)->mapWithKeys(fn ($d, $i) => [(string) $i => $d]),
+                                            'selected' => $filters['schedule_day'],
+                                            'labels' => $labels,
+                                        ])
+                                        @include('consultant.partials._filter_select', [
+                                            'name' => 'schedule_done',
+                                            'idPrefix' => 'schedule-done',
+                                            'label' => $labels['filter_schedule_done'],
+                                            'options' => $scheduleDoneOptions,
+                                            'selected' => $filters['schedule_done'],
+                                            'labels' => $labels,
+                                        ])
+                                    </div>
 
                                     @include('consultant.partials._filter_hiddens', ['visible' => ['schedule_day', 'schedule_done']])
                                 </form>
@@ -269,56 +303,47 @@
                                         <h4 class="filter-assign-title">{{ $labels['assign_schedule_title'] }}</h4>
                                         <p class="filter-assign-hint">{{ $labels['assign_schedule_hint'] }}</p>
 
-                                        <label class="filter-assign-field">
-                                            <span>{{ $labels['assign_schedule_block_title'] }}</span>
-                                            <input type="text" name="title" value="{{ old('filter_open') === 'schedule' ? old('title') : '' }}" required class="filter-assign-input">
+                                        <label class="filter-field">
+                                            <span class="filter-field-name">{{ $labels['assign_schedule_block_title'] }}</span>
+                                            <input type="text" name="title" value="{{ old('filter_open') === 'schedule' ? old('title') : '' }}" required class="filter-input">
                                         </label>
 
-                                        <div class="filter-assign-row">
-                                            <label class="filter-assign-field filter-assign-field--half">
-                                                <span>{{ $labels['assign_schedule_week_start'] }}</span>
-                                                <input type="date" name="week_start_date" value="{{ old('filter_open') === 'schedule' ? old('week_start_date', $weekStart) : $weekStart }}" class="filter-assign-input">
+                                        <div class="filter-fields">
+                                            <label class="filter-field">
+                                                <span class="filter-field-name">{{ $labels['assign_schedule_week_start'] }}</span>
+                                                <input type="date" name="week_start_date" value="{{ old('filter_open') === 'schedule' ? old('week_start_date', $weekStart) : $weekStart }}" class="filter-input">
                                             </label>
-                                            <label class="filter-assign-field filter-assign-field--half">
-                                                <span>{{ $labels['filter_schedule_day'] }}</span>
-                                                <select name="day_index" class="filter-assign-input">
+                                            <label class="filter-field">
+                                                <span class="filter-field-name">{{ $labels['filter_schedule_day'] }}</span>
+                                                <select name="day_index" class="filter-input">
                                                     @foreach($scheduleDays as $i => $day)
                                                         <option value="{{ $i }}" @selected(old('filter_open') === 'schedule' && old('day_index') == $i)>{{ $day }}</option>
                                                     @endforeach
                                                 </select>
                                             </label>
-                                        </div>
-
-                                        <div class="filter-assign-row">
-                                            <label class="filter-assign-field filter-assign-field--half">
-                                                <span>{{ $labels['assign_schedule_start'] }}</span>
-                                                <input type="time" name="start_time" value="{{ old('filter_open') === 'schedule' ? old('start_time') : '' }}" required class="filter-assign-input">
+                                            <label class="filter-field">
+                                                <span class="filter-field-name">{{ $labels['assign_schedule_start'] }}</span>
+                                                <input type="time" name="start_time" value="{{ old('filter_open') === 'schedule' ? old('start_time') : '' }}" required class="filter-input">
                                             </label>
-                                            <label class="filter-assign-field filter-assign-field--half">
-                                                <span>{{ $labels['assign_schedule_end'] }}</span>
-                                                <input type="time" name="end_time" value="{{ old('filter_open') === 'schedule' ? old('end_time') : '' }}" required class="filter-assign-input">
+                                            <label class="filter-field">
+                                                <span class="filter-field-name">{{ $labels['assign_schedule_end'] }}</span>
+                                                <input type="time" name="end_time" value="{{ old('filter_open') === 'schedule' ? old('end_time') : '' }}" required class="filter-input">
                                             </label>
-                                        </div>
-
-                                        <div class="filter-assign-row">
-                                            <label class="filter-assign-field filter-assign-field--color">
-                                                <span>{{ $labels['assign_schedule_color'] }}</span>
-                                                <input type="color" name="color" value="{{ old('filter_open') === 'schedule' ? old('color', '#3b82f6') : '#3b82f6' }}" class="filter-assign-input">
+                                            <label class="filter-field filter-field--color">
+                                                <span class="filter-field-name">{{ $labels['assign_schedule_color'] }}</span>
+                                                <input type="color" name="color" value="{{ old('filter_open') === 'schedule' ? old('color', '#3b82f6') : '#3b82f6' }}" class="filter-input">
                                             </label>
-                                            <label class="filter-assign-field filter-assign-field--half">
-                                                <span>{{ $labels['assign_schedule_book'] }}</span>
-                                                <input type="text" name="book_name" value="{{ old('filter_open') === 'schedule' ? old('book_name') : '' }}" class="filter-assign-input">
+                                            <label class="filter-field">
+                                                <span class="filter-field-name">{{ $labels['assign_schedule_book'] }}</span>
+                                                <input type="text" name="book_name" value="{{ old('filter_open') === 'schedule' ? old('book_name') : '' }}" class="filter-input">
                                             </label>
-                                        </div>
-
-                                        <div class="filter-assign-row">
-                                            <label class="filter-assign-field filter-assign-field--half">
-                                                <span>{{ $labels['assign_schedule_test_count'] }}</span>
-                                                <input type="number" name="test_count" min="0" value="{{ old('filter_open') === 'schedule' ? old('test_count') : '' }}" class="filter-assign-input">
+                                            <label class="filter-field">
+                                                <span class="filter-field-name">{{ $labels['assign_schedule_test_count'] }}</span>
+                                                <input type="number" name="test_count" min="0" value="{{ old('filter_open') === 'schedule' ? old('test_count') : '' }}" class="filter-input">
                                             </label>
-                                            <label class="filter-assign-field filter-assign-field--half">
-                                                <span>{{ $labels['assign_schedule_page_count'] }}</span>
-                                                <input type="number" name="page_count" min="0" value="{{ old('filter_open') === 'schedule' ? old('page_count') : '' }}" class="filter-assign-input">
+                                            <label class="filter-field">
+                                                <span class="filter-field-name">{{ $labels['assign_schedule_page_count'] }}</span>
+                                                <input type="number" name="page_count" min="0" value="{{ old('filter_open') === 'schedule' ? old('page_count') : '' }}" class="filter-input">
                                             </label>
                                         </div>
 
@@ -335,21 +360,26 @@
                                 @endif
                             @endif
                         </div>
+                        </div>
                     </div>
-                </div>
 
-                <div class="filter-dots">
-                    <button type="button" class="filter-dot @if($initialPanel === 0) is-active @endif" data-filter-dot="0" aria-label="فیلترها"></button>
-                    <button type="button" class="filter-dot @if($initialPanel === 1) is-active @endif" data-filter-dot="1" aria-label="{{ $labels['panel_exams'] }}"></button>
-                    <button type="button" class="filter-dot @if($initialPanel === 2) is-active @endif" data-filter-dot="2" aria-label="{{ $labels['panel_reports'] }}"></button>
-                    <button type="button" class="filter-dot @if($initialPanel === 3) is-active @endif" data-filter-dot="3" aria-label="{{ $labels['panel_schedule'] }}"></button>
-                </div>
+                    <div class="filter-modal-foot">
+                        <div class="filter-actions">
+                            {{-- One apply button for every tab: app.js repoints its
+                                 form attribute at the visible panel's GET form. --}}
+                            <button type="submit" form="filter-form-{{ $panelKeys[$initialPanel] }}" class="primary-button" data-filter-apply>{{ $labels['filter_apply'] }}</button>
+                            <a href="{{ route('consultant.dashboard') }}" class="secondary-button">{{ $labels['filter_reset'] }}</a>
+                        </div>
 
-                <div class="filter-actions">
-                    {{-- One apply button for every page: app.js repoints its
-                         form attribute at the visible panel's GET form. --}}
-                    <button type="submit" form="filter-form-{{ $panelKeys[$initialPanel] }}" class="primary-button" data-filter-apply>{{ $labels['filter_apply'] }}</button>
-                    <a href="{{ route('consultant.dashboard') }}" class="secondary-button">{{ $labels['filter_reset'] }}</a>
+                        @if($panelFlags['assign'])
+                            {{-- The bulk nav entry is gone; the assignment history (and
+                                 revert controls) is reachable from here instead. --}}
+                            <a href="{{ route('consultant.bulk.history') }}" class="filter-foot-link">
+                                <i class="fas fa-clock-rotate-left" aria-hidden="true"></i>
+                                {{ $labels['filter_history'] }}
+                            </a>
+                        @endif
+                    </div>
                 </div>
             </div>
         </div>

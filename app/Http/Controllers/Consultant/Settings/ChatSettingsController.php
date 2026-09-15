@@ -12,7 +12,8 @@ use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 /**
- * The chat settings tab (تنظیمات → گفتگو).
+ * The chat settings section of the profile hub (پروفایل → گفتگو), rendered
+ * through the profile route with ?tab=chat.
  *
  * Two halves:
  *  - tenant-wide chat behavior (groups, attachments, receipts, limits,
@@ -113,7 +114,11 @@ class ChatSettingsController extends Controller
             ConfigWriter::publishForTenant(tenant(), $changes);
         }
 
-        return back()->with('success', 'تنظیمات گفتگو ذخیره شد.');
+        // Explicit hub URL (not back()): after a publish the referrer could
+        // predate the tab, and the chat section lives under the profile now.
+        return redirect()
+            ->route('consultant.settings.profile', ['tab' => 'chat'])
+            ->with('success', 'تنظیمات گفتگو ذخیره شد.');
     }
 
     /** Current effective values, for rendering the form. */

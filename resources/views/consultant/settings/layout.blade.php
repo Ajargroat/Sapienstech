@@ -1,27 +1,44 @@
 {{--
-    Settings hub shell: the tab bar shared by every settings page.
+    Profile hub shell (consultant), Telegram-style:
 
-    $tabs      — visible tab definitions from App\Support\SettingsTabs
-    $activeTab — key of the current tab
+      • a slim header row — just the title on the hub home, a back link plus
+        the section title inside every other section (the settings list on
+        the home page replaces the horizontal tab bar entirely: one vertical
+        list instead of a fake navigation inside the page),
+      • the centered identity hero, home only,
+      • shared flashes, then the section content.
 
-    Children fill @section('settings-content'). The tab list is feature- and
-    route-gated in PHP, so a tab can never point at a route that 404s.
+    $tabs      — visible section definitions from App\Support\SettingsTabs
+                 (single hub route, ?tab= selectors — no per-section pages)
+    $activeTab — key of the current section
+
+    Everything reads tenant theme tokens, so the shell restyles itself with
+    the tenant's theme without any per-page CSS.
 --}}
 @extends('layouts.consultant')
 
+@php
+    $isHome = ($activeTab ?? 'profile') === 'profile';
+    $activeLabel = collect($tabs ?? [])->firstWhere('key', $activeTab ?? '')['label'] ?? null;
+@endphp
+
 @section('content')
 <div class="settings-shell">
-    <nav class="settings-tabs" data-router="replace" aria-label="{{ $labels['settings'] ?? 'تنظیمات' }}">
-        @foreach($tabs as $tab)
-            <a
-                href="{{ route($tab['route']) }}"
-                class="settings-tab {{ ($activeTab ?? null) === $tab['key'] ? 'is-active' : '' }}"
-                @if(($activeTab ?? null) === $tab['key']) aria-current="page" @endif
-            >
-                {{ $tab['label'] }}
+    <header class="profile-header">
+        @unless($isHome)
+            <a class="profile-header-back" href="{{ route('consultant.settings.profile') }}" data-router="replace"
+               aria-label="{{ $labels['settings_profile'] ?? 'پروفایل' }}">
+                <i class="fas fa-chevron-right" aria-hidden="true"></i>
             </a>
-        @endforeach
-    </nav>
+        @endunless
+        <span class="profile-header-title">
+            {{ $isHome ? ($labels['settings_profile'] ?? 'پروفایل') : $activeLabel }}
+        </span>
+    </header>
+
+    @if($isHome)
+        @include('partials.profile-hero', ['profile' => auth()->user(), 'portal' => 'consultant'])
+    @endif
 
     @if(session('success'))
         <div class="settings-flash settings-flash--success" role="status">

@@ -143,7 +143,7 @@ async function toPage(response, fallbackHref) {
         // copying that beats re-implementing `request()->routeIs()` in JS.
         // `.sidebar-link` is the shell's sidebar variant of `.topnav-link`;
         // only one of the two is ever rendered, but the router stays agnostic.
-        activeNav: [...doc.querySelectorAll('.topnav-link.active, .sidebar-link.active')]
+        activeNav: [...doc.querySelectorAll('.topnav-link.active, .sidebar-link.active, .topnav-profile.active')]
             .map((a) => resolveLink(a.getAttribute('href'))?.href)
             .filter(Boolean),
     };
@@ -295,7 +295,7 @@ function stopPage() {
 function syncNav(page) {
     const active = new Set(page.activeNav);
 
-    for (const link of document.querySelectorAll('.topnav-link, .sidebar-link')) {
+    for (const link of document.querySelectorAll('.topnav-link, .sidebar-link, .topnav-profile')) {
         const on = active.has(link.href);
         link.classList.toggle('active', on);
         if (on) link.setAttribute('aria-current', 'page');

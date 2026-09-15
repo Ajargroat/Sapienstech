@@ -132,7 +132,7 @@ class ShellNavigationTest extends TestCase
 
         // The rail carries the same tabs, so navigation stays complete.
         $this->assertStringContainsString('sidebar-link', $html);
-        $this->assertStringContainsString('data-topnav-dropdown', $html);
+        $this->assertStringContainsString('topnav-profile', $html);
         $this->assertStringContainsString('id="theme-toggle-btn"', $html);
     }
 

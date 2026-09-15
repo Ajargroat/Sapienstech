@@ -6,14 +6,15 @@ use App\Http\Controllers\Controller;
 use App\Models\ScheduleItem;
 use App\Models\StudentAssignedQuiz;
 use App\Models\StudentTestAttempt;
+use App\Support\StudentFilter;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 /**
- * The student's own workspace: this week's sessions, upcoming exams, recent
- * results and headline stats — the student-side mirror of the consultant
- * dashboard.
+ * The student's own workspace: this week's sessions, next month's upcoming
+ * exams, recent results and headline stats — the student-side mirror of the
+ * consultant dashboard.
  *
  * Every query is keyed off the authenticated student (never a client-supplied
  * id), and the BelongsToTenant global scope on each model keeps the data
@@ -48,17 +49,27 @@ class StudentDashboardController extends Controller
 
         $assignments = StudentAssignedQuiz::query()
             ->where('student_id', $student->id)
-            ->with(['test', 'latestAttempt'])
+            ->with(['test' => fn ($query) => $query->withCount('questions'), 'latestAttempt'])
             ->orderByRaw('COALESCE(student_assigned_quizzes.scheduled_at, student_assigned_quizzes.assigned_at) DESC')
             ->get();
 
+        // Upcoming exams are windowed to the next month (from today) so the
+        // dashboard never drifts into a far-future backlog; nearest first.
+        $monthEnd = $today->copy()->addMonth()->endOfDay();
+
         $upcomingExams = $assignments
-            ->filter(fn (StudentAssignedQuiz $a) => $a->status === 'scheduled' && $a->test)
-            ->take(4)
+            ->filter(
+                fn (StudentAssignedQuiz $a) => $a->status === 'scheduled'
+                    && $a->test
+                    && $a->scheduled_at
+                    && $a->scheduled_at->between($today->copy()->startOfDay(), $monthEnd)
+            )
+            ->sortBy(fn (StudentAssignedQuiz $a) => $a->scheduled_at->timestamp)
             ->values();
 
         $recentResults = $assignments
             ->filter(fn (StudentAssignedQuiz $a) => $a->status === 'completed' && $a->test && $a->latestAttempt)
+            ->sortByDesc(fn (StudentAssignedQuiz $a) => $a->latestAttempt->completed_at?->timestamp ?? 0)
             ->take(4)
             ->values();
 
@@ -73,6 +84,7 @@ class StudentDashboardController extends Controller
             'upcomingExams' => $upcomingExams,
             'recentResults' => $recentResults,
             'statuses' => self::STATUSES,
+            'quizTypes' => StudentFilter::QUIZ_TYPE_VALUES,
             'stats' => [
                 'week_sessions' => $weekItems->count(),
                 'week_done' => $weekItems->where('is_completed', true)->count(),

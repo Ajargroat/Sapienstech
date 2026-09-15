@@ -71,15 +71,20 @@ class AppearanceStudioTest extends TestCase
         return $input;
     }
 
-    public function test_appearance_tab_loads(): void
+    public function test_appearance_section_loads_inside_the_profile_hub(): void
     {
         [$tenant, $host] = $this->tenantWithDomain();
         $user = $this->userFor($tenant, 'tenant_admin');
 
         $response = $this->actingAs($user)
-            ->get("http://{$host}/consultant/settings/appearance")
+            ->get("http://{$host}/consultant/settings/profile?tab=appearance")
             ->assertOk()
             ->assertSee('ظاهر');
+
+        // The old standalone tab URL redirects into the hub section.
+        $this->actingAs($user)
+            ->get("http://{$host}/consultant/settings/appearance")
+            ->assertRedirect('/consultant/settings/profile?tab=appearance');
 
         $html = $response->getContent();
 

@@ -33,14 +33,9 @@
                 @include('partials.chat.unread-badge')
             </a>
 
-            @if(site('features.bulk_actions', false))
-                <a
-                    href="{{ route('consultant.bulk.exams') }}"
-                    class="topnav-link {{ request()->routeIs('consultant.bulk.*') ? 'active' : '' }}"
-                >
-                    {{ $labels['bulk_actions'] ?? 'اقدامات گروهی' }}
-                </a>
-            @endif
+            {{-- Bulk assignment now lives inside the dashboard filter popover;
+                 the «اقدامات گروهی» nav entry is intentionally gone. The
+                 تاریخچه page is still reachable from the popover footer. --}}
         </nav>
 
         <div class="topnav-user">
@@ -55,32 +50,17 @@
                 <i class="fas fa-sun"></i>
             </button>
 
-            <div class="topnav-dropdown" data-topnav-dropdown>
-                <button
-                    type="button"
-                    class="topnav-icon-btn"
-                    title="{{ $labels['settings'] ?? 'تنظیمات' }}"
-                    aria-label="{{ $labels['settings'] ?? 'تنظیمات' }}"
-                    aria-haspopup="true"
-                    aria-expanded="false"
-                >
-                    <i class="fas fa-user"></i>
-                </button>
-
-                <div class="topnav-dropdown-menu">
-                    <div class="topnav-dropdown-head">
-                        <strong>{{ auth()->user()->name ?? session('username', 'مدیر سیستم') }}</strong>
-                    </div>
-                    @foreach(\App\Support\SettingsTabs::visible('consultant') as $tab)
-                        <a
-                            href="{{ route($tab['route']) }}"
-                            class="topnav-dropdown-link {{ request()->routeIs($tab['route']) ? 'is-active' : '' }}"
-                        >
-                            {{ $tab['label'] }}
-                        </a>
-                    @endforeach
-                </div>
-            </div>
+            {{-- Profile is the hub now (account, appearance studio, chat
+                 settings): the button links straight into it — no dropdown. --}}
+            <a
+                href="{{ route('consultant.settings.profile') }}"
+                class="topnav-icon-btn topnav-profile {{ request()->routeIs('consultant.settings.profile') ? 'active' : '' }}"
+                title="{{ $labels['settings_profile'] ?? 'پروفایل' }}"
+                aria-label="{{ $labels['settings_profile'] ?? 'پروفایل' }}"
+                @if(request()->routeIs('consultant.settings.profile')) aria-current="page" @endif
+            >
+                <i class="fas fa-user"></i>
+            </a>
 
             <button
                 type="button"

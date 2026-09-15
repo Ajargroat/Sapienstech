@@ -2,9 +2,10 @@
     Shared student picker for the bulk flows.
 
     Renders inside the main POST form, so filtering is done with links
-    rather than a nested form. The data-router-region areas are swapped in
-    place by the page router (the create page is fetched, only the picker
-    updates), so half-filled exam/schedule fields survive a filter change.
+    rather than a nested form (the filterbar's themed dropdowns hold those
+    links). The data-router-region areas are swapped in place by the page
+    router (the create page is fetched, only the picker updates), so
+    half-filled exam/schedule fields survive a filter change.
     The current filter set travels back as hidden inputs: when select_all is
     chosen the server re-applies them (App\Support\BulkSelection) instead of
     trusting the visible checkboxes.
@@ -32,18 +33,42 @@
         @endforeach
     </div>
 
+    {{-- One themed dropdown per filter field instead of a wall of chips.
+         These stay links (the picker renders inside the main POST form, so
+         a nested form is impossible); the shared dropdown JS folds the
+         panel and mirrors the trigger label while the router swaps rows. --}}
     <div class="bulk-filterbar" data-router-region="picker">
-        <a href="{{ request()->fullUrlWithQuery(['search' => null]) }}"
-           class="blog-chip {{ $filters['search'] === '' ? 'is-active' : '' }}">بدون جستجو</a>
-
-        @foreach(['grade' => $gradeOptions, 'gender' => $genderOptions, 'major' => $majorOptions] as $field => $options)
-            @foreach($options as $option)
-                <a href="{{ request()->fullUrlWithQuery([$field => $option]) }}"
-                   class="blog-chip {{ $filters[$field] === $option ? 'is-active' : '' }}">
-                    {{ $option }}
-                </a>
-            @endforeach
+        @foreach([
+            'grade' => ['label' => 'پایه تحصیلی', 'options' => $gradeOptions],
+            'gender' => ['label' => 'جنسیت', 'options' => $genderOptions],
+            'major' => ['label' => 'رشته تحصیلی', 'options' => $majorOptions],
+        ] as $field => $meta)
+            @php($selected = (string) ($filters[$field] ?? ''))
+            <div class="filter-select" data-filter-select data-select-auto-width>
+                <button type="button" class="filter-select-trigger @if($selected === '') is-placeholder @endif"
+                        data-filter-select-trigger aria-haspopup="true" aria-expanded="false">
+                    <span class="filter-select-value" data-filter-select-display>{{ $selected !== '' ? $selected : $meta['label'] }}</span>
+                    <i class="fas fa-chevron-down filter-select-caret" aria-hidden="true"></i>
+                </button>
+                <div class="filter-select-list" data-filter-select-list aria-label="{{ $meta['label'] }}">
+                    <a href="{{ request()->fullUrlWithQuery([$field => null]) }}"
+                       class="filter-select-option @if($selected === '') is-active @endif"
+                       data-filter-select-option data-placeholder data-label="{{ $meta['label'] }}">همه</a>
+                    @foreach($meta['options'] as $option)
+                        <a href="{{ request()->fullUrlWithQuery([$field => $option]) }}"
+                           class="filter-select-option @if($selected === (string) $option) is-active @endif"
+                           data-filter-select-option data-label="{{ $option }}">{{ $option }}</a>
+                    @endforeach
+                </div>
+            </div>
         @endforeach
+
+        @if($filters['search'] !== '')
+            <a href="{{ request()->fullUrlWithQuery(['search' => null]) }}" class="blog-chip">
+                <i class="fas fa-times" aria-hidden="true"></i>
+                بدون جستجو «{{ $filters['search'] }}»
+            </a>
+        @endif
     </div>
 
     <label class="bulk-select-toggle">
