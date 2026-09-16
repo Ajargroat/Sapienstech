@@ -13,13 +13,17 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->string('bio', 500)->nullable()->after('avatar');
-        });
+        if (! Schema::hasColumn('users', 'bio')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->string('bio', 500)->nullable()->after('avatar');
+            });
+        }
 
-        Schema::table('students', function (Blueprint $table) {
-            $table->string('bio', 500)->nullable()->after('avatar');
-        });
+        if (! Schema::hasColumn('students', 'bio')) {
+            Schema::table('students', function (Blueprint $table) {
+                $table->string('bio', 500)->nullable()->after('avatar');
+            });
+        }
     }
 
     public function down(): void

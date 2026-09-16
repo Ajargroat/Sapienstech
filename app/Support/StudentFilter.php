@@ -5,6 +5,7 @@ namespace App\Support;
 use App\Models\Student;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 /**
  * The tenant's student filter vocabulary in one place.
@@ -226,10 +227,20 @@ class StudentFilter
         $query
             // MySQL DAYOFWEEK: 1=Sunday..7=Saturday; day_index is the Persian
             // week order (0=شنبه..6=جمعه) used across the schedule features.
+            // SQLite has no DAYOFWEEK: strftime('%w') is 0=Sunday..6=Saturday,
+            // i.e. exactly DAYOFWEEK - 1, so the same $dayOfWeek mapping applies.
             ->when($scheduleDay !== '', function ($q) use ($scheduleDay) {
                 $dayOfWeek = (int) $scheduleDay === 0 ? 7 : (int) $scheduleDay + 1;
 
-                $q->whereHas('scheduleItems', fn ($s) => $s->whereRaw('DAYOFWEEK(start_datetime) = ?', [$dayOfWeek]));
+                if (DB::getDriverName() === 'sqlite') {
+                    // Bound as a string on purpose: strftime() results carry no
+                    // column affinity, so an integer-bound parameter never
+                    // matches in SQLite. MySQL coerces, which is why the int
+                    // binding works there.
+                    $q->whereHas('scheduleItems', fn ($s) => $s->whereRaw("strftime('%w', start_datetime) = ?", [(string) ($dayOfWeek - 1)]));
+                } else {
+                    $q->whereHas('scheduleItems', fn ($s) => $s->whereRaw('DAYOFWEEK(start_datetime) = ?', [$dayOfWeek]));
+                }
             })
             ->when($scheduleDone !== '', fn ($q) => $q->whereHas(
                 'scheduleItems',

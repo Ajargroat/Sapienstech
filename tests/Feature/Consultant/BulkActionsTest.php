@@ -11,7 +11,7 @@ use App\Models\StudentTestAttempt;
 use App\Models\Test;
 use App\Models\Tenant;
 use App\Models\User;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -22,7 +22,7 @@ use Tests\TestCase;
  */
 class BulkActionsTest extends TestCase
 {
-    use DatabaseTransactions;
+    use RefreshDatabase;
 
     private function tenantWithDomain(): array
     {

@@ -16,8 +16,12 @@ return new class extends Migration
             }
         });
 
-        // Imported questions aren't tied to a book chapter yet.
-        DB::statement('ALTER TABLE questions MODIFY chapter_id bigint UNSIGNED NULL');
+        // Imported questions aren't tied to a book chapter yet. MySQL-only:
+        // SQLite has no MODIFY, and the base schema already declares the
+        // column nullable there.
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement('ALTER TABLE questions MODIFY chapter_id bigint UNSIGNED NULL');
+        }
     }
 
     public function down(): void

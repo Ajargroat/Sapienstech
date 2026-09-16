@@ -20,12 +20,16 @@ return new class extends Migration
 
         // quiz/comprehensive drive the card badges; the legacy values stay
         // valid so previously imported tests keep rendering. MODIFY is
-        // idempotent, so re-running this migration is safe.
-        DB::statement(
-            "ALTER TABLE tests MODIFY exam_type "
-            . "ENUM('quiz','comprehensive','progress','mock','online_quiz','single_lesson') "
-            . "NOT NULL DEFAULT 'quiz'"
-        );
+        // idempotent, so re-running this migration is safe. MySQL-only:
+        // SQLite stores enums as plain varchar (no enforcement) and the
+        // Blueprint definition above already covers both drivers.
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement(
+                "ALTER TABLE tests MODIFY exam_type "
+                . "ENUM('quiz','comprehensive','progress','mock','online_quiz','single_lesson') "
+                . "NOT NULL DEFAULT 'quiz'"
+            );
+        }
 
         // These two tables were created without timestamps, which makes
         // Eloquent create()/save() fail. The exam workspace writes to both.

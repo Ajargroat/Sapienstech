@@ -17,9 +17,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('questions', function (Blueprint $table) {
-            $table->string('subject', 100)->nullable()->index()->after('difficulty');
-            $table->string('corp', 100)->nullable()->index()->after('subject');
-            $table->string('chapter_label', 100)->nullable()->after('corp');
+            if (! Schema::hasColumn('questions', 'subject')) {
+                $table->string('subject', 100)->nullable()->index()->after('difficulty');
+            }
+            if (! Schema::hasColumn('questions', 'corp')) {
+                $table->string('corp', 100)->nullable()->index()->after('subject');
+            }
+            if (! Schema::hasColumn('questions', 'chapter_label')) {
+                $table->string('chapter_label', 100)->nullable()->after('corp');
+            }
         });
     }
 

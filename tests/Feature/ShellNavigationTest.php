@@ -8,7 +8,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Models\WebsiteConfig;
 use App\Support\StudioSchema;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
@@ -22,7 +22,7 @@ use Tests\TestCase;
  */
 class ShellNavigationTest extends TestCase
 {
-    use DatabaseTransactions;
+    use RefreshDatabase;
 
     private function tenantWithDomain(): array
     {

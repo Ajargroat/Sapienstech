@@ -34,7 +34,8 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('chat_conversations', function (Blueprint $table) {
+        if (! Schema::hasTable('chat_conversations')) {
+            Schema::create('chat_conversations', function (Blueprint $table) {
             $table->id();
             $table->foreignId('tenant_id')->constrained()->cascadeOnDelete();
             $table->enum('type', ['direct', 'group'])->default('direct');
@@ -53,9 +54,11 @@ return new class extends Migration
             $table->index(['tenant_id', 'type', 'status']);
             $table->index(['staff_user_id', 'last_message_at']);
             $table->index(['student_id', 'last_message_at']);
-        });
+            });
+        }
 
-        Schema::create('chat_participants', function (Blueprint $table) {
+        if (! Schema::hasTable('chat_participants')) {
+            Schema::create('chat_participants', function (Blueprint $table) {
             $table->id();
             $table->foreignId('tenant_id')->constrained()->cascadeOnDelete();
             $table->foreignId('conversation_id')
@@ -76,9 +79,11 @@ return new class extends Migration
             $table->unique(['conversation_id', 'student_id']);
             $table->index(['tenant_id', 'user_id']);
             $table->index(['tenant_id', 'student_id']);
-        });
+            });
+        }
 
-        Schema::create('chat_messages', function (Blueprint $table) {
+        if (! Schema::hasTable('chat_messages')) {
+            Schema::create('chat_messages', function (Blueprint $table) {
             $table->id();
             $table->foreignId('tenant_id')->constrained()->cascadeOnDelete();
             $table->foreignId('conversation_id')
@@ -99,7 +104,8 @@ return new class extends Migration
 
             $table->index(['conversation_id', 'id']);
             $table->index(['tenant_id', 'created_at']);
-        });
+            });
+        }
     }
 
     public function down(): void

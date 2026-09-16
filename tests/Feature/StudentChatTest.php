@@ -8,7 +8,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Support\ChatActor;
 use App\Support\ChatService;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -20,7 +20,7 @@ use Tests\TestCase;
  */
 class StudentChatTest extends TestCase
 {
-    use DatabaseTransactions;
+    use RefreshDatabase;
 
     private function tenantWithDomain(): array
     {

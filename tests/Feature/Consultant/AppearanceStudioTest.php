@@ -8,7 +8,7 @@ use App\Models\User;
 use App\Models\WebsiteConfig;
 use App\Support\ConfigWriter;
 use App\Support\StudioSchema;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Validator;
@@ -22,7 +22,7 @@ use Tests\TestCase;
  */
 class AppearanceStudioTest extends TestCase
 {
-    use DatabaseTransactions;
+    use RefreshDatabase;
 
     private function tenantWithDomain(): array
     {

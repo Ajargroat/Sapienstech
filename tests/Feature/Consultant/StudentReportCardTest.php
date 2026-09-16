@@ -11,7 +11,7 @@ use App\Models\StudentTestAttempt;
 use App\Models\Test;
 use App\Models\Tenant;
 use App\Models\User;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
@@ -21,11 +21,11 @@ use Tests\TestCase;
  * source-permissions destination.
  *
  * Like StudentScheduleTest these run against the already-migrated dev DB via
- * DatabaseTransactions.
+ * RefreshDatabase.
  */
 class StudentReportCardTest extends TestCase
 {
-    use DatabaseTransactions;
+    use RefreshDatabase;
 
     private function makeTenantWithConsultant(string $host): array
     {
