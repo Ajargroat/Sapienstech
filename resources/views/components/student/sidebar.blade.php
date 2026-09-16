@@ -19,6 +19,16 @@
             <span>داشبورد</span>
         </a>
 
+        @if(site('features.report_cards', false))
+            <a
+                href="{{ route('student.report-card') }}"
+                class="sidebar-link {{ request()->routeIs('student.report-card') ? 'active' : '' }}"
+            >
+                <i class="fas fa-chart-pie" aria-hidden="true"></i>
+                <span>کارنامه</span>
+            </a>
+        @endif
+
         @if(site('features.student_chat', false) && \Illuminate\Support\Facades\Route::has('student.direct-chat.page'))
             <a
                 href="{{ route('student.direct-chat.page') }}"
@@ -43,31 +53,15 @@
             <i class="fas fa-sun"></i>
         </button>
 
-        <div class="topnav-dropdown" data-topnav-dropdown>
-            <button
-                type="button"
-                class="topnav-icon-btn"
-                title="{{ $labels['settings'] ?? 'تنظیمات' }}"
-                aria-label="{{ $labels['settings'] ?? 'تنظیمات' }}"
-                aria-haspopup="true"
-                aria-expanded="false"
-            >
-                <i class="fas fa-user"></i>
-            </button>
-
-            <div class="topnav-dropdown-menu">
-                <div class="topnav-dropdown-head">
-                    <strong>{{ auth('student')->user()->name ?? 'دانش‌آموز' }}</strong>
-                </div>
-                @foreach(\App\Support\SettingsTabs::visible('student') as $tab)
-                    <a
-                        href="{{ route($tab['route']) }}"
-                        class="topnav-dropdown-link {{ request()->routeIs($tab['route']) ? 'is-active' : '' }}"
-                    >
-                        {{ $tab['label'] }}
-                    </a>
-                @endforeach
-            </div>
-        </div>
+        {{-- Profile hub (mirrors the student topnav): direct link. --}}
+        <a
+            href="{{ route('student.settings.profile') }}"
+            class="topnav-icon-btn topnav-profile {{ request()->routeIs('student.settings.profile') ? 'active' : '' }}"
+            title="{{ $labels['settings_profile'] ?? 'پروفایل' }}"
+            aria-label="{{ $labels['settings_profile'] ?? 'پروفایل' }}"
+            @if(request()->routeIs('student.settings.profile')) aria-current="page" @endif
+        >
+            <i class="fas fa-user"></i>
+        </a>
     </div>
 </aside>

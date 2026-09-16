@@ -9,5 +9,7 @@
 /storage/framework/cache/*.php
 /storage/framework/sessions/*
 /storage/framework/views/*
-/storage/logs/*.log
+/storage/logs/*
+!/storage/logs/.gitkeep
+*.log
 /database/*.sqlite-journal

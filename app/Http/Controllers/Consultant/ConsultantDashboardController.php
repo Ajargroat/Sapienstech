@@ -133,6 +133,7 @@ class ConsultantDashboardController extends Controller
                 'assign_schedule_test_count' => 'تعداد تست',
                 'assign_schedule_page_count' => 'تعداد صفحه',
                 'to_filtered_students' => 'نفر',
+                'filter_history' => 'تاریخچهٔ اقدامات گروهی',
             ],
         ]);
     }

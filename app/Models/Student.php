@@ -26,6 +26,7 @@ class Student extends Authenticatable
         'gender',
         'major',
         'avatar',
+        'bio',
         'preferences',
     ];
 

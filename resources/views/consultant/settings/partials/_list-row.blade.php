@@ -58,17 +58,30 @@
                             // Same contract as the scalar select control: a
                             // value matching no option keeps the first one
                             // checked so the group can never submit nothing.
+                            // Themed dropdown (radio rows inside), not a chip
+                            // spread — see the studio _field partial.
                             $matched = in_array((string) $val, array_map('strval', array_keys($options)), true);
+                            $keys = array_keys($options);
+                            $displayKey = $matched ? $val : ($keys[0] ?? null);
+                            $displayLabel = $displayKey === null ? '' : ($options[$displayKey] ?? (string) $displayKey);
                         @endphp
-                        <div class="filter-chips studio-chips" role="radiogroup" aria-label="{{ $def['label'] ?? $key }}"
+                        <div class="filter-select studio-select" data-filter-select
                              @if(!empty($def['discriminant'])) data-list-type @endif>
-                            @foreach($options as $optValue => $optLabel)
-                                <input type="radio" class="filter-chip-input"
-                                       id="{{ $id }}-{{ $loop->index }}"
-                                       name="{{ $in }}" value="{{ $optValue }}"
-                                       @checked($matched ? (string) $val === (string) $optValue : $loop->first)>
-                                <label class="filter-chip" for="{{ $id }}-{{ $loop->index }}">{{ $optLabel }}</label>
-                            @endforeach
+                            <button type="button" class="filter-select-trigger" data-filter-select-trigger
+                                    aria-haspopup="true" aria-expanded="false" aria-label="{{ $def['label'] ?? $key }}">
+                                <span class="filter-select-value" data-filter-select-display>{{ $displayLabel }}</span>
+                                <i class="fas fa-chevron-down filter-select-caret" aria-hidden="true"></i>
+                            </button>
+                            <div class="filter-select-list" data-filter-select-list aria-label="{{ $def['label'] ?? $key }}">
+                                @foreach($options as $optValue => $optLabel)
+                                    <label class="filter-select-option" data-filter-select-option data-label="{{ $optLabel }}">
+                                        <input type="radio" name="{{ $in }}" value="{{ $optValue }}"
+                                               @checked($matched ? (string) $val === (string) $optValue : $loop->first)>
+                                        <span>{{ $optLabel }}</span>
+                                        <i class="fas fa-check filter-select-option-mark" aria-hidden="true"></i>
+                                    </label>
+                                @endforeach
+                            </div>
                         </div>
                         @break
 

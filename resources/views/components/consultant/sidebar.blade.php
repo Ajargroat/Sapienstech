@@ -40,15 +40,8 @@
             @include('partials.chat.unread-badge')
         </a>
 
-        @if(site('features.bulk_actions', false))
-            <a
-                href="{{ route('consultant.bulk.exams') }}"
-                class="sidebar-link {{ request()->routeIs('consultant.bulk.*') ? 'active' : '' }}"
-            >
-                <i class="fas fa-layer-group" aria-hidden="true"></i>
-                <span>{{ $labels['bulk_actions'] ?? 'اقدامات گروهی' }}</span>
-            </a>
-        @endif
+        {{-- Sidebar mirrors the topnav; bulk assignment lives in the
+             dashboard filter popover, so the nav entry is gone from both. --}}
     </nav>
 
     <div class="sidebar-user topnav-user">
@@ -63,32 +56,16 @@
             <i class="fas fa-sun"></i>
         </button>
 
-        <div class="topnav-dropdown" data-topnav-dropdown>
-            <button
-                type="button"
-                class="topnav-icon-btn"
-                title="{{ $labels['settings'] ?? 'تنظیمات' }}"
-                aria-label="{{ $labels['settings'] ?? 'تنظیمات' }}"
-                aria-haspopup="true"
-                aria-expanded="false"
-            >
-                <i class="fas fa-user"></i>
-            </button>
-
-            <div class="topnav-dropdown-menu">
-                <div class="topnav-dropdown-head">
-                    <strong>{{ auth()->user()->name ?? session('username', 'مدیر سیستم') }}</strong>
-                </div>
-                @foreach(\App\Support\SettingsTabs::visible('consultant') as $tab)
-                    <a
-                        href="{{ route($tab['route']) }}"
-                        class="topnav-dropdown-link {{ request()->routeIs($tab['route']) ? 'is-active' : '' }}"
-                    >
-                        {{ $tab['label'] }}
-                    </a>
-                @endforeach
-            </div>
-        </div>
+        {{-- Profile hub (mirrors the topnav): direct link, no dropdown. --}}
+        <a
+            href="{{ route('consultant.settings.profile') }}"
+            class="topnav-icon-btn topnav-profile {{ request()->routeIs('consultant.settings.profile') ? 'active' : '' }}"
+            title="{{ $labels['settings_profile'] ?? 'پروفایل' }}"
+            aria-label="{{ $labels['settings_profile'] ?? 'پروفایل' }}"
+            @if(request()->routeIs('consultant.settings.profile')) aria-current="page" @endif
+        >
+            <i class="fas fa-user"></i>
+        </a>
 
         <button
             type="button"

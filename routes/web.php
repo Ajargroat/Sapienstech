@@ -21,6 +21,8 @@ use App\Http\Controllers\Public\PageController;
 use App\Http\Controllers\Student\ChatController as StudentChatController;
 use App\Http\Controllers\Student\Settings\ProfileController as StudentProfileController;
 use App\Http\Controllers\Student\StudentDashboardController;
+use App\Http\Controllers\Student\StudentExamController as StudentExamPortalController;
+use App\Http\Controllers\Student\StudentReportCardController as StudentReportCardPortalController;
 use App\Support\SettingsTabs;
 use Illuminate\Support\Facades\Route;
 
@@ -109,14 +111,18 @@ Route::middleware('auth')->prefix('consultant')->name('consultant.')->group(func
         ->name('direct-chat');
 
     /*
-    | Settings hub — reached from the topnav user dropdown. Each tab is its
-    | own route so feature gating and shareable URLs stay independent.
+    | Profile hub — the topnav's profile button leads straight here. Every
+    | personal part (account, appearance studio, chat settings) renders
+    | through the ONE profile route with ?tab=<section>; the browsing routes
+    | that used to sit behind each section now just redirect into it, while
+    | the save/POST endpoints stay independent (and keep their feature
+    | gates). Gating moved from per-tab route middleware into the hub
+    | controller via App\Support\SettingsTabs.
     */
     Route::prefix('settings')->name('settings.')->group(function () {
         Route::redirect('/', '/consultant/settings/profile');
 
         Route::get('profile', [ConsultantProfileController::class, 'index'])
-            ->middleware('consultant.feature:settings_profile')
             ->name('profile');
         Route::patch('profile', [ConsultantProfileController::class, 'update'])
             ->middleware('consultant.feature:settings_profile')
@@ -131,20 +137,20 @@ Route::middleware('auth')->prefix('consultant')->name('consultant.')->group(func
             ->middleware('consultant.feature:settings_profile')
             ->name('profile.avatar.delete');
 
-        Route::get('chat', [ConsultantChatSettingsController::class, 'index'])
-            ->middleware('consultant.feature:settings_chat')
-            ->name('chat');
+        // Legacy standalone tab URL → the profile hub's chat section.
+        Route::redirect('chat', '/consultant/settings/profile?tab=chat');
         Route::post('chat', [ConsultantChatSettingsController::class, 'save'])
             ->middleware('consultant.feature:settings_chat')
             ->name('chat.save');
 
         /*
         | Appearance studio — schema-driven editor over the tenant's runtime
-        | config layer (see config/studio.php). "For everyone" is gated to the
-        | tenant admin inside the controller; the flag only hides the tab.
+        | config layer (see config/studio.php), shown as the hub's appearance
+        | section. "For everyone" is gated to the tenant admin inside the
+        | controller; the flag only hides the section + write endpoints.
         */
+        Route::redirect('appearance', '/consultant/settings/profile?tab=appearance');
         Route::prefix('appearance')->middleware('consultant.feature:theme_studio')->group(function () {
-            Route::get('/', [AppearanceController::class, 'index'])->name('appearance');
             Route::post('/', [AppearanceController::class, 'save'])->name('appearance.save');
             Route::post('reset', [AppearanceController::class, 'resetKey'])->name('appearance.reset');
             Route::post('reset-all', [AppearanceController::class, 'resetAll'])->name('appearance.reset.all');
@@ -235,6 +241,15 @@ Route::middleware('guest:student')->prefix('student')->name('student.')->group(f
 Route::middleware('auth:student')->prefix('student')->name('student.')->group(function () {
     Route::post('logout', [StudentLoginController::class, 'logout'])->name('logout');
     Route::get('dashboard', [StudentDashboardController::class, 'index'])->name('dashboard');
+
+    Route::get('report-card', [StudentReportCardPortalController::class, 'index'])
+        ->middleware('student.feature:report_cards')
+        ->name('report-card');
+
+    // Read-only review of the student's own finished attempts (the portal has
+    // no exam-taking UI; sessions are run by the consultant).
+    Route::get('exams/{assignment}/result', [StudentExamPortalController::class, 'result'])
+        ->name('exams.result');
 
     /*
     | Student side of direct chat: read + reply in the threads a consultant

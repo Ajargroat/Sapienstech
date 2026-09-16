@@ -1,24 +1,33 @@
 {{--
-    Student settings hub shell. Mirrors the consultant settings layout so both
-    portals look identical; extends layouts.student (same tenant/theme/labels
-    composer). The student hub currently has only a Profile tab, but the tab
-    bar is rendered from SettingsTabs so future tabs drop in unchanged.
+    Student profile hub shell. Mirrors the consultant hub exactly (same
+    header/hero machinery, same section dispatch through SettingsTabs) so
+    both portals stay visually identical; extends layouts.student (same
+    tenant/theme/labels composer).
 --}}
 @extends('layouts.student')
 
+@php
+    $isHome = ($activeTab ?? 'profile') === 'profile';
+    $activeLabel = collect($tabs ?? [])->firstWhere('key', $activeTab ?? '')['label'] ?? null;
+@endphp
+
 @section('content')
 <div class="settings-shell">
-    <nav class="settings-tabs" data-router="replace" aria-label="{{ $labels['settings'] ?? 'تنظیمات' }}">
-        @foreach($tabs as $tab)
-            <a
-                href="{{ route($tab['route']) }}"
-                class="settings-tab {{ ($activeTab ?? null) === $tab['key'] ? 'is-active' : '' }}"
-                @if(($activeTab ?? null) === $tab['key']) aria-current="page" @endif
-            >
-                {{ $tab['label'] }}
+    <header class="profile-header">
+        @unless($isHome)
+            <a class="profile-header-back" href="{{ route('student.settings.profile') }}" data-router="replace"
+               aria-label="{{ $labels['settings_profile'] ?? 'پروفایل' }}">
+                <i class="fas fa-chevron-right" aria-hidden="true"></i>
             </a>
-        @endforeach
-    </nav>
+        @endunless
+        <span class="profile-header-title">
+            {{ $isHome ? ($labels['settings_profile'] ?? 'پروفایل') : $activeLabel }}
+        </span>
+    </header>
+
+    @if($isHome)
+        @include('partials.profile-hero', ['profile' => auth('student')->user(), 'portal' => 'student'])
+    @endif
 
     @if(session('success'))
         <div class="settings-flash settings-flash--success" role="status">

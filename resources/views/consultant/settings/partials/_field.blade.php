@@ -59,22 +59,35 @@
                     ? array_combine(\App\Support\StudioSchema::archetypes(), \App\Support\StudioSchema::archetypes())
                     : ($field['options'] ?? []);
 
-                // Radios instead of a native <select>: the popup is browser
-                // chrome that can't be themed (white-on-white in dark mode).
-                // These reuse the dashboard-filter chip styles verbatim.
+                // One themed dropdown instead of spreading every option as a
+                // chip (long lists like the 13 background modes read as a
+                // wall). The native <select> popup is browser chrome that
+                // can't follow the tenant theme, so these are radios folded
+                // into a themed panel: theme-studio.js keeps receiving their
+                // bubbled change events and reading `input:checked`.
                 // A stored value matching no option used to silently submit
                 // the first option; keep that contract — an unchecked radio
                 // group would submit nothing at all.
                 $matched = in_array((string) $value, array_map('strval', array_keys($options)), true);
+                $displayKey = $matched ? $value : (array_key_first($options) ?? null);
+                $displayLabel = $displayKey === null ? '' : ($options[$displayKey] ?? (string) $displayKey);
             @endphp
-            <div class="filter-chips studio-chips" role="radiogroup" aria-label="{{ $field['label'] }}">
-                @foreach($options as $optValue => $optLabel)
-                    <input type="radio" class="filter-chip-input"
-                           id="studio-{{ md5($path) }}-{{ $loop->index }}"
-                           name="{{ $name }}" value="{{ $optValue }}"
-                           @checked($matched ? (string) $value === (string) $optValue : $loop->first)>
-                    <label class="filter-chip" for="studio-{{ md5($path) }}-{{ $loop->index }}">{{ $optLabel }}</label>
-                @endforeach
+            <div class="filter-select studio-select" data-filter-select>
+                <button type="button" class="filter-select-trigger" data-filter-select-trigger
+                        aria-haspopup="true" aria-expanded="false" aria-label="{{ $field['label'] }}">
+                    <span class="filter-select-value" data-filter-select-display>{{ $displayLabel }}</span>
+                    <i class="fas fa-chevron-down filter-select-caret" aria-hidden="true"></i>
+                </button>
+                <div class="filter-select-list" data-filter-select-list aria-label="{{ $field['label'] }}">
+                    @foreach($options as $optValue => $optLabel)
+                        <label class="filter-select-option" data-filter-select-option data-label="{{ $optLabel }}">
+                            <input type="radio" name="{{ $name }}" value="{{ $optValue }}"
+                                   @checked($matched ? (string) $value === (string) $optValue : $loop->first)>
+                            <span>{{ $optLabel }}</span>
+                            <i class="fas fa-check filter-select-option-mark" aria-hidden="true"></i>
+                        </label>
+                    @endforeach
+                </div>
             </div>
             @break
 
@@ -163,10 +176,23 @@
                     return $ordered;
                 })(), $field);
             @endphp
-            <div class="studio-sections" data-sections>
-                @foreach($ordered as $sec)
-                    @php $isLocked = in_array($sec, $locked, true); @endphp
-                    <label class="studio-section @if($isLocked || in_array($sec, $current, true)) is-on @endif @if($isLocked) is-locked @endif" data-section-row>
+            {{-- Multi-select tray: every section stays reachable, but the
+                 rows live inside one themed dropdown (checked count shows on
+                 the trigger) instead of a permanent wall of rows. Move/lock
+                 mechanics are untouched — the checked boxes still submit in
+                 DOM order. --}}
+            <div class="filter-select studio-select studio-sections-select" data-filter-select
+                 data-select-multi data-select-auto-width data-count-unit="بخش">
+                <button type="button" class="filter-select-trigger" data-filter-select-trigger
+                        aria-haspopup="true" aria-expanded="false" aria-label="{{ $field['label'] }}">
+                    <span class="filter-select-value" data-filter-select-display>{{ persian_digits(count($current)) }} بخش</span>
+                    <i class="fas fa-chevron-down filter-select-caret" aria-hidden="true"></i>
+                </button>
+                <div class="filter-select-list" data-filter-select-list>
+                    <div class="studio-sections" data-sections>
+                        @foreach($ordered as $sec)
+                            @php $isLocked = in_array($sec, $locked, true); @endphp
+                            <label class="studio-section @if($isLocked || in_array($sec, $current, true)) is-on @endif @if($isLocked) is-locked @endif" data-section-row>
                         <span class="studio-section-move">
                             @if($isLocked)
                                 <i class="fas fa-lock" title="این بخش همیشه نمایش داده می‌شود و جابه‌جا نمی‌شود"></i>
@@ -179,7 +205,7 @@
                             {{-- Hidden, not a disabled checkbox: it must always
                                  submit, and it holds the row's pinned slot in
                                  DOM order (JS blocks crossing locked rows). --}}
-                            <input type="hidden"
+                            <input type="hidden" data-section-locked
                                    name="{{ \App\Support\StudioSchema::htmlName($path, true) }}"
                                    value="{{ $sec }}">
                         @else
@@ -189,8 +215,10 @@
                                    @checked(in_array($sec, $current, true))>
                         @endif
                         <span>{{ $field['options'][$sec] }}</span>
-                    </label>
-                @endforeach
+                            </label>
+                        @endforeach
+                    </div>
+                </div>
             </div>
             @break
 

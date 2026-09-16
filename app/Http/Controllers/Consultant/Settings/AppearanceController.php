@@ -185,7 +185,7 @@ class AppearanceController extends Controller
         $request->session()->forget('studio.preview');
 
         return redirect()
-            ->route('consultant.settings.appearance')
+            ->route('consultant.settings.profile', ['tab' => 'appearance'])
             ->with('success', $diff === []
                 ? 'تغییری برای اعمال وجود نداشت.'
                 : 'تغییرات برای همهٔ بازدیدکنندگان اعمال شد.');
@@ -197,7 +197,7 @@ class AppearanceController extends Controller
         $request->session()->forget('studio.preview');
 
         return redirect()
-            ->route('consultant.settings.appearance')
+            ->route('consultant.settings.profile', ['tab' => 'appearance'])
             ->with('success', $diff === []
                 ? 'تغییری برای اعمال وجود نداشت.'
                 : 'تغییرات فقط برای نمای شما ذخیره شد.');
@@ -208,7 +208,7 @@ class AppearanceController extends Controller
         session(['studio.preview' => self::nestedLayer($diff)]);
 
         return redirect()
-            ->route('consultant.settings.appearance')
+            ->route('consultant.settings.profile', ['tab' => 'appearance'])
             ->with('success', 'حالت پیش‌نمایش فعال شد؛ با «خروج از پیش‌نمایش» به حالت ذخیره‌شده برمی‌گردید.');
     }
 

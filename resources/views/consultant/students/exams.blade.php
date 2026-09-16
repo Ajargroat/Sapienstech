@@ -52,14 +52,14 @@
             </div>
 
             <div class="filter-wrap">
-                <input type="checkbox" id="filter-toggle" class="filter-toggle-input" @checked($status !== '')>
-                <label for="filter-toggle" class="filter-toggle-btn" aria-label="فیلتر وضعیت آزمون">
+                <input type="checkbox" id="filter-toggle" class="filter-toggle-input">
+                <label for="filter-toggle" class="filter-toggle-btn" aria-label="فیلتر وضعیت آزمون" title="فیلتر وضعیت آزمون">
                     <i class="fas fa-sliders-h"></i>
                     {{-- Always rendered (hidden when empty) so the router's region
                          pairing stays stable across partial swaps. --}}
                     <span class="filter-count" data-router-region="results" @if($status === '') hidden @endif>{{ persian_digits($statusCounts[$status] ?? 0) }}</span>
                 </label>
-                <div class="filter-popover" data-router-region="results">
+                <div class="filter-popover filter-popover--menu" data-router-region="results">
                     <p class="filter-popover-title">وضعیت آزمون</p>
                     <a href="{{ route('consultant.student.exams', ['student' => $student, 'search' => $search !== '' ? $search : null]) }}"
                        class="exam-filter-option @if($status === '') is-active @endif">
