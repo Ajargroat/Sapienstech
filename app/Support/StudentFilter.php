@@ -8,6 +8,7 @@ use App\Models\Test;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 /**
  * The tenant's student filter vocabulary in one place.
@@ -275,12 +276,22 @@ class StudentFilter
         $query
             // MySQL DAYOFWEEK: 1=Sunday..7=Saturday; day_index is the Persian
             // week order (0=شنبه..6=جمعه) used across the schedule features.
+            // SQLite has no DAYOFWEEK: strftime('%w') is 0=Sunday..6=Saturday,
+            // i.e. exactly DAYOFWEEK - 1, so the same $dayOfWeek mapping applies.
             ->when($scheduleDays !== [], function ($q) use ($scheduleDays) {
                 $q->where(function ($w) use ($scheduleDays) {
                     foreach ($scheduleDays as $scheduleDay) {
                         $dayOfWeek = (int) $scheduleDay === 0 ? 7 : (int) $scheduleDay + 1;
 
-                        $w->orWhereHas('scheduleItems', fn ($s) => $s->whereRaw('DAYOFWEEK(start_datetime) = ?', [$dayOfWeek]));
+                        if (DB::getDriverName() === 'sqlite') {
+                            // Bound as a string on purpose: strftime() results carry no
+                            // column affinity, so an integer-bound parameter never
+                            // matches in SQLite. MySQL coerces, which is why the int
+                            // binding works there.
+                            $w->orWhereHas('scheduleItems', fn ($s) => $s->whereRaw("strftime('%w', start_datetime) = ?", [(string) ($dayOfWeek - 1)]));
+                        } else {
+                            $w->orWhereHas('scheduleItems', fn ($s) => $s->whereRaw('DAYOFWEEK(start_datetime) = ?', [$dayOfWeek]));
+                        }
                     }
                 });
             })
@@ -456,7 +467,13 @@ class StudentFilter
             $dayOfWeek = $index === 0 ? 7 : $index + 1;
 
             $counts['schedule_day'][$index] = Student::query()
-                ->whereHas('scheduleItems', fn ($s) => $s->whereRaw('DAYOFWEEK(start_datetime) = ?', [$dayOfWeek]))
+                ->whereHas('scheduleItems', function ($s) use ($dayOfWeek) {
+                    if (DB::getDriverName() === 'sqlite') {
+                        $s->whereRaw("strftime('%w', start_datetime) = ?", [(string) ($dayOfWeek - 1)]);
+                    } else {
+                        $s->whereRaw('DAYOFWEEK(start_datetime) = ?', [$dayOfWeek]);
+                    }
+                })
                 ->count();
         }
 

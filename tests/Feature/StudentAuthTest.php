@@ -5,14 +5,14 @@ namespace Tests\Feature;
 use App\Models\Domain;
 use App\Models\Student;
 use App\Models\Tenant;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class StudentAuthTest extends TestCase
 {
-    use DatabaseTransactions;
+    use RefreshDatabase;
 
     private function makeTenantWithStudent(string $host): array
     {

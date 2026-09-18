@@ -8,7 +8,7 @@ use App\Models\Question;
 use App\Models\Student;
 use App\Models\Tenant;
 use App\Models\User;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
@@ -17,12 +17,12 @@ use Tests\TestCase;
  * the five fixed lesson chips, the removal of question_count/total_marks from
  * the form, and store() deriving both server-side.
  *
- * Same strategy as StudentScheduleTest: DatabaseTransactions against the
+ * Same strategy as StudentScheduleTest: RefreshDatabase against the
  * provisioned schema (no RefreshDatabase — the base tables predate migrations).
  */
 class StudentExamCreationTest extends TestCase
 {
-    use DatabaseTransactions;
+    use RefreshDatabase;
 
     /** @return array{Tenant, User, Student} */
     private function tenantContext(string $host = 'tenant-a.test'): array
@@ -139,7 +139,9 @@ class StudentExamCreationTest extends TestCase
         $this->assertSame('شیمی، فیزیک', $test->lesson);
         // Both derived server-side now: count from the selection, marks fixed.
         $this->assertSame(2, (int) $test->question_count);
-        $this->assertSame('20.00', (string) $test->total_marks);
+        // Numeric comparison on purpose: MySQL returns DECIMAL as '20.00'
+        // while SQLite returns 20 — same value, different wire format.
+        $this->assertEquals(20, (float) $test->total_marks);
         $this->assertSame(90, (int) $test->time_limit_minutes);
 
         $assignment = DB::table('student_assigned_quizzes')

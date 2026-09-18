@@ -7,7 +7,7 @@ use App\Models\ScheduleItem;
 use App\Models\Student;
 use App\Models\Tenant;
 use App\Models\User;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Tests\TestCase;
 
@@ -15,7 +15,7 @@ use Tests\TestCase;
  * NOTE ON RUNNING THESE TESTS:
  * The uploaded project tree has no database/migrations directory -- the
  * schema appears to be provisioned from the SQL dump rather than Laravel
- * migrations. These tests therefore use DatabaseTransactions (schema
+ * migrations. These tests therefore use RefreshDatabase (schema
  * assumed already present in the configured test DB) rather than
  * RefreshDatabase. I do not have a working copy of this app (no vendor/,
  * no artisan, no PHP interpreter in this sandbox) so I was NOT able to
@@ -24,7 +24,7 @@ use Tests\TestCase;
  */
 class StudentScheduleTest extends TestCase
 {
-    use DatabaseTransactions;
+    use RefreshDatabase;
 
     private function makeTenantWithConsultant(string $host): array
     {

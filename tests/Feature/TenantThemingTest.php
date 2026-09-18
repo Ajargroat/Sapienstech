@@ -6,7 +6,7 @@ use App\Models\Domain;
 use App\Models\Tenant;
 use App\Models\WebsiteConfig;
 use App\Support\SiteConfig;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -18,7 +18,7 @@ use Tests\TestCase;
  */
 class TenantThemingTest extends TestCase
 {
-    use DatabaseTransactions;
+    use RefreshDatabase;
 
     /** @var list<string> tenant config files this test created, removed in tearDown */
     private array $createdFiles = [];

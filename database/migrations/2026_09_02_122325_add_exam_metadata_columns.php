@@ -14,7 +14,13 @@ return new class extends Migration
                 $t->string('lesson', 100)->nullable()->after('test_title');
             }
             if (! Schema::hasColumn('tests', 'exam_type')) {
-                $t->enum('exam_type', ['progress', 'mock', 'online_quiz', 'single_lesson'])
+                // Full value list up front: the 2026_09_02_163937 migration
+                // widens this enum to quiz/comprehensive on MySQL via MODIFY
+                // (a statement SQLite cannot run, and SQLite DOES enforce
+                // enum CHECK constraints). Declaring the final list here keeps
+                // fresh databases identical on both drivers; the later MODIFY
+                // is then a no-op everywhere.
+                $t->enum('exam_type', ['progress', 'mock', 'online_quiz', 'single_lesson', 'quiz', 'comprehensive'])
                     ->default('progress')->after('lesson');
             }
             if (! Schema::hasColumn('tests', 'total_marks')) {
@@ -52,9 +58,13 @@ return new class extends Migration
         });
 
         // MODIFY is a no-op when already applied, so this is safe on your live DB.
-        DB::statement('ALTER TABLE student_test_attempts MODIFY test_id bigint UNSIGNED NOT NULL');
-        DB::statement('ALTER TABLE student_test_attempts MODIFY score_simple_percent decimal(5,2) NULL');
-        DB::statement('ALTER TABLE student_test_attempts MODIFY score_negative_percent decimal(5,2) NULL');
+        // MySQL-only: SQLite has no MODIFY; the base schema already matches
+        // the post-migration shape there.
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement('ALTER TABLE student_test_attempts MODIFY test_id bigint UNSIGNED NOT NULL');
+            DB::statement('ALTER TABLE student_test_attempts MODIFY score_simple_percent decimal(5,2) NULL');
+            DB::statement('ALTER TABLE student_test_attempts MODIFY score_negative_percent decimal(5,2) NULL');
+        }
     }
 
     public function down(): void

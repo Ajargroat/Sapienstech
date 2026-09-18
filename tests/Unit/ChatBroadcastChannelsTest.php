@@ -14,7 +14,7 @@ use App\Models\User;
 use App\Support\ChatActor;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
@@ -27,7 +27,7 @@ use Tests\TestCase;
  */
 class ChatBroadcastChannelsTest extends TestCase
 {
-    use DatabaseTransactions;
+    use RefreshDatabase;
 
     private function thread(): array
     {

@@ -5,7 +5,7 @@ namespace Tests\Feature\Consultant;
 use App\Models\Domain;
 use App\Models\Tenant;
 use App\Models\User;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
@@ -19,7 +19,7 @@ use Tests\TestCase;
  */
 class SettingsProfileTest extends TestCase
 {
-    use DatabaseTransactions;
+    use RefreshDatabase;
 
     private function tenantWithDomain(): array
     {

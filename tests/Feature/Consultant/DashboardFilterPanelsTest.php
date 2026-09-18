@@ -11,7 +11,7 @@ use App\Models\StudentAssignedQuiz;
 use App\Models\Test;
 use App\Models\Tenant;
 use App\Models\User;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -23,11 +23,11 @@ use Tests\TestCase;
  * «اقدامات گروهی» picker absorbed into the dashboard).
  *
  * Like the other consultant suites these run against the migrated dev DB
- * via DatabaseTransactions.
+ * via RefreshDatabase.
  */
 class DashboardFilterPanelsTest extends TestCase
 {
-    use DatabaseTransactions;
+    use RefreshDatabase;
 
     private function makeTenantWithConsultant(string $host): array
     {

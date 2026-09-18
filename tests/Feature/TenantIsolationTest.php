@@ -4,12 +4,12 @@ namespace Tests\Feature;
 
 use App\Models\Student;
 use App\Models\Tenant;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class TenantIsolationTest extends TestCase
 {
-    use DatabaseTransactions;
+    use RefreshDatabase;
 
     public function test_tenant_cannot_see_another_tenants_students(): void
     {
