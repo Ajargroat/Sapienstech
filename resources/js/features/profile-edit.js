@@ -1,88 +1,153 @@
-// Profile "Edit Profile" hub section (both portals), Telegram-style:
-// tapping a row expands its inline editor under the label (one row open at
-// a time); collapsing a row without saving restores the original value, so
-// a closed editor never leaks a half-typed edit into the next "ذخیره".
-// The three text rows share one PATCH form (the endpoint expects the full
-// field set), so any row's save submits every field — the untouched ones
-// still carry their current values. The photo row is different: picking a
-// file uploads immediately (same as tapping the camera badge over the
-// header avatar, which just labels the same hidden input).
-
-const ROW_SELECTOR = '.profile-edit-row';
-const OPEN_CLASS = 'is-editing';
-
+// Native dialogs keep focus inside the editor without moving forms out of
+// the router's page region (and away from inherited tenant theme tokens).
 export default function init() {
-    const root = document.querySelector('.profile-edit-fields');
+    const root = document.querySelector('[data-profile-dialogs]');
     if (!root || root.dataset.profileEditBound) return;
     root.dataset.profileEditBound = '1';
 
-    // Remember each field's value as rendered (also the old() input after a
-    // failed save, so cancelling an error-opened row is sane).
-    editableFields(root).forEach((field) => {
-        field.dataset.original = field.value;
-    });
+    const events = new AbortController();
+    const options = { signal: events.signal };
+    const resetAvatar = initAvatar(root, options);
+    const dialogs = [...root.querySelectorAll('.profile-dialog')];
+    let active = null;
+    let opener = null;
+
+    const close = () => {
+        if (!active) return;
+        const dialog = active;
+        active = null;
+        dialog.close();
+        dialog.querySelectorAll('form').forEach((form) => form.reset());
+        // Passwords and unsubmitted file selections must not survive dismissal.
+        dialog.querySelectorAll('input[type=password], input[type=file]').forEach((field) => { field.value = ''; });
+        opener?.focus();
+    };
+
+    const open = (dialog, trigger) => {
+        if (!dialog || !root.contains(dialog)) return;
+        close();
+        opener = trigger;
+        active = dialog;
+        dialog.showModal();
+    };
 
     root.addEventListener('click', (event) => {
-        const head = event.target.closest('.profile-edit-row-head');
-        if (head) {
-            const row = head.closest(ROW_SELECTOR);
-            row.classList.contains(OPEN_CLASS) ? closeRow(row) : openRow(root, row);
-            return;
+        const trigger = event.target.closest('[data-profile-open]');
+        if (trigger) {
+            open(document.getElementById(trigger.dataset.profileOpen), trigger);
+        } else if (event.target.closest('[data-profile-close]')) {
+            close();
         }
+    }, options);
 
-        const cancel = event.target.closest('[data-edit-cancel]');
-        if (cancel) closeRow(cancel.closest(ROW_SELECTOR));
+    dialogs.forEach((dialog) => {
+        // Only dismiss a gesture that both starts and ends on the backdrop;
+        // dragging a text selection outside the panel must not lose the edit.
+        let backdropStart = false;
+        dialog.addEventListener('pointerdown', (event) => {
+            backdropStart = event.target === dialog && outside(dialog, event);
+        }, options);
+        dialog.addEventListener('click', (event) => {
+            if (backdropStart && event.target === dialog && outside(dialog, event)) close();
+            backdropStart = false;
+        }, options);
+        dialog.addEventListener('cancel', (event) => {
+            event.preventDefault();
+            close();
+        }, options);
     });
 
-    root.addEventListener('keydown', (event) => {
-        if (event.key !== 'Escape') return;
-
-        const row = event.target.closest?.(ROW_SELECTOR);
-        if (!row?.classList.contains(OPEN_CLASS)) return;
-
-        closeRow(row);
-        row.querySelector('.profile-edit-row-head')?.focus();
-    });
-
-    // Photo: choose file -> upload right away.
     root.addEventListener('change', (event) => {
         const file = event.target;
-        if (!file.matches?.('input[type=file][name=avatar]') || !file.files.length) return;
+        if (file.matches('input[type=file][name=avatar]') && file.files.length) file.closest('form')?.requestSubmit();
+    }, options);
 
-        file.closest('form')?.requestSubmit();
-    });
+    // Browser validation can target another field after a failed submission.
+    root.addEventListener('invalid', (event) => {
+        const dialog = event.target.closest('.profile-dialog');
+        if (dialog && dialog !== active) open(dialog, root.querySelector(`[data-profile-open="${dialog.id}"]`));
+    }, { ...options, capture: true });
+
+    const initial = dialogs.find((dialog) => dialog.hasAttribute('data-profile-auto-open'));
+    if (initial) open(initial, root.querySelector(`[data-profile-open="${initial.id}"]`));
+
+    return () => {
+        close();
+        resetAvatar();
+        events.abort();
+        delete root.dataset.profileEditBound;
+    };
 }
 
-function openRow(root, row) {
-    root.querySelectorAll(`${ROW_SELECTOR}.${OPEN_CLASS}`)
-        .forEach((open) => { if (open !== row) closeRow(open); });
+export function initAvatar(root, options) {
+    const avatar = root.querySelector('[data-profile-avatar]');
+    if (!avatar) return () => {};
+    const toggle = avatar.querySelector('[data-profile-avatar-toggle]');
+    const deletion = avatar.querySelector('[data-profile-avatar-delete]');
+    let expanded = false;
+    let pinned = false;
+    let touchStart = null;
+    let swiped = false;
 
-    row.classList.add(OPEN_CLASS);
-    row.querySelector('.profile-edit-row-head')?.setAttribute('aria-expanded', 'true');
+    const setExpanded = (value) => {
+        expanded = value;
+        avatar.classList.toggle('is-expanded', value);
+        toggle.setAttribute('aria-expanded', String(value));
+        toggle.setAttribute('aria-label', value ? 'کوچک‌نمایی تصویر پروفایل' : 'بزرگ‌نمایی تصویر پروفایل');
+        if (deletion) deletion.hidden = !value;
+    };
+    const collapse = () => {
+        pinned = false;
+        setExpanded(false);
+    };
 
-    const field = row.querySelector('input:not([type=file]), textarea');
-    field?.focus();
-    field?.select();
-}
+    avatar.addEventListener('pointerenter', (event) => {
+        if (event.pointerType === 'mouse') setExpanded(true);
+    }, options);
+    avatar.addEventListener('pointerleave', (event) => {
+        if (event.pointerType === 'mouse' && !pinned && !avatar.contains(document.activeElement)) setExpanded(false);
+    }, options);
+    toggle.addEventListener('click', () => {
+        if (swiped) { swiped = false; return; }
+        pinned = !pinned;
+        setExpanded(pinned);
+    }, options);
+    avatar.addEventListener('focusout', (event) => {
+        if (!avatar.contains(event.relatedTarget)) collapse();
+    }, options);
+    document.addEventListener('pointerdown', (event) => {
+        if (!avatar.contains(event.target)) collapse();
+    }, options);
+    document.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape' || !expanded) return;
+        if (deletion?.contains(document.activeElement)) toggle.focus();
+        collapse();
+    }, options);
 
-function closeRow(row) {
-    restoreRow(row);
-    row.classList.remove(OPEN_CLASS);
-    row.querySelector('.profile-edit-row-head')?.setAttribute('aria-expanded', 'false');
-}
-
-function restoreRow(row) {
-    row.querySelectorAll('input, textarea').forEach((field) => {
-        if (field.type === 'file') {
-            field.value = ''; // a never-uploaded pick must not linger
-            return;
+    // Observe native scrolling without trapping the page's touch gestures.
+    avatar.addEventListener('touchstart', (event) => {
+        swiped = false;
+        touchStart = event.touches.length === 1 && event.target.closest('[data-profile-avatar-toggle]')
+            ? { x: event.touches[0].clientX, y: event.touches[0].clientY } : null;
+    }, { ...options, passive: true });
+    avatar.addEventListener('touchmove', (event) => {
+        if (!touchStart || event.touches.length !== 1) return;
+        const dx = event.touches[0].clientX - touchStart.x;
+        const dy = event.touches[0].clientY - touchStart.y;
+        if (dy < -30 && Math.abs(dy) > Math.abs(dx)) {
+            pinned = true;
+            swiped = true;
+            setExpanded(true);
+            touchStart = null;
         }
-        if (typeof field.dataset.original === 'string') field.value = field.dataset.original;
-    });
+    }, { ...options, passive: true });
+    avatar.addEventListener('touchcancel', () => { touchStart = null; swiped = false; }, options);
+    return collapse;
 }
 
-function editableFields(root) {
-    return [...root.querySelectorAll('input, textarea')].filter((field) => field.type !== 'file');
+function outside(dialog, event) {
+    const rect = dialog.getBoundingClientRect();
+    return event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom;
 }
 
 if (!window.sapienstechRouter) {

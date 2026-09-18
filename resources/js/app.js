@@ -78,6 +78,14 @@ const FILTER_FIELDS = [
     'schedule_day', 'schedule_done',
 ];
 
+// Multi-value fields: their live controls are checkboxes named "field[]"
+// inside the owning panel form; every other filter surface rebuilds its
+// hidden "field[]" mirrors from the live state right before submit.
+const MULTI_FILTER_FIELDS = [
+    'grade', 'gender', 'major', 'exam_status', 'exam_lesson',
+    'report_source', 'report_status', 'schedule_day',
+];
+
 const isLiveFilterControl = (name) =>
     `[data-filter-value][name="${name}"]` +
     `, input:not([type="hidden"])[name="${name}"]` +
@@ -85,7 +93,25 @@ const isLiveFilterControl = (name) =>
 
 document.addEventListener('submit', (event) => {
     const form = event.target;
-    if (!form.matches?.('form[data-filter-sync]')) return;
+    if (!form.matches?.('form')) return;
+
+    /*
+     * Required themed pickers (the bulk-creation test/day dropdowns): the
+     * value lives in a hidden input, and hidden inputs are barred from native
+     * constraint validation, so the browser's "please select" never fires.
+     * Block the submit here — this capture listener runs before the page
+     * router's own submit handler — and flag the offending trigger.
+     */
+    for (const holder of form.querySelectorAll('[data-filter-value][required]')) {
+        if (holder.value !== '') continue;
+        event.preventDefault();
+        const wrap = holder.closest('.filter-select');
+        wrap?.classList.add('is-invalid');
+        wrap?.querySelector('[data-filter-select-trigger]')?.focus();
+        return;
+    }
+
+    if (!form.matches('form[data-filter-sync]')) return;
 
     const scope = form.closest('[data-filter-popover]') ?? document;
     const query = new URLSearchParams(window.location.search);
@@ -108,6 +134,28 @@ document.addEventListener('submit', (event) => {
 
         const live = scope.querySelector(isLiveFilterControl(input.name));
         input.value = live ? live.value : (query.get(input.name) ?? '');
+    });
+
+    // Multi-value fields: rebuild this form's hidden "field[]" mirrors from
+    // the live checkbox state. The owning panel's own boxes serialize
+    // natively and are skipped.
+    MULTI_FILTER_FIELDS.forEach((field) => {
+        const name = `${field}[]`;
+        if (form.querySelector(`input[type="checkbox"][name="${CSS.escape(name)}"]`)) return;
+
+        form
+            .querySelectorAll(`input[type="hidden"][name="${CSS.escape(name)}"]`)
+            .forEach((mirror) => mirror.remove());
+
+        scope
+            .querySelectorAll(`input[type="checkbox"][name="${CSS.escape(name)}"]:checked`)
+            .forEach((box) => {
+                const mirror = document.createElement('input');
+                mirror.type = 'hidden';
+                mirror.name = name;
+                mirror.value = box.value;
+                form.appendChild(mirror);
+            });
     });
 }, true); // capture: must run before the page-router serializes the form
 
@@ -154,33 +202,62 @@ const openFilterSelect = (wrap) => {
 
     closeAllFilterSelects();
 
+    // Open first: the list must be laid out for the offsetParent probe below
+    // (a display:none element reports no offsetParent at all).
+    wrap.classList.add('is-open');
+    trigger.setAttribute('aria-expanded', 'true');
+
     const rect = trigger.getBoundingClientRect();
     const viewportPad = 12;
     const spaceBelow = window.innerHeight - rect.bottom - viewportPad;
     const spaceAbove = rect.top - viewportPad;
     const preferAbove = spaceBelow < 180 && spaceAbove > spaceBelow;
 
+    // Viewport-anchored plan; the probe at the end may rebaseline it.
+    let top = preferAbove ? null : rect.bottom + 4;
+    let bottom = preferAbove ? window.innerHeight - rect.top + 4 : null;
+    let left = Math.max(viewportPad, rect.left);
+    let right = null;
+
     list.style.position = 'fixed';
-    list.style.top = preferAbove ? 'auto' : (rect.bottom + 4) + 'px';
-    list.style.bottom = preferAbove ? (window.innerHeight - rect.top + 4) + 'px' : 'auto';
     list.style.maxHeight = Math.max(140, (preferAbove ? spaceAbove : spaceBelow) - 8) + 'px';
 
     if (wrap.hasAttribute('data-select-auto-width')) {
         // Wider-than-trigger panels (link menus, section trays) grow towards
         // the inline start, anchored on the trigger's end edge.
+        right = Math.max(viewportPad, window.innerWidth - rect.right);
         list.style.width = '';
         list.style.left = '';
-        list.style.right = Math.max(viewportPad, window.innerWidth - rect.right) + 'px';
+        list.style.right = right + 'px';
         list.style.minWidth = rect.width + 'px';
         list.style.maxWidth = Math.min(360, window.innerWidth - 2 * viewportPad) + 'px';
     } else {
-        list.style.left = Math.max(viewportPad, rect.left) + 'px';
+        list.style.left = left + 'px';
         list.style.right = '';
         list.style.width = rect.width + 'px';
     }
 
-    wrap.classList.add('is-open');
-    trigger.setAttribute('aria-expanded', 'true');
+    list.style.top = top === null ? 'auto' : top + 'px';
+    list.style.bottom = bottom === null ? 'auto' : bottom + 'px';
+
+    /*
+     * position: fixed normally anchors to the viewport, but any ancestor
+     * with a transform/filter/perspective (or a running entrance animation)
+     * silently becomes the containing block — then viewport-space offsets
+     * land the panel at the far corner of that ancestor. offsetParent is
+     * null only while the viewport really is the containing block; when it
+     * points at an element, rebaseline every offset into that element's
+     * border box (getBoundingClientRect is viewport-relative and unaffected
+     * by the ancestor's own transform, so the math stays exact).
+     */
+    const block = list.offsetParent;
+    if (block && block !== document.documentElement && block !== document.body) {
+        const box = block.getBoundingClientRect();
+        if (top !== null) list.style.top = top - box.top + 'px';
+        if (bottom !== null) list.style.bottom = bottom - (window.innerHeight - box.bottom) + 'px';
+        if (right !== null) list.style.right = right - (window.innerWidth - box.right) + 'px';
+        else list.style.left = left - box.left + 'px';
+    }
 };
 
 const setSelectDisplay = (wrap, label, isPlaceholder = false) => {
@@ -198,6 +275,15 @@ const syncSelectDisplayFromChecked = (wrap) => {
 
 const syncSelectCount = (wrap) => {
     const count = wrap.querySelectorAll('input:checked, [data-section-locked]').length;
+    const clearRow = wrap.querySelector('[data-filter-clear]');
+    if (clearRow) clearRow.classList.toggle('is-active', count === 0);
+
+    // A dashboard multi tray with nothing ticked filters nothing: show the
+    // placeholder «همه» instead of a zero count.
+    if (count === 0 && wrap.hasAttribute('data-filter-multi')) {
+        setSelectDisplay(wrap, wrap.dataset.allLabel ?? 'همه', true);
+        return;
+    }
     setSelectDisplay(wrap, `${faDigits(count)} ${wrap.dataset.countUnit ?? 'مورد'}`);
 };
 
@@ -234,8 +320,22 @@ document.addEventListener('click', (event) => {
 
         // Button option (dashboard listbox): hidden holder is the control.
         const value = option.dataset.value ?? '';
+
+        if (wrap.hasAttribute('data-filter-multi')) {
+            // The «همه» row of a multi tray: untick everything.
+            wrap.querySelectorAll('input[type="checkbox"]').forEach((box) => {
+                box.checked = false;
+            });
+            syncSelectCount(wrap);
+            closeFilterSelect(wrap);
+            return;
+        }
+
         const holder = wrap.querySelector('[data-filter-value]');
-        if (holder) holder.value = value;
+        if (holder) {
+            holder.value = value;
+            wrap.classList.remove('is-invalid');
+        }
         setSelectDisplay(wrap, option.dataset.label ?? option.textContent ?? '', value === '');
 
         wrap.querySelectorAll('[data-filter-select-option]').forEach((el) => {

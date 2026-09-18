@@ -72,15 +72,40 @@ return [
         'appearance_staff_publish' => false,
 
         /*
-        |--------------------------------------------------------------------------
+        |------------------------------------------------------------------------
         | Student Workspace (per-student destinations reached from the
         | dashboard's Actions menu)
-        |--------------------------------------------------------------------------
+        |------------------------------------------------------------------------
         */
         'student_profile'    => true,
         'report_cards'       => true,
         'student_exams'      => true,
         'student_schedule'   => true,
+
+        /*
+        |------------------------------------------------------------------------
+        | Deal renewal (تمدید و پرداخت) — the consultant manager plus the
+        | student's continue/withdraw decision + payment receipt submission.
+        |------------------------------------------------------------------------
+        */
+        'deals'              => true,
+
+        /*
+        |------------------------------------------------------------------------
+        | Teacher Panel — the tenant's teacher sub-level, plus its student-
+        | facing half. `teacher_panel` is the master switch: when off, the
+        | whole /teacher area 404s. Each section additionally has its own
+        | flag so an academy can scope what its teachers get.
+        |------------------------------------------------------------------------
+        */
+        'teacher_panel'        => true,
+        'teacher_materials'    => true,
+        'teacher_assignments'  => true,
+        'teacher_schedule'     => true,
+
+        'student_materials'    => true,
+        'student_assignments'  => true,
+        'student_timetable'    => true,
 
         /*
         |--------------------------------------------------------------------------
@@ -403,6 +428,17 @@ return [
             'font_accent'      => null,
             'font_mono'        => null,
             'font_button'      => null,
+            // Files are deployed manually beneath public/fonts (see README).
+            // Tenant faces lists replace this list; include each required face.
+            'faces' => [
+                [
+                    'family' => 'Vazirmatn',
+                    'src' => '/fonts/vazirmatn/Vazirmatn[wght].woff2',
+                    'weight' => '100 900',
+                    'style' => 'normal',
+                    'display' => 'swap',
+                ],
+            ],
             'body_size'        => '15px',
             'body_weight'      => '400',
             'heading_weight'   => '800',
@@ -501,14 +537,58 @@ return [
             'page_glow_2' => null,
         ],
 
-        'assets' => [
-            'font_url'         => 'https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap',
+        // 20 local collections in resources/icons/catalog.json; legacy fallback is font-awesome.
+                'icons' => ['set' => 'font-awesome'],
+
+                'assets' => [
+
             'icon_library_url' => 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
         ],
 
         // The old inline `presets` array lived here and was dead code: nothing
         // ever merged it into `colors`. Full identity bundles now live in
         // config/archetypes/*.php, applied by App\Support\SiteConfig.
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Academics — grade vocabulary and study-file rules
+    |--------------------------------------------------------------------------
+    |
+    | The platform's primary audience is middle school (متوسطه اول, grades
+    | 7-9). High school (10-12) stays available — `grade_groups` keeps both,
+    | and `default_group` only decides which level the pickers lead with.
+    | Tenants may re-shape every list through the usual config layers
+    | (tenant file / DB layer / archetype) without touching code.
+    |
+    | Grade values are plain Persian names, exactly what the students table
+    | already stores as free strings.
+    |
+    */
+    'academics' => [
+        'grade_groups' => [
+            'intermediate' => [
+                'label'  => 'متوسطه اول',
+                'grades' => ['هفتم', 'هشتم', 'نهم'],
+            ],
+            'high_school' => [
+                'label'  => 'متوسطه دوم',
+                'grades' => ['دهم', 'یازدهم', 'دوازدهم'],
+            ],
+        ],
+
+        'default_group' => 'intermediate',
+
+        // Subject suggestions for material/assignment pickers (datalist,
+        // not a hard whitelist — teachers can type anything).
+        'subjects' => ['ریاضی', 'علوم', 'فارسی', 'ادبیات', 'عربی', 'دینی', 'اجتماعی', 'انگلیسی', 'نگارش', 'مطالعات', 'کار و فناوری'],
+
+        // Lesson-material uploads (TenantUploads folder + size/type limits).
+        'materials' => [
+            'max_kb' => 20480,
+            'types'  => ['pdf', 'jpg', 'jpeg', 'png', 'webp', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'zip'],
+            'folder' => 'materials',
+        ],
     ],
 
     /*
@@ -522,6 +602,13 @@ return [
         'blog_management' => 'وبلاگ',
         'direct_chat'     => 'گفتگوی مستقیم',
         'bulk_actions'    => 'اقدامات گروهی',
+
+        // Teacher panel navigation
+        'teacher_dashboard'   => 'داشبورد معلم',
+        'teacher_students'    => 'دانش‌آموزان',
+        'teacher_materials'   => 'جزوه‌ها و منابع',
+        'teacher_assignments' => 'تکالیف',
+        'teacher_schedule'    => 'برنامه کلاسی',
 
         // Chat workspace
         'student_chat'            => 'گفتگو',

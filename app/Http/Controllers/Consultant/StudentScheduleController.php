@@ -3,14 +3,18 @@
 namespace App\Http\Controllers\Consultant;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Consultant\StoreScheduleDraftRequest;
 use App\Http\Requests\Consultant\StoreScheduleItemRequest;
 use App\Http\Requests\Consultant\UpdateScheduleItemRequest;
 use App\Models\ItemComment;
+use App\Models\ScheduleDraft;
 use App\Models\ScheduleItem;
 use App\Models\Student;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Throwable;
 
@@ -145,6 +149,121 @@ $item->created_by_user_id = null;        $item->save();
         ])->values();
 
         return response()->json($comments);
+    }
+
+    public function drafts(Request $request, Student $student): JsonResponse
+    {
+        $this->assertDraftAccess($request, $student);
+
+        $drafts = ScheduleDraft::query()
+            ->where('tenant_id', tenant()->id)
+            ->where('user_id', $request->user()->id)
+            ->orderByDesc('updated_at')
+            ->orderByDesc('id')
+            ->get();
+
+        return response()->json([
+            'drafts' => $drafts->map(fn (ScheduleDraft $draft) => $this->toDraftArray($draft))->values(),
+        ]);
+    }
+
+    public function storeDraft(StoreScheduleDraftRequest $request, Student $student): JsonResponse
+    {
+        $this->assertDraftAccess($request, $student);
+
+        $draft = new ScheduleDraft($request->draftData());
+        $draft->tenant_id = tenant()->id;
+        $draft->user_id = $request->user()->id;
+        $draft->week_start_date = $this->resolveWeekStart($request->validated('week_start_date'))->toDateString();
+        $draft->save();
+
+        return response()->json(['success' => true, 'draft' => $this->toDraftArray($draft)], 201);
+    }
+
+    public function updateDraft(StoreScheduleDraftRequest $request, Student $student, ScheduleDraft $draft): JsonResponse
+    {
+        $this->assertDraftAccess($request, $student, $draft);
+
+        $draft->fill($request->draftData());
+        $draft->week_start_date = $this->resolveWeekStart($request->validated('week_start_date'))->toDateString();
+        $draft->save();
+
+        return response()->json(['success' => true, 'draft' => $this->toDraftArray($draft)]);
+    }
+
+    public function applyDraft(Request $request, Student $student, ScheduleDraft $draft): JsonResponse
+    {
+        $this->assertDraftAccess($request, $student, $draft);
+
+        $data = $request->validate([
+            'week_start_date' => ['required', 'date_format:Y-m-d'],
+        ]);
+
+        // Revalidate stored blocks before applying, including drafts saved under older rules.
+        validator([
+            'name' => $draft->name,
+            'week_start_date' => $data['week_start_date'],
+            'blocks' => $draft->blocks,
+        ], (new StoreScheduleDraftRequest)->rules())->validate();
+
+        DB::transaction(function () use ($request, $student, $draft, $data) {
+            foreach ($draft->blocks as $block) {
+                [$start, $end, $weekStart] = $this->resolveDatetimes([
+                    ...$block,
+                    'week_start_date' => $data['week_start_date'],
+                ]);
+
+                $item = new ScheduleItem(Arr::only($block, [
+                    'title', 'description', 'book_name', 'page_count', 'test_count', 'link_url',
+                ]));
+                $item->tenant_id = tenant()->id;
+                $item->student_id = $student->id;
+                $item->week_start_date = $weekStart->toDateString();
+                $item->start_datetime = $start;
+                $item->end_datetime = $end;
+                $item->color = ($block['color'] ?? null) ?: '#3b82f6';
+                $item->item_type = 'consultant_event';
+                $item->created_by_type = 'user';
+                $item->created_by_user_id = $request->user()->id;
+                $item->created_by_student_id = null;
+                $item->is_completed = false;
+                $item->completion_timestamp = null;
+                $item->save();
+            }
+        });
+
+        return response()->json(['success' => true]);
+    }
+
+    private function assertDraftAccess(Request $request, Student $student, ?ScheduleDraft $draft = null): void
+    {
+        $this->assertStudentBelongsToTenant($student);
+        $tenant = tenant();
+        $user = $request->user();
+
+        abort_unless(
+            $tenant && $user && $user->id && (int) $user->tenant_id === (int) $tenant->id,
+            404
+        );
+
+        if ($draft) {
+            abort_unless(
+                (int) $draft->tenant_id === (int) $tenant->id
+                && (int) $draft->user_id === (int) $user->id,
+                404
+            );
+        }
+    }
+
+    private function toDraftArray(ScheduleDraft $draft): array
+    {
+        return [
+            'id' => $draft->id,
+            'name' => $draft->name,
+            'week_start_date' => $draft->week_start_date->toDateString(),
+            'blocks' => $draft->blocks,
+            'updated_at' => $draft->updated_at->toISOString(),
+        ];
     }
 
     private function assertStudentBelongsToTenant(Student $student): void

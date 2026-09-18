@@ -39,7 +39,7 @@
 |   label    Persian field label
 |   hint     optional one-line Persian explanation rendered as an ⓘ bubble
 |            next to the label (hover on desktop, tap on touch)
-|   control  color | text | textarea | select | toggle | number | range | font | image | sections | archetype | list
+|   control  color | text | textarea | select | toggle | number | range | font | image | sections | archetype | list | hidden
 |   rules    Laravel validation rules for the scalar value (for list: the
 |            whole-array rules; row values validate via `item` rules)
 |   options  [value => label] for select/sections
@@ -59,6 +59,8 @@
 |            `required_for` => [types] on a show_for def makes the cell
 |            required exactly for those row types. A type with no content
 |            cells (spacer, divider) is never treated as an abandoned row.
+|            `content` => false marks metadata that cannot keep an otherwise
+|            abandoned row alive (identity, styles, or spacer size).
 |   max      list control: the most rows a submission may carry
 |   locked   sections control: option keys pinned to their canonical slot
 |            (their index in `options`). They can never be moved or hidden —
@@ -106,7 +108,8 @@ $dur     = ['required', 'string', 'max:10', 'regex:/^[0-9.]+(ms|s)$/'];
 $ls      = ['required', 'string', 'max:20', 'regex:/^-?[0-9.]+(em|px|rem)?$/'];
 $lh      = ['required', 'string', 'max:20', 'regex:/^([0-9.]+|inherit|normal)$/'];
 $clamp   = ['required', 'string', 'max:60', 'regex:/^[0-9a-zA-Z(),.\s%+-]+$/'];
-$font    = ['required', 'string', 'regex:/^[A-Za-z0-9 ,_\-]{1,80}$/'];
+// Directory membership is resolved by StudioSchema at runtime, not config-cache time.
+$font    = ['nullable', 'string'];
 $bool    = ['nullable', 'boolean'];
 
 $weights = [
@@ -219,7 +222,7 @@ return [
             'label' => 'تایپوگرافی',
             'icon'  => 'fa-font',
             'fields' => [
-                ['path' => 'theme.typography.font_family', 'label' => 'قلم متن', 'hint' => 'نام قلم متن بدنه در سراسر سایت و پنل.', 'control' => 'font', 'rules' => ['required', 'string', 'regex:/^[A-Za-z0-9 _\-]{1,60}$/']],
+                ['path' => 'theme.typography.font_family', 'label' => 'قلم متن', 'hint' => 'پوشهٔ قلم نصب‌شده در public/fonts؛ حفظ مقدار فعلی یا بازنشانی نیز ممکن است.', 'control' => 'font', 'rules' => $font],
                 ['path' => 'theme.typography.font_heading', 'label' => 'قلم تیترها', 'control' => 'font', 'rules' => $font],
                 ['path' => 'theme.typography.font_accent', 'label' => 'قلم تأکیدی', 'control' => 'font', 'rules' => $font],
                 ['path' => 'theme.typography.font_button', 'label' => 'قلم دکمه‌ها', 'control' => 'font', 'rules' => $font],
@@ -243,6 +246,14 @@ return [
                 ['path' => 'theme.typography.letter_spacing', 'label' => 'فاصله حروف متن', 'hint' => 'اعداد منفی حروف را به هم می‌چسبانند و مثبت آن‌ها را باز می‌کند.', 'control' => 'range', 'min' => -0.05, 'max' => 0.2, 'step' => 0.005, 'unit' => '', 'rules' => $ls],
                 ['path' => 'theme.typography.line_height', 'label' => 'فاصله خطوط متن', 'control' => 'range', 'min' => 1, 'max' => 3, 'step' => 0.05, 'unit' => '', 'rules' => $lh],
                 ['path' => 'theme.typography.measure', 'label' => 'عرض ایده‌آل پاراگراف', 'hint' => 'حداکثر عرض پاراگراف؛ هرچه باریک‌تر، خواندن راحت‌تر.', 'control' => 'range', 'min' => 20, 'max' => 100, 'step' => 1, 'unit' => 'rem', 'rules' => $len],
+            ],
+        ],
+
+        'icons' => [
+            'label' => 'آیکون‌ها',
+            'icon'  => 'fa-shapes',
+            'fields' => [
+                ['path' => 'theme.icons.set', 'label' => 'آیکون‌ست', 'hint' => 'سبک همهٔ آیکون‌های سایت و پنل؛ هر گزینه شکل واقعی آیکون‌ها را پیش‌نمایش می‌کند.', 'control' => 'iconset', 'rules' => ['required', 'in:'.implode(',', array_keys(\App\Support\ThemeIcons::choices()))]],
             ],
         ],
 
@@ -664,9 +675,21 @@ return [
                             'rules' => ['nullable', 'in:'.implode(',', array_keys($alignOpt))], 'options' => $alignOpt],
                         ['key' => 'src', 'label' => 'نشانی تصویر', 'control' => 'text', 'show_for' => ['image'], 'required_for' => ['image'],
                             'rules' => $imgSrc],
-                        ['key' => 'size', 'label' => 'اندازه فاصله', 'control' => 'select', 'show_for' => ['spacer'],
+                        ['key' => 'size', 'label' => 'اندازه فاصله', 'control' => 'select', 'content' => false, 'show_for' => ['spacer'],
                             'rules' => ['nullable', 'in:,sm,md,lg'],
                             'options' => ['' => 'متوسط', 'sm' => 'کم', 'md' => 'متوسط', 'lg' => 'زیاد']],
+                        ['key' => 'id', 'label' => 'شناسه', 'control' => 'hidden', 'content' => false,
+                            'rules' => ['nullable', 'uuid']],
+                        ['key' => 'background', 'label' => 'پس‌زمینه بلوک', 'control' => 'color', 'content' => false,
+                            'rules' => ['nullable', 'string', 'regex:/\A#[0-9A-Fa-f]{6}\z/']],
+                        ['key' => 'color', 'label' => 'رنگ متن بلوک', 'control' => 'color', 'content' => false,
+                            'rules' => ['nullable', 'string', 'regex:/\A#[0-9A-Fa-f]{6}\z/']],
+                        ['key' => 'padding', 'label' => 'فاصله داخلی (px)', 'control' => 'number', 'content' => false, 'min' => 0, 'max' => 128,
+                            'rules' => ['nullable', 'numeric', 'integer', 'between:0,128', 'regex:/\A[0-9]+\z/']],
+                        ['key' => 'radius', 'label' => 'گردی گوشه (px)', 'control' => 'number', 'content' => false, 'min' => 0, 'max' => 128,
+                            'rules' => ['nullable', 'numeric', 'integer', 'between:0,128', 'regex:/\A[0-9]+\z/']],
+                        ['key' => 'width', 'label' => 'عرض (%)', 'control' => 'number', 'content' => false, 'min' => 10, 'max' => 100,
+                            'rules' => ['nullable', 'numeric', 'integer', 'between:10,100', 'regex:/\A[0-9]+\z/']],
                         ['key' => 'visible', 'label' => 'نمایش', 'control' => 'toggle'],
                     ]],
             ],
@@ -759,6 +782,14 @@ return [
                 ['path' => 'features.report_cards', 'label' => 'کارنامه‌ها', 'control' => 'toggle', 'rules' => $bool, 'admin' => true],
                 ['path' => 'features.student_exams', 'label' => 'آزمون‌ها', 'control' => 'toggle', 'rules' => $bool, 'admin' => true],
                 ['path' => 'features.student_schedule', 'label' => 'برنامه هفتگی', 'control' => 'toggle', 'rules' => $bool, 'admin' => true],
+                ['path' => 'features.deals', 'label' => 'تمدید و پرداخت', 'control' => 'toggle', 'rules' => $bool, 'admin' => true],
+                ['path' => 'features.teacher_panel', 'label' => 'پنل معلم', 'control' => 'toggle', 'rules' => $bool, 'admin' => true],
+                ['path' => 'features.teacher_materials', 'label' => 'جزوه‌های معلم', 'control' => 'toggle', 'rules' => $bool, 'admin' => true],
+                ['path' => 'features.teacher_assignments', 'label' => 'تکالیف معلم', 'control' => 'toggle', 'rules' => $bool, 'admin' => true],
+                ['path' => 'features.teacher_schedule', 'label' => 'برنامه کلاسی معلم', 'control' => 'toggle', 'rules' => $bool, 'admin' => true],
+                ['path' => 'features.student_materials', 'label' => 'درس‌های دانش‌آموز', 'control' => 'toggle', 'rules' => $bool, 'admin' => true],
+                ['path' => 'features.student_assignments', 'label' => 'تکالیف دانش‌آموز', 'control' => 'toggle', 'rules' => $bool, 'admin' => true],
+                ['path' => 'features.student_timetable', 'label' => 'جدول هفتگی کلاس', 'control' => 'toggle', 'rules' => $bool, 'admin' => true],
                 ['path' => 'features.quiz_management', 'label' => 'مدیریت آزمونک', 'control' => 'toggle', 'rules' => $bool, 'admin' => true],
                 ['path' => 'features.question_management', 'label' => 'مدیریت سوالات', 'control' => 'toggle', 'rules' => $bool, 'admin' => true],
                 ['path' => 'features.book_access', 'label' => 'دسترسی کتاب', 'control' => 'toggle', 'rules' => $bool, 'admin' => true],

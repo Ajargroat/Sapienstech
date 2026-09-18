@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Support\ChatActor;
 use App\Support\ChatJs;
 use App\Support\ChatService;
+use App\Support\StudentAccess;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -77,9 +78,11 @@ class ChatController extends Controller
     {
         $search = trim((string) $request->query('search', ''));
 
-        $students = Student::query()
+        $students = StudentAccess::scope(Student::query(), $this->actor()->model)
             ->when($search !== '',
-                fn ($q) => $q->where('name', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%"))
+                fn ($q) => $q->where(fn ($names) => $names
+                    ->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")))
             ->orderBy('name')
             ->limit(50)
             ->get(['id', 'name', 'grade', 'avatar']);

@@ -14,7 +14,7 @@
 @php
     $b      = $cfg;
     $reveal = $anim['reveal'] ?? true;
-    $items  = array_values(array_filter($b['items'] ?? [], static fn ($i) => $i['visible'] ?? true));
+    $items  = array_filter($b['items'] ?? [], static fn ($i) => $i['visible'] ?? true);
 
     $aligns  = ['start' => 'text-start', 'center' => 'text-center', 'end' => 'text-end'];
     $spacers = ['sm' => '2rem', 'md' => '4rem', 'lg' => '7rem'];
@@ -23,9 +23,15 @@
 @if ($items !== [])
 <section id="{{ $b['id'] ?? 'blocks' }}" class="lp-section">
     <div class="landing-container lp-blocks">
-        @foreach ($items as $blk)
+        @foreach ($items as $index => $blk)
             @php($type = $blk['type'] ?? '')
+            @continue(!in_array($type, ['heading', 'text', 'button', 'card', 'image', 'spacer', 'divider'], true))
+            @php($blockStyles = \App\Support\BlockStyles::variables($blk))
 
+            {{-- Keep the existing primitives in the flex flow. The frontend
+                 consumes --block-* on those primitives, not on this boxless
+                 identity wrapper (notably .lp-blocks__buttons > .lp-btn). --}}
+            <div class="lp-block-object" data-studio-block="{{ $blk['id'] ?? 'legacy-'.$index }}" style="display:contents{{ $blockStyles !== '' ? ';'.$blockStyles : '' }}">
             @switch($type)
                 @case('heading')
                     @if (!empty($blk['title']))
@@ -93,6 +99,7 @@
                     <hr class="lp-blocks__divider">
                     @break
             @endswitch
+            </div>
         @endforeach
     </div>
 </section>

@@ -6,7 +6,7 @@
     main features (the same destinations the top navigation carries, since
     everything personal now lives behind the profile), info rows, the
     settings list, and logout. The forms themselves moved to their own
-    sections (?tab=edit / ?tab=password); this page only *shows* and *routes*.
+    edit section (?tab=edit); this page only *shows* and *routes*.
 --}}
 @section('settings-content')
 @php

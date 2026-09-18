@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class User extends Authenticatable
 {
@@ -15,6 +17,7 @@ class User extends Authenticatable
     public const ROLE_PLATFORM_ADMIN = 'platform_admin';
     public const ROLE_TENANT_ADMIN = 'tenant_admin';
     public const ROLE_CONSULTANT_STAFF = 'consultant_staff';
+    public const ROLE_TEACHER = 'teacher';
 
     protected $fillable = [
         'tenant_id',
@@ -62,9 +65,52 @@ class User extends Authenticatable
         return $this->role === self::ROLE_TENANT_ADMIN;
     }
 
+    public function isTenantOwner(): bool
+    {
+        $tenant = Tenant::find($this->tenant_id);
+
+        return $this->isTenantAdmin() && $tenant
+            && ((int) $tenant->owner_user_id === (int) $this->id
+                || (! $tenant->hierarchy_type && $tenant->owner_user_id === null));
+    }
+
+    public function students(): BelongsToMany
+    {
+        return $this->belongsToMany(Student::class, 'student_staff')
+            ->withPivot('tenant_id')
+            ->whereColumn('students.tenant_id', 'student_staff.tenant_id');
+    }
+
+    public function classrooms(): BelongsToMany
+    {
+        return $this->belongsToMany(Classroom::class, 'classroom_teacher')
+            ->withPivot(['tenant_id', 'subject'])
+            ->whereColumn('classrooms.tenant_id', 'classroom_teacher.tenant_id');
+    }
+
     public function isConsultantStaff(): bool
     {
         return $this->role === self::ROLE_CONSULTANT_STAFF;
+    }
+
+    public function isTeacher(): bool
+    {
+        return $this->role === self::ROLE_TEACHER;
+    }
+
+    public function lessonMaterials(): HasMany
+    {
+        return $this->hasMany(LessonMaterial::class, 'teacher_id');
+    }
+
+    public function assignments(): HasMany
+    {
+        return $this->hasMany(Assignment::class, 'teacher_id');
+    }
+
+    public function classSchedules(): HasMany
+    {
+        return $this->hasMany(ClassSchedule::class, 'teacher_id');
     }
 
     /**

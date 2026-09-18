@@ -9,6 +9,12 @@
     </div>
 @endif
 
+@if(session('error'))
+    <div class="settings-flash settings-flash--error" role="alert">
+        <i class="fas fa-exclamation-circle" aria-hidden="true"></i> {{ session('error') }}
+    </div>
+@endif
+
 @if($errors->any())
     <div class="settings-flash settings-flash--error" role="alert">
         <i class="fas fa-exclamation-circle" aria-hidden="true"></i> {{ $errors->first() }}

@@ -14,6 +14,34 @@ class Student extends Authenticatable
 {
     use HasFactory, Notifiable, BelongsToTenant;
 
+    protected static function booted(): void
+    {
+        static::addGlobalScope('staff_access', function (\Illuminate\Database\Eloquent\Builder $query) {
+            // Student authentication must not inherit a concurrently logged-in web actor.
+            if (request()->is('student', 'student/*')) {
+                return;
+            }
+            $staff = auth('web')->user();
+            if ($staff instanceof User) {
+                \App\Support\StudentAccess::scope($query, $staff);
+            }
+        });
+    }
+
+    public function staff(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'student_staff')
+            ->withPivot('tenant_id')
+            ->whereColumn('users.tenant_id', 'student_staff.tenant_id');
+    }
+
+    public function classrooms(): BelongsToMany
+    {
+        return $this->belongsToMany(Classroom::class, 'classroom_student')
+            ->withPivot('tenant_id')
+            ->whereColumn('classrooms.tenant_id', 'classroom_student.tenant_id');
+    }
+
     protected $fillable = [
         'tenant_id',
         // NULL (for now) = not pinned. Students get domain-pinned login

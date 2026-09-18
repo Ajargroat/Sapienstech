@@ -14,7 +14,7 @@ use Illuminate\View\View;
 /**
  * The student-side profile hub — the counterpart of the consultant
  * ProfileController: same single route with `?tab=` section dispatch and
- * the same SettingsTabs gating (account, edit, password), so both portals
+ * the same SettingsTabs gating (account and edit), so both portals
  * browse identically and a disabled feature 404s a tab exactly like the
  * consultant shell. ApplyPersonalTheme gives the student guard the same
  * per-user theme machinery.
@@ -48,11 +48,7 @@ class ProfileController extends Controller
                 'tabs' => SettingsTabs::visible('student'),
                 'activeTab' => 'edit',
             ]),
-            'password' => view('student.settings.password', [
-                'student' => $student,
-                'tabs' => SettingsTabs::visible('student'),
-                'activeTab' => 'password',
-            ]),
+
             default => view('student.settings.profile', [
                 'student' => $student,
                 'tabs' => SettingsTabs::visible('student'),

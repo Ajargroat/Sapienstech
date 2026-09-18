@@ -31,8 +31,10 @@ export default defineConfig({
                 'resources/js/features/bulk-actions.js',
                 'resources/js/features/direct-chat.js',
                 'resources/js/features/theme-studio.js',
+
                 'resources/js/features/profile-edit.js',
                 'resources/js/features/student-dashboard.js',
+                'resources/js/features/teacher-panel.js',
                 'resources/js/app.js',
             ],
             refresh: true,

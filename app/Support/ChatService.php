@@ -117,6 +117,7 @@ class ChatService
     {
         $tenant = tenant();
         abort_unless($tenant && (int) $student->tenant_id === (int) $tenant->id, 404);
+        abort_unless(StudentAccess::allows($staff, $student), 404);
 
         $conversation = ChatConversation::firstOrCreate(
             [
@@ -171,7 +172,7 @@ class ChatService
         abort_unless((bool) self::config('groups.enabled', true), 403);
 
         $tenant = tenant();
-        abort_unless($tenant !== null, 404);
+        abort_unless($tenant && (int) $staff->tenant_id === (int) $tenant->id, 404);
 
         $max = max(2, (int) self::config('groups.max_members', 50));
         $studentIds = array_values(array_unique(array_map('intval', $studentIds)));
@@ -179,7 +180,11 @@ class ChatService
         abort_if($studentIds === [], 422, 'برای ساخت گروه حداقل یک دانش‌آموز انتخاب کنید.');
         abort_if(count($studentIds) > $max, 422, "حداکثر {$max} دانش‌آموز در هر گروه.");
 
-        $students = Student::query()->whereIn('id', $studentIds)->get();
+        // Resolve against the supplied staff, not whichever guard happens to be logged in.
+        $students = StudentAccess::scope(
+            Student::withoutGlobalScope('staff_access')->where('tenant_id', $tenant->id),
+            $staff
+        )->whereIn('id', $studentIds)->get();
 
         abort_if(
             $students->count() !== count($studentIds),
@@ -240,17 +245,19 @@ class ChatService
     public static function conversationList(ChatActor $actor, ?string $search = null): Collection
     {
         $conversations = ChatConversation::query()
+            ->where('tenant_id', $actor->model->tenant_id)
             ->forActor($actor)
             ->with(['lastMessage.senderUser', 'lastMessage.senderStudent', 'participants'])
             ->when($search, function ($q) use ($search) {
                 $like = "%{$search}%";
-                $q->where('title', 'like', $like)
+                $q->where(fn ($matches) => $matches->where('title', 'like', $like)
                     ->orWhereHas('student', fn ($s) => $s->where('name', 'like', $like))
-                    ->orWhereHas('staff', fn ($s) => $s->where('name', 'like', $like));
+                    ->orWhereHas('staff', fn ($s) => $s->where('name', 'like', $like)));
             })
             ->orderByRaw('COALESCE(last_message_at, created_at) DESC')
             ->limit(200)
-            ->get();
+            ->get()
+            ->filter(fn (ChatConversation $c) => self::relationsAllow($c));
 
         $unreads = self::unreadCounts($actor, $conversations->pluck('id')->all());
 
@@ -265,11 +272,11 @@ class ChatService
 
     public static function unreadTotal(ChatActor $actor): int
     {
-        return self::$unreadMemo[$actor->key()] ??= (function () use ($actor): int {
-            $conversations = ChatConversation::query()->forActor($actor)->get(['id']);
+        // Do not memoize authorization: links can be revoked while the actor stays logged in.
+        $ids = ChatConversation::query()->where('tenant_id', $actor->model->tenant_id)
+            ->forActor($actor)->pluck('id')->all();
 
-            return array_sum(self::unreadCounts($actor, $conversations->pluck('id')->all()));
-        })();
+        return array_sum(self::unreadCounts($actor, $ids));
     }
 
     /** Unread inside a single conversation for one actor. */
@@ -284,6 +291,18 @@ class ChatService
      */
     public static function unreadCounts(ChatActor $actor, array $conversationIds): array
     {
+        if ($conversationIds === []) {
+            return [];
+        }
+
+        $conversationIds = ChatConversation::query()
+            ->where('tenant_id', $actor->model->tenant_id)
+            ->forActor($actor)
+            ->whereIn('id', $conversationIds)
+            ->get()
+            ->filter(fn (ChatConversation $c) => self::relationsAllow($c))
+            ->pluck('id')->all();
+
         if ($conversationIds === []) {
             return [];
         }
@@ -593,22 +612,58 @@ class ChatService
     /**
      * @return ChatParticipant the actor's membership row
      *
-     * Membership is the only access rule: cross-tenant threads never resolve
-     * (BelongsToTenant scope → 404 at binding), and same-tenant threads the
-     * actor is not part of 404 as well, so existence is never leaked.
+     * Membership and current staff/student relations are both required,
+     * including when called directly without route binding or a staff guard.
      */
     public static function assertMember(ChatConversation $conversation, ChatActor $actor): ChatParticipant
     {
-        $participant = $conversation->participantFor($actor);
+        abort_unless(
+            tenant() && (int) $conversation->tenant_id === (int) tenant()->id
+                && (int) $actor->model->tenant_id === (int) $conversation->tenant_id
+                && self::relationsAllow($conversation),
+            404
+        );
 
+        $participant = $actor->participantRow($conversation);
         abort_unless($participant !== null, 404);
 
         return $participant;
     }
 
+    /**
+     * Fail closed for the whole group if any membership has been revoked.
+     * Hiding only that member would still expose their history and identity.
+     */
+    private static function relationsAllow(ChatConversation $conversation): bool
+    {
+        $staff = $conversation->staff()->first();
+        if (! $staff || (int) $staff->tenant_id !== (int) $conversation->tenant_id) {
+            return false;
+        }
+
+        $studentIds = $conversation->participants()->whereNotNull('student_id')
+            ->pluck('student_id')->map(fn ($id) => (int) $id)->unique()->values();
+
+        if ($conversation->isDirect()) {
+            if ($studentIds->count() !== 1 || $studentIds->first() !== (int) $conversation->student_id) {
+                return false;
+            }
+        } elseif (! $conversation->isGroup() || $studentIds->isEmpty()) {
+            return false;
+        }
+
+        $students = Student::withoutGlobalScope('staff_access')
+            ->where('tenant_id', $conversation->tenant_id)->whereIn('id', $studentIds);
+
+        return StudentAccess::scope($students, $staff)->count() === $studentIds->count();
+    }
+
     public static function canSend(ChatConversation $conversation, ChatActor $actor): bool
     {
-        if (! self::enabled()) {
+        if (! self::enabled()
+            || (int) $actor->model->tenant_id !== (int) $conversation->tenant_id
+            || ! $actor->participantRow($conversation)
+            || ! self::relationsAllow($conversation)) {
             return false;
         }
 

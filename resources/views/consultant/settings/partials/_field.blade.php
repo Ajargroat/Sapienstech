@@ -14,7 +14,7 @@
 
     // Controls that render several inputs (or none) can't be the target of a
     // single `for`; their group carries an aria-label instead.
-    $idless = in_array($control, ['select', 'archetype', 'sections', 'list'], true);
+    $idless = in_array($control, ['select', 'archetype', 'font', 'iconset', 'sections', 'list'], true);
 @endphp
 
 <div class="studio-field studio-field--{{ $control }} @if($isOverridden) is-overridden @endif"
@@ -52,12 +52,45 @@
             </div>
             @break
 
+        @case('iconset')
+            @php
+                $sets = \App\Support\ThemeIcons::choices();
+                $selectedSet = \App\Support\ThemeIcons::selected($value);
+                $samples = ['check', 'user', 'search', 'bell', 'calendar', 'star', 'rotate', 'trash'];
+            @endphp
+            <div class="studio-iconset" role="radiogroup" aria-label="{{ $field['label'] }}" data-studio-iconset-group>
+                @foreach($sets as $setValue => $setLabel)
+                    @php
+                        $sampleIcons = \App\Support\ThemeIcons::preview($setValue, $samples);
+                    @endphp
+                    <label class="studio-iconset-card"
+                           data-studio-iconset="{{ $setValue }}">
+                        <input type="radio" name="{{ $name }}" value="{{ $setValue }}" @checked($selectedSet === $setValue)>
+                        <span class="studio-iconset-name">{{ $setLabel }}</span>
+                        <span class="studio-iconset-demo">
+                            @foreach($sampleIcons as $sampleIcon)
+                                @if($sampleIcon['dataUri'] === null)
+                                    {{-- No .fas/.fa-solid: the selected tenant set must not restyle this sample. --}}
+                                    <i class="studio-iconset-fa fa-{{ $sampleIcon['name'] }}" aria-hidden="true"></i>
+                                @else
+                                    <span class="studio-iconset-glyph" style="--studio-icon-preview: url('{{ $sampleIcon['dataUri'] }}')" aria-hidden="true"></span>
+                                @endif
+                            @endforeach
+                        </span>
+                    </label>
+                @endforeach
+            </div>
+            @break
+
         @case('select')
         @case('archetype')
+        @case('font')
             @php
                 $options = $control === 'archetype'
                     ? array_combine(\App\Support\StudioSchema::archetypes(), \App\Support\StudioSchema::archetypes())
-                    : ($field['options'] ?? []);
+                    : ($control === 'font'
+                        ? \App\Support\ThemeFonts::choices((array) data_get($resolved, 'theme.typography', []), $value)
+                        : ($field['options'] ?? []));
 
                 // One themed dropdown instead of spreading every option as a
                 // chip (long lists like the 13 background modes read as a
@@ -232,7 +265,23 @@
                  row theme-studio.js clones for "add" (its __KEY__ placeholders
                  become a unique browser-side key, so abandoned rows never
                  collide with the stored indices). --}}
-            <div class="studio-list" data-studio-list data-max="{{ $max }}">
+            <div class="studio-list" data-studio-list data-max="{{ $max }}" @if($path === 'public.landing.blocks.items') data-block-editor @endif>
+                @if($path === 'public.landing.blocks.items')
+                    <div class="studio-block-tools" aria-label="افزودن بلوک">
+                        @foreach(collect($defs)->firstWhere('key', 'type')['options'] as $type => $label)
+                            <button type="button" class="secondary-button" data-block-insert="{{ $type }}">+ {{ $label }}</button>
+                        @endforeach
+                    </div>
+                    <div class="studio-block-actions">
+                        <button type="button" class="secondary-button" data-block-undo disabled>واگرد</button>
+                        <button type="button" class="secondary-button" data-block-redo disabled>از نو</button>
+                        <button type="button" class="secondary-button" data-block-duplicate disabled>تکثیر</button>
+                        <button type="button" class="secondary-button" data-block-reset-style disabled>بازنشانی سبک</button>
+                    </div>
+                    <p class="settings-card-text">بلوک را از لایه‌ها یا پیش‌نمایش انتخاب کنید. برای جابه‌جایی، لایه را بکشید یا از دکمه‌های بالا و پایین استفاده کنید. خالی گذاشتن سبک، ظاهر پیش‌فرض را برمی‌گرداند.</p>
+                    <div class="studio-block-layers" data-block-layers aria-label="لایه‌های صفحه"></div>
+                    <p data-block-status role="status" aria-live="polite"></p>
+                @endif
                 <div class="studio-list-rows" data-list-rows>
                     @foreach($rows as $i => $row)
                         @include('consultant.settings.partials._list-row', [

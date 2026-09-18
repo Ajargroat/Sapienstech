@@ -23,14 +23,16 @@
                     <span class="settings-field-label">هفتهٔ شروع</span>
                     <input type="date" name="week_start_date" value="{{ old('week_start_date', $weekStart) }}" class="settings-input">
                 </label>
-                <label class="settings-field">
-                    <span class="settings-field-label">روز</span>
-                    <select name="day_index" class="settings-input">
-                        @foreach($days as $i => $day)
-                            <option value="{{ $i }}" @selected(old('day_index') == $i)>{{ $day }}</option>
-                        @endforeach
-                    </select>
-                </label>
+                <div class="settings-field">
+                    @include('consultant.partials._filter_select', [
+                        'name' => 'day_index',
+                        'idPrefix' => 'bulk-day',
+                        'label' => 'روز',
+                        'options' => collect($days)->mapWithKeys(fn ($day, $i) => [(string) $i => $day])->all(),
+                        'selected' => old('day_index') !== null ? (string) old('day_index') : '0',
+                        'allowAll' => false,
+                    ])
+                </div>
                 <label class="settings-field">
                     <span class="settings-field-label">شروع</span>
                     <input type="time" name="start_time" value="{{ old('start_time') }}" required class="settings-input">

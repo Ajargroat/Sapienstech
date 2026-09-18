@@ -5,10 +5,8 @@
     $profile — the signed-in account (User or Student)
 
     $portal  — 'consultant'|'student'
-    $avatarPickerId — optional: id of a file input elsewhere on the page
-                     (?tab=edit's upload form). When set, the avatar gains
-                     Telegram's camera badge and the avatar itself becomes
-                     the picker's label.
+    $avatarDialogId — optional upload dialog for the edit page. The camera
+                      opens uploads; the photo expands to reveal deletion.
 
     The status line is where each portal's identity lives: consultants show
     their role, students their grade and major (X surfaces workplace/education
@@ -29,8 +27,12 @@
     };
 @endphp
 <header class="profile-hero">
-    <div class="profile-hero-avatar-wrap">
-        <div class="profile-hero-avatar">
+    <div class="profile-hero-avatar-wrap" @if(!empty($avatarDialogId)) data-profile-avatar @endif>
+        @if(!empty($avatarDialogId))
+            <button type="button" class="profile-hero-avatar" data-profile-avatar-toggle aria-expanded="false" aria-label="بزرگ‌نمایی تصویر پروفایل">
+        @else
+            <div class="profile-hero-avatar">
+        @endif
 
             @if($profile->avatar)
 
@@ -42,9 +44,27 @@
 
             @endif
 
-        </div>
+        @if(!empty($avatarDialogId))
+            </button>
+        @else
+            </div>
+        @endif
 
-        @if(!empty($avatarPickerId))
+        @if(!empty($avatarDialogId) && $profile->avatar)
+            <form method="POST" action="{{ route($portal . '.settings.profile.avatar.delete') }}" data-router="off" class="profile-avatar-delete" data-profile-avatar-delete hidden>
+                @csrf
+                @method('DELETE')
+                <button type="submit" aria-label="حذف تصویر پروفایل" title="حذف تصویر پروفایل">
+                    <i class="fas fa-trash" aria-hidden="true"></i>
+                </button>
+            </form>
+        @endif
+
+        @if(!empty($avatarDialogId))
+            <button type="button" class="profile-edit-avatar-badge" data-profile-open="{{ $avatarDialogId }}" aria-haspopup="dialog" aria-controls="{{ $avatarDialogId }}" aria-label="تغییر تصویر">
+                <i class="fas fa-camera" aria-hidden="true"></i>
+            </button>
+        @elseif(!empty($avatarPickerId))
             <label class="profile-edit-avatar-badge" for="{{ $avatarPickerId }}" title="تغییر تصویر">
                 <i class="fas fa-camera" aria-hidden="true"></i>
             </label>

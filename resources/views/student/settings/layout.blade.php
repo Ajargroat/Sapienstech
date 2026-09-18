@@ -13,17 +13,17 @@
 
 @section('content')
 <div class="settings-shell">
+    @unless($isHome)
     <header class="profile-header">
-        @unless($isHome)
             <a class="profile-header-back" href="{{ route('student.settings.profile') }}" data-router="replace"
                aria-label="{{ $labels['settings_profile'] ?? 'پروفایل' }}">
                 <i class="fas fa-chevron-right" aria-hidden="true"></i>
             </a>
-        @endunless
         <span class="profile-header-title">
-            {{ $isHome ? ($labels['settings_profile'] ?? 'پروفایل') : $activeLabel }}
+            {{ $activeLabel }}
         </span>
     </header>
+    @endunless
 
     @if($isHome)
         @include('partials.profile-hero', ['profile' => auth('student')->user(), 'portal' => 'student'])

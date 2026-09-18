@@ -61,7 +61,9 @@ class StudioSaveRequest extends FormRequest
                     $contentKeys = [];
 
                     foreach ($defs as $def) {
-                        if (($def['control'] ?? 'text') === 'toggle' || $def['key'] === $disc) {
+                        if (($def['control'] ?? 'text') === 'toggle'
+                                                    || $def['key'] === $disc
+                                                    || ($def['content'] ?? true) === false) {
                             continue;
                         }
 

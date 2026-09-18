@@ -25,6 +25,7 @@ return [
 
     'theme' => [
         'archetype' => 'aurora_glass',
+                'icons' => ['set' => 'lucide'], // Choices: resources/icons/catalog.json
 
         /*
         | Colors. Primitives (primary/secondary/background/…) inherit from the
@@ -40,6 +41,10 @@ return [
         | Typography. Tighter headings, balanced wrapping, bigger stat numbers.
         */
         'typography' => [
+            // Uses the platform's local Vazirmatn face; no remote stylesheet.
+            'font_family' => 'Vazirmatn, sans-serif',
+            'font_heading' => 'Vazirmatn, sans-serif',
+            'font_button' => 'Vazirmatn, sans-serif',
             'heading_line_height' => '1.3',
             'heading_balance'     => 'balance',
             'stat_size'           => 'clamp(2.5rem, 5.5vw, 3.75rem)',

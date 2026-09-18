@@ -37,10 +37,8 @@
         <link rel="icon" href="{{ $tenant['favicon'] }}">
     @endif
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="{{ $theme['assets']['font_url'] }}">
-    <link rel="stylesheet" href="{{ $theme['assets']['icon_library_url'] }}">
+
+
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @include('partials.theme-vars')
@@ -54,6 +52,7 @@
     <div class="lp-ground" aria-hidden="true"></div>
 
     @if ($public['nav']['enabled'])
+        <template data-studio-section-marker="nav"></template>
         @include('public.sections.nav', ['L' => $L, 'anim' => $anim])
     @endif
 
@@ -64,11 +63,13 @@
                 (public/sections/{name}/{variant}.blade.php); the dispatcher
                 partial resolves which one and falls back to the default.
             --}}
+            <template data-studio-section-marker="{{ $section }}"></template>
             @includeIf('public.sections.' . $section, ['L' => $L, 'anim' => $anim])
         @endforeach
     </main>
 
     @if ($public['footer']['enabled'])
+        <template data-studio-section-marker="footer"></template>
         @include('public.sections.footer', ['L' => $L, 'anim' => $anim])
     @endif
 

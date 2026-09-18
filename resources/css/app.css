@@ -1,6 +1,8 @@
 @import "tailwindcss";
 @import "./landing.css";
 @import "./features/chat.css";
+@import "./profile-chat.css";
+@import "./features/studio-block-editor.css";
 
 /* =========================================
    0. Theme color tokens
@@ -41,15 +43,37 @@ body.student-shell {
   margin: 0;
   background: var(--c-background);
   color: var(--c-text);
-  font-family: "Vazirmatn", sans-serif;
+  font-family: var(--font-body, sans-serif);
   line-height: 1.8;
   overflow-x: hidden;
 }
 
+body {
+  font-family: var(--font-body, sans-serif);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading, var(--font-body, sans-serif));
+}
+
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
+}
+
+button,
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+.btn,
+[role="button"] {
+  font-family: var(--font-button, var(--font-body, sans-serif));
+}
+
+code, pre, kbd, samp {
+  font-family: var(--font-mono, ui-monospace, monospace);
 }
 
 a {
@@ -555,6 +579,7 @@ a {
      display: flex;
      flex-direction: column;
      width: min(760px, 100%);
+     height: min(600px, 86vh);
      max-height: min(86vh, 860px);
      border: 1px solid var(--c-border);
      border-radius: 18px;
@@ -565,9 +590,12 @@ a {
    }
 
    @keyframes filter-modal-in {
+     /* Opacity only on purpose: a transform in these keyframes makes the
+        animated card the containing block for position:fixed descendants,
+        which would misplace the .filter-select-list popovers app.js anchors
+        in viewport coordinates. */
      from {
        opacity: 0;
-       transform: translateY(10px) scale(0.98);
      }
    }
 
@@ -623,6 +651,7 @@ a {
      display: flex;
      flex: 1 1 auto;
      min-height: 0;
+     overflow: hidden;
    }
 
    /* Side tab rail: first flex child, so RTL renders it on the right. */
@@ -679,9 +708,11 @@ a {
    .filter-modal-panels {
      flex: 1 1 auto;
      min-width: 0;
+     min-height: 0;
      padding: 16px 18px;
      overflow-y: auto;
      scrollbar-width: thin;
+     align-content: start;
    }
 
    .filter-modal-foot {
@@ -693,6 +724,7 @@ a {
    @media (max-width: 720px) {
      .filter-modal-card {
        width: 100%;
+       height: 92vh;
        max-height: 92vh;
      }
 
@@ -829,6 +861,14 @@ a {
      box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-primary) 22%, transparent);
    }
 
+   /* Required themed pickers (bulk creation's test/day selects): the value
+      lives in a hidden input, which native constraint validation ignores, so
+      app.js flags the wrapper when a submit happens with nothing picked. */
+   .filter-select.is-invalid .filter-select-trigger {
+     border-color: var(--c-danger);
+     box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-danger) 22%, transparent);
+   }
+
    .filter-select-value {
      flex: 1 1 auto;
      min-width: 0;
@@ -937,6 +977,31 @@ a {
    .filter-select-option:has(input:focus-visible) {
      outline: 2px solid var(--c-primary);
      outline-offset: -2px;
+   }
+
+   /* Report-card-style option rows: the dashboard dropdowns borrow the
+      .exam-filter-option look (label + count pill). The text span must not
+      inherit the count pill's chrome, the mark leads the row, and the pill
+      hugs the inline end exactly like the report-card menu. */
+   .filter-select .exam-filter-option .filter-select-option-text {
+     flex: 1 1 auto;
+     min-width: 0;
+     overflow: hidden;
+     text-overflow: ellipsis;
+     white-space: nowrap;
+     padding: 0;
+     border-radius: 0;
+     background: transparent;
+     font-size: 13px;
+   }
+
+   .filter-select .exam-filter-option .filter-select-count {
+     flex: 0 0 auto;
+   }
+
+   .filter-select .exam-filter-option .filter-select-option-mark {
+     flex: 0 0 auto;
+     margin-inline-start: 0;
    }
 
    .filter-foot-link {
@@ -3557,10 +3622,7 @@ body.landing ::selection { background: var(--c-selection-bg); color: var(--c-sel
   background: color-mix(in srgb, var(--c-danger, #F87171) 9%, var(--c-surface));
 }
 
-/* Edit section (Telegram "Edit Profile"): grouped tap-to-edit rows — icon,
-   label + current value, chevron. Opening a row swaps the value for an
-   inline editor (profile-edit.js); the camera badge rides on the shared
-   hero circle, making the whole avatar the file picker's label. */
+/* Account rows open themed dialogs; the camera badge opens the photo editor. */
 .profile-hero-avatar-wrap {
   position: relative;
   display: inline-flex;
@@ -3582,6 +3644,59 @@ body.landing ::selection { background: var(--c-selection-bg); color: var(--c-sel
   border: 2px solid var(--c-surface);
   box-shadow: 0 2px 10px color-mix(in srgb, var(--c-text) 18%, transparent);
   cursor: pointer;
+}
+
+[data-profile-avatar] .profile-hero-avatar {
+  padding: 0;
+  border: 0;
+  cursor: zoom-in;
+  transition: width 220ms ease, height 220ms ease, border-radius 220ms ease;
+}
+
+[data-profile-avatar].is-expanded .profile-hero-avatar {
+  width: min(280px, calc(100vw - 96px));
+  height: min(280px, calc(100vw - 96px));
+  border-radius: 20px;
+  cursor: zoom-out;
+}
+
+[data-profile-avatar] .profile-edit-avatar-badge,
+.profile-avatar-delete button {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  font-size: 11px;
+}
+
+.profile-avatar-delete {
+  position: absolute;
+  top: 8px;
+  /* Intentionally physical: the action belongs at the photo's top-right in RTL too. */
+  right: 8px;
+  margin: 0;
+}
+
+.profile-avatar-delete[hidden] { display: none; }
+
+.profile-avatar-delete button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--c-border);
+  border-radius: 50%;
+  background: var(--c-surface);
+  color: var(--c-danger, #F87171);
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--c-text) 18%, transparent);
+  cursor: pointer;
+}
+
+[data-profile-avatar] button:focus-visible {
+  outline: 2px solid var(--c-primary);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-profile-avatar] .profile-hero-avatar { transition: none; }
 }
 
 .profile-edit-row + .profile-edit-row {
@@ -3634,35 +3749,63 @@ body.landing ::selection { background: var(--c-selection-bg); color: var(--c-sel
   font-weight: 600;
 }
 
-/* While editing, the value and the chevron make way for the editor. */
-.profile-edit-row.is-editing .profile-edit-row-value,
-.profile-edit-row.is-editing .profile-setting-chevron {
-  display: none;
+/* Native top-layer dialogs avoid clipping inside the router's animated shell. */
+.profile-dialog {
+  position: fixed;
+  inset: 0;
+  width: min(460px, calc(100% - 32px));
+  max-height: calc(100dvh - 32px);
+  margin: auto;
+  padding: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--c-border);
+  border-radius: 20px;
+  background: var(--c-surface);
+  color: var(--c-text);
+  font: inherit;
+  box-shadow: 0 24px 80px rgb(0 0 0 / 30%);
 }
 
-/* Editor sits under the label, lined up with it (60px = icon column). */
-.profile-edit-row-editor {
-  display: none;
+.profile-dialog:not([open]) { display: none; }
+.profile-dialog[open] { animation: profile-dialog-enter 160ms ease-out; }
+.profile-dialog::backdrop { background: rgb(0 0 0 / 45%); backdrop-filter: blur(4px); }
+body:has(.profile-dialog[open]) { overflow: hidden; }
+
+
+.profile-dialog-body {
+  display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-inline: 60px 14px;
-  padding-block-end: 13px;
+  gap: 12px;
+  padding: 20px;
 }
 
-.profile-edit-row.is-editing .profile-edit-row-editor {
-  display: flex;
+.profile-dialog-body .settings-input { width: 100%; min-width: 0; }
+.profile-dialog-body textarea { resize: vertical; }
+.profile-dialog .file-picker { position: relative; }
+.profile-dialog .file-picker input[type=file] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+.profile-dialog .file-picker:focus-within { outline: 2px solid var(--c-primary); outline-offset: 3px; }
+.profile-dialog-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
+.profile-dialog-actions button { min-height: 44px; }
+.profile-dialog :focus-visible,
+[data-profile-open]:focus-visible { outline: 2px solid var(--c-primary); outline-offset: 3px; }
+.profile-dialog .profile-info-list { margin: 0; }
+.profile-edit-save { padding: 8px 18px; font-size: 12.5px; }
+
+@keyframes profile-dialog-enter {
+  from { opacity: 0; transform: translateY(8px) scale(.98); }
+  to { opacity: 1; transform: none; }
 }
 
-.profile-edit-row-buttons {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.profile-edit-save,
-.profile-edit-row-buttons .secondary-button {
-  padding: 8px 18px;
-  font-size: 12.5px;
+@media (prefers-reduced-motion: reduce) {
+  .profile-dialog[open] { animation: none; }
 }
 
 .profile-edit-avatar-form {
@@ -3685,12 +3828,7 @@ body.landing ::selection { background: var(--c-selection-bg); color: var(--c-sel
   color: var(--c-muted);
 }
 
-/* ============================================================================
-   PROFILE HUB — ?tab=password (profile-password-fields partial)
-   Same card language as the edit rows: icon + label with the control sitting
-   permanently in the value position (there is no stored secret to reveal by
-   tapping). Tenant tokens only, so it re-skins with the theme.
-   ============================================================================ */
+/* Password controls retain the profile's grouped-row language inside the dialog. */
 .profile-password-row {
   display: flex;
   align-items: center;
@@ -3708,10 +3846,6 @@ body.landing ::selection { background: var(--c-selection-bg); color: var(--c-sel
   margin-top: 6px;
 }
 
-.profile-password-submit {
-  width: 100%;
-  margin-top: 2px;
-}
 
 /* The topnav/sidebar profile button — now a direct link into the hub. */
 .topnav-icon-btn.active {
@@ -3732,7 +3866,8 @@ body.landing ::selection { background: var(--c-selection-bg); color: var(--c-sel
   .profile-info-value { text-align: start; }
 
   .profile-edit-avatar-badge { width: 30px; height: 30px; font-size: 11px; }
-  .profile-edit-row-editor { margin-inline: 14px; }
+  .profile-dialog-body { padding: 16px; }
+
 }
 
 /* ==========================================================================
@@ -3871,6 +4006,12 @@ body.landing ::selection { background: var(--c-selection-bg); color: var(--c-sel
   font-size: 13px;
   font-weight: 700;
   color: var(--c-muted);
+}
+
+/* The shared _filter_select partial renders its own field-name span; inside
+   the settings fields' flex-gap layout that margin would double up. */
+.settings-field .filter-field-name {
+  margin-bottom: 0;
 }
 
 .settings-input {
@@ -5086,7 +5227,7 @@ select.settings-input option,
   cursor: pointer;
 }
 
-.studio-color-text { flex: 1; font-family: monospace; text-transform: uppercase; }
+.studio-color-text { flex: 1; font-family: var(--font-mono, monospace); text-transform: uppercase; }
 
 .studio-toggle {
   display: inline-flex;
@@ -5152,6 +5293,68 @@ select.settings-input option,
 .studio-toggle input[type="checkbox"]:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.studio-iconset {
+  display: grid;
+  gap: 10px;
+}
+
+.studio-iconset-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--c-border);
+  border-radius: 10px;
+  color: var(--c-text);
+  background: var(--c-surface);
+  cursor: pointer;
+}
+
+.studio-iconset-card:has(input:checked) {
+  border-color: var(--c-primary);
+  background: color-mix(in srgb, var(--c-primary) 12%, var(--c-surface));
+}
+
+.studio-iconset-card:has(input:focus-visible) {
+  outline: 2px solid var(--c-primary);
+  outline-offset: 2px;
+}
+
+.studio-iconset-card input {
+  accent-color: var(--c-primary);
+}
+
+.studio-iconset-name { font-weight: 600; }
+
+.studio-iconset-demo {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 22px;
+}
+
+.studio-iconset-fa,
+.studio-iconset-glyph {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  line-height: 1;
+}
+
+.studio-iconset-fa {
+  font-family: "Font Awesome 6 Free";
+  font-style: normal;
+  font-weight: 900;
+}
+
+.studio-iconset-glyph {
+  background-color: currentColor;
+  -webkit-mask: var(--studio-icon-preview) center / contain no-repeat;
+  mask: var(--studio-icon-preview) center / contain no-repeat;
 }
 
 .studio-image { display: flex; flex-direction: column; gap: 8px; }
@@ -5820,5 +6023,423 @@ body[data-shell-nav="sidebar"] .consultant-content {
   body[data-shell-nav="sidebar"] .consultant-content {
     margin-inline-start: 0;
     padding-block-end: 84px;
+  }
+}
+
+
+/* ==========================================================================
+   TEACHER PANEL — /teacher screens + the student-facing lessons,
+   assignments and timetable pages. Everything shared (.panel, .exam-card,
+   .exam-status, .empty-state, .settings-input, .primary-button …) comes
+   from the sections above; the shells reuse the consultant styles.
+   ========================================================================== */
+
+/* --- Status pills: assignment lifecycle (pending → submitted → completed) --- */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+
+.status-pill--pending {
+  background: color-mix(in srgb, var(--c-warning) 14%, transparent);
+  color: var(--c-warning);
+  border-color: color-mix(in srgb, var(--c-warning) 35%, transparent);
+}
+
+.status-pill--submitted {
+  background: color-mix(in srgb, var(--c-info) 14%, transparent);
+  color: var(--c-info);
+  border-color: color-mix(in srgb, var(--c-info) 35%, transparent);
+}
+
+.status-pill--completed {
+  background: color-mix(in srgb, var(--c-success) 14%, transparent);
+  color: var(--c-success);
+  border-color: color-mix(in srgb, var(--c-success) 35%, transparent);
+}
+
+/* --- Page header back link --- */
+.teacher-backlink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-block-end: 18px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--c-muted);
+  transition: color var(--animation-duration) ease;
+}
+
+.teacher-backlink:hover {
+  color: var(--c-primary);
+}
+
+/* --- Roster: filters + student cards --- */
+.teacher-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-block-end: 22px;
+}
+
+.teacher-filters .settings-input {
+  width: auto;
+}
+
+.teacher-filters .settings-input:first-child {
+  flex: 1 1 240px;
+}
+
+.teacher-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+  margin-block-end: 18px;
+}
+
+.teacher-student-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--c-border);
+  background: var(--c-surface);
+  color: inherit;
+  text-decoration: none;
+  transition:
+    transform var(--animation-duration) ease,
+    border-color var(--animation-duration) ease;
+}
+
+.teacher-student-card:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--c-primary) 40%, transparent);
+}
+
+.teacher-student-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+}
+
+.teacher-student-body strong {
+  font-size: 14.5px;
+}
+
+.teacher-student-email {
+  font-size: 12px;
+  color: var(--c-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.teacher-student-chevron {
+  color: var(--c-muted);
+  flex: 0 0 auto;
+}
+
+.student-avatar-sm {
+  width: 40px;
+  height: 40px;
+  font-size: 16px;
+  flex: 0 0 auto;
+}
+
+/* --- Forms --- */
+.teacher-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.teacher-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+}
+
+.teacher-form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-block-start: 4px;
+}
+
+.teacher-form-grow {
+  flex: 1;
+  min-width: 200px;
+}
+
+.teacher-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--c-muted);
+  cursor: pointer;
+}
+
+.teacher-switch input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--c-primary);
+}
+
+/* --- Materials library --- */
+.teacher-subject-head {
+  font-size: 15px;
+  font-weight: 800;
+  margin-block: 18px 12px;
+  color: var(--c-primary);
+}
+
+.teacher-subject-head i {
+  margin-inline-end: 6px;
+}
+
+.teacher-material-icon {
+  font-size: 26px;
+}
+
+.teacher-material-desc {
+  font-size: 13px;
+  color: var(--c-muted);
+  line-height: 1.9;
+  margin-block: 8px 12px;
+}
+
+.teacher-material-desc--warn {
+  color: var(--c-warning);
+  font-weight: 700;
+}
+
+.teacher-material-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-block-start: auto;
+}
+
+.teacher-status-strip {
+  display: flex;
+  gap: 8px;
+  margin-block: 10px 0;
+}
+
+.teacher-assignment-facts {
+  margin-block: 14px;
+}
+
+/* --- Today's classes / list rows (dashboard, schedule, timetable) --- */
+.teacher-class-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.teacher-class-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--c-border);
+  border-inline-start: 3px solid var(--accent, var(--c-primary));
+  background: var(--c-surface);
+  color: inherit;
+  text-decoration: none;
+  transition: border-color var(--animation-duration) ease;
+}
+
+a.teacher-class-row:hover,
+button.teacher-class-row:hover {
+  border-color: color-mix(in srgb, var(--accent, var(--c-primary)) 45%, transparent);
+}
+
+.teacher-class-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--c-muted);
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+
+.teacher-class-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.teacher-class-body strong {
+  font-size: 14px;
+}
+
+.teacher-class-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--c-muted);
+}
+
+.teacher-class-tools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.teacher-day-empty {
+  color: var(--c-muted);
+  font-size: 13px;
+  padding-block: 6px;
+}
+
+.teacher-today-panel {
+  border-color: color-mix(in srgb, var(--c-primary) 35%, transparent);
+}
+
+.sched-day--today .sched-day-head {
+  color: var(--c-primary);
+}
+
+/* --- Assignment status board (per-student table) --- */
+.teacher-table {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-block-start: 16px;
+}
+
+.teacher-table-head,
+.teacher-table-row {
+  display: grid;
+  grid-template-columns: minmax(140px, 1.4fr) minmax(110px, 1fr) minmax(90px, 0.8fr) minmax(120px, 1.2fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.teacher-table-head {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--c-muted);
+  padding-inline: 14px;
+}
+
+.teacher-table-row {
+  padding: 10px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--c-border);
+  background: var(--c-surface);
+}
+
+.teacher-table-student {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: inherit;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 13.5px;
+  min-width: 0;
+}
+
+.teacher-table-student:hover {
+  color: var(--c-primary);
+}
+
+.teacher-table-time {
+  font-size: 12.5px;
+  color: var(--c-muted);
+  white-space: nowrap;
+}
+
+.teacher-table-note {
+  font-size: 12.5px;
+  color: var(--c-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.teacher-table-actions .secondary-button {
+  padding: 6px 12px;
+  font-size: 12.5px;
+}
+
+/* --- Schedule dialog --- */
+.teacher-dialog {
+  width: min(720px, calc(100vw - 32px));
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-card);
+  background: var(--c-surface);
+  color: var(--c-text);
+  padding: 24px;
+}
+
+.teacher-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+}
+
+.teacher-dialog-title {
+  font-size: 17px;
+  font-weight: 800;
+  margin-block-end: 18px;
+}
+
+/* --- Count badge that doubles as a link --- */
+.count-badge--link {
+  color: var(--c-primary);
+  text-decoration: none;
+  transition: color var(--animation-duration) ease;
+}
+
+.count-badge--link:hover {
+  color: color-mix(in srgb, var(--c-primary) 70%, white);
+}
+
+/* --- Mobile: the status board collapses to stacked rows --- */
+@media (max-width: 760px) {
+  .teacher-table-head {
+    display: none;
+  }
+
+  .teacher-table-row {
+    grid-template-columns: 1fr auto;
+  }
+
+  .teacher-table-time,
+  .teacher-table-note {
+    grid-column: 1 / -1;
+  }
+
+  .teacher-table-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+  }
+
+  .student-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

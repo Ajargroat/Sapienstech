@@ -1,142 +1,81 @@
-{{--
-    Shared ?tab=edit section (both portals), Telegram's "Edit Profile" in
-    spirit: the identity header on top (the hero again, this time with a
-    camera badge over the avatar), then grouped rows of
-    icon / label + current value / chevron. Tapping a row expands an inline
-    editor in place of the value — no stacked form boxes, no page of bare
-    inputs (profile-edit.js does the toggling; a row left open server-side
-    by a validation error renders already expanded).
-
-    $profile — the signed-in account (User or Student)
-    $portal  — 'consultant'|'student'
-
-    All surfaces read tenant theme tokens through the hub's shared classes,
-    so the section re-skins with the tenant theme. Text rows share one PATCH
-    form (the update endpoint expects the full set), while the photo keeps
-    its own multipart PUT/DELETE pair; picking a file uploads immediately.
---}}
+{{-- Shared account editors. Each dialog posts the full profile field set expected by the endpoint. --}}
 @php
     $profileRoute = fn (string $suffix) => route($portal . '.settings.profile' . $suffix);
+    $fields = [
+        'name' => ['label' => 'نام', 'icon' => 'fa-user', 'type' => 'text'],
+        'email' => ['label' => 'ایمیل (شناسهٔ حساب شما)', 'icon' => 'fa-at', 'type' => 'email'],
+        'bio' => ['label' => 'توضیحات', 'icon' => 'fa-circle-info', 'type' => 'textarea'],
+    ];
 @endphp
 
-<div class="profile-page profile-edit-fields">
+<div class="profile-page profile-edit-fields" data-profile-dialogs>
     @include('partials.profile-hero', [
         'profile' => $profile,
         'portal' => $portal,
-        'avatarPickerId' => 'profile-avatar-file',
+        'avatarDialogId' => 'profile-dialog-avatar',
     ])
 
-    {{-- Photo --}}
-    <div class="profile-info-list">
-        <div class="profile-edit-row" data-edit-row="avatar">
-            <button type="button" class="profile-edit-row-head" aria-expanded="false">
-                <span class="profile-setting-icon"><i class="fas fa-camera" aria-hidden="true"></i></span>
-                <span class="profile-edit-row-content">
-                    <span class="profile-edit-row-label">تصویر پروفایل</span>
-                    <span class="profile-edit-row-value">{{ $profile->avatar ? 'تغییر تصویر' : 'افزودن تصویر' }}</span>
-                </span>
-                <i class="fas fa-chevron-left profile-setting-chevron" aria-hidden="true"></i>
-            </button>
 
-            <div class="profile-edit-row-editor">
-                <form method="POST" action="{{ $profileRoute('.avatar') }}" enctype="multipart/form-data" data-router="off" class="profile-edit-avatar-form">
-                    @csrf
-                    @method('PUT')
-                    <label class="file-picker">
-                        <i class="fas fa-image" aria-hidden="true"></i>
-                        <span>انتخاب فایل</span>
-                        <input type="file" name="avatar" id="profile-avatar-file" accept="image/*" hidden>
-                    </label>
-                    <button type="submit" class="primary-button profile-edit-save">بارگذاری</button>
-                </form>
-                <p class="profile-edit-note">بلافاصله پس از انتخاب فایل، تصویر جایگزین می‌شود.</p>
+    <dialog class="profile-dialog" id="profile-dialog-avatar" aria-label="تصویر پروفایل" @if($errors->has('avatar')) data-profile-auto-open @endif>
 
-                @if($profile->avatar)
-                    <form method="POST" action="{{ $profileRoute('.avatar.delete') }}" data-router="off">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="link-danger"><i class="fas fa-trash" aria-hidden="true"></i> حذف تصویر</button>
-                    </form>
-                @endif
-            </div>
+        <div class="profile-dialog-body">
+            <form method="POST" action="{{ $profileRoute('.avatar') }}" enctype="multipart/form-data" data-router="off" class="profile-edit-avatar-form">
+                @csrf
+                @method('PUT')
+                <label class="file-picker">
+                    <i class="fas fa-image" aria-hidden="true"></i>
+                    <span>انتخاب فایل</span>
+                    <input type="file" name="avatar" accept="image/*" required aria-label="انتخاب تصویر پروفایل">
+                </label>
+                <button type="submit" class="primary-button profile-edit-save">بارگذاری</button>
+            </form>
+            <p class="profile-edit-note">بلافاصله پس از انتخاب فایل، تصویر جایگزین می‌شود.</p>
+            @error('avatar')<span class="settings-error" role="alert">{{ $message }}</span>@enderror
+
         </div>
+    </dialog>
+
+    <div class="profile-info-list">
+        @foreach($fields as $name => $field)
+            <div class="profile-edit-row">
+                <button type="button" class="profile-edit-row-head" data-profile-open="profile-dialog-{{ $name }}" aria-haspopup="dialog" aria-controls="profile-dialog-{{ $name }}">
+                    <span class="profile-setting-icon"><i class="fas {{ $field['icon'] }}" aria-hidden="true"></i></span>
+                    <span class="profile-edit-row-content">
+                        <span class="profile-edit-row-label">{{ $field['label'] }}</span>
+                        <span class="profile-edit-row-value {{ $name === 'email' ? 'is-accent' : '' }}" @if($name === 'email') dir="ltr" @endif>{{ $profile->{$name} ?: 'هنوز متنی ننوشته‌اید' }}</span>
+                    </span>
+                    <i class="fas fa-chevron-left profile-setting-chevron" aria-hidden="true"></i>
+                </button>
+            </div>
+        @endforeach
     </div>
 
-    {{-- Account fields (one PATCH form; every row's "ذخیره" submits it) --}}
-    <form method="POST" action="{{ $profileRoute('.update') }}">
-        @csrf
-        @method('PATCH')
+    @foreach($fields as $name => $field)
+        <dialog class="profile-dialog" id="profile-dialog-{{ $name }}" aria-label="{{ $field['label'] }}" @if($errors->has($name)) data-profile-auto-open @endif>
 
-        <div class="profile-info-list">
-            <div class="profile-edit-row @error('name') is-editing @enderror" data-edit-row="name">
-                <button type="button" class="profile-edit-row-head" aria-expanded="{{ $errors->has('name') ? 'true' : 'false' }}">
-                    <span class="profile-setting-icon"><i class="fas fa-user" aria-hidden="true"></i></span>
-                    <span class="profile-edit-row-content">
-                        <span class="profile-edit-row-label">نام</span>
-                        <span class="profile-edit-row-value">{{ old('name', $profile->name) }}</span>
-                    </span>
-                    <i class="fas fa-chevron-left profile-setting-chevron" aria-hidden="true"></i>
-                </button>
-
-                <div class="profile-edit-row-editor">
-                    <input type="text" name="name" value="{{ old('name', $profile->name) }}"
-                           class="settings-input @error('name') is-invalid @enderror" required>
-                    @error('name')<span class="settings-error">{{ $message }}</span>@enderror
-                    <div class="profile-edit-row-buttons">
-                        <button type="submit" class="primary-button profile-edit-save">ذخیره</button>
-                        <button type="button" class="secondary-button" data-edit-cancel>انصراف</button>
-                    </div>
+            <form method="POST" action="{{ $profileRoute('.update') }}" class="profile-dialog-body">
+                @csrf
+                @method('PATCH')
+                @foreach($fields as $otherName => $otherField)
+                    @if($otherName !== $name)
+                        <input type="hidden" name="{{ $otherName }}" value="{{ $profile->{$otherName} }}">
+                    @endif
+                @endforeach
+                <label class="profile-edit-row-label" for="profile-input-{{ $name }}">{{ $field['label'] }}</label>
+                @if($field['type'] === 'textarea')
+                    <textarea id="profile-input-{{ $name }}" name="{{ $name }}" rows="4" maxlength="500" class="settings-input" autofocus aria-invalid="{{ $errors->has($name) ? 'true' : 'false' }}" @error($name) aria-describedby="profile-error-{{ $name }}" @enderror>{{ old($name, $profile->{$name}) }}</textarea>
+                @else
+                    <input id="profile-input-{{ $name }}" type="{{ $field['type'] }}" name="{{ $name }}" value="{{ old($name, $profile->{$name}) }}" class="settings-input" required autofocus autocomplete="{{ $name }}" @if($name === 'email') dir="ltr" @endif aria-invalid="{{ $errors->has($name) ? 'true' : 'false' }}" @error($name) aria-describedby="profile-error-{{ $name }}" @enderror>
+                @endif
+                @error($name)<span class="settings-error" id="profile-error-{{ $name }}" role="alert">{{ $message }}</span>@enderror
+                <div class="profile-dialog-actions">
+                    <button type="button" class="secondary-button" data-profile-close>انصراف</button>
+                    <button type="submit" class="primary-button">ذخیره</button>
                 </div>
-            </div>
-
-            <div class="profile-edit-row @error('email') is-editing @enderror" data-edit-row="email">
-                <button type="button" class="profile-edit-row-head" aria-expanded="{{ $errors->has('email') ? 'true' : 'false' }}">
-                    <span class="profile-setting-icon"><i class="fas fa-at" aria-hidden="true"></i></span>
-                    <span class="profile-edit-row-content">
-                        <span class="profile-edit-row-label">ایمیل (شناسهٔ حساب شما)</span>
-                        <span class="profile-edit-row-value is-accent" dir="ltr">{{ old('email', $profile->email) }}</span>
-                    </span>
-                    <i class="fas fa-chevron-left profile-setting-chevron" aria-hidden="true"></i>
-                </button>
-
-                <div class="profile-edit-row-editor">
-                    <input type="email" name="email" value="{{ old('email', $profile->email) }}" dir="ltr"
-                           class="settings-input @error('email') is-invalid @enderror" required>
-                    @error('email')<span class="settings-error">{{ $message }}</span>@enderror
-                    <div class="profile-edit-row-buttons">
-                        <button type="submit" class="primary-button profile-edit-save">ذخیره</button>
-                        <button type="button" class="secondary-button" data-edit-cancel>انصراف</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="profile-edit-row @error('bio') is-editing @enderror" data-edit-row="bio">
-                <button type="button" class="profile-edit-row-head" aria-expanded="{{ $errors->has('bio') ? 'true' : 'false' }}">
-                    <span class="profile-setting-icon"><i class="fas fa-circle-info" aria-hidden="true"></i></span>
-                    <span class="profile-edit-row-content">
-                        <span class="profile-edit-row-label">توضیحات</span>
-                        @if(trim((string) old('bio', $profile->bio)) !== '')
-                            <span class="profile-edit-row-value">{{ old('bio', $profile->bio) }}</span>
-                        @else
-                            <span class="profile-edit-row-value is-muted">هنوز متنی ننوشته‌اید</span>
-                        @endif
-                    </span>
-                    <i class="fas fa-chevron-left profile-setting-chevron" aria-hidden="true"></i>
-                </button>
-
-                <div class="profile-edit-row-editor">
-                    <textarea name="bio" rows="3" maxlength="500"
-                              class="settings-input @error('bio') is-invalid @enderror"
-                              placeholder="چند خط دربارهٔ خودتان — در پروفایل شما نمایش داده می‌شود.">{{ old('bio', $profile->bio) }}</textarea>
-                    @error('bio')<span class="settings-error">{{ $message }}</span>@enderror
-                    <div class="profile-edit-row-buttons">
-                        <button type="submit" class="primary-button profile-edit-save">ذخیره</button>
-                        <button type="button" class="secondary-button" data-edit-cancel>انصراف</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </form>
+            </form>
+        </dialog>
+    @endforeach
+    @include('partials.profile-password-fields', ['portal' => $portal])
 
     <p class="profile-edit-hint">برای ویرایش هر مورد، روی آن بزنید.</p>
 </div>

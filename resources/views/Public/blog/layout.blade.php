@@ -33,10 +33,8 @@
         <link rel="icon" href="{{ $tenant['favicon'] }}">
     @endif
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="{{ $theme['assets']['font_url'] }}">
-    <link rel="stylesheet" href="{{ $theme['assets']['icon_library_url'] }}">
+
+
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @include('partials.theme-vars')

@@ -71,6 +71,14 @@ class StudioSchema
                 continue;
             }
 
+            if (($field['control'] ?? '') === 'font') {
+                // Exact current values remain valid for legacy full-form saves.
+                $rules[$path] = ['nullable', 'string', \Illuminate\Validation\Rule::in(array_keys(
+                    ThemeFonts::choices((array) site('theme.typography', []), site($path)),
+                ))];
+                continue;
+            }
+
             $rules[$path] = $field['rules'] ?? [];
         }
 
@@ -392,6 +400,11 @@ class StudioSchema
      */
     public static function liveMode(string $path): string
     {
+        // Directory changes also need new @font-face rules in the document.
+        if ((self::field($path)['control'] ?? '') === 'font') {
+            return 'reload';
+        }
+
         if (str_starts_with($path, 'theme.schemes.')) {
             return 'token';
         }

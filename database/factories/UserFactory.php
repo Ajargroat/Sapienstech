@@ -46,6 +46,11 @@ class UserFactory extends Factory
         return $this->state(fn () => ['role' => 'tenant_admin']);
     }
 
+    public function teacher(): static
+    {
+        return $this->state(fn () => ['role' => 'teacher']);
+    }
+
     /**
      * Pin the user to a single domain: they may only log in through it.
      */

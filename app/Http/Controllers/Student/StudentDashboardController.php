@@ -5,10 +5,13 @@ namespace App\Http\Controllers\Student;
 use App\Http\Controllers\Controller;
 use App\Models\ScheduleItem;
 use App\Models\StudentAssignedQuiz;
+use App\Models\StudentDeal;
 use App\Models\StudentTestAttempt;
+use App\Support\DealService;
 use App\Support\StudentFilter;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 
 /**
@@ -78,6 +81,20 @@ class StudentDashboardController extends Controller
             ->where('status', 'completed')
             ->avg('score_simple_percent');
 
+        // Deal renewal banner: the student's active period whose decision
+        // window (continue/withdraw) has opened — feature-gated like the
+        // rest of the renewal flow. The table check keeps the dashboard
+        // working before the deals migration has been applied.
+        $dealBanner = site('features.deals', false) && Schema::hasTable('student_deals')
+            ? StudentDeal::query()
+                ->where('student_id', $student->id)
+                ->whereNull('renewed_at')
+                ->where('decision', '!=', StudentDeal::DECISION_WITHDRAW)
+                ->whereDate('ends_on', '<=', $today->copy()->addDays(DealService::WINDOW_DAYS)->toDateString())
+                ->orderBy('ends_on')
+                ->first()
+            : null;
+
         return view('student.dashboard', [
             'student' => $student,
             'weekItems' => $weekItems,
@@ -92,6 +109,7 @@ class StudentDashboardController extends Controller
                 'completed_exams' => $assignments->where('status', 'completed')->count(),
                 'average_percent' => $averagePercent === null ? null : (int) round((float) $averagePercent),
             ],
+            'dealBanner' => $dealBanner,
         ]);
     }
 }

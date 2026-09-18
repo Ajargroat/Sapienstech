@@ -20,6 +20,19 @@ ScheduleFacade::command('chat:auto-close')
     ->dailyAt('03:30')
     ->withoutOverlapping();
 
+/*
+| Deal renewal reminders: every tenant's non-withdrawn, unrenewed deals that
+| reach their decision window get a daily student-portal notification until
+| the student decides or the period is renewed (dedupe handled by the
+| unique (deal, kind, day) index). Config-gated like everything else: when a
+| tenant disables the `deals` feature the command still runs but their
+| deals stay visible to staff — switch the whole feature off per tenant
+| with `features.deals` in the appearance studio.
+*/
+ScheduleFacade::command('deals:remind-due')
+    ->dailyAt('08:00')
+    ->withoutOverlapping();
+
 Artisan::command('chat:auto-close', function () {
     $closed = ChatService::autoCloseIdle();
 

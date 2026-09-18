@@ -49,6 +49,18 @@
     </div>
 </div>
 
+@if($dealBanner)
+    <a href="{{ route('student.deals.index') }}"
+       class="mt-4 block rounded-2xl border p-4 no-underline"
+       style="border-color:color-mix(in srgb,var(--c-warning,#FBBF24) 45%,var(--c-border));background:color-mix(in srgb,var(--c-warning,#FBBF24) 10%,transparent)">
+        <b><i class="fas fa-file-invoice"></i> دورهٔ مشاورهٔ شما رو به پایان است</b>
+        <span class="block text-sm" style="color:var(--c-muted)">
+            @if($dealBanner->daysLeft() < 0) سرسید گذشته — @else {{ persian_digits($dealBanner->daysLeft()) }} روز مانده — @endif
+            لطفاً ادامهٔ مسیر یا انصراف خود را اعلام کنید.
+        </span>
+    </a>
+@endif
+
 <div class="student-stats" data-stagger>
     <div class="student-stat">
         <span class="student-stat-icon student-stat-icon--primary"><i class="fas fa-calendar-alt"></i></span>

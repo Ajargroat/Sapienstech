@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\StudentLoginController;
 use App\Http\Controllers\Consultant\ChatController as ConsultantChatController;
 use App\Http\Controllers\Consultant\ConsultantDashboardController;
 use App\Http\Controllers\Consultant\ConsultantFeatureController;
+use App\Http\Controllers\Consultant\DealController as ConsultantDealController;
 use App\Http\Controllers\Consultant\Settings\ChatSettingsController as ConsultantChatSettingsController;
 use App\Http\Controllers\Consultant\Bulk\BulkExamController;
 use App\Http\Controllers\Consultant\Bulk\BulkHistoryController;
@@ -19,10 +20,19 @@ use App\Http\Controllers\Consultant\StudentScheduleController;
 use App\Http\Controllers\Public\BlogController as PublicBlogController;
 use App\Http\Controllers\Public\PageController;
 use App\Http\Controllers\Student\ChatController as StudentChatController;
+use App\Http\Controllers\Student\DealController as StudentDealController;
 use App\Http\Controllers\Student\Settings\ProfileController as StudentProfileController;
+use App\Http\Controllers\Student\StudentAssignmentController;
 use App\Http\Controllers\Student\StudentDashboardController;
 use App\Http\Controllers\Student\StudentExamController as StudentExamPortalController;
+use App\Http\Controllers\Student\StudentMaterialController;
 use App\Http\Controllers\Student\StudentReportCardController as StudentReportCardPortalController;
+use App\Http\Controllers\Student\StudentTimetableController;
+use App\Http\Controllers\Teacher\TeacherAssignmentController;
+use App\Http\Controllers\Teacher\TeacherDashboardController;
+use App\Http\Controllers\Teacher\TeacherMaterialController;
+use App\Http\Controllers\Teacher\TeacherScheduleController;
+use App\Http\Controllers\Teacher\TeacherStudentController;
 use App\Support\SettingsTabs;
 use Illuminate\Support\Facades\Route;
 
@@ -173,6 +183,19 @@ Route::middleware('auth')->prefix('consultant')->name('consultant.')->group(func
         Route::delete('history/{action}', [BulkHistoryController::class, 'revert'])->name('history.revert');
     });
 
+    /*
+    | Deal renewal (تمدید و پرداخت) — dated periods per student; near the end
+    | of each period the student chooses continue/withdraw in their portal and
+    | submits their transfer receipt, while the tenant owner verifies it and
+    | approving opens the next period. Gated by the tenant `deals` flag.
+    */
+    Route::prefix('deals')->name('deals.')->middleware('consultant.feature:deals')->group(function () {
+        Route::get('/', [ConsultantDealController::class, 'index'])->name('index');
+        Route::post('/', [ConsultantDealController::class, 'store'])->name('store');
+        Route::post('payments/{payment}/review', [ConsultantDealController::class, 'reviewPayment'])->name('payments.review');
+        Route::post('{deal}/remind', [ConsultantDealController::class, 'remind'])->name('remind');
+    });
+
     Route::get('/permissions', [ConsultantFeatureController::class, 'show'])->defaults('feature', 'permissions')->middleware('consultant.feature:book_access')->name('permissions');
     Route::get('/questions', [ConsultantFeatureController::class, 'show'])->defaults('feature', 'questions')->middleware('consultant.feature:question_management')->name('questions');
     Route::get('/quizzes', [ConsultantFeatureController::class, 'show'])->defaults('feature', 'quizzes')->middleware('consultant.feature:quiz_management')->name('quizzes');
@@ -215,6 +238,13 @@ Route::middleware('auth')->prefix('consultant')->name('consultant.')->group(func
             ->middleware('consultant.feature:student_schedule')
             ->name('schedule');
 
+        Route::prefix('schedule/drafts')->name('schedule.drafts.')->middleware('consultant.feature:student_schedule')->group(function () {
+            Route::get('/', [StudentScheduleController::class, 'drafts'])->name('index');
+            Route::post('/', [StudentScheduleController::class, 'storeDraft'])->name('store');
+            Route::put('/{draft}', [StudentScheduleController::class, 'updateDraft'])->name('update');
+            Route::post('/{draft}/apply', [StudentScheduleController::class, 'applyDraft'])->name('apply');
+        });
+
         Route::prefix('schedule/items')->name('schedule.items.')->middleware('consultant.feature:student_schedule')->group(function () {
             Route::get('/', [StudentScheduleController::class, 'items'])->name('index');
             Route::post('/', [StudentScheduleController::class, 'store'])->name('store');
@@ -224,6 +254,54 @@ Route::middleware('auth')->prefix('consultant')->name('consultant.')->group(func
         });
     });
 });
+
+/*
+|--------------------------------------------------------------------------
+| Teacher Panel — dedicated sub-level of the tenant (users with the
+| teacher role). Role-gated by EnsureTeacher; every section is also a
+| tenant feature flag, so an academy can switch pieces off without code.
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'teacher.role'])
+    ->prefix('teacher')
+    ->name('teacher.')
+    ->group(function () {
+        Route::get('/dashboard', [TeacherDashboardController::class, 'index'])
+            ->middleware('teacher.feature:teacher_panel')
+            ->name('dashboard');
+
+        Route::get('/students', [TeacherStudentController::class, 'index'])
+            ->middleware('teacher.feature:teacher_panel')
+            ->name('students');
+
+        Route::get('/students/{student}', [TeacherStudentController::class, 'show'])
+            ->middleware('teacher.feature:teacher_panel')
+            ->name('students.show');
+
+        Route::prefix('materials')->name('materials.')->middleware('teacher.feature:teacher_materials')->group(function () {
+            Route::get('/', [TeacherMaterialController::class, 'index'])->name('index');
+            Route::post('/', [TeacherMaterialController::class, 'store'])->name('store');
+            Route::get('/{material}/download', [TeacherMaterialController::class, 'download'])->name('download');
+            Route::delete('/{material}', [TeacherMaterialController::class, 'destroy'])->name('destroy');
+        });
+
+        Route::prefix('assignments')->name('assignments.')->middleware('teacher.feature:teacher_assignments')->group(function () {
+            Route::get('/', [TeacherAssignmentController::class, 'index'])->name('index');
+            Route::get('/create', [TeacherAssignmentController::class, 'create'])->name('create');
+            Route::post('/', [TeacherAssignmentController::class, 'store'])->name('store');
+            Route::get('/{assignment}', [TeacherAssignmentController::class, 'show'])->name('show');
+            Route::patch('/{assignment}', [TeacherAssignmentController::class, 'update'])->name('update');
+            Route::delete('/{assignment}', [TeacherAssignmentController::class, 'destroy'])->name('destroy');
+            Route::patch('/{assignment}/students/{student}', [TeacherAssignmentController::class, 'updateSubmission'])->name('submissions.update');
+        });
+
+        Route::prefix('schedule')->name('schedule.')->middleware('teacher.feature:teacher_schedule')->group(function () {
+            Route::get('/', [TeacherScheduleController::class, 'index'])->name('index');
+            Route::post('/', [TeacherScheduleController::class, 'store'])->name('store');
+            Route::put('/{item}', [TeacherScheduleController::class, 'update'])->name('update');
+            Route::delete('/{item}', [TeacherScheduleController::class, 'destroy'])->name('destroy');
+        });
+    });
 
 /*
 |--------------------------------------------------------------------------
@@ -245,6 +323,38 @@ Route::middleware('auth:student')->prefix('student')->name('student.')->group(fu
     Route::get('report-card', [StudentReportCardPortalController::class, 'index'])
         ->middleware('student.feature:report_cards')
         ->name('report-card');
+
+    /*
+    | Lessons library, assignments and the class timetable — the teacher
+    | panel's student-facing half, each gated by its own tenant flag.
+    */
+    Route::prefix('lessons')->name('lessons.')->middleware('student.feature:student_materials')->group(function () {
+        Route::get('/', [StudentMaterialController::class, 'index'])->name('index');
+        Route::get('/{material}/download', [StudentMaterialController::class, 'download'])->name('download');
+    });
+
+    Route::prefix('assignments')->name('assignments.')->middleware('student.feature:student_assignments')->group(function () {
+        Route::get('/', [StudentAssignmentController::class, 'index'])->name('index');
+        Route::get('/{assignment}', [StudentAssignmentController::class, 'show'])->name('show');
+        Route::post('/{assignment}/submit', [StudentAssignmentController::class, 'submit'])->name('submit');
+    });
+
+    /*
+    | Deal renewal — the student side of تمدید و پرداخت: the decision prompt
+    | at every end of period, transfer-receipt submission and the persisted
+    | notification feed. Gated by the same tenant `deals` flag as the panel.
+    */
+    Route::prefix('deals')->name('deals.')->middleware('student.feature:deals')->group(function () {
+        Route::get('/', [StudentDealController::class, 'index'])->name('index');
+        Route::post('{deal}/decision', [StudentDealController::class, 'decide'])->name('decide');
+        Route::post('{deal}/payments', [StudentDealController::class, 'submitPayment'])->name('payments.store');
+        Route::post('notifications/{notification}/read', [StudentDealController::class, 'readNotification'])->name('notifications.read');
+        Route::post('notifications/read-all', [StudentDealController::class, 'readAll'])->name('notifications.readAll');
+    });
+
+    Route::get('timetable', [StudentTimetableController::class, 'index'])
+        ->middleware('student.feature:student_timetable')
+        ->name('timetable');
 
     // Read-only review of the student's own finished attempts (the portal has
     // no exam-taking UI; sessions are run by the consultant).

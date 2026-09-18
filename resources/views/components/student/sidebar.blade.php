@@ -29,6 +29,46 @@
             </a>
         @endif
 
+        @if(site('features.student_materials', false) && \Illuminate\Support\Facades\Route::has('student.lessons.index'))
+            <a
+                href="{{ route('student.lessons.index') }}"
+                class="sidebar-link {{ request()->routeIs('student.lessons*') ? 'active' : '' }}"
+            >
+                <i class="fas fa-book-open-reader" aria-hidden="true"></i>
+                <span>درس‌ها</span>
+            </a>
+        @endif
+
+        @if(site('features.student_assignments', false) && \Illuminate\Support\Facades\Route::has('student.assignments.index'))
+            <a
+                href="{{ route('student.assignments.index') }}"
+                class="sidebar-link {{ request()->routeIs('student.assignments*') ? 'active' : '' }}"
+            >
+                <i class="fas fa-tasks" aria-hidden="true"></i>
+                <span>تکالیف</span>
+            </a>
+        @endif
+
+        @if(site('features.student_timetable', false) && \Illuminate\Support\Facades\Route::has('student.timetable'))
+            <a
+                href="{{ route('student.timetable') }}"
+                class="sidebar-link {{ request()->routeIs('student.timetable') ? 'active' : '' }}"
+            >
+                <i class="fas fa-calendar-week" aria-hidden="true"></i>
+                <span>جدول کلاس</span>
+            </a>
+        @endif
+
+        @if(site('features.deals', false) && \Illuminate\Support\Facades\Route::has('student.deals.index'))
+            <a
+                href="{{ route('student.deals.index') }}"
+                class="sidebar-link {{ request()->routeIs('student.deals*') ? 'active' : '' }}"
+            >
+                <i class="fas fa-file-invoice" aria-hidden="true"></i>
+                <span>دورهٔ من</span>
+            </a>
+        @endif
+
         @if(site('features.student_chat', false) && \Illuminate\Support\Facades\Route::has('student.direct-chat.page'))
             <a
                 href="{{ route('student.direct-chat.page') }}"

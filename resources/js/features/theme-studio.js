@@ -15,18 +15,25 @@
 // it is open on wide screens the page itself becomes a design studio: the
 // preview is the main content and the settings dock beside it as a bar.
 
+import initBlockEditor from './studio-block-editor.js';
+import initWorkspace from './studio-workspace.js';
+import '../../css/features/studio-workspace.css';
+
 export default function init() {
     const form = document.getElementById('studio-form');
-    if (!form) return;
+    if (!form || form.dataset.studioReady) return;
+    form.dataset.studioReady = '1';
 
     initColors(form);
     initToggles(form);
     initReset(form);
     initSections(form);
     initLists(form);
+    form.querySelectorAll('[data-block-editor]').forEach((wrap) => initBlockEditor(form, wrap));
     initRanges(form);
     initGroups();
     initHints();
+    initWorkspace(form);
     initLive(form);
 }
 
@@ -36,7 +43,6 @@ function initColors(form) {
         const picker = wrap.querySelector('[data-color-pick]');
         const text = wrap.querySelector('[data-color-text]');
         if (picker && text) {
-            text.value = picker.value;
             picker.addEventListener('input', () => { text.value = picker.value; });
         }
     });
@@ -110,10 +116,11 @@ function initLists(form) {
                 const num = row.querySelector('[data-list-num]');
                 if (num) num.textContent = i + 1;
             });
-            if (addBtn) addBtn.hidden = rowList().length >= max;
+            if (addBtn) addBtn.hidden = wrap.hasAttribute('data-block-editor') || rowList().length >= max;
             // Structural change: bubble an input event so the live preview
             // (which listens on the form) re-renders the site.
             if (notify) form.dispatchEvent(new Event('input', { bubbles: true }));
+            wrap.dispatchEvent(new CustomEvent('studio:list-changed', { detail: { notify } }));
         };
 
         const wireRow = (row) => {
@@ -149,6 +156,7 @@ function initLists(form) {
             });
         };
 
+        wrap.studioList = { wireRow, refresh };
         rowList().forEach(wireRow);
         refresh(false);
 
@@ -270,8 +278,8 @@ function initGroups() {
         // left arrow advances through the sections.
         const next = rtl ? 'ArrowLeft' : 'ArrowRight';
         const prev = rtl ? 'ArrowRight' : 'ArrowLeft';
-        if (e.key === next) focusTab(tabs[(i + 1) % tabs.length]);
-        else if (e.key === prev) focusTab(tabs[(i - 1 + tabs.length) % tabs.length]);
+        if (e.key === next || e.key === 'ArrowDown') focusTab(tabs[(i + 1) % tabs.length]);
+        else if (e.key === prev || e.key === 'ArrowUp') focusTab(tabs[(i - 1 + tabs.length) % tabs.length]);
         else if (e.key === 'Home') focusTab(tabs[0]);
         else if (e.key === 'End') focusTab(tabs[tabs.length - 1]);
         else return;
@@ -383,11 +391,13 @@ function initPreviewChrome(pane, frame) {
     const split = document.getElementById('studio-split');
     if (!stage || !deviceBtns.length) return;
 
-    const DEVICES = { desktop: { w: 1440, h: 900 }, mobile: { w: 390, h: 844 } };
+    const DEVICES = { desktop: { w: 1440, h: 900 }, tablet: { w: 768, h: 1024 }, mobile: { w: 390, h: 844 } };
+    const zoom = pane.querySelector('[data-studio-zoom]');
 
     let device = 'desktop';
     try {
-        if (localStorage.getItem('studio.preview.device') === 'mobile') device = 'mobile';
+        const saved = localStorage.getItem('studio.preview.device');
+        if (saved in DEVICES) device = saved;
     } catch { /* private mode */ }
 
     const fit = () => {
@@ -399,7 +409,8 @@ function initPreviewChrome(pane, frame) {
         // Contain-scale a real device viewport into the stage. A fixed
         // internal size (not stageHeight/scale) keeps svh units and the
         // hero's proportions honest, exactly like browser device mode.
-        const scale = Math.min(1, w / dev.w, h / dev.h);
+        const requested = Number(zoom?.value);
+        const scale = requested > 0 ? Math.min(1.25, Math.max(0.25, requested)) : Math.min(1, w / dev.w, h / dev.h);
         // Size every frame in the stage, not just the visible one: the
         // hot-swap twin must already be laid out when it trades places
         // (theme-studio.js initLive).
@@ -458,6 +469,7 @@ function initPreviewChrome(pane, frame) {
         maxBtn.querySelector('i')?.classList.toggle('fa-expand', !on);
     });
 
+    zoom?.addEventListener('change', fit);
     if (window.ResizeObserver) new ResizeObserver(fit).observe(stage);
     window.addEventListener('resize', fit);
 
@@ -485,6 +497,11 @@ function initLive(form) {
     if (!toggle || !split || !pane || !frame) return;
 
     const chrome = initPreviewChrome(pane, frame);
+    frame.addEventListener('load', (event) => {
+        if (!event.currentTarget.hasAttribute('aria-hidden')) {
+            form.dispatchEvent(new CustomEvent('studio:frame-ready', { detail: { frame: event.currentTarget } }));
+        }
+    });
 
     const liveUrl = form.dataset.liveUrl;
     const homeUrl = form.dataset.homeUrl;
@@ -506,6 +523,7 @@ function initLive(form) {
     let swapping = false;
     let swapQueued = false;
     let lastTokens = null;
+    let previousStructural = false;
 
     const setDot = (state) => { if (dot) dot.dataset.state = state; };
 
@@ -546,6 +564,7 @@ function initLive(form) {
             incoming.dataset.loaded = '1';
             twin = current;   // the outgoing frame becomes the next buffer
             frame = incoming;
+            form.dispatchEvent(new CustomEvent('studio:frame-ready', { detail: { frame } }));
             swapping = false;
             if (swapQueued) { swapQueued = false; swapFrame(); }
         };
@@ -583,13 +602,14 @@ function initLive(form) {
             setDot('ok');
 
             const structural = (json.changed || []).some((path) => modes[path] !== 'token');
-            if (structural) {
+            if (structural || previousStructural) {
                 // Shorter than the old reload debounce: the swap is
                 // invisible, so the only cost of firing early is one more
                 // background page load.
                 clearTimeout(swapTimer);
                 swapTimer = setTimeout(swapFrame, 500);
             }
+            previousStructural = structural;
         }).catch((err) => {
             if (err?.name !== 'AbortError') setDot('error');
         });
@@ -628,7 +648,5 @@ function initLive(form) {
     toggle.addEventListener('change', () => setLive(toggle.checked));
     reloadBtn?.addEventListener('click', swapFrame);
 
-    try {
-        if (localStorage.getItem('studio.live') === '1') setLive(true);
-    } catch { /* private mode */ }
+    setLive(toggle.checked);
 }

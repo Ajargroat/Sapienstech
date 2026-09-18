@@ -13,14 +13,14 @@ class ViewServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        // Existing consultant dashboard composer (unchanged). The student
-        // shell renders with the exact same tenant/theme tokens, so it joins
-        // the same composer instead of duplicating the wiring.
+        // Existing consultant dashboard composer (unchanged). The student and
+        // teacher shells render with the exact same tenant/theme tokens, so
+        // they join the same composer instead of duplicating the wiring.
         //
         // `filters` and `sidebar` used to be passed here from config keys that
         // do not exist, so both views always received []. The dashboard's real
         // `$filters` comes from its controller, which is a different view.
-        View::composer(['layouts.consultant', 'layouts.student'], function ($view) {
+        View::composer(['layouts.consultant', 'layouts.student', 'layouts.teacher'], function ($view) {
             $c = site();
 
             $view->with([

@@ -16,7 +16,7 @@ use Illuminate\View\View;
  * The profile hub: the one page the top navigation's profile button leads
  * to. Its home is the Telegram-style identity page (centered avatar, quick
  * actions, info rows, a settings list) shared by both portals, and every
- * personal part of the consultant area — profile edit, password, the
+ * personal part of the consultant area — profile edit (including password), the
  * appearance studio, chat settings — renders *through* this route with a
  * `?tab=<section>` selector instead of owning a page route. The save
  * endpoints stay separate; only the browsing surface is unified.
@@ -53,11 +53,7 @@ class ProfileController extends Controller
                 'tabs' => SettingsTabs::visible('consultant'),
                 'activeTab' => 'edit',
             ]),
-            'password' => view('consultant.settings.password', [
-                'user' => $request->user(),
-                'tabs' => SettingsTabs::visible('consultant'),
-                'activeTab' => 'password',
-            ]),
+
             default => view('consultant.settings.profile', [
                 'user' => $request->user(),
                 'tabs' => SettingsTabs::visible('consultant'),

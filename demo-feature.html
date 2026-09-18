@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>کنکوریار — پنل مدیریت مشاوران</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lalezar&family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#081b1e; --bg2:#0c2529; --panel:#0f2f34; --panel2:#123a41;
+  --line:#1c4547; --line2:rgba(94,226,208,.18);
+  --ink:#ecf7f4; --mut:#9dbcb8; --mut2:#6e908c;
+  --tq:#3fd9c0; --tq2:#14a08e; --saff:#f6b23f; --saff2:#ffcf7d;
+  --coral:#ff8177; --green:#63d68e; --sky:#7cc7ff; --lime:#c9de6a;
+  --shadow:0 14px 34px -14px rgba(0,0,0,.55);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Vazirmatn',sans-serif; background:var(--bg); color:var(--ink);
+  min-height:100vh; overflow-x:hidden; font-size:14.5px; line-height:1.7;
+}
+::selection{background:rgba(63,217,192,.35)}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:#1d4a4c;border-radius:8px}
+::-webkit-scrollbar-track{background:transparent}
+
+/* ---------- ambient background ---------- */
+.glow{position:fixed;border-radius:50%;filter:blur(90px);pointer-events:none;z-index:0}
+.g1{width:620px;height:620px;top:-220px;right:-140px;background:radial-gradient(circle,rgba(20,160,142,.34),transparent 65%);animation:drift 22s ease-in-out infinite alternate}
+.g2{width:560px;height:560px;bottom:-240px;left:-160px;background:radial-gradient(circle,rgba(246,178,63,.16),transparent 65%);animation:drift 26s ease-in-out infinite alternate-reverse}
+@keyframes drift{from{transform:translate(0,0) scale(1)}to{transform:translate(-60px,50px) scale(1.12)}}
+.pattern{position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.9;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Cg fill='none' stroke='%233fd9c0' stroke-opacity='.05'%3E%3Cpath d='M32 5l7 20 20 7-20 7-7 20-7-20-20-7 20-7z'/%3E%3Ccircle cx='32' cy='32' r='3.5'/%3E%3C/g%3E%3C/svg%3E");}
+
+/* ---------- layout ---------- */
+.app{position:relative;z-index:1;display:grid;grid-template-columns:266px 1fr;min-height:100vh}
+
+/* sidebar */
+.sidebar{
+  position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:6px;
+  padding:22px 18px;background:linear-gradient(180deg,#0d2b30,#0a2125);
+  border-inline-end:1px solid var(--line);z-index:60;
+}
+.brand{display:flex;align-items:center;gap:12px;padding:4px 6px 20px;border-bottom:1px dashed var(--line);margin-bottom:14px}
+.brand .mark{width:46px;height:46px;flex:none;border-radius:13px;display:grid;place-items:center;
+  background:linear-gradient(135deg,var(--tq),var(--tq2));box-shadow:0 8px 20px -6px rgba(63,217,192,.5)}
+.brand h1{font-family:'Lalezar';font-size:24px;font-weight:400;line-height:1;color:#dffaf4}
+.brand small{display:block;color:var(--mut2);font-size:11.5px;font-weight:500;margin-top:3px}
+.nav-btn{
+  display:flex;align-items:center;gap:11px;width:100%;padding:11px 13px;border:0;border-radius:11px;
+  background:transparent;color:var(--mut);font-family:inherit;font-size:13.5px;font-weight:600;
+  cursor:pointer;transition:.22s;text-align:right;position:relative;
+}
+.nav-btn svg{width:19px;height:19px;flex:none;transition:.22s}
+.nav-btn:hover{background:rgba(63,217,192,.08);color:var(--ink);transform:translateX(-3px)}
+.nav-btn.active{background:linear-gradient(90deg,rgba(63,217,192,.16),rgba(63,217,192,.04));color:#c8f5ec;box-shadow:inset 3px 0 0 var(--tq)}
+.nav-badge{margin-inline-start:auto;background:rgba(255,129,119,.16);color:var(--coral);
+  border:1px solid rgba(255,129,119,.35);font-size:11px;font-weight:700;min-width:24px;text-align:center;
+  border-radius:99px;padding:1px 8px}
+.nav-badge.tb{background:rgba(246,178,63,.14);color:var(--saff2);border-color:rgba(246,178,63,.35)}
+.mgr-card{margin-top:auto;display:flex;align-items:center;gap:11px;padding:12px;border-radius:13px;
+  background:rgba(255,255,255,.03);border:1px solid var(--line)}
+.mgr-card .av{width:40px;height:40px;border-radius:50%;flex:none;display:grid;place-items:center;
+  font-family:'Lalezar';font-size:18px;color:#04211f;background:linear-gradient(135deg,var(--saff2),var(--saff))}
+.mgr-card b{font-size:13px;display:block;line-height:1.4}
+.mgr-card span{font-size:11px;color:var(--mut2)}
+.online-dot{width:9px;height:9px;border-radius:50%;background:var(--green);margin-inline-start:auto;
+  box-shadow:0 0 0 0 rgba(99,214,142,.6);animation:ping 2.2s infinite}
+@keyframes ping{0%{box-shadow:0 0 0 0 rgba(99,214,142,.5)}70%{box-shadow:0 0 0 8px rgba(99,214,142,0)}100%{box-shadow:0 0 0 0 rgba(99,214,142,0)}}
+
+.backdrop{position:fixed;inset:0;background:rgba(3,12,14,.6);backdrop-filter:blur(2px);
+  opacity:0;pointer-events:none;transition:.3s;z-index:55}
+.backdrop.show{opacity:1;pointer-events:auto}
+
+/* main */
+.main{padding:0 clamp(16px,3vw,40px) 60px;min-width:0}
+.topbar{
+  position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:14px;
+  padding:14px 2px;margin:0 -4px 22px;background:rgba(8,27,30,.82);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line);
+}
+.burger{display:none;width:40px;height:40px;border:1px solid var(--line);border-radius:10px;
+  background:var(--panel);color:var(--ink);cursor:pointer;place-items:center}
+.burger svg{width:20px;height:20px}
+.top-title{font-family:'Lalezar';font-size:20px;color:#d7f6ef;line-height:1}
+.top-title small{display:block;font-family:'Vazirmatn';font-size:11px;color:var(--mut2);font-weight:500;margin-top:2px}
+.top-side{margin-inline-start:auto;display:flex;align-items:center;gap:12px}
+.date-pill,.clock-pill{display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:99px;
+  border:1px solid var(--line);background:rgba(15,47,52,.7);font-size:12.5px;color:var(--mut);font-weight:500}
+.date-pill svg,.clock-pill svg{width:15px;height:15px;color:var(--tq)}
+.clock-pill{font-variant-numeric:tabular-nums;color:#c8f5ec;min-width:104px;justify-content:center}
+.bell{position:relative;width:42px;height:42px;border-radius:12px;border:1px solid var(--line);
+  background:var(--panel);color:var(--ink);cursor:pointer;display:grid;place-items:center;transition:.25s}
+.bell:hover{border-color:var(--tq);box-shadow:0 0 18px -4px rgba(63,217,192,.5);transform:translateY(-2px)}
+.bell svg{width:19px;height:19px}
+.bell .cnt{position:absolute;top:-7px;inset-inline-start:-7px;background:linear-gradient(135deg,#ff9a8d,#e8543f);
+  color:#fff;font-size:10.5px;font-weight:800;min-width:21px;height:21px;border-radius:99px;
+  display:grid;place-items:center;padding:0 5px;box-shadow:0 4px 10px -2px rgba(232,84,63,.6)}
+.bell.ring svg{animation:ring 1s ease .4s}
+@keyframes ring{0%,100%{transform:rotate(0)}15%{transform:rotate(16deg)}30%{transform:rotate(-14deg)}45%{transform:rotate(10deg)}60%{transform:rotate(-7deg)}75%{transform:rotate(4deg)}}
+.top-ava{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-family:'Lalezar';
+  font-size:18px;color:#04211f;background:linear-gradient(135deg,var(--saff2),var(--saff));cursor:pointer;
+  border:1px solid rgba(246,178,63,.4);transition:.25s}
+.top-ava:hover{transform:translateY(-2px) scale(1.04)}
+
+/* views */
+.view{display:none}
+.view.active{display:block;animation:rise .45s ease both}
+@keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+
+/* greeting + stats */
+.greet{margin-bottom:22px}
+.greet h2{font-family:'Lalezar';font-weight:400;font-size:clamp(28px,3.4vw,42px);line-height:1.25;color:#eafcf7}
+.greet h2 em{font-style:normal;color:var(--tq)}
+.greet p{color:var(--mut);font-size:13.5px;margin-top:4px}
+.stats{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:14px;margin-bottom:26px}
+.stat{padding:18px 20px;border-radius:16px;border:1px solid var(--line);background:linear-gradient(160deg,var(--panel2),var(--panel));
+  display:flex;flex-direction:column;gap:6px;position:relative;overflow:hidden;transition:.3s;animation:rise .5s ease both}
+.stat:hover{transform:translateY(-3px);border-color:var(--line2);box-shadow:var(--shadow)}
+.stat .lbl{font-size:12px;color:var(--mut);font-weight:600;display:flex;align-items:center;gap:8px}
+.stat .lbl svg{width:16px;height:16px}
+.stat .num{font-family:'Lalezar';font-size:clamp(26px,2.6vw,38px);line-height:1.1}
+.stat .sub{font-size:11.5px;color:var(--mut2)}
+.stat.money{background:linear-gradient(140deg,#134047,#0d2c31 55%),radial-gradient(circle at 85% 15%,rgba(246,178,63,.22),transparent 55%);border-color:rgba(246,178,63,.28)}
+.stat.money .num{color:var(--saff2)}
+.stat.money .lbl svg{color:var(--saff)}
+.stat.due .num{color:var(--coral)}
+.stat.due .lbl svg{color:var(--coral)}
+.stat.stud .num{color:#a9efe2}.stat.stud .lbl svg{color:var(--tq)}
+.stat.cons .num{color:var(--sky)}.stat.cons .lbl svg{color:var(--sky)}
+.stat.money::after{content:'';position:absolute;width:150px;height:150px;border-radius:50%;
+  background:radial-gradient(circle,rgba(246,178,63,.14),transparent 70%);top:-60px;left:-40px}
+
+/* search */
+.search-wrap{display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+.search{flex:1;min-width:230px;max-width:430px;position:relative}
+.search svg{position:absolute;inset-inline-start:14px;top:50%;transform:translateY(-50%);width:17px;height:17px;color:var(--mut2)}
+.search input{width:100%;padding:12px 44px 12px 16px;border-radius:12px;border:1px solid var(--line);
+  background:rgba(15,47,52,.7);color:var(--ink);font-family:inherit;font-size:13.5px;transition:.25s;outline:none}
+.search input:focus{border-color:var(--tq);box-shadow:0 0 0 3px rgba(63,217,192,.14)}
+.search input::placeholder{color:var(--mut2)}
+.list-count{font-size:12.5px;color:var(--mut2)}
+.list-count b{color:var(--tq)}
+
+/* consultant cards */
+.cons-list{display:flex;flex-direction:column;gap:12px}
+.con-card{
+  display:grid;grid-template-columns:54px minmax(170px,1.35fr) repeat(3,minmax(96px,auto)) 110px 34px;
+  gap:18px;align-items:center;padding:16px 20px;border-radius:15px;cursor:pointer;
+  border:1px solid var(--line);background:linear-gradient(160deg,var(--panel2),var(--panel));
+  transition:.28s;animation:rise .5s ease both;
+}
+.con-card:hover{transform:translateY(-3px);border-color:rgba(63,217,192,.45);box-shadow:0 16px 34px -16px rgba(63,217,192,.35)}
+.con-card:hover .go{transform:translateX(-4px);color:var(--tq)}
+.ava{width:54px;height:54px;border-radius:15px;display:grid;place-items:center;font-family:'Lalezar';
+  font-size:24px;flex:none}
+.h1{background:linear-gradient(135deg,#7fe9d8,#14a08e);color:#04211f}
+.h2{background:linear-gradient(135deg,#ffd98f,#e9932a);color:#3a2404}
+.h3{background:linear-gradient(135deg,#ffa39a,#e05a4e);color:#3a0f0a}
+.h4{background:linear-gradient(135deg,#a8d9ff,#4a98d9);color:#06263f}
+.h5{background:linear-gradient(135deg,#e2ef9f,#9db83a);color:#28300a}
+.h6{background:linear-gradient(135deg,#cfc0ff,#8a72e8);color:#1d1345}
+.con-info b{font-size:15.5px;display:block;line-height:1.4}
+.con-info span{font-size:12px;color:var(--mut);display:flex;align-items:center;gap:6px}
+.con-info span svg{width:12px;height:12px}
+.metric{text-align:center}
+.metric i{display:block;font-style:normal;font-family:'Lalezar';font-size:21px;line-height:1.2}
+.metric small{font-size:11px;color:var(--mut2);font-weight:500}
+.metric.warn i{color:var(--coral)}
+.metric.ok i{color:var(--green)}
+.mixbar{height:7px;border-radius:99px;background:rgba(255,255,255,.07);overflow:hidden;display:flex;min-width:90px}
+.mixbar i{height:100%;display:block;transition:width .8s ease}
+.mixbar .a{background:var(--green)}.mixbar .b{background:var(--saff)}.mixbar .c{background:var(--coral)}
+.mix-lbl{font-size:10.5px;color:var(--mut2);margin-top:5px}
+.go{color:var(--mut2);transition:.25s;display:grid;place-items:center}
+.go svg{width:22px;height:22px}
+
+/* students view */
+.back-row{display:flex;align-items:center;gap:14px;margin-bottom:18px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:8px;border:0;border-radius:11px;padding:10px 18px;
+  font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;transition:.25s;line-height:1.4}
+.btn svg{width:16px;height:16px}
+.btn:active{transform:scale(.96)}
+.btn-ghost{background:rgba(255,255,255,.05);color:var(--mut);border:1px solid var(--line)}
+.btn-ghost:hover{color:var(--ink);border-color:var(--tq)}
+.btn-p{background:linear-gradient(135deg,#49e0c6,#14a08e);color:#04211f;box-shadow:0 8px 20px -8px rgba(63,217,192,.6)}
+.btn-p:hover{transform:translateY(-2px);box-shadow:0 12px 26px -8px rgba(63,217,192,.7)}
+.btn-saff{background:linear-gradient(135deg,#ffc65c,#ef9526);color:#3a2404;box-shadow:0 8px 20px -8px rgba(246,178,63,.55)}
+.btn-saff:hover{transform:translateY(-2px)}
+.crumb{font-size:12.5px;color:var(--mut2)}
+.crumb b{color:var(--tq);font-weight:700}
+
+.con-head{display:flex;align-items:center;gap:18px;padding:22px;border-radius:16px;margin-bottom:16px;
+  border:1px solid var(--line);background:linear-gradient(120deg,#12383f,#0e2b30 60%),radial-gradient(circle at 12% 0%,rgba(63,217,192,.15),transparent 50%);
+  flex-wrap:wrap;animation:rise .4s ease both}
+.con-head .ava{width:66px;height:66px;font-size:30px;border-radius:18px}
+.con-head h3{font-family:'Lalezar';font-weight:400;font-size:26px;line-height:1.2}
+.con-head .spec{color:var(--tq);font-size:13px;font-weight:600}
+.con-head .contact{color:var(--mut2);font-size:12px;display:flex;gap:14px;margin-top:4px;flex-wrap:wrap}
+.con-head .contact span{display:flex;align-items:center;gap:5px}
+.con-head .contact svg{width:13px;height:13px}
+.head-stats{margin-inline-start:auto;display:flex;gap:26px;flex-wrap:wrap}
+.head-stats .metric i{font-size:26px}
+
+/* due banner */
+.due-banner{display:flex;align-items:center;gap:14px;padding:15px 20px;border-radius:14px;margin-bottom:18px;
+  background:linear-gradient(90deg,rgba(255,129,119,.16),rgba(246,178,63,.12));
+  border:1px solid rgba(255,129,119,.4);animation:rise .45s ease both;flex-wrap:wrap}
+.due-banner .ic{width:42px;height:42px;flex:none;border-radius:12px;display:grid;place-items:center;
+  background:rgba(255,129,119,.18);color:var(--coral)}
+.due-banner .ic svg{width:21px;height:21px;animation:pulseIc 1.8s infinite}
+@keyframes pulseIc{0%,100%{transform:scale(1)}50%{transform:scale(1.14)}}
+.due-banner b{font-size:14.5px;display:block}
+.due-banner span{font-size:12px;color:var(--mut)}
+.due-banner .btn{margin-inline-start:auto}
+
+/* chips */
+.chips{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:16px}
+.chip{padding:8px 15px;border-radius:99px;border:1px solid var(--line);background:rgba(15,47,52,.6);
+  color:var(--mut);font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;transition:.22s;display:flex;gap:7px;align-items:center}
+.chip:hover{border-color:var(--tq);color:var(--ink)}
+.chip.on{background:linear-gradient(135deg,rgba(63,217,192,.22),rgba(63,217,192,.08));color:#c8f5ec;border-color:rgba(63,217,192,.55)}
+.chip i{font-style:normal;font-size:10.5px;background:rgba(255,255,255,.09);padding:1px 7px;border-radius:99px}
+
+/* students table */
+.st-panel{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:linear-gradient(180deg,rgba(15,47,52,.75),rgba(11,34,38,.8))}
+.srow{display:grid;grid-template-columns:1.55fr .62fr .72fr .62fr .95fr .85fr 1.05fr 92px;
+  gap:12px;align-items:center;padding:14px 20px;border-bottom:1px solid rgba(28,69,71,.6);transition:.2s;animation:rise .4s ease both}
+.srow:last-child{border-bottom:0}
+.srow.body{cursor:pointer}
+.srow.body:hover{background:rgba(63,217,192,.05);box-shadow:inset 3px 0 0 var(--tq)}
+.srow.head{background:rgba(255,255,255,.025);font-size:11.5px;font-weight:700;color:var(--mut2);padding:11px 20px;animation:none}
+.st-cell b{font-size:13.5px;display:block;line-height:1.4}
+.st-cell small{font-size:11px;color:var(--mut2)}
+.st-cell .fee{font-family:'Lalezar';font-size:16px;color:#ffe1a8}
+.st-cell .fee small{font-family:'Vazirmatn';font-size:10.5px;color:var(--mut2);margin-inline-start:3px}
+.mini-ava{width:38px;height:38px;border-radius:11px;flex:none;display:grid;place-items:center;
+  font-family:'Lalezar';font-size:16px;color:#04211f;background:linear-gradient(135deg,#8feadd,#2fb9a4)}
+.st-name{display:flex;align-items:center;gap:11px}
+.bdg{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:99px;font-size:11.5px;font-weight:700;white-space:nowrap}
+.bdg .dot{width:7px;height:7px;border-radius:50%;flex:none}
+.st-overdue{background:rgba(255,129,119,.13);color:#ffa39a;border:1px solid rgba(255,129,119,.4)}
+.st-overdue .dot{background:var(--coral);animation:blink 1.2s infinite}
+.st-today{background:rgba(246,178,63,.14);color:#ffd07e;border:1px solid rgba(246,178,63,.45)}
+.st-today .dot{background:var(--saff);animation:blink 1.6s infinite}
+.st-soon{background:rgba(63,217,192,.1);color:#8cead9;border:1px solid rgba(63,217,192,.35)}
+.st-soon .dot{background:var(--tq)}
+.st-paid{background:rgba(99,214,142,.12);color:#96e6b4;border:1px solid rgba(99,214,142,.35)}
+.st-paid .dot{background:var(--green)}
+.st-ok{background:rgba(255,255,255,.05);color:var(--mut);border:1px solid var(--line)}
+.st-ok .dot{background:var(--mut2)}
+@keyframes blink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.75)}}
+.row-acts{display:flex;gap:7px}
+.ic-btn{width:34px;height:34px;border-radius:9px;border:1px solid var(--line);background:rgba(255,255,255,.04);
+  color:var(--mut);display:grid;place-items:center;cursor:pointer;transition:.22s}
+.ic-btn svg{width:15px;height:15px}
+.ic-btn:hover{border-color:var(--tq);color:var(--tq);transform:translateY(-2px);box-shadow:0 6px 14px -6px rgba(63,217,192,.5)}
+.ic-btn.saff:hover{border-color:var(--saff);color:var(--saff)}
+.ic-btn:disabled{opacity:.35;cursor:not-allowed;transform:none}
+.empty{padding:44px;text-align:center;color:var(--mut2)}
+.empty svg{width:44px;height:44px;margin-bottom:10px;opacity:.5}
+
+/* due view */
+.due-row{display:grid;grid-template-columns:1.4fr .9fr .7fr .9fr .8fr 1.1fr 44px;gap:14px;align-items:center;
+  padding:14px 20px;border-bottom:1px solid rgba(28,69,71,.6);animation:rise .4s ease both}
+.due-row:last-child{border-bottom:0}
+.due-row:hover{background:rgba(255,129,119,.04)}
+.con-tag{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--sky);
+  background:rgba(124,199,255,.1);border:1px solid rgba(124,199,255,.3);padding:3px 10px;border-radius:99px}
+.due-date{font-size:12.5px;color:var(--saff2);display:flex;align-items:center;gap:6px}
+.due-date svg{width:14px;height:14px}
+
+/* messages view */
+.tabs{display:flex;gap:6px;border-bottom:1px solid var(--line);margin-bottom:18px;overflow-x:auto}
+.tab{padding:11px 18px;background:none;border:0;font-family:inherit;font-size:13.5px;font-weight:600;
+  color:var(--mut2);cursor:pointer;position:relative;transition:.2s;white-space:nowrap;display:flex;gap:8px;align-items:center}
+.tab i{font-style:normal;font-size:10.5px;background:rgba(255,255,255,.08);padding:1px 8px;border-radius:99px}
+.tab:hover{color:var(--ink)}
+.tab.on{color:var(--tq)}
+.tab.on::after{content:'';position:absolute;bottom:-1px;inset-inline:10px;height:2.5px;border-radius:4px;
+  background:linear-gradient(90deg,var(--tq),transparent)}
+.msg-list{display:flex;flex-direction:column;gap:12px}
+.msg{display:flex;gap:15px;padding:17px 20px;border-radius:14px;border:1px solid var(--line);
+  background:linear-gradient(160deg,var(--panel2),var(--panel));animation:rise .4s ease both;transition:.25s}
+.msg:hover{border-color:var(--line2);transform:translateX(-3px)}
+.msg.flash{animation:flash 1.6s ease}
+@keyframes flash{0%{background:rgba(63,217,192,.22);border-color:var(--tq)}100%{background:linear-gradient(160deg,var(--panel2),var(--panel))}}
+.ch-ic{width:44px;height:44px;flex:none;border-radius:13px;display:grid;place-items:center}
+.ch-ic svg{width:20px;height:20px}
+.ch-sms{background:rgba(63,217,192,.14);color:var(--tq);border:1px solid rgba(63,217,192,.3)}
+.ch-email{background:rgba(246,178,63,.13);color:var(--saff);border:1px solid rgba(246,178,63,.3)}
+.msg-body{flex:1;min-width:0}
+.msg-to{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.msg-to b{font-size:14px}
+.who{font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:99px}
+.who.student{background:rgba(124,199,255,.12);color:var(--sky);border:1px solid rgba(124,199,255,.3)}
+.who.consultant{background:rgba(201,222,106,.1);color:var(--lime);border:1px solid rgba(201,222,106,.3)}
+.msg-to span.cnt{font-size:11.5px;color:var(--mut2);direction:ltr}
+.msg-subj{font-size:13px;font-weight:700;color:#ffe1a8;margin-top:5px}
+.msg-text{font-size:12.8px;color:var(--mut);margin-top:4px;background:rgba(0,0,0,.18);
+  border-inline-start:2.5px solid var(--line);padding:9px 13px;border-radius:8px;line-height:1.9}
+.msg-meta{display:flex;align-items:center;gap:14px;margin-top:9px;font-size:11.5px;color:var(--mut2);flex-wrap:wrap}
+.msg-meta .ok{color:var(--green);display:flex;align-items:center;gap:5px;font-weight:600}
+.msg-meta .ok svg{width:13px;height:13px}
+.msg-meta .queue{color:var(--saff);display:flex;align-items:center;gap:5px;font-weight:600}
+.msg-meta .tag{background:rgba(255,255,255,.06);padding:2px 10px;border-radius:99px}
+
+/* drawer */
+.drawer{position:fixed;top:0;bottom:0;left:0;width:min(440px,100%);z-index:80;
+  background:linear-gradient(180deg,#10333a,#0b252a);border-inline-start:none;border-right:1px solid var(--line);
+  box-shadow:20px 0 60px rgba(0,0,0,.5);transform:translateX(-105%);transition:transform .38s cubic-bezier(.22,1,.3,1);
+  display:flex;flex-direction:column;overflow-y:auto}
+.drawer.open{transform:none}
+.drawer-back{position:fixed;inset:0;background:rgba(3,12,14,.65);z-index:75;opacity:0;pointer-events:none;transition:.3s}
+.drawer-back.show{opacity:1;pointer-events:auto}
+.d-head{display:flex;align-items:flex-start;gap:14px;padding:24px 24px 18px;border-bottom:1px dashed var(--line);position:sticky;top:0;
+  background:linear-gradient(180deg,#10333a,#10333af0);z-index:2}
+.d-head .ava{width:58px;height:58px;font-size:26px;border-radius:17px}
+.d-head h3{font-family:'Lalezar';font-weight:400;font-size:24px;line-height:1.2}
+.d-head p{font-size:12.5px;color:var(--mut)}
+.d-close{margin-inline-start:auto;width:36px;height:36px;border-radius:10px;border:1px solid var(--line);
+  background:none;color:var(--mut);cursor:pointer;display:grid;place-items:center;transition:.2s;flex:none}
+.d-close:hover{color:var(--coral);border-color:var(--coral);transform:rotate(90deg)}
+.d-close svg{width:17px;height:17px}
+.d-sec{padding:20px 24px;border-bottom:1px dashed var(--line)}
+.d-status{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.d-due-lbl{font-size:12.5px;color:var(--mut)}
+.d-due-lbl b{color:var(--saff2)}
+.prog-wrap{margin-top:16px}
+.prog-lbl{display:flex;justify-content:space-between;font-size:11.5px;color:var(--mut2);margin-bottom:7px}
+.prog{height:9px;border-radius:99px;background:rgba(255,255,255,.07);overflow:hidden}
+.prog i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--tq),var(--saff));width:0;transition:width 1s ease .2s}
+.d-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.d-item{background:rgba(255,255,255,.035);border:1px solid var(--line);border-radius:12px;padding:11px 14px}
+.d-item small{display:block;font-size:10.5px;color:var(--mut2);margin-bottom:3px}
+.d-item b{font-size:13.5px;font-weight:700}
+.d-item b.num{font-family:'Lalezar';color:#ffe1a8;font-size:17px}
+.d-item.ltr b{direction:ltr;display:inline-block;font-size:12px;color:var(--sky)}
+.d-acts{display:flex;gap:10px;flex-wrap:wrap}
+.d-acts .btn{flex:1;justify-content:center}
+.d-hist-item{display:flex;gap:10px;padding:10px 0;border-bottom:1px dashed rgba(28,69,71,.8);font-size:12px}
+.d-hist-item:last-child{border:0}
+.d-hist-item .ch-ic{width:30px;height:30px;border-radius:9px}
+.d-hist-item .ch-ic svg{width:14px;height:14px}
+.d-hist-item p{color:var(--mut);line-height:1.7;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.d-hist-item small{color:var(--mut2);font-size:10.5px}
+
+/* toasts */
+.toasts{position:fixed;bottom:22px;left:22px;z-index:100;display:flex;flex-direction:column;gap:10px}
+.toast{display:flex;align-items:center;gap:11px;padding:13px 18px;border-radius:13px;min-width:290px;max-width:92vw;
+  background:linear-gradient(135deg,#134048,#0d2d33);border:1px solid rgba(63,217,192,.4);
+  box-shadow:0 18px 40px -12px rgba(0,0,0,.6);animation:toastIn .45s cubic-bezier(.22,1.4,.3,1) both;font-size:13px;font-weight:600}
+.toast svg{width:19px;height:19px;color:var(--tq);flex:none}
+.toast.out{animation:toastOut .4s ease both}
+@keyframes toastIn{from{opacity:0;transform:translateY(24px) scale(.92)}to{opacity:1;transform:none}}
+@keyframes toastOut{to{opacity:0;transform:translateY(16px) scale(.95)}}
+
+.sec-title{font-family:'Lalezar';font-weight:400;font-size:clamp(23px,2.5vw,32px);margin-bottom:4px;color:#eafcf7}
+.sec-sub{color:var(--mut);font-size:13px;margin-bottom:20px}
+
+.settings-panel{padding:34px;border-radius:16px;border:1px solid var(--line);
+  background:linear-gradient(160deg,var(--panel2),var(--panel));text-align:center;max-width:560px}
+.settings-panel .mark{width:60px;height:60px;margin:0 auto 14px;border-radius:17px;display:grid;place-items:center;
+  background:linear-gradient(135deg,var(--tq),var(--tq2))}
+.settings-panel h3{font-family:'Lalezar';font-weight:400;font-size:24px;margin-bottom:6px}
+.settings-panel p{color:var(--mut);font-size:13px}
+
+/* ---------- responsive ---------- */
+@media (max-width:1240px){
+  .con-card{grid-template-columns:54px minmax(160px,1.3fr) repeat(3,minmax(80px,auto)) 34px}
+  .con-card .mix{display:none}
+}
+@media (max-width:1080px){
+  .stats{grid-template-columns:1fr 1fr}
+  .srow.head{display:none}
+  .srow.body{grid-template-columns:1fr 1fr;gap:14px;padding:18px}
+  .srow.body .st-cell::before{content:attr(data-l);display:block;font-size:10.5px;color:var(--mut2);margin-bottom:2px;font-weight:600}
+  .srow.body .st-cell.name::before{display:none}
+  .srow.body .st-cell.acts{display:flex;justify-content:flex-end;align-items:center}
+  .srow.body .st-cell.acts::before{display:none}
+  .due-row{grid-template-columns:1.3fr 1fr 1fr 44px}
+  .due-row .hide-m{display:none}
+}
+@media (max-width:1020px){
+  .app{grid-template-columns:1fr}
+  .sidebar{position:fixed;inset-block:0;inset-inline-start:0;width:272px;transform:translateX(105%);transition:transform .35s cubic-bezier(.22,1,.3,1);box-shadow:-20px 0 60px rgba(0,0,0,.5)}
+  .sidebar.open{transform:none}
+  .burger{display:grid}
+}
+@media (max-width:720px){
+  .con-card{grid-template-columns:48px 1fr;gap:12px;padding:16px}
+  .con-card .metric,.con-card .go{display:none}
+  .con-card .m-row{display:flex;gap:20px;grid-column:1/-1;padding-top:12px;border-top:1px dashed var(--line)}
+  .con-card .m-row .metric{display:block}
+  .date-pill{display:none}
+  .head-stats{width:100%;margin-inline-start:0;gap:18px}
+  .due-banner .btn{width:100%;justify-content:center;margin-inline-start:0}
+  .toasts{left:12px;right:12px}
+  .toast{min-width:0}
+}
+</style>
+</head>
+<body>
+
+<div class="glow g1"></div><div class="glow g2"></div><div class="pattern"></div>
+
+<div class="app">
+  <!-- ======= SIDEBAR ======= -->
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="mark">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#04211f" stroke-width="1.8" stroke-linejoin="round"><path d="M12 2l2.4 5.6L20 9.9l-4.4 3.9 1.3 6.2L12 16.8 7.1 20l1.3-6.2L4 9.9l5.6-2.3z"/></svg>
+      </div>
+      <div><h1>کنکوریار</h1><small>پنل مدیریت مشاوران کنکور</small></div>
+    </div>
+
+    <button class="nav-btn active" data-view="consultants">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9.5" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M15.5 3.13a4 4 0 0 1 0 7.75"/></svg>
+      مشاوران
+    </button>
+    <button class="nav-btn" data-view="due">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><circle cx="12" cy="16" r="1.6" fill="currentColor" stroke="none"/></svg>
+      سررسیدهای تمدید
+      <span class="nav-badge" id="dueBadge">۰</span>
+    </button>
+    <button class="nav-btn" data-view="messages">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>
+      پیام‌های ارسالی
+      <span class="nav-badge tb" id="msgBadge">۰</span>
+    </button>
+    <button class="nav-btn" data-view="settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      تنظیمات
+    </button>
+
+    <div class="mgr-card">
+      <div class="av">ه</div>
+      <div><b>دکتر الهام رستمی</b><span>مدیر گروه مشاوره</span></div>
+      <span class="online-dot"></span>
+    </div>
+  </aside>
+  <div class="backdrop" id="backdrop"></div>
+
+  <!-- ======= MAIN ======= -->
+  <main class="main">
+    <header class="topbar">
+      <button class="burger" id="burger" aria-label="منو"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+      <div class="top-title" id="topTitle">داشبورد مشاوران<small>مدیریت تمدید اشتراک دانش‌آموزان</small></div>
+      <div class="top-side">
+        <div class="date-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span id="todayFa"></span></div>
+        <div class="clock-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span id="clock"></span></div>
+        <button class="bell ring" id="bell" title="سررسیدهای فوری">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+          <span class="cnt" id="bellCount">۰</span>
+        </button>
+        <div class="top-ava" title="دکتر الهام رستمی">ه</div>
+      </div>
+    </header>
+
+    <!-- ===== VIEW: CONSULTANTS ===== -->
+    <section class="view active" id="view-consultants">
+      <div class="greet">
+        <h2 id="greetTxt"><em>سلام</em>، خانم دکتر رستمی 🌤</h2>
+        <p>وضعیت تمدید اشتراک دانش‌آموزانِ مشاوران، در یک نگاه.</p>
+      </div>
+
+      <div class="stats">
+        <div class="stat money" style="animation-delay:.05s">
+          <span class="lbl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>جمع شهریه ماهانه</span>
+          <span class="num" id="stRevenue" data-n="0">۰</span>
+          <span class="sub">تومان — از مجموع اشتراک فعال دانش‌آموزان</span>
+        </div>
+        <div class="stat stud" style="animation-delay:.12s">
+          <span class="lbl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1.5 2.7 3 6 3s6-1.5 6-3v-5"/></svg>دانش‌آموزان فعال</span>
+          <span class="num" id="stStudents" data-n="0">۰</span>
+          <span class="sub">در حال دریافت مشاوره کنکور</span>
+        </div>
+        <div class="stat due" style="animation-delay:.19s">
+          <span class="lbl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.7 3.86a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>سررسیدهای فوری</span>
+          <span class="num" id="stDue" data-n="0">۰</span>
+          <span class="sub">نیازمند پیگیری و یادآوری پرداخت</span>
+        </div>
+        <div class="stat cons" style="animation-delay:.26s">
+          <span class="lbl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9.5" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M15.5 3.13a4 4 0 0 1 0 7.75"/></svg>مشاوران همکار</span>
+          <span class="num" id="stCons" data-n="0">۰</span>
+          <span class="sub">مشاور فعال در مجموعه کنکوریار</span>
+        </div>
+      </div>
+
+      <div class="search-wrap">
+        <div class="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="text" id="searchCons" placeholder="جست‌وجوی نام یا تخصص مشاور…">
+        </div>
+        <span class="list-count" id="consCount"></span>
+      </div>
+      <div class="cons-list" id="consList"></div>
+    </section>
+
+    <!-- ===== VIEW: STUDENTS ===== -->
+    <section class="view" id="view-students">
+      <div class="back-row">
+        <button class="btn btn-ghost" id="backBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+          بازگشت به مشاوران
+        </button>
+        <span class="crumb">مشاوران ← <b id="crumbName"></b></span>
+      </div>
+      <div class="con-head" id="conHead"></div>
+      <div id="dueBannerWrap"></div>
+      <div class="search-wrap">
+        <div class="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="text" id="searchStd" placeholder="جست‌وجوی دانش‌آموز یا شهر…">
+        </div>
+        <span class="list-count" id="stdCount"></span>
+      </div>
+      <div class="chips" id="chips"></div>
+      <div class="st-panel">
+        <div class="srow head">
+          <div>دانش‌آموز</div><div>رشته</div><div>پایه</div><div>شهر</div>
+          <div>شهریه ماهانه</div><div>تاریخ عضویت</div><div>وضعیت تمدید</div><div>اقدامات</div>
+        </div>
+        <div id="stdList"></div>
+      </div>
+    </section>
+
+    <!-- ===== VIEW: DUE ===== -->
+    <section class="view" id="view-due">
+      <h2 class="sec-title">🔔 سررسیدهای تمدید اشتراک</h2>
+      <p class="sec-sub">دانش‌آموزانی که موعد پرداخت ماهانه آن‌ها فرا رسیده یا از آن گذشته است — از همه مشاوران.</p>
+      <div class="st-panel" id="dueList"></div>
+    </section>
+
+    <!-- ===== VIEW: MESSAGES ===== -->
+    <section class="view" id="view-messages">
+      <h2 class="sec-title">✉️ پیام‌های ارسالی</h2>
+      <p class="sec-sub">بایگانی پیامک‌ها و ایمیل‌های یادآوری تمدید اشتراک — به دانش‌آموزان و مشاوران.</p>
+      <div class="tabs" id="msgTabs"></div>
+      <div class="msg-list" id="msgList"></div>
+    </section>
+
+    <!-- ===== VIEW: SETTINGS ===== -->
+    <section class="view" id="view-settings">
+      <h2 class="sec-title">تنظیمات</h2>
+      <p class="sec-sub">پیکربندی پنل مدیریت</p>
+      <div class="settings-panel">
+        <div class="mark"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#04211f" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"/></svg></div>
+        <h3>نسخهٔ نمایشی</h3>
+        <p>این پنل صرفاً یک نمونهٔ رابط کاربری است؛ تمام داده‌ها به‌صورت داخلی و ثابت بارگذاری شده‌اند و هیچ اتصال به سرور یا پایگاه داده وجود ندارد.</p>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- ===== DRAWER ===== -->
+<div class="drawer-back" id="drawerBack"></div>
+<aside class="drawer" id="drawer">
+  <div class="d-head">
+    <div class="ava h1" id="dAva">ـ</div>
+    <div><h3 id="dName"></h3><p id="dSub"></p></div>
+    <button class="d-close" id="dClose"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+  </div>
+  <div class="d-sec">
+    <div class="d-status"><span id="dBadge"></span><span class="d-due-lbl">سررسید بعدی: <b id="dDueDate"></b></span></div>
+    <div class="prog-wrap">
+      <div class="prog-lbl"><span>پیشرفت دورهٔ اشتراک</span><span id="dProgTxt"></span></div>
+      <div class="prog"><i id="dProg"></i></div>
+    </div>
+  </div>
+  <div class="d-sec">
+    <div class="d-grid">
+      <div class="d-item"><small>شهریه ماهانه</small><b class="num" id="dFee"></b></div>
+      <div class="d-item"><small>تاریخ عضویت</small><b id="dJoin"></b></div>
+      <div class="d-item"><small>شماره تماس</small><b id="dPhone"></b></div>
+      <div class="d-item ltr"><small>ایمیل</small><b id="dMail"></b></div>
+    </div>
+  </div>
+  <div class="d-sec">
+    <div class="d-acts">
+      <button class="btn btn-saff" id="dSms"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>ارسال یادآور پیامکی</button>
+      <button class="btn btn-ghost" id="dEmail"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>ارسال ایمیل</button>
+    </div>
+  </div>
+  <div class="d-sec" style="border-bottom:0">
+    <div class="d-due-lbl" style="margin-bottom:8px">📨 تاریخچهٔ پیام‌های این دانش‌آموز</div>
+    <div id="dHist"></div>
+  </div>
+</aside>
+
+<div class="toasts" id="toasts"></div>
+
+<script>
+/* ================= HELPERS ================= */
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const DAY=864e5, today=new Date();
+const faNum=n=>Number(n).toLocaleString('fa-IR');
+const fa=s=>String(s).replace(/[0-9]/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d]);
+const fmtMD=d=>new Intl.DateTimeFormat('fa-IR',{day:'numeric',month:'long'}).format(d);
+const fmtFull=d=>new Intl.DateTimeFormat('fa-IR',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).format(d);
+
+/* ================= DATA ================= */
+const CONSULTANTS=[
+ {id:1,name:'سارا محمدی',spec:'مشاور ارشد علوم تجربی',phone:'۰۹۱۲ ۸۴۱ ۳۳۵۷'},
+ {id:2,name:'امیرحسین رادمهر',spec:'مشاور ریاضی و فیزیک',phone:'۰۹۳۵ ۶۲۰ ۹۱۸۴'},
+ {id:3,name:'نگار کاظمی',spec:'مشاور علوم انسانی',phone:'۰۹۱۹ ۴۷۶ ۲۰۵۱'},
+ {id:4,name:'کاوه شریفی',spec:'مشاور تجربی — هدف‌گذاری پزشکی',phone:'۰۹۱۰ ۳۸۳ ۷۷۴۲'},
+ {id:5,name:'مریم احمدی',spec:'مشاور زبان‌های خارجی',phone:'۰۹۱۲ ۵۹۷ ۶۶۲۰'},
+ {id:6,name:'حسین توکلی',spec:'مشاور ریاضی و هنر',phone:'۰۹۳۸ ۲۱۴ ۵۵۹۳'},
+];
+/* [name, major, grade, city, fee, joinDate, dueOffsetDays, renewed, email] */
+const RAW={
+1:[['الناز کریمی','تجربی','دوازدهم','تهران',4500000,'۱۴۰۴/۰۷/۱۲',0,0,'elnaz.k@konkooryar.ir'],
+   ['پارسا نوری','تجربی','پشت‌کنکور','کرج',5200000,'۱۴۰۴/۰۳/۰۲',-3,0,'parsa.n@konkooryar.ir'],
+   ['یلدا صفری','تجربی','یازدهم','قم',3800000,'۱۴۰۵/۰۱/۲۰',2,0,'yalda.s@konkooryar.ir'],
+   ['محمدامین حیدری','تجربی','دوازدهم','اصفهان',4900000,'۱۴۰۴/۱۰/۰۵',-1,0,'mamin.h@konkooryar.ir'],
+   ['ترانه کاویانی','تجربی','دهم','شیراز',3200000,'۱۴۰۵/۰۳/۱۴',12,0,'taraneh.k@konkooryar.ir'],
+   ['آرمین صادقی','تجربی','پشت‌کنکور','تبریز',5600000,'۱۴۰۴/۰۵/۳۰',6,1,'armin.s@konkooryar.ir'],
+   ['هستی مرادی','تجربی','یازدهم','رشت',3500000,'۱۴۰۵/۰۲/۰۸',4,0,'hasti.m@konkooryar.ir']],
+2:[['کیان ابراهیمی','ریاضی','دوازدهم','تهران',4200000,'۱۴۰۴/۰۶/۱۸',-2,0,'kian.e@konkooryar.ir'],
+   ['سوگند نادری','ریاضی','یازدهم','مشهد',3600000,'۱۴۰۵/۰۲/۰۱',0,0,'sogand.n@konkooryar.ir'],
+   ['بردیا مقدم','ریاضی','پشت‌کنکور','اصفهان',5000000,'۱۴۰۴/۰۸/۱۱',6,0,'bardia.m@konkooryar.ir'],
+   ['باران شریفی','ریاضی','دهم','شیراز',2900000,'۱۴۰۵/۰۴/۰۳',21,0,'baran.sh@konkooryar.ir'],
+   ['آریا قاسمی','ریاضی','دوازدهم','کرج',4400000,'۱۴۰۴/۰۹/۲۳',10,1,'aria.gh@konkooryar.ir'],
+   ['ملیکا تاجیک','ریاضی','یازدهم','یزد',3400000,'۱۴۰۴/۱۱/۳۰',-5,0,'melika.t@konkooryar.ir']],
+3:[['نیایش عبدالله‌زاده','انسانی','دوازدهم','تهران',3800000,'۱۴۰۴/۰۷/۰۷',1,0,'niayesh.a@konkooryar.ir'],
+   ['ماهان رحیمی','انسانی','پشت‌کنکور','مشهد',4600000,'۱۴۰۴/۰۴/۱۵',-1,0,'mahan.r@konkooryar.ir'],
+   ['غزل نجفی','انسانی','یازدهم','تبریز',3200000,'۱۴۰۵/۰۳/۰۹',15,0,'ghazal.n@konkooryar.ir'],
+   ['سامیار اکبری','انسانی','دهم','قم',2700000,'۱۴۰۵/۰۴/۲۶',8,0,'samyar.a@konkooryar.ir'],
+   ['جانان حسینی','انسانی','دوازدهم','ساری',3900000,'۱۴۰۴/۱۲/۲۰',20,1,'janan.h@konkooryar.ir']],
+4:[['دیانا خسروی','تجربی','دوازدهم','اهواز',4700000,'۱۴۰۴/۰۶/۲۳',0,0,'diana.kh@konkooryar.ir'],
+   ['آرمان سلطانی','تجربی','پشت‌کنکور','تهران',5800000,'۱۴۰۴/۰۲/۱۰',-4,0,'arman.s@konkooryar.ir'],
+   ['پرنیان موسوی','تجربی','یازدهم','اصفهان',3700000,'۱۴۰۵/۰۱/۰۵',3,0,'parnian.m@konkooryar.ir'],
+   ['رایان جعفری','تجربی','دهم','رشت',2800000,'۱۴۰۵/۰۵/۰۱',18,0,'rayan.j@konkooryar.ir'],
+   ['ترمه ربیعی','تجربی','دوازدهم','کرمان',4100000,'۱۴۰۴/۰۹/۰۲',2,0,'termeh.r@konkooryar.ir'],
+   ['ایلیا فرهمند','تجربی','یازدهم','همدان',3300000,'۱۴۰۵/۰۲/۲۴',26,0,'ilia.f@konkooryar.ir']],
+5:[['نورا ایزدی','زبان','دوازدهم','تهران',3000000,'۱۴۰۴/۰۸/۱۹',5,0,'nora.i@konkooryar.ir'],
+   ['شروین بختیاری','زبان','پشت‌کنکور','شیراز',4300000,'۱۴۰۴/۰۵/۱۲',0,0,'shervin.b@konkooryar.ir'],
+   ['لیانا دوستی','زبان','یازدهم','مشهد',2600000,'۱۴۰۵/۰۳/۲۸',11,0,'liana.d@konkooryar.ir'],
+   ['مهراد صالحی','زبان','دهم','اصفهان',2400000,'۱۴۰۴/۱۰/۱۷',-2,0,'mehrad.s@konkooryar.ir']],
+6:[['نفس عظیمی','هنر','دوازدهم','تهران',3500000,'۱۴۰۴/۰۶/۳۰',1,0,'nafas.a@konkooryar.ir'],
+   ['شایان رضایی','ریاضی','دوازدهم','تبریز',4000000,'۱۴۰۴/۰۳/۲۱',-6,0,'shayan.r@konkooryar.ir'],
+   ['درسا کمالی','هنر','یازدهم','شیراز',3100000,'۱۴۰۵/۰۲/۱۶',9,0,'dorsa.k@konkooryar.ir'],
+   ['امیرعلی زرگر','ریاضی','پشت‌کنکور','کرج',4800000,'۱۴۰۴/۰۷/۲۹',0,0,'amirali.z@konkooryar.ir'],
+   ['هلیا نادری‌فر','ریاضی','دهم','مشهد',2500000,'۱۴۰۵/۰۴/۱۱',14,0,'helia.n@konkooryar.ir']]
+};
+const STUDENTS=[];
+for(const cid in RAW) RAW[cid].forEach((r,i)=>{
+  STUDENTS.push({id:cid+'-'+i,cid:+cid,name:r[0],major:r[1],grade:r[2],city:r[3],fee:r[4],join:r[5],due:r[6],renewed:!!r[7],mail:r[8],
+    phone:'۰۹'+fa(String(10+((i*7+ +cid*3)%89)))+' '+fa(String(100+((i*71+ +cid*13)%900)))+' '+fa(String(1000+((i*137+ +cid*29)%9000)))});
+});
+const studentsOf=cid=>STUDENTS.filter(s=>s.cid===cid);
+
+function stOf(s){
+  if(s.renewed) return {k:'paid',t:'تمدید شد',cls:'st-paid'};
+  if(s.due<0)   return {k:'overdue',t:faNum(-s.due)+' روز تأخیر در پرداخت',cls:'st-overdue'};
+  if(s.due===0) return {k:'today',t:'سررسید امروز',cls:'st-today'};
+  if(s.due<=5)  return {k:'soon',t:faNum(s.due)+' روز مانده',cls:'st-soon'};
+  return {k:'ok',t:faNum(s.due)+' روز مانده',cls:'st-ok'};
+}
+const dueOf=cid=>studentsOf(cid).filter(s=>!s.renewed&&s.due<=0);
+const ALL_DUE=()=>STUDENTS.filter(s=>!s.renewed&&s.due<=0).sort((a,b)=>a.due-b.due);
+
+/* message templates */
+const tStudent=n=>`دانش‌آموز گرامی، ${n} عزیز؛ موعد تمدید اشتراک مشاورهٔ کنکور شما فرا رسیده است. برای ادامهٔ دریافت برنامه‌ریزی و پشتیبانی، حداکثر تا ۴۸ ساعت آینده نسبت به پرداخت اقدام فرمایید. — مجموعه کنکوریار`;
+const tConsultant=(n,k)=>`مشاور گرامی، ${n}؛ تعداد ${faNum(k)} نفر از دانش‌آموزان شما به موعد تمدید اشتراک رسیده‌اند. لطفاً وضعیت پرداخت آن‌ها را پیگیری فرمایید. — پنل مدیریت کنکوریار`;
+const eStudent=f=>`صورتحساب اشتراک ماهانهٔ شما به مبلغ ${faNum(f)} تومان صادر شده است. لینک پرداخت امن در پنل دانش‌آموزی شما فعال است؛ در صورت پرداخت، این پیام را نادیده بگیرید.`;
+const eConsultant=k=>`گزارش سررسید: در حال حاضر ${faNum(k)} نفر از دانش‌آموزان تحت مشاورهٔ شما نیازمند تمدید اشتراک ماهانه هستند. جزئیات در پنل مشاوران موجود است.`;
+
+function dtStr(ago,hm){
+  const lbl=ago===0?'امروز':ago===1?'دیروز':fmtMD(new Date(today-ago*DAY));
+  return lbl+'، '+hm;
+}
+let messages=[
+ {id:'m1', ch:'sms',  type:'student',   to:'الناز کریمی',     contact:'۰۹۱۲ ۴۵۶ ۷۸۹۰', body:tStudent('الناز کریمی'), time:dtStr(0,'۰۹:۱۵'), st:'تحویل شد'},
+ {id:'m2', ch:'sms',  type:'consultant',to:'سارا محمدی',      contact:'۰۹۱۲ ۸۴۱ ۳۳۵۷', body:tConsultant('سارا محمدی',3), time:dtStr(0,'۰۸:۳۰'), st:'تحویل شد'},
+ {id:'m3', ch:'email',type:'student',   to:'پارسا نوری',      contact:'parsa.n@konkooryar.ir', subj:'صورتحساب تمدید اشتراک — سررسید گذشته', body:eStudent(5200000), time:dtStr(1,'۱۸:۴۲'), st:'تحویل شد'},
+ {id:'m4', ch:'sms',  type:'student',   to:'محمدامین حیدری',  contact:'۰۹۱۹ ۳۲۰ ۶۶۴۱', body:tStudent('محمدامین حیدری'), time:dtStr(1,'۱۰:۰۵'), st:'تحویل شد'},
+ {id:'m5', ch:'email',type:'consultant',to:'امیرحسین رادمهر', contact:'radmehr@konkooryar.ir', subj:'گزارش هفتگی سررسید دانش‌آموزان', body:eConsultant(2), time:dtStr(2,'۲۰:۱۵'), st:'تحویل شد'},
+ {id:'m6', ch:'sms',  type:'student',   to:'ملیکا تاجیک',     contact:'۰۹۰۲ ۷۸۴ ۵۱۲۳', body:tStudent('ملیکا تاجیک'), time:dtStr(2,'۰۹:۳۰'), st:'تحویل شد'},
+ {id:'m7', ch:'email',type:'student',   to:'آرمان سلطانی',    contact:'arman.s@konkooryar.ir', subj:'یادآوری پرداخت معوق اشتراک', body:eStudent(5800000), time:dtStr(3,'۱۴:۲۰'), st:'تحویل شد'},
+ {id:'m8', ch:'sms',  type:'consultant',to:'کاوه شریفی',      contact:'۰۹۱۰ ۳۸۳ ۷۷۴۲', body:tConsultant('کاوه شریفی',2), time:dtStr(3,'۰۸:۰۰'), st:'تحویل شد'},
+ {id:'m9', ch:'sms',  type:'student',   to:'شایان رضایی',     contact:'۰۹۳۶ ۹۱۷ ۲۲۰۸', body:tStudent('شایان رضایی'), time:dtStr(4,'۱۱:۴۵'), st:'تحویل شد'},
+ {id:'m10',ch:'email',type:'student',   to:'مهراد صالحی',     contact:'mehrad.s@konkooryar.ir', subj:'مهلت تمدید اشتراک ماهانه', body:eStudent(2400000), time:dtStr(4,'۱۶:۱۰'), st:'تحویل شد'},
+ {id:'m11',ch:'sms',  type:'student',   to:'دیانا خسروی',     contact:'۰۹۱۶ ۵۵۲ ۸۰۹۴', body:tStudent('دیانا خسروی'), time:dtStr(0,'۰۷:۵۸'), st:'در صف ارسال'},
+];
+const nowFaTime=()=>{
+  const d=new Intl.DateTimeFormat('fa-IR',{day:'numeric',month:'long'}).format(new Date());
+  return 'امروز، '+new Date().toLocaleTimeString('fa-IR',{hour:'2-digit',minute:'2-digit'});
+};
+
+/* ================= RENDER: CONSULTANTS ================= */
+const hueCls=n=>'h'+(((n-1)%6)+1);
+function renderConsultants(q=''){
+  const list=$('#consList'); list.innerHTML='';
+  const items=CONSULTANTS.filter(c=>c.name.includes(q)||c.spec.includes(q));
+  $('#consCount').innerHTML=`نمایش <b>${faNum(items.length)}</b> مشاور`;
+  if(!items.length){list.innerHTML='<div class="empty">مشاوری با این مشخصات پیدا نشد.</div>';return;}
+  items.forEach((c,i)=>{
+    const sts=studentsOf(c.id), due=dueOf(c.id).length;
+    const paid=sts.filter(s=>s.renewed).length, soon=sts.filter(s=>!s.renewed&&s.due>0&&s.due<=5).length;
+    const rev=sts.reduce((a,s)=>a+s.fee,0);
+    const p=Math.round(paid/sts.length*100), s2=Math.round(soon/sts.length*100);
+    const el=document.createElement('div');
+    el.className='con-card'; el.style.animationDelay=(i*70)+'ms';
+    el.innerHTML=`
+      <div class="ava ${hueCls(c.id)}">${c.name[0]}</div>
+      <div class="con-info"><b>${c.name}</b><span>${c.spec}</span>
+        <span style="margin-top:2px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 16.9v2a2 2 0 0 1-2.2 2A19 19 0 0 1 3.1 4.2 2 2 0 0 1 5.1 2h2a2 2 0 0 1 2 1.7c.13.96.36 1.9.7 2.8a2 2 0 0 1-.45 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.45c.9.34 1.84.57 2.8.7a2 2 0 0 1 1.7 2.05z"/></svg>${c.phone}</span></div>
+      <div class="metric"><i>${faNum(sts.length)}</i><small>دانش‌آموز</small></div>
+      <div class="metric ${due?'warn':'ok'}"><i>${faNum(due)}</i><small>سررسید فوری</small></div>
+      <div class="metric"><i>${faNum(Math.round(rev/1e6)*10/10).replace('.','٫')} م</i><small>تومان / ماه</small></div>
+      <div class="mix"><div class="mixbar"><i class="a" style="width:${p}%"></i><i class="b" style="width:${s2}%"></i><i class="c" style="width:${Math.max(100-p-s2,0)}%"></i></div>
+        <div class="mix-lbl">وضعیت تمدیدها</div></div>
+      <div class="go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg></div>
+      <div class="m-row">
+        <div class="metric"><i>${faNum(sts.length)}</i><small>دانش‌آموز</small></div>
+        <div class="metric ${due?'warn':'ok'}"><i>${faNum(due)}</i><small>سررسید</small></div>
+        <div class="metric"><i>${faNum(rev)}</i><small>تومان/ماه</small></div>
+      </div>`;
+    el.onclick=()=>openConsultant(c.id);
+    list.appendChild(el);
+  });
+}
+
+/* ================= RENDER: STUDENTS ================= */
+let curC=null, curChip='all', stdQ='';
+function openConsultant(id){
+  curC=CONSULTANTS.find(c=>c.id===id); curChip='all'; stdQ=''; $('#searchStd').value='';
+  $('#crumbName').textContent=curC.name;
+  const sts=studentsOf(id), due=dueOf(id);
+  const rev=sts.reduce((a,s)=>a+s.fee,0);
+  $('#conHead').innerHTML=`
+    <div class="ava ${hueCls(id)}">${curC.name[0]}</div>
+    <div><h3>${curC.name}</h3><div class="spec">${curC.spec}</div>
+      <div class="contact">
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.9v2a2 2 0 0 1-2.2 2A19 19 0 0 1 3.1 4.2 2 2 0 0 1 5.1 2h2a2 2 0 0 1 2 1.7c.13.96.36 1.9.7 2.8a2 2 0 0 1-.45 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.45c.9.34 1.84.57 2.8.7a2 2 0 0 1 1.7 2.05z"/></svg>${curC.phone}</span>
+        <span>🗓 فعال از تابستان ۱۴۰۴</span>
+      </div></div>
+    <div class="head-stats">
+      <div class="metric"><i>${faNum(sts.length)}</i><small>دانش‌آموز فعال</small></div>
+      <div class="metric ${due.length?'warn':'ok'}"><i>${faNum(due.length)}</i><small>سررسید فوری</small></div>
+      <div class="metric"><i>${faNum(rev)}</i><small>تومان در ماه</small></div>
+    </div>`;
+  renderBanner(); renderChips(); renderStudents(); showView('students');
+}
+function renderBanner(){
+  const due=dueOf(curC.id), w=$('#dueBannerWrap');
+  if(!due.length){w.innerHTML='';return;}
+  w.innerHTML=`<div class="due-banner">
+    <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.7 3.86a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg></div>
+    <div><b>${faNum(due.length)} دانش‌آموز این مشاور به موعد تمدید اشتراک رسیده‌اند</b>
+    <span>پیامک یا ایمیل یادآوری برای آن‌ها ارسال کنید تا سرویس‌شان قطع نشود.</span></div>
+    <button class="btn btn-saff" id="bulkBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></svg>ارسال یادآور گروهی</button>
+  </div>`;
+  $('#bulkBtn').onclick=()=>{due.forEach(s=>sendReminder(s,'sms',true)); toast(`یادآور گروهی برای ${faNum(due.length)} دانش‌آموز ارسال شد ✅`);};
+}
+const CHIP_DEFS=[['all','همه'],['overdue','تأخیر در پرداخت'],['today','سررسید امروز'],['soon','در آستانه'],['paid','تمدید شده'],['ok','در دوره']];
+function renderChips(){
+  const sts=studentsOf(curC.id), box=$('#chips'); box.innerHTML='';
+  CHIP_DEFS.forEach(([k,l])=>{
+    const n=k==='all'?sts.length:sts.filter(s=>stOf(s).k===k).length;
+    const b=document.createElement('button');
+    b.className='chip'+(curChip===k?' on':'');
+    b.innerHTML=`${l} <i>${faNum(n)}</i>`;
+    b.onclick=()=>{curChip=k;renderChips();renderStudents();};
+    box.appendChild(b);
+  });
+}
+function renderStudents(){
+  const box=$('#stdList'); box.innerHTML='';
+  let sts=studentsOf(curC.id);
+  if(curChip!=='all') sts=sts.filter(s=>stOf(s).k===curChip);
+  if(stdQ) sts=sts.filter(s=>s.name.includes(stdQ)||s.city.includes(stdQ));
+  $('#stdCount').innerHTML=`نمایش <b>${faNum(sts.length)}</b> دانش‌آموز`;
+  if(!sts.length){box.innerHTML='<div class="empty">موردی یافت نشد.</div>';return;}
+  sts.forEach((s,i)=>{
+    const st=stOf(s);
+    const r=document.createElement('div');
+    r.className='srow body'; r.style.animationDelay=(i*45)+'ms';
+    r.innerHTML=`
+      <div class="st-cell name" data-l="دانش‌آموز"><div class="st-name"><div class="mini-ava">${s.name[0]}</div><div><b>${s.name}</b><small>${s.phone}</small></div></div></div>
+      <div class="st-cell" data-l="رشته"><b>${s.major}</b></div>
+      <div class="st-cell" data-l="پایه"><b>${s.grade}</b></div>
+      <div class="st-cell" data-l="شهر"><b>${s.city}</b></div>
+      <div class="st-cell" data-l="شهریه"><span class="fee">${faNum(s.fee)}<small>تومان</small></span></div>
+      <div class="st-cell" data-l="عضویت"><b style="font-size:12.5px">${s.join}</b></div>
+      <div class="st-cell" data-l="وضعیت"><span class="bdg ${st.cls}"><span class="dot"></span>${st.t}</span></div>
+      <div class="st-cell acts"><div class="row-acts">
+        <button class="ic-btn saff" title="ارسال یادآور پیامکی" data-act="remind"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></svg></button>
+        <button class="ic-btn" title="جزئیات و تاریخچه" data-act="info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg></button>
+      </div></div>`;
+    r.querySelector('[data-act=remind]').onclick=e=>{e.stopPropagation();sendReminder(s,'sms');};
+    r.querySelector('[data-act=info]').onclick=e=>{e.stopPropagation();openDrawer(s);};
+    r.onclick=()=>openDrawer(s);
+    box.appendChild(r);
+  });
+}
+
+/* ================= DRAWER ================= */
+let dStudent=null;
+function openDrawer(s){
+  dStudent=s; const st=stOf(s), c=CONSULTANTS.find(x=>x.id===s.cid);
+  $('#dAva').className='ava '+hueCls(s.cid); $('#dAva').textContent=s.name[0];
+  $('#dName').textContent=s.name;
+  $('#dSub').innerHTML=`${s.major} • ${s.grade} • ${s.city} — مشاور: ${c.name}`;
+  $('#dBadge').innerHTML=`<span class="bdg ${st.cls}" style="font-size:13px;padding:7px 14px"><span class="dot"></span>${st.t}</span>`;
+  const dd=new Date(today.getTime()+Math.max(s.due,0)*DAY);
+  $('#dDueDate').textContent=s.renewed?'پرداخت شد — '+fmtMD(dd):fmtMD(dd);
+  $('#dFee').textContent=faNum(s.fee)+' تومان';
+  $('#dJoin').textContent=s.join;
+  $('#dPhone').textContent=s.phone;
+  $('#dMail').textContent=s.mail;
+  const rem=Math.max(s.due,0), pct=Math.min(100,Math.round((30-rem)/30*100));
+  $('#dProgTxt').textContent=s.renewed?'دورهٔ جدید آغاز شد':rem===0?'هم‌اکنون سررسید است':faNum(rem)+' روز تا سررسید';
+  const bar=$('#dProg'); bar.style.width='0'; requestAnimationFrame(()=>setTimeout(()=>bar.style.width=pct+'%',60));
+  renderDrawerHist();
+  $('#drawer').classList.add('open'); $('#drawerBack').classList.add('show');
+}
+function renderDrawerHist(){
+  const hs=messages.filter(m=>m.to===dStudent.name);
+  $('#dHist').innerHTML= hs.length? hs.map(m=>`
+    <div class="d-hist-item">
+      <div class="ch-ic ${m.ch==='sms'?'ch-sms':'ch-email'}">${m.ch==='sms'?icSms():icMail()}</div>
+      <div style="min-width:0"><p>${m.body}</p><small>${m.time} — ${m.st}</small></div>
+    </div>`).join('') : '<div style="color:var(--mut2);font-size:12px;padding:8px 0">هنوز پیامی برای این دانش‌آموز ارسال نشده است.</div>';
+}
+function closeDrawer(){$('#drawer').classList.remove('open');$('#drawerBack').classList.remove('show');}
+$('#dClose').onclick=closeDrawer; $('#drawerBack').onclick=closeDrawer;
+$('#dSms').onclick=()=>sendReminder(dStudent,'sms');
+$('#dEmail').onclick=()=>sendReminder(dStudent,'email');
+
+/* ================= SEND / MESSAGES ================= */
+function sendReminder(s,ch,bulk=false){
+  const m={id:'m'+Date.now()+Math.random().toString(16).slice(2,5),ch,type:'student',to:s.name,
+    contact:ch==='sms'?s.phone:s.mail,
+    subj:ch==='email'?'یادآوری تمدید اشتراک ماهانه':null,
+    body:ch==='sms'?tStudent(s.name):eStudent(s.fee),
+    time:nowFaTime(),st:'در صف ارسال'};
+  messages.unshift(m);
+  renderMessages(curTab); if($('#view-students').classList.contains('active')) renderBanner();
+  updateBadges(); if(dStudent&&dStudent.id===s.id) renderDrawerHist();
+  if(!bulk) toast((ch==='sms'?'پیامک':'ایمیل')+' یادآوری برای '+s.name+' ارسال شد');
+  setTimeout(()=>{m.st='تحویل شد'; renderMessages(curTab); if(dStudent&&dStudent.id===s.id) renderDrawerHist();},1600);
+}
+let curTab='all';
+const TAB_DEFS=[['all','همه'],['sms','پیامک'],['email','ایمیل'],['student','به دانش‌آموزان'],['consultant','به مشاوران']];
+function renderTabs(){
+  const box=$('#msgTabs'); box.innerHTML='';
+  TAB_DEFS.forEach(([k,l])=>{
+    let n=messages.length;
+    if(k==='sms')n=messages.filter(m=>m.ch==='sms').length;
+    if(k==='email')n=messages.filter(m=>m.ch==='email').length;
+    if(k==='student')n=messages.filter(m=>m.type==='student').length;
+    if(k==='consultant')n=messages.filter(m=>m.type==='consultant').length;
+    const b=document.createElement('button');
+    b.className='tab'+(curTab===k?' on':'');
+    b.innerHTML=`${l}<i>${faNum(n)}</i>`;
+    b.onclick=()=>{curTab=k;renderTabs();renderMessages();};
+    box.appendChild(b);
+  });
+}
+const icSms=()=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
+const icMail=()=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>';
+const icCheck=()=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg>';
+function renderMessages(){
+  renderTabs();
+  let ms=[...messages];
+  if(curTab==='sms')ms=ms.filter(m=>m.ch==='sms');
+  if(curTab==='email')ms=ms.filter(m=>m.ch==='email');
+  if(curTab==='student')ms=ms.filter(m=>m.type==='student');
+  if(curTab==='consultant')ms=ms.filter(m=>m.type==='consultant');
+  const box=$('#msgList');
+  box.innerHTML= ms.length? ms.map((m,i)=>`
+    <div class="msg ${m.id.startsWith('m1')?'':''}" style="animation-delay:${Math.min(i*45,400)}ms" data-id="${m.id}">
+      <div class="ch-ic ${m.ch==='sms'?'ch-sms':'ch-email'}">${m.ch==='sms'?icSms():icMail()}</div>
+      <div class="msg-body">
+        <div class="msg-to"><b>${m.to}</b>
+          <span class="who ${m.type}">${m.type==='student'?'دانش‌آموز':'مشاور'}</span>
+          <span class="cnt">${m.contact}</span></div>
+        ${m.subj?`<div class="msg-subj">موضوع: ${m.subj}</div>`:''}
+        <div class="msg-text">${m.body}</div>
+        <div class="msg-meta">
+          <span>🕐 ${m.time}</span>
+          <span class="tag">تمدید اشتراک</span>
+          ${m.st==='تحویل شد'?`<span class="ok">${icCheck()} تحویل شد</span>`:`<span class="queue">⏳ ${m.st}</span>`}
+        </div>
+      </div>
+    </div>`).join('') : '<div class="empty">پیامی در این دسته وجود ندارد.</div>';
+}
+
+/* ================= RENDER: DUE VIEW ================= */
+function renderDue(){
+  const due=ALL_DUE(), box=$('#dueList');
+  if(!due.length){box.innerHTML='<div class="empty">🎉 هیچ سررسید فوری‌ای وجود ندارد.</div>';return;}
+  box.innerHTML=`<div class="srow head" style="grid-template-columns:1.4fr .9fr .7fr .9fr .8fr 1.1fr 44px;gap:14px">
+      <div>دانش‌آموز</div><div>مشاور</div><div class="hide-m">شهر</div><div class="hide-m">شهریه</div><div>تاریخ سررسید</div><div>وضعیت</div><div></div>
+    </div>`+due.map((s,i)=>{
+    const st=stOf(s), c=CONSULTANTS.find(x=>x.id===s.cid);
+    const dd=new Date(today.getTime()+s.due*DAY);
+    return `<div class="due-row" style="animation-delay:${i*40}ms">
+      <div class="st-name"><div class="mini-ava">${s.name[0]}</div><div><b>${s.name}</b><small>${s.major} • ${s.grade}</small></div></div>
+      <div><span class="con-tag">👤 ${c.name}</span></div>
+      <div class="hide-m" style="font-size:13px">${s.city}</div>
+      <div class="hide-m"><span class="fee" style="font-family:'Lalezar';color:#ffe1a8">${faNum(s.fee)}</span></div>
+      <div class="due-date"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>${fmtMD(dd)}</div>
+      <div><span class="bdg ${st.cls}"><span class="dot"></span>${st.t}</span></div>
+      <button class="ic-btn saff" title="ارسال یادآور" data-act="r"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></svg></button>
+    </div>`;}).join('');
+  box.querySelectorAll('[data-act=r]').forEach((b,i)=>b.onclick=()=>sendReminder(due[i],'sms'));
+}
+
+/* ================= NAV / VIEWS ================= */
+const TITLES={consultants:['داشبورد مشاوران','مدیریت تمدید اشتراک دانش‌آموزان'],
+  students:['لیست دانش‌آموزان','مشخصات و وضعیت تمدید اشتراک'],
+  due:['سررسیدهای تمدید','دانش‌آموزان در آستانه یا عبور از موعد پرداخت'],
+  messages:['پیام‌های ارسالی','بایگانی پیامک و ایمیل یادآوری'],
+  settings:['تنظیمات','پیکربندی پنل مدیریت']};
+function showView(v){
+  $$('.view').forEach(x=>x.classList.remove('active'));
+  $('#view-'+v).classList.add('active');
+  $$('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.view===v||(v==='students'&&b.dataset.view==='consultants')));
+  $('#topTitle').innerHTML=TITLES[v][0]+'<small>'+TITLES[v][1]+'</small>';
+  if(v==='due')renderDue();
+  if(v==='messages')renderMessages();
+  closeSidebar(); window.scrollTo({top:0,behavior:'smooth'});
+}
+$$('.nav-btn').forEach(b=>b.onclick=()=>showView(b.dataset.view));
+$('#backBtn').onclick=()=>showView('consultants');
+$('#bell').onclick=()=>showView('due');
+
+/* mobile sidebar */
+function closeSidebar(){$('#sidebar').classList.remove('open');$('#backdrop').classList.remove('show');}
+$('#burger').onclick=()=>{$('#sidebar').classList.add('open');$('#backdrop').classList.add('show');};
+$('#backdrop').onclick=closeSidebar;
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeDrawer();closeSidebar();}});
+
+/* search */
+$('#searchCons').oninput=e=>renderConsultants(e.target.value.trim());
+$('#searchStd').oninput=e=>{stdQ=e.target.value.trim();renderStudents();};
+
+/* ================= TOAST ================= */
+function toast(msg){
+  const t=document.createElement('div'); t.className='toast';
+  t.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5"/></svg>${msg}`;
+  $('#toasts').appendChild(t);
+  setTimeout(()=>{t.classList.add('out');setTimeout(()=>t.remove(),400);},3400);
+}
+
+/* ================= INIT ================= */
+function updateBadges(){
+  const n=ALL_DUE().length;
+  $('#bellCount').textContent=faNum(n); $('#dueBadge').textContent=faNum(n);
+  $('#msgBadge').textContent=faNum(messages.length);
+}
+function animateNum(el,target,money){
+  const t0=performance.now(), dur=1100;
+  (function tick(t){
+    const p=Math.min((t-t0)/dur,1), e=1-Math.pow(1-p,3);
+    el.textContent=faNum(Math.round(target*e))+(money?' ':'' );
+    if(p<1)requestAnimationFrame(tick);
+  })(t0);
+}
+function greet(){
+  const h=new Date().getHours();
+  const g=h<5?'شب بخیر':h<12?'صبح بخیر':h<17?'ظهر بخیر':h<20?'عصر بخیر':'شب بخیر';
+  $('#greetTxt').innerHTML=`<em>${g}</em>، خانم دکتر رستمی ✨`;
+}
+(function init(){
+  $('#todayFa').textContent=fmtFull(today);
+  greet(); renderConsultants(); updateBadges(); renderMessages();
+  const rev=STUDENTS.reduce((a,s)=>a+s.fee,0);
+  animateNum($('#stRevenue'),rev); animateNum($('#stStudents'),STUDENTS.length);
+  animateNum($('#stDue'),ALL_DUE().length); animateNum($('#stCons'),CONSULTANTS.length);
+  setInterval(()=>{$('#clock').textContent=new Date().toLocaleTimeString('fa-IR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});},1000);
+  $('#clock').textContent=new Date().toLocaleTimeString('fa-IR',{hour:'2-digit',minute:'2-digit'});
+})();
+</script>
+</body>
+</html>

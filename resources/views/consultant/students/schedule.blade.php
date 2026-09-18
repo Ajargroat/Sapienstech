@@ -29,6 +29,9 @@
     data-url-update-template="{{ route('consultant.student.schedule.items.update', [$student, '__ITEM__']) }}"
     data-url-destroy-template="{{ route('consultant.student.schedule.items.destroy', [$student, '__ITEM__']) }}"
     data-url-comments-template="{{ route('consultant.student.schedule.items.comments', [$student, '__ITEM__']) }}"
+    data-url-drafts="{{ route('consultant.student.schedule.drafts.index', $student) }}"
+    data-url-draft-update-template="{{ route('consultant.student.schedule.drafts.update', [$student, '__DRAFT__']) }}"
+    data-url-draft-apply-template="{{ route('consultant.student.schedule.drafts.apply', [$student, '__DRAFT__']) }}"
 >
     <script src="https://unpkg.com/lucide@latest"></script>
 
@@ -98,12 +101,33 @@
                 </button>
             </div>
 
-            <button id="add-event-button" type="button" class="bg-primary hover:bg-primary-hover text-black dark:text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition flex items-center justify-center gap-2 shadow-sm shrink-0">
-                <i data-lucide="plus" class="w-4 h-4"></i>
-                <span>افزودن</span>
+            <button id="save-draft-button" type="button" disabled class="border border-[var(--c-border)] text-[var(--c-text)] px-3 py-2 rounded-lg text-xs sm:text-sm flex items-center gap-2 disabled:opacity-50">
+                <i data-lucide="save" class="w-4 h-4"></i>
+                ذخیره پیش‌نویس
+            </button>
+            <button id="add-event-button" type="button" aria-label="پیش‌نویس‌های برنامه هفتگی" title="پیش‌نویس‌های برنامه هفتگی" aria-expanded="false" aria-controls="draft-panel" class="bg-primary hover:bg-primary-hover text-black dark:text-white p-2 rounded-lg transition flex items-center justify-center shadow-sm shrink-0">
+                <i data-lucide="plus" class="w-5 h-5" aria-hidden="true"></i>
             </button>
         </div>
     </header>
+
+    <section id="draft-panel" aria-labelledby="draft-panel-title" class="hidden border-b border-[var(--c-border)] bg-[var(--c-surface)] p-4">
+        <div class="flex items-center justify-between gap-3 mb-3">
+            <h2 id="draft-panel-title" class="font-bold text-[var(--c-text)]">پیش‌نویس‌های من</h2>
+            <button id="new-draft-button" type="button" disabled class="text-primary text-sm disabled:opacity-50">پیش‌نویس جدید</button>
+        </div>
+        <p class="text-xs text-[var(--c-muted)] mb-3">پیش‌نویس‌ها خصوصی هستند. افزودن به هفته، بلوک‌ها را بدون حذف برنامه فعلی به هفته انتخاب‌شده اضافه می‌کند.</p>
+        <div id="draft-list" aria-live="polite" class="space-y-2 max-h-60 overflow-y-auto"></div>
+    </section>
+
+    <section id="draft-editor" class="hidden border-b border-[var(--c-border)] bg-[var(--c-surface-alt)] p-3 flex flex-wrap items-center gap-3">
+        <label for="draft-name" class="text-sm text-[var(--c-text)]">نام پیش‌نویس</label>
+        <input id="draft-name" type="text" maxlength="255" class="border border-[var(--c-border)] bg-[var(--c-surface)] text-[var(--c-text)] rounded-lg px-3 py-2 text-sm" placeholder="نام برنامه هفتگی">
+        <span id="draft-status" role="status" class="text-xs text-[var(--c-muted)]"></span>
+        <button id="copy-draft-button" type="button" class="text-primary text-sm">ذخیره به‌عنوان پیش‌نویس جدید</button>
+        <button id="exit-draft-button" type="button" class="text-sm text-[var(--c-text)]">بازگشت به برنامه دانش‌آموز</button>
+        <p class="w-full text-xs text-[var(--c-muted)]">حالت پیش‌نویس: تغییر بلوک‌ها فقط در این پیش‌نویس انجام می‌شود و تا افزودن به هفته برای دانش‌آموز نمایش داده نمی‌شود.</p>
+    </section>
 
     <main class="flex-1 flex flex-col overflow-hidden px-2 sm:px-4 lg:px-6 py-3 sm:py-4">
         <div id="mobile-day-tabs" class="mobile-only flex overflow-x-auto gap-2 pb-2 mb-2 snap-x hide-scrollbar"></div>

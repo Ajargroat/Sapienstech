@@ -1,1 +1,25 @@
-{"private":true,"type":"module","scripts":{"build":"vite build","dev":"vite"},"devDependencies":{"@tailwindcss/vite":"^4.0.0","autoprefixer":"^10.4.20","concurrently":"^9.1.2","laravel-vite-plugin":"^2.0.0","tailwindcss":"^4.0.0","vite":"^7.0.0"}}
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "npm run icons:build && vite build",
+    "icons:build": "node scripts/build-icons.mjs",
+    "dev": "vite",
+    "test:studio": "node --test tests/Js/*.test.mjs",
+    "icons:audit": "node scripts/audit-icon-usage.mjs",
+    "test:icons": "node scripts/audit-icon-usage.mjs --self-test"
+  },
+  "devDependencies": {
+    "@iconify-json/bi": "^1.2.7",
+    "@iconify-json/la": "^1.2.1",
+    "@iconify-json/lucide": "^1.2.133",
+    "@iconify-json/tabler": "^1.2.38",
+    "@tailwindcss/vite": "^4.0.0",
+    "autoprefixer": "^10.4.20",
+    "concurrently": "^9.1.2",
+    "jsdom": "^26.1.0",
+    "laravel-vite-plugin": "^2.0.0",
+    "tailwindcss": "^4.0.0",
+    "vite": "^7.0.0"
+  }
+}

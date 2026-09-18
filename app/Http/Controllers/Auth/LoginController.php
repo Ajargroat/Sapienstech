@@ -49,7 +49,11 @@ class LoginController extends Controller
         // Prevent session fixation.
         $request->session()->regenerate();
 
-        return redirect()->intended(route('consultant.dashboard'));
+        // Teachers land on their own panel; everyone else on the consultant
+        // dashboard (tenant admins included).
+        $fallback = $user->isTeacher() ? route('teacher.dashboard') : route('consultant.dashboard');
+
+        return redirect()->intended($fallback);
     }
 
     public function logout(Request $request): RedirectResponse

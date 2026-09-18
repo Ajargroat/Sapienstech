@@ -19,5 +19,13 @@
     $visible ?? [],
 ))
 @foreach($mirror as $name)
-    <input type="hidden" name="{{ $name }}" value="{{ $filters[$name] ?? '' }}">
+    @if(in_array($name, \App\Support\StudentFilter::MULTI_FIELDS, true))
+        {{-- One hidden input per selected value; app.js rebuilds these
+             mirrors from the live checkbox tray right before submit. --}}
+        @foreach(($filters[$name] ?? []) as $filterValue)
+            <input type="hidden" name="{{ $name }}[]" value="{{ $filterValue }}">
+        @endforeach
+    @else
+        <input type="hidden" name="{{ $name }}" value="{{ $filters[$name] ?? '' }}">
+    @endif
 @endforeach

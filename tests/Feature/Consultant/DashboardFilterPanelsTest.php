@@ -39,9 +39,9 @@ class DashboardFilterPanelsTest extends TestCase
         return [$tenant, $user];
     }
 
-    private function student(Tenant $tenant, string $name): Student
+    private function student(Tenant $tenant, string $name, array $attrs = []): Student
     {
-        return Student::factory()->for($tenant)->create(['name' => $name]);
+        return Student::factory()->for($tenant)->create(array_merge(['name' => $name], $attrs));
     }
 
     private function assignExam(
@@ -186,6 +186,67 @@ class DashboardFilterPanelsTest extends TestCase
             ->assertOk()
             ->assertSee('DpanelOther')
             ->assertDontSee('DpanelPending');
+    }
+
+    public function test_multi_value_filters_narrow_students(): void
+    {
+        [$tenant, $consultant] = $this->makeTenantWithConsultant('dpanel-f.test');
+        $tenth = $this->student($tenant, 'DpanelMultiTenth', ['grade' => 'دهم']);
+        $eleventh = $this->student($tenant, 'DpanelMultiEleventh', ['grade' => 'یازدهم']);
+        $this->student($tenant, 'DpanelMultiTwelfth', ['grade' => 'دوازدهم']);
+
+        // "grade[]" multi value: both grades match, the third does not.
+        $this->actingAs($consultant)
+            ->get('http://dpanel-f.test/consultant/dashboard?'.http_build_query(['grade' => ['دهم', 'یازدهم']]))
+            ->assertOk()
+            ->assertSee('DpanelMultiTenth')
+            ->assertSee('DpanelMultiEleventh')
+            ->assertDontSee('DpanelMultiTwelfth');
+
+        // Two exam statuses at once; a student without exams matches neither.
+        $this->assignExam($tenth, $consultant, 'ریاضی', 'scheduled');
+        $this->assignExam($eleventh, $consultant, 'شیمی', 'completed');
+
+        $this->actingAs($consultant)
+            ->get('http://dpanel-f.test/consultant/dashboard?'.http_build_query(['exam_status' => ['scheduled', 'completed']]))
+            ->assertOk()
+            ->assertSee('DpanelMultiTenth')
+            ->assertSee('DpanelMultiEleventh')
+            ->assertDontSee('DpanelMultiTwelfth');
+    }
+
+    public function test_dashboard_assignment_reapplies_multi_value_filters(): void
+    {
+        [$tenant, $consultant] = $this->makeTenantWithConsultant('dpanel-g.test');
+        $scheduled = $this->student($tenant, 'DpanelMassTarget');
+        $done = $this->student($tenant, 'DpanelMassDone');
+        $this->student($tenant, 'DpanelMassUntouched');
+
+        $this->assignExam($scheduled, $consultant, 'زیست‌شناسی', 'scheduled');
+        $this->assignExam($done, $consultant, 'شیمی', 'completed');
+
+        $newTest = Test::create([
+            'tenant_id' => $tenant->id,
+            'test_title' => 'آزمون چندوضعیتی',
+            'lesson' => 'ریاضی',
+            'exam_type' => 'comprehensive',
+            'created_by_user_id' => $consultant->id,
+        ]);
+
+        $this->actingAs($consultant)->post('http://dpanel-g.test/consultant/bulk/exams', [
+            'test_id' => $newTest->id,
+            'select_all' => 1,
+            'exam_status' => ['scheduled', 'completed'],
+            'filter_open' => 'exams',
+        ])->assertRedirect();
+
+        $assigned = StudentAssignedQuiz::withoutGlobalScopes()
+            ->where('test_id', $newTest->id)
+            ->pluck('student_id')
+            ->sort()
+            ->values();
+
+        $this->assertSame([$scheduled->id, $done->id], $assigned->all());
     }
 
     public function test_dashboard_assignment_reapplies_domain_filters(): void

@@ -26,37 +26,58 @@
         </div>
     </div>
 
-    {{-- Current filters, posted back for server-side select_all --}}
+    {{-- Current filters, posted back for server-side select_all. Multi-value
+         fields (StudentFilter::MULTI_FIELDS) carry one hidden input per
+         selected value. --}}
     <div hidden data-router-region="picker">
         @foreach($filters as $filterKey => $filterValue)
-            <input type="hidden" name="{{ $filterKey }}" value="{{ $filterValue }}">
+            @if(is_array($filterValue))
+                @foreach($filterValue as $filterItem)
+                    <input type="hidden" name="{{ $filterKey }}[]" value="{{ $filterItem }}">
+                @endforeach
+            @else
+                <input type="hidden" name="{{ $filterKey }}" value="{{ $filterValue }}">
+            @endif
         @endforeach
     </div>
 
     {{-- One themed dropdown per filter field instead of a wall of chips.
          These stay links (the picker renders inside the main POST form, so
          a nested form is impossible); the shared dropdown JS folds the
-         panel and mirrors the trigger label while the router swaps rows. --}}
+         panel and mirrors the trigger label while the router swaps rows.
+         Each option link toggles its value in the field's selected set, so
+         the picker's filters are multi-value exactly like the dashboard's. --}}
     <div class="bulk-filterbar" data-router-region="picker">
         @foreach([
             'grade' => ['label' => 'پایه تحصیلی', 'options' => $gradeOptions],
             'gender' => ['label' => 'جنسیت', 'options' => $genderOptions],
             'major' => ['label' => 'رشته تحصیلی', 'options' => $majorOptions],
         ] as $field => $meta)
-            @php($selected = (string) ($filters[$field] ?? ''))
+            @php($current = array_map('strval', array_values((array) ($filters[$field] ?? []))))
             <div class="filter-select" data-filter-select data-select-auto-width>
-                <button type="button" class="filter-select-trigger @if($selected === '') is-placeholder @endif"
+                <button type="button" class="filter-select-trigger @if($current === []) is-placeholder @endif"
                         data-filter-select-trigger aria-haspopup="true" aria-expanded="false">
-                    <span class="filter-select-value" data-filter-select-display>{{ $selected !== '' ? $selected : $meta['label'] }}</span>
+                    <span class="filter-select-value" data-filter-select-display>
+                        @if($current === [])
+                            {{ $meta['label'] }}
+                        @else
+                            {{ implode('، ', $current) }}
+                        @endif
+                    </span>
                     <i class="fas fa-chevron-down filter-select-caret" aria-hidden="true"></i>
                 </button>
                 <div class="filter-select-list" data-filter-select-list aria-label="{{ $meta['label'] }}">
                     <a href="{{ request()->fullUrlWithQuery([$field => null]) }}"
-                       class="filter-select-option @if($selected === '') is-active @endif"
+                       class="filter-select-option @if($current === []) is-active @endif"
                        data-filter-select-option data-placeholder data-label="{{ $meta['label'] }}">همه</a>
                     @foreach($meta['options'] as $option)
-                        <a href="{{ request()->fullUrlWithQuery([$field => $option]) }}"
-                           class="filter-select-option @if($selected === (string) $option) is-active @endif"
+                        {{-- Expression forms only (see StudentFilter::MULTI_FIELDS): a
+                             raw-php block marker in this file would swallow the
+                             @php(...) expressions above it during compilation. --}}
+                        @php($option = (string) $option)
+                        @php($toggled = in_array($option, $current, true) ? array_values(array_diff($current, [$option])) : array_merge($current, [$option]))
+                        <a href="{{ request()->fullUrlWithQuery([$field => $toggled === [] ? null : $toggled]) }}"
+                           class="filter-select-option @if(in_array($option, $current, true)) is-active @endif"
                            data-filter-select-option data-label="{{ $option }}">{{ $option }}</a>
                     @endforeach
                 </div>

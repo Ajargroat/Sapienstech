@@ -115,6 +115,8 @@
                                         'label' => $labels['filter_grade'],
                                         'options' => $gradeOptions->mapWithKeys(fn ($o) => [(string) $o => $o]),
                                         'selected' => $filters['grade'],
+                                        'counts' => $optionCounts['grade'] ?? [],
+                                        'allCount' => $optionCounts['total'] ?? null,
                                         'labels' => $labels,
                                     ])
                                     @include('consultant.partials._filter_select', [
@@ -123,6 +125,8 @@
                                         'label' => $labels['filter_gender'],
                                         'options' => $genderOptions->mapWithKeys(fn ($o) => [(string) $o => $o]),
                                         'selected' => $filters['gender'],
+                                        'counts' => $optionCounts['gender'] ?? [],
+                                        'allCount' => $optionCounts['total'] ?? null,
                                         'labels' => $labels,
                                     ])
                                     @include('consultant.partials._filter_select', [
@@ -131,6 +135,8 @@
                                         'label' => $labels['filter_major'],
                                         'options' => $majorOptions->mapWithKeys(fn ($o) => [(string) $o => $o]),
                                         'selected' => $filters['major'],
+                                        'counts' => $optionCounts['major'] ?? [],
+                                        'allCount' => $optionCounts['total'] ?? null,
                                         'labels' => $labels,
                                     ])
 
@@ -140,6 +146,7 @@
                                         'newest' => $labels['sort_newest'],
                                         'oldest' => $labels['sort_oldest'],
                                     ])
+                                    {{-- Ordering is single-choice by nature: no counts. --}}
                                     @include('consultant.partials._filter_select', [
                                         'name' => 'sort',
                                         'idPrefix' => 'sort',
@@ -169,14 +176,18 @@
                                             'label' => $labels['filter_exam_status'],
                                             'options' => $examStatuses,
                                             'selected' => $filters['exam_status'],
+                                            'counts' => $optionCounts['exam_status'] ?? [],
+                                            'allCount' => $optionCounts['total'] ?? null,
                                             'labels' => $labels,
                                         ])
                                         @include('consultant.partials._filter_select', [
                                             'name' => 'exam_lesson',
                                             'idPrefix' => 'exam-lesson',
                                             'label' => $labels['filter_exam_lesson'],
-                                            'options' => array_combine($examLessons, $examLessons),
+                                            'options' => collect($examLessons)->mapWithKeys(fn ($o) => [(string) $o => $o]),
                                             'selected' => $filters['exam_lesson'],
+                                            'counts' => $optionCounts['exam_lesson'] ?? [],
+                                            'allCount' => $optionCounts['total'] ?? null,
                                             'labels' => $labels,
                                         ])
                                         @include('consultant.partials._filter_select', [
@@ -185,6 +196,8 @@
                                             'label' => $labels['filter_exam_type'],
                                             'options' => $examTypes,
                                             'selected' => $filters['exam_type'],
+                                            'counts' => $optionCounts['exam_type'] ?? [],
+                                            'allCount' => $optionCounts['total'] ?? null,
                                             'labels' => $labels,
                                         ])
                                     </div>
@@ -201,16 +214,19 @@
                                         @else
                                             <p class="filter-assign-hint">{{ $labels['assign_exam_hint'] }}</p>
                                             <div class="filter-fields">
-                                                <label class="filter-field">
-                                                    <span class="filter-field-name">{{ $labels['assign_exam_test'] }}</span>
-                                                    <select name="test_id" class="filter-input" required>
-                                                        @foreach($tests as $test)
-                                                            <option value="{{ $test->id }}" @selected(old('filter_open') === 'exams' && old('test_id') == $test->id)>
-                                                                {{ $test->test_title }}{{ $test->lesson ? ' — '.$test->lesson : '' }}
-                                                            </option>
-                                                        @endforeach
-                                                    </select>
-                                                </label>
+                                                @include('consultant.partials._filter_select', [
+                                                    'name' => 'test_id',
+                                                    'idPrefix' => 'assign-test',
+                                                    'label' => $labels['assign_exam_test'],
+                                                    'options' => $tests->mapWithKeys(fn ($test) => [
+                                                        (string) $test->id => $test->test_title.($test->lesson ? ' — '.$test->lesson : ''),
+                                                    ])->all(),
+                                                    'selected' => old('filter_open') === 'exams' ? (string) old('test_id') : '',
+                                                    'allowAll' => false,
+                                                    'required' => true,
+                                                    'placeholderText' => '— انتخاب آزمون —',
+                                                    'labels' => $labels,
+                                                ])
                                                 <label class="filter-field">
                                                     <span class="filter-field-name">{{ $labels['assign_exam_date'] }}</span>
                                                     <input type="datetime-local" name="scheduled_at" value="{{ old('filter_open') === 'exams' ? old('scheduled_at') : '' }}" class="filter-input">
@@ -251,6 +267,8 @@
                                             'label' => $labels['filter_report_source'],
                                             'options' => $reportSources,
                                             'selected' => $filters['report_source'],
+                                            'counts' => $optionCounts['report_source'] ?? [],
+                                            'allCount' => $optionCounts['total'] ?? null,
                                             'labels' => $labels,
                                         ])
                                         @include('consultant.partials._filter_select', [
@@ -259,6 +277,8 @@
                                             'label' => $labels['filter_report_status'],
                                             'options' => $reportStatuses,
                                             'selected' => $filters['report_status'],
+                                            'counts' => $optionCounts['report_status'] ?? [],
+                                            'allCount' => $optionCounts['total'] ?? null,
                                             'labels' => $labels,
                                         ])
                                     </div>
@@ -282,6 +302,8 @@
                                             'label' => $labels['filter_schedule_day'],
                                             'options' => collect($scheduleDays)->mapWithKeys(fn ($d, $i) => [(string) $i => $d]),
                                             'selected' => $filters['schedule_day'],
+                                            'counts' => $optionCounts['schedule_day'] ?? [],
+                                            'allCount' => $optionCounts['total'] ?? null,
                                             'labels' => $labels,
                                         ])
                                         @include('consultant.partials._filter_select', [
@@ -290,6 +312,8 @@
                                             'label' => $labels['filter_schedule_done'],
                                             'options' => $scheduleDoneOptions,
                                             'selected' => $filters['schedule_done'],
+                                            'counts' => $optionCounts['schedule_done'] ?? [],
+                                            'allCount' => $optionCounts['total'] ?? null,
                                             'labels' => $labels,
                                         ])
                                     </div>
@@ -313,14 +337,16 @@
                                                 <span class="filter-field-name">{{ $labels['assign_schedule_week_start'] }}</span>
                                                 <input type="date" name="week_start_date" value="{{ old('filter_open') === 'schedule' ? old('week_start_date', $weekStart) : $weekStart }}" class="filter-input">
                                             </label>
-                                            <label class="filter-field">
-                                                <span class="filter-field-name">{{ $labels['filter_schedule_day'] }}</span>
-                                                <select name="day_index" class="filter-input">
-                                                    @foreach($scheduleDays as $i => $day)
-                                                        <option value="{{ $i }}" @selected(old('filter_open') === 'schedule' && old('day_index') == $i)>{{ $day }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </label>
+                                            @include('consultant.partials._filter_select', [
+                                                'name' => 'day_index',
+                                                'idPrefix' => 'assign-day',
+                                                'label' => $labels['filter_schedule_day'],
+                                                'options' => collect($scheduleDays)->mapWithKeys(fn ($day, $i) => [(string) $i => $day])->all(),
+                                                'selected' => old('filter_open') === 'schedule' && old('day_index') !== null ? (string) old('day_index') : '0',
+                                                'allowAll' => false,
+                                                'required' => true,
+                                                'labels' => $labels,
+                                            ])
                                             <label class="filter-field">
                                                 <span class="filter-field-name">{{ $labels['assign_schedule_start'] }}</span>
                                                 <input type="time" name="start_time" value="{{ old('filter_open') === 'schedule' ? old('start_time') : '' }}" required class="filter-input">

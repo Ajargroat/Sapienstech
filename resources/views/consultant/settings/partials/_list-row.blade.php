@@ -39,17 +39,32 @@
                 $in   = $rowName.'['.$key.']';
                 $id   = 'studio-'.md5($rowName.'-'.$key);
             @endphp
+            @if($ctrl === 'hidden')
+                <input type="hidden" name="{{ $in }}" value="{{ $val }}" data-block-id>
+                @continue
+            @endif
             <div class="studio-list-cell @if(!empty($def['discriminant'])) studio-list-cell--type @endif"
                  @if(!empty($def['show_for'])) data-show-for="{{ implode(' ', $def['show_for']) }}" @endif>
                 <span class="studio-list-cell-label">{{ $def['label'] ?? $key }}</span>
 
                 @switch($ctrl)
+                    @case('color')
+                        <div class="studio-color" data-block-color>
+                            <input type="color" value="{{ preg_match('/^#[0-9a-fA-F]{6}$/', (string) $val) ? $val : '#000000' }}"
+                                   data-block-color-picker aria-label="{{ $def['label'] ?? $key }}">
+                            <input type="text" name="{{ $in }}" value="{{ $val }}" class="settings-input" data-block-color-value
+                                   placeholder="پیش‌فرض" aria-label="{{ $def['label'] ?? $key }} (HEX)">
+                        </div>
+                        @break
+
                     @case('textarea')
                         <textarea name="{{ $in }}" rows="3" class="settings-input" aria-label="{{ $def['label'] ?? $key }}">{{ $val }}</textarea>
                         @break
 
                     @case('number')
-                        <input type="number" name="{{ $in }}" value="{{ $val }}" class="settings-input" aria-label="{{ $def['label'] ?? $key }}">
+                        <input type="number" name="{{ $in }}" value="{{ $val }}" class="settings-input" aria-label="{{ $def['label'] ?? $key }}"
+                                                       @isset($def['min']) min="{{ $def['min'] }}" @endisset
+                                                       @isset($def['max']) max="{{ $def['max'] }}" @endisset>
                         @break
 
                     @case('select')

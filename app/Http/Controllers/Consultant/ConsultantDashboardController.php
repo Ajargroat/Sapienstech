@@ -63,7 +63,11 @@ class ConsultantDashboardController extends Controller
             'activeFilterCount' => $activeFilterCount,
             'examStatuses' => StudentFilter::EXAM_STATUSES,
             'examTypes' => StudentFilter::EXAM_TYPES,
-            'examLessons' => StudentFilter::EXAM_LESSONS,
+            // Lessons the tenant's own tests actually cover (tests store
+            // joined lessons as one string), with per-option student counts
+            // for the report-card-style menus.
+            'examLessons' => StudentFilter::examLessons()->all(),
+            'optionCounts' => StudentFilter::optionCounts(),
             'reportStatuses' => StudentFilter::REPORT_STATUSES,
             'reportSources' => $reportSources,
             'scheduleDays' => StudentFilter::SCHEDULE_DAYS,
@@ -100,6 +104,7 @@ class ConsultantDashboardController extends Controller
                 'filter_all' => 'همه',
                 'filter_apply' => 'اعمال',
                 'filter_reset' => 'پاک کردن',
+                'filter_selected' => 'مورد',
                 'sort_name_asc' => 'نام (الف تا ی)',
                 'sort_name_desc' => 'نام (ی تا الف)',
                 'sort_newest' => 'جدیدترین',

@@ -23,6 +23,7 @@
             <span>{{ $labels['dashboard'] ?? 'داشبورد' }}</span>
         </a>
 
+        @if(!tenant()?->hierarchy_type || auth()->user()?->isTenantOwner())
         <a
             href="{{ route('consultant.blog.index') }}"
             class="sidebar-link {{ request()->routeIs('consultant.blog.*') ? 'active' : '' }}"
@@ -30,6 +31,7 @@
             <i class="fas fa-newspaper" aria-hidden="true"></i>
             <span>{{ $labels['blog_management'] ?? 'وبلاگ' }}</span>
         </a>
+        @endif
 
         <a
             href="{{ route('consultant.direct-chat') }}"
@@ -39,6 +41,16 @@
             <span>{{ $labels['direct_chat'] ?? 'گفتگوی مستقیم' }}</span>
             @include('partials.chat.unread-badge')
         </a>
+
+        @if(site('features.deals', false) && \Illuminate\Support\Facades\Route::has('consultant.deals.index'))
+        <a
+            href="{{ route('consultant.deals.index') }}"
+            class="sidebar-link {{ request()->routeIs('consultant.deals*') ? 'active' : '' }}"
+        >
+            <i class="fas fa-sack-dollar" aria-hidden="true"></i>
+            <span>تمدید و پرداخت</span>
+        </a>
+        @endif
 
         {{-- Sidebar mirrors the topnav; bulk assignment lives in the
              dashboard filter popover, so the nav entry is gone from both. --}}
@@ -57,6 +69,7 @@
         </button>
 
         {{-- Profile hub (mirrors the topnav): direct link, no dropdown. --}}
+        @if(!tenant()?->hierarchy_type || auth()->user()?->isTenantOwner())
         <a
             href="{{ route('consultant.settings.profile') }}"
             class="topnav-icon-btn topnav-profile {{ request()->routeIs('consultant.settings.profile') ? 'active' : '' }}"
@@ -66,6 +79,14 @@
         >
             <i class="fas fa-user"></i>
         </a>
+        @else
+        <form method="POST" action="{{ route('logout') }}" data-router="off">
+            @csrf
+            <button type="submit" class="topnav-icon-btn" title="خروج از حساب" aria-label="خروج از حساب">
+                <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
+            </button>
+        </form>
+        @endif
 
         <button
             type="button"

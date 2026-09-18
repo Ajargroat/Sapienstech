@@ -99,6 +99,13 @@ class AppearanceStudioTest extends TestCase
             'data-studio-field="public.landing.services.items"',
             'data-studio-field="public.landing.blocks.items"',
             'data-list-template',
+            'studio-workspace',
+            'data-workspace-tool="select"',
+            'data-workspace-insert="button"',
+            'data-object-inspector',
+            'data-object-metrics',
+            'data-studio-preview-device="tablet"',
+            'data-studio-zoom',
         ] as $marker) {
             $this->assertStringContainsString($marker, $html);
         }
@@ -108,6 +115,90 @@ class AppearanceStudioTest extends TestCase
             'public[landing][services][items][0][title]',
             $html
         );
+    }
+
+    public function test_icon_set_is_selectable_in_the_studio_with_visual_previews(): void
+    {
+        [$otherTenant, $otherHost] = $this->tenantWithDomain();
+        $otherAdmin = $this->userFor($otherTenant, 'tenant_admin');
+        ConfigWriter::publishForTenant($otherTenant, ['theme.icons.set' => 'lucide']);
+
+        [$tenant, $host] = $this->tenantWithDomain();
+        $admin = $this->userFor($tenant, 'tenant_admin');
+
+        $html = $this->actingAs($admin)
+            ->get("http://{$host}/consultant/settings/profile?tab=appearance")
+            ->getContent();
+
+        // The lever exists in the form and every choice renders a real icon
+        // preview, not a plain name list.
+        $this->assertStringContainsString('data-studio-field="theme.icons.set"', $html);
+        $this->assertStringContainsString('data-studio-iconset="lucide"', $html);
+        $this->assertStringContainsString('data-studio-iconset="font-awesome"', $html);
+        $this->assertSame(5, substr_count($html, 'studio-iconset-demo'));
+        $this->assertSame(32, substr_count($html, 'class="studio-iconset-glyph"'));
+        $this->assertSame(8, substr_count($html, 'class="studio-iconset-fa '));
+        $this->assertStringNotContainsString('<img src=""', $html);
+        $this->assertSame('reload', StudioSchema::liveMode('theme.icons.set'));
+
+        // Choosing a set publishes it to the tenant layer and the site renders
+        // that set's stylesheet.
+        $payload = $this->payload(['theme.icons.set' => 'tabler']);
+        $payload['scope'] = 'everyone';
+
+        $this->actingAs($admin)
+            ->post("http://{$host}/consultant/settings/appearance", $payload)
+            ->assertRedirect();
+
+        $row = WebsiteConfig::withoutGlobalScopes()->where('tenant_id', $tenant->id)->first();
+        $this->assertSame('tabler', data_get($row->layout_config, 'theme.icons.set'));
+
+        $this->assertStringContainsString(
+            'icons/tabler.css',
+            $this->get("http://{$host}/consultant/dashboard")->getContent()
+        );
+
+        $otherHtml = $this->actingAs($otherAdmin)
+            ->get("http://{$otherHost}/consultant/dashboard")->assertOk()->getContent();
+        $this->assertStringContainsString('data-icon-set="lucide"', $otherHtml);
+        $this->assertStringNotContainsString('icons/tabler.css', $otherHtml);
+    }
+
+    public function test_invalid_and_retired_icon_sets_are_rejected_by_the_studio(): void
+    {
+        [$tenant, $host] = $this->tenantWithDomain();
+        $admin = $this->userFor($tenant, 'tenant_admin');
+        $this->actingAs($admin)->get("http://{$host}/consultant/dashboard")->assertOk();
+
+        foreach (['feather', 'heroicons', '../other', 'unknown'] as $set) {
+            $payload = $this->payload(['theme.icons.set' => $set]);
+            $payload['scope'] = 'everyone';
+            $this->post("http://{$host}/consultant/settings/appearance", $payload)
+                ->assertSessionHasErrors('theme.icons.set');
+        }
+
+        $row = WebsiteConfig::withoutGlobalScopes()->where('tenant_id', $tenant->id)->first();
+        $this->assertNull(data_get($row?->layout_config, 'theme.icons.set'));
+    }
+
+    public function test_icon_preview_is_session_only_and_can_be_saved_personally(): void
+    {
+        [$tenant, $host] = $this->tenantWithDomain();
+        $staff = $this->userFor($tenant);
+        $this->actingAs($staff)->get("http://{$host}/consultant/dashboard")->assertOk();
+        $payload = $this->payload(['theme.icons.set' => 'bi']);
+        $payload['scope'] = 'preview';
+        $this->postJson("http://{$host}/consultant/settings/appearance/live", $payload)->assertOk();
+        $this->assertSame('bi', session('studio.preview.theme.icons.set'));
+        $row = WebsiteConfig::withoutGlobalScopes()->where('tenant_id', $tenant->id)->first();
+        $this->assertNull(data_get($row?->layout_config, 'theme.icons.set'));
+        $this->assertNull(data_get($staff->fresh()->preferences, 'site.theme.icons.set'));
+
+        $payload['scope'] = 'me';
+        $this->post("http://{$host}/consultant/settings/appearance", $payload)
+            ->assertSessionHasNoErrors()->assertRedirect();
+        $this->assertSame('bi', data_get($staff->fresh()->preferences, 'site.theme.icons.set'));
+        $this->assertNull(session('studio.preview'));
     }
 
     public function test_tenant_admin_can_publish_site_wide_change(): void
@@ -731,5 +822,183 @@ class AppearanceStudioTest extends TestCase
         $this->assertCount(1, $items);
         $this->assertSame([0], array_keys($items), 'the abandoned row must leave no gap');
         $this->assertSame('بلوک واقعی', $items[0]['title']);
+    }
+
+    public function test_block_styles_publish_individually_with_stable_render_markers(): void
+    {
+        [$tenant, $host] = $this->tenantWithDomain();
+        [$otherTenant, $otherHost] = $this->tenantWithDomain();
+        $admin = $this->userFor($tenant, 'tenant_admin');
+        $id = (string) Str::uuid();
+        $buttonId = (string) Str::uuid();
+        $styles = ['background' => '#123ABC', 'color' => '#FEDCBA', 'padding' => '0', 'radius' => '128', 'width' => '75'];
+        $payload = $this->payload([
+            'public.landing.sections' => ['hero', 'blocks'],
+            'public.landing.blocks.items' => [
+                ['type' => 'text', 'text' => 'Hidden block', 'visible' => '0'],
+                ['type' => 'card', 'title' => 'Styled card', 'text' => 'Card copy', 'id' => $id, 'visible' => '1', ...$styles],
+                ['type' => 'button', 'title' => 'Styled button', 'href' => '/contact', 'id' => $buttonId, 'background' => '#AABBCC', 'padding' => '12', 'visible' => '1'],
+                ['type' => 'text', 'text' => 'Unstyled sibling', 'visible' => '1'],
+                ['type' => 'heading', 'title' => 'Legacy heading', 'visible' => '1'],
+                ['type' => 'image', 'src' => '/block.png', 'visible' => '1'],
+                ['type' => 'spacer', 'visible' => '1'],
+                ['type' => 'divider', 'visible' => '1'],
+            ],
+        ]);
+        $payload['scope'] = 'everyone';
+
+        $this->actingAs($admin)->post("http://{$host}/consultant/settings/appearance", $payload)
+            ->assertRedirect()->assertSessionHasNoErrors();
+
+        $items = data_get(WebsiteConfig::withoutGlobalScopes()->where('tenant_id', $tenant->id)->first()->layout_config, 'public.landing.blocks.items');
+        $this->assertCount(8, $items);
+        $this->assertSame($id, $items[1]['id']);
+        foreach (['background' => '#123ABC', 'color' => '#FEDCBA', 'padding' => 0, 'radius' => 128, 'width' => 75] as $key => $value) {
+            $this->assertSame($value, $items[1][$key]);
+            $this->assertArrayNotHasKey($key, $items[3]);
+        }
+        $this->assertArrayNotHasKey('id', $items[3]);
+        $this->assertSame(['type' => 'spacer', 'visible' => true], $items[6]);
+
+        $this->app['auth']->guard()->logout();
+        $html = $this->get("http://{$host}/")->assertOk()->getContent();
+        $dom = new \DOMDocument;
+        @$dom->loadHTML('<?xml encoding="UTF-8">'.$html);
+        $xpath = new \DOMXPath($dom);
+        $objects = $xpath->query('//*[@data-studio-block]');
+        $this->assertCount(7, $objects);
+        $this->assertSame([$id, $buttonId, 'legacy-3', 'legacy-4', 'legacy-5', 'legacy-6', 'legacy-7'],
+            array_map(static fn ($node) => $node->getAttribute('data-studio-block'), iterator_to_array($objects)));
+        $this->assertSame('display:contents;--block-background:#123ABC;--block-color:#FEDCBA;--block-padding:0px;--block-radius:128px;--block-width:75%', $objects[0]->getAttribute('style'));
+        $this->assertSame('display:contents;--block-background:#AABBCC;--block-padding:12px', $objects[1]->getAttribute('style'));
+        $this->assertSame('display:contents', $objects[2]->getAttribute('style'));
+        $this->assertSame(1, $xpath->query('//*[@data-studio-block="'.$id.'"]/*[contains(@class,"lp-blocks__card")]')->length);
+        $this->assertSame(1, $xpath->query('//*[@data-studio-block="'.$buttonId.'"]/*[contains(@class,"lp-blocks__buttons")]/a[contains(@class,"lp-btn")]')->length);
+        $this->assertStringNotContainsString('Hidden block', $html);
+        $this->assertSame(2, substr_count($html, '--block-background:'));
+
+        $otherHtml = $this->get("http://{$otherHost}/")->assertOk()->getContent();
+        $this->assertStringNotContainsString($id, $otherHtml);
+        $this->assertStringNotContainsString('--block-background:#123ABC', $otherHtml);
+        $this->assertNull(data_get(WebsiteConfig::withoutGlobalScopes()->where('tenant_id', $otherTenant->id)->first()?->layout_config, 'public.landing.blocks.items'));
+    }
+
+    public function test_invalid_block_styles_and_ids_are_rejected_without_persisting(): void
+    {
+        [$tenant, $host] = $this->tenantWithDomain();
+        $admin = $this->userFor($tenant, 'tenant_admin');
+        $invalid = [
+            ['background', '#123'], ['background', '#123456;color:red'],
+            ['color', 'red'], ['color', ['#123456']],
+            ['padding', -1], ['padding', 129], ['padding', '1.5'], ['padding', '12px'],
+            ['padding', true], ['padding', ['12']],
+            ['radius', -1], ['radius', 129], ['radius', '1e2'], ['radius', '+12'],
+            ['width', 9], ['width', 101], ['width', '50%'], ['width', 10.5],
+            ['id', 'legacy-0'], ['id', 'not-a-uuid'],
+        ];
+        $rows = [];
+        $errors = [];
+        foreach ($invalid as $i => [$key, $value]) {
+            $rows[] = ['type' => 'card', 'title' => 'Invalid style', 'visible' => '1', $key => $value];
+            $errors[] = 'public.landing.blocks.items.'.$i.'.'.$key;
+        }
+        $payload = $this->payload(['public.landing.blocks.items' => $rows]);
+        $payload['scope'] = 'everyone';
+        $this->actingAs($admin)->post("http://{$host}/consultant/settings/appearance", $payload)
+            ->assertSessionHasErrors($errors);
+        $this->assertNull(data_get(WebsiteConfig::withoutGlobalScopes()->where('tenant_id', $tenant->id)->first()?->layout_config, 'public.landing.blocks.items'));
+    }
+
+    public function test_block_metadata_does_not_keep_abandoned_content_rows(): void
+    {
+        [$tenant, $host] = $this->tenantWithDomain();
+        $admin = $this->userFor($tenant, 'tenant_admin');
+        $metadata = ['id' => (string) Str::uuid(), 'background' => '#123456', 'color' => '#ABCDEF', 'padding' => 0, 'radius' => 20, 'width' => 100];
+        $rows = [];
+        foreach (['heading', 'text', 'button', 'card', 'image'] as $type) {
+            $rows[] = ['type' => $type, 'visible' => '1', ...$metadata];
+        }
+        $rows[] = ['type' => 'spacer', 'visible' => '1'];
+        $rows[] = ['type' => 'divider', 'visible' => '1'];
+        $rows[] = ['type' => 'spacer', 'visible' => '1', ...$metadata];
+        $payload = $this->payload(['public.landing.blocks.items' => $rows]);
+        $payload['scope'] = 'everyone';
+        $this->actingAs($admin)->post("http://{$host}/consultant/settings/appearance", $payload)
+            ->assertRedirect()->assertSessionHasNoErrors();
+        $items = data_get(WebsiteConfig::withoutGlobalScopes()->where('tenant_id', $tenant->id)->first()->layout_config, 'public.landing.blocks.items');
+        $this->assertCount(3, $items);
+        $this->assertSame(['type' => 'spacer', 'visible' => true], $items[0]);
+        $this->assertSame(['type' => 'divider', 'visible' => true], $items[1]);
+        $this->assertSame($metadata['id'], $items[2]['id']);
+    }
+
+    public function test_block_style_preview_leaves_published_database_and_preferences_unchanged(): void
+    {
+        [$tenant, $host] = $this->tenantWithDomain();
+        $admin = $this->userFor($tenant, 'tenant_admin');
+        $id = (string) Str::uuid();
+        $item = ['type' => 'card', 'title' => 'Published card', 'id' => $id, 'background' => '#112233', 'visible' => '1'];
+        $payload = $this->payload(['public.landing.sections' => ['hero', 'blocks'], 'public.landing.blocks.items' => [$item]]);
+        $payload['scope'] = 'everyone';
+        $this->actingAs($admin)->post("http://{$host}/consultant/settings/appearance", $payload)
+            ->assertRedirect()->assertSessionHasNoErrors();
+        $row = WebsiteConfig::withoutGlobalScopes()->where('tenant_id', $tenant->id)->first();
+        $before = $row->layout_config;
+        $preferences = $admin->fresh()->preferences;
+
+        $preview = $this->payload(['public.landing.blocks.items' => [[...$item, 'background' => '#A1B2C3', 'padding' => 24]]]);
+        $preview['scope'] = 'preview';
+        $this->actingAs($admin)->post("http://{$host}/consultant/settings/appearance", $preview)
+            ->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertSame($before, $row->fresh()->layout_config);
+        $this->assertSame($preferences, $admin->fresh()->preferences);
+        $this->get("http://{$host}/")->assertOk()
+            ->assertSee('data-studio-block="'.$id.'"', false)
+            ->assertSee('--block-background:#A1B2C3;--block-padding:24px', false);
+        $this->actingAs($admin)->post("http://{$host}/consultant/settings/appearance/preview/exit")->assertRedirect();
+        $this->get("http://{$host}/")->assertOk()
+            ->assertSee('--block-background:#112233', false)
+            ->assertDontSee('--block-background:#A1B2C3', false);
+    }
+
+    public function test_empty_block_style_fields_reset_only_that_objects_overrides(): void
+    {
+        [$tenant, $host] = $this->tenantWithDomain();
+        $admin = $this->userFor($tenant, 'tenant_admin');
+        $id = (string) Str::uuid();
+        $item = ['type' => 'card', 'title' => 'Reset styles', 'id' => $id, 'visible' => '1'];
+        $sibling = ['type' => 'text', 'text' => 'Keep sibling style', 'background' => '#ABCDEF', 'visible' => '1'];
+        $styles = ['background' => '#112233', 'color' => '#445566', 'padding' => 128, 'radius' => 0, 'width' => 10];
+        $payload = $this->payload(['public.landing.sections' => ['hero', 'blocks'], 'public.landing.blocks.items' => [[...$item, ...$styles], $sibling]]);
+        $payload['scope'] = 'everyone';
+        $this->actingAs($admin)->post("http://{$host}/consultant/settings/appearance", $payload)
+            ->assertRedirect()->assertSessionHasNoErrors();
+
+        $reset = $this->payload(['public.landing.blocks.items' => [[...$item, ...array_fill_keys(array_keys($styles), '')], $sibling]]);
+        $reset['scope'] = 'everyone';
+        $this->actingAs($admin)->post("http://{$host}/consultant/settings/appearance", $reset)
+            ->assertRedirect()->assertSessionHasNoErrors();
+        $items = data_get(WebsiteConfig::withoutGlobalScopes()->where('tenant_id', $tenant->id)->first()->layout_config, 'public.landing.blocks.items');
+        foreach (array_keys($styles) as $key) {
+            $this->assertArrayNotHasKey($key, $items[0]);
+        }
+        $this->assertSame($id, $items[0]['id']);
+        $this->assertSame('#ABCDEF', $items[1]['background']);
+        $this->get("http://{$host}/")->assertOk()
+            ->assertSee('data-studio-block="'.$id.'" style="display:contents"', false)
+            ->assertDontSee('--block-background:#112233', false)
+            ->assertSee('--block-background:#ABCDEF', false);
+    }
+
+    public function test_block_style_rendering_filters_unvalidated_file_owned_values(): void
+    {
+        $this->assertSame('', \App\Support\BlockStyles::variables([
+            'background' => '#123456;display:none', 'color' => ['red'],
+            'padding' => true, 'radius' => -1, 'width' => 101, 'css' => 'display:none',
+        ]));
+        $this->assertSame('--block-padding:0px;--block-radius:128px;--block-width:100%',
+            \App\Support\BlockStyles::variables(['padding' => 0, 'radius' => '128', 'width' => 100]));
+        $defs = array_column(StudioSchema::field('public.landing.blocks.items')['item'], null, 'key');
+        $this->assertSame('hidden', $defs['id']['control']);
     }
 }

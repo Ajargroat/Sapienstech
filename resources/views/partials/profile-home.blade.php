@@ -7,7 +7,7 @@
     2. info list    — the account's data rows; the email is the handle and
                       gets the accent color, exactly like Telegram's @username,
     3. settings list — one row per profile section from App\Support\SettingsTabs
-                      (edit, password, appearance, chat — feature-gated), each
+                      (edit, appearance, chat — feature-gated), each
                       a link *into* the hub's ?tab= sections. The 'profile'
                       key is this page itself, so it never lists itself,
     4. danger zone  — logout as a plain red row.

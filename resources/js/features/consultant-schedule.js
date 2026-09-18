@@ -45,6 +45,9 @@ export default function init() {
         urlUpdateTemplate: root.dataset.urlUpdateTemplate,
         urlDestroyTemplate: root.dataset.urlDestroyTemplate,
         urlCommentsTemplate: root.dataset.urlCommentsTemplate,
+        urlDrafts: root.dataset.urlDrafts,
+        urlDraftUpdateTemplate: root.dataset.urlDraftUpdateTemplate,
+        urlDraftApplyTemplate: root.dataset.urlDraftApplyTemplate,
     };
 
     const el = {
@@ -61,11 +64,26 @@ export default function init() {
         nextWeekBtn: document.getElementById('next-week-btn'),
         toast: document.getElementById('toast'),
         toastMsg: document.getElementById('toast-msg'),
+        draftPanel: document.getElementById('draft-panel'),
+        draftList: document.getElementById('draft-list'),
+        draftEditor: document.getElementById('draft-editor'),
+        draftName: document.getElementById('draft-name'),
+        draftStatus: document.getElementById('draft-status'),
+        saveDraftBtn: document.getElementById('save-draft-button'),
+        newDraftBtn: document.getElementById('new-draft-button'),
+        copyDraftBtn: document.getElementById('copy-draft-button'),
+        exitDraftBtn: document.getElementById('exit-draft-button'),
     };
 
     let activeMobileDay = 0;
     let events = [];
     let currentWeekStartDate = null;
+    let activeDraft = null;
+    let draftDirty = false;
+    let busy = false;
+    let scheduleReady = false;
+    let localId = 0;
+    let draftListRequest = 0;
 
     const dragState = { isDragging: false, dayIndex: null, startY: null, currentY: null, ghostEl: null };
 
@@ -90,6 +108,8 @@ export default function init() {
     }
 
     async function fetchSchedule(weekStart = null) {
+        scheduleReady = false;
+        setBusy(true);
         el.weekDisplay.innerText = 'در حال بارگذاری...';
         events = [];
         renderEvents();
@@ -118,6 +138,7 @@ export default function init() {
                     start: `${String(startDateObj.getHours()).padStart(2, '0')}:${String(startDateObj.getMinutes()).padStart(2, '0')}`,
                     end: `${String(endDateObj.getHours()).padStart(2, '0')}:${String(endDateObj.getMinutes()).padStart(2, '0')}`,
                     color: mapHexToTheme(ev.color),
+                    rawColor: ev.color,
                     book: ev.book_name,
                     tests: ev.test_count,
                     pages: ev.page_count,
@@ -130,14 +151,19 @@ export default function init() {
             });
 
             renderEvents();
+            scheduleReady = true;
             if (!weekStart) scrollToHour(7);
         } catch (err) {
             console.error('Failed to fetch schedule:', err);
             el.weekDisplay.innerText = 'خطا در بارگذاری';
+        } finally {
+            setBusy(false);
         }
     }
 
     async function saveEvent() {
+        if (busy || !scheduleReady) return;
+        if (!document.getElementById('event-form').reportValidity()) return;
         const id = document.getElementById('event_id').value;
         const title = document.getElementById('title').value;
         if (!title) return alert('لطفا عنوان را وارد کنید');
@@ -168,9 +194,20 @@ export default function init() {
             link_url: document.getElementById('link_url').value || null,
         };
 
+        if (activeDraft) {
+            const event = blockToEvent(payload, id || `draft-${++localId}`);
+            if (id) events = events.map((existing) => String(existing.id) === id ? event : existing);
+            else events.push(event);
+            markDraftDirty();
+            closeModal();
+            renderEvents();
+            return;
+        }
+
         const url = id ? config.urlUpdateTemplate.replace('__ITEM__', id) : config.urlStore;
         const method = id ? 'PUT' : 'POST';
 
+        setBusy(true);
         try {
             const response = await fetch(url, {
                 method,
@@ -182,13 +219,15 @@ export default function init() {
             if (response.ok && result.success) {
                 showToast(id ? 'برنامه با موفقیت بروزرسانی شد' : 'برنامه جدید افزوده شد');
                 closeModal();
-                fetchSchedule(currentWeekStartDate);
+                await fetchSchedule(currentWeekStartDate);
             } else {
                 alert(`خطا: ${result.error || summarizeErrors(result) || 'خطای ناشناخته'}`);
             }
         } catch (err) {
             console.error('Save failed:', err);
             alert('خطا در ارتباط با سرور');
+        } finally {
+            setBusy(false);
         }
     }
 
@@ -198,9 +237,18 @@ export default function init() {
     }
 
     async function deleteEvent() {
+        if (busy || !scheduleReady) return;
         if (!confirm('آیا از حذف این برنامه اطمینان دارید؟')) return;
 
         const id = document.getElementById('event_id').value;
+        if (activeDraft) {
+            events = events.filter((event) => String(event.id) !== id);
+            markDraftDirty();
+            closeModal();
+            renderEvents();
+            return;
+        }
+        setBusy(true);
         const url = config.urlDestroyTemplate.replace('__ITEM__', id);
 
         try {
@@ -210,13 +258,176 @@ export default function init() {
             if (response.ok && result.success) {
                 showToast('برنامه با موفقیت حذف شد');
                 closeModal();
-                fetchSchedule(currentWeekStartDate);
+                await fetchSchedule(currentWeekStartDate);
             } else {
                 alert(`خطا: ${result.error || 'خطای ناشناخته'}`);
             }
         } catch (err) {
             console.error('Delete failed:', err);
             alert('خطا در ارتباط با سرور');
+        } finally {
+            setBusy(false);
+        }
+    }
+
+    // Drafts use week-relative blocks; live item IDs and student progress never enter the payload.
+    function eventToBlock(event) {
+        return {
+            title: event.title, day_index: event.day_index,
+            start_time: event.start, end_time: event.end,
+            color: event.rawColor || COLOR_THEMES[event.color],
+            book_name: event.book || null, page_count: event.pages ?? null,
+            test_count: event.tests ?? null, description: event.description || null,
+            link_url: event.link || null,
+        };
+    }
+
+    function blockToEvent(block, id = `draft-${++localId}`) {
+        return {
+            id, title: block.title, day_index: Number(block.day_index),
+            start: block.start_time, end: block.end_time,
+            color: mapHexToTheme(block.color), rawColor: block.color,
+            book: block.book_name, pages: block.page_count, tests: block.test_count,
+            description: block.description, link: block.link_url,
+            item_type: 'consultant_event', is_completed: false,
+        };
+    }
+
+    function setBusy(value) {
+        busy = value;
+        [el.saveDraftBtn, el.newDraftBtn, el.copyDraftBtn, el.exitDraftBtn].forEach((button) => {
+            button.disabled = busy || !scheduleReady;
+        });
+        el.prevWeekBtn.disabled = el.nextWeekBtn.disabled = busy || !!activeDraft;
+        el.draftName.disabled = busy;
+        el.draftList.querySelectorAll('button').forEach((button) => {
+            button.disabled = busy || !scheduleReady;
+        });
+    }
+
+    function markDraftDirty() {
+        if (!activeDraft) return;
+        draftDirty = true;
+        el.draftStatus.textContent = 'تغییرات ذخیره نشده';
+    }
+
+    function canLeaveDraft() {
+        return !draftDirty || confirm('تغییرات پیش‌نویس ذخیره نشده است. ادامه می‌دهید؟');
+    }
+
+    function warnUnsavedDraft(event) {
+        if (!draftDirty) return;
+        event.preventDefault();
+        event.returnValue = '';
+    }
+
+    function enterDraft(draft) {
+        activeDraft = { id: draft.id, name: draft.name };
+        draftDirty = false;
+        el.draftName.value = draft.name;
+        events = draft.blocks.map((block) => blockToEvent(block));
+        el.draftEditor.classList.remove('hidden');
+        el.draftPanel.classList.add('hidden');
+        el.addEventButton.setAttribute('aria-expanded', 'false');
+        el.draftStatus.textContent = draft.id ? 'پیش‌نویس ذخیره‌شده' : 'پیش‌نویس جدید';
+        setBusy(false);
+        renderEvents();
+    }
+
+    async function draftRequest(url, method, payload) {
+        const response = await fetch(url, {
+            method, headers: authHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify(payload),
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok || !result.success) {
+            throw new Error(result.error || summarizeErrors(result) || 'خطا در ذخیره پیش‌نویس');
+        }
+        return result;
+    }
+
+    async function saveDraft(asCopy = false) {
+        if (busy || !scheduleReady) return;
+        const name = activeDraft ? el.draftName.value.trim() : prompt('نام پیش‌نویس برنامه هفتگی:')?.trim();
+        if (name == null) return;
+        if (!name || name.length > 255) return alert('نام پیش‌نویس را وارد کنید (حداکثر ۲۵۵ نویسه).');
+        const id = !asCopy && activeDraft?.id;
+        const payload = {
+            name, week_start_date: currentWeekStartDate,
+            blocks: events.filter((event) => event.item_type === 'consultant_event').map(eventToBlock),
+        };
+        setBusy(true);
+        try {
+            const result = await draftRequest(
+                id ? config.urlDraftUpdateTemplate.replace('__DRAFT__', id) : config.urlDrafts,
+                id ? 'PUT' : 'POST', payload,
+            );
+            enterDraft(result.draft);
+            showToast('پیش‌نویس ذخیره شد');
+        } catch (error) {
+            alert(error.message);
+        } finally {
+            setBusy(false);
+        }
+    }
+
+    async function loadDrafts() {
+        const request = ++draftListRequest;
+        el.draftList.textContent = 'در حال بارگذاری...';
+        try {
+            const response = await fetch(config.urlDrafts, { headers: authHeaders() });
+            if (!response.ok) throw new Error('خطا در بارگذاری پیش‌نویس‌ها. دوباره تلاش کنید.');
+            const result = await response.json();
+            if (request !== draftListRequest) return;
+            el.draftList.replaceChildren();
+            if (!result.drafts.length) el.draftList.textContent = 'هنوز پیش‌نویسی ذخیره نشده است.';
+            result.drafts.forEach((draft) => {
+                const row = document.createElement('div');
+                row.className = 'flex flex-wrap items-center gap-3 border border-[var(--c-border)] rounded-lg p-3 text-sm text-[var(--c-text)]';
+                const label = document.createElement('span');
+                label.className = 'flex-1 break-words';
+                label.textContent = `${draft.name} — ${draft.blocks.length.toLocaleString('fa-IR')} بلوک`;
+                const edit = document.createElement('button');
+                edit.type = 'button';
+                edit.className = 'text-primary';
+                edit.textContent = 'باز کردن';
+                edit.addEventListener('click', () => {
+                    if (!busy && scheduleReady && canLeaveDraft()) enterDraft(draft);
+                });
+                const apply = document.createElement('button');
+                apply.type = 'button';
+                apply.className = 'text-primary';
+                apply.textContent = 'افزودن به این هفته';
+                apply.addEventListener('click', () => applyDraft(draft));
+                row.append(label, edit, apply);
+                el.draftList.append(row);
+            });
+            setBusy(busy);
+        } catch (error) {
+            if (request === draftListRequest) el.draftList.textContent = error.message;
+        }
+    }
+
+    async function applyDraft(draft) {
+        if (busy || !scheduleReady || !canLeaveDraft()) return;
+        if (!draft.blocks.length) return alert('این پیش‌نویس هنوز بلوکی ندارد.');
+        if (!confirm(`پیش‌نویس «${draft.name}» به هفته ${el.weekDisplay.innerText} اضافه شود؟ برنامه فعلی حذف نمی‌شود.`)) return;
+        setBusy(true);
+        try {
+            await draftRequest(config.urlDraftApplyTemplate.replace('__DRAFT__', draft.id), 'POST', {
+                week_start_date: currentWeekStartDate,
+            });
+            activeDraft = null;
+            draftDirty = false;
+            el.draftEditor.classList.add('hidden');
+            el.draftPanel.classList.add('hidden');
+            el.addEventButton.setAttribute('aria-expanded', 'false');
+            await fetchSchedule(currentWeekStartDate);
+            showToast('پیش‌نویس به برنامه هفته اضافه شد');
+        } catch (error) {
+            alert(error.message);
+        } finally {
+            setBusy(false);
         }
     }
 
@@ -229,7 +440,7 @@ export default function init() {
     }
 
     function navigateWeek(daysOffset) {
-        if (!currentWeekStartDate) return;
+        if (!currentWeekStartDate || busy || activeDraft) return;
         fetchSchedule(getSafeLocalDateStr(currentWeekStartDate, daysOffset));
     }
 
@@ -315,6 +526,7 @@ export default function init() {
 
     // --- Drag-to-create (mouse + touch) ---
     function handleMouseDown(e) {
+        if (busy || !scheduleReady) return;
         if (e.target.closest('.event-card')) return;
         const col = e.currentTarget;
         dragState.isDragging = true;
@@ -327,6 +539,7 @@ export default function init() {
     }
 
     function handleTouchStart(e) {
+        if (busy || !scheduleReady) return;
         if (e.target.closest('.event-card')) return;
         if (e.cancelable) e.preventDefault();
         const col = e.currentTarget;
@@ -540,6 +753,7 @@ export default function init() {
     }
 
     function openModalForNew(dayIndex, start, end) {
+        if (busy || !scheduleReady) return;
         resetForm();
         document.getElementById('modal-title').innerText = 'افزودن برنامه جدید';
         document.getElementById('status-container').classList.add('hidden');
@@ -552,6 +766,7 @@ export default function init() {
     }
 
     function openModalForEdit(eventId) {
+        if (busy || !scheduleReady) return;
         const ev = events.find((e) => e.id === eventId);
         if (!ev) return;
 
@@ -571,6 +786,14 @@ export default function init() {
         document.getElementById('page_count').value = ev.pages || '';
         document.getElementById('description').value = ev.description || '';
         document.getElementById('link_url').value = ev.link || '';
+
+        if (activeDraft) {
+            document.getElementById('status-container').classList.add('hidden');
+            document.getElementById('comments-section').classList.add('hidden');
+            document.getElementById('btn-delete').classList.remove('hidden');
+            openModal();
+            return;
+        }
 
         const statusContainer = document.getElementById('status-container');
         const statusText = document.getElementById('completion-status');
@@ -631,7 +854,29 @@ export default function init() {
     }
 
     // --- Wire up + init ---
-    el.addEventButton.addEventListener('click', () => openModalForNew(0, '08:00', '10:00'));
+    el.addEventButton.addEventListener('click', () => {
+        const open = el.draftPanel.classList.contains('hidden');
+        el.draftPanel.classList.toggle('hidden', !open);
+        el.addEventButton.setAttribute('aria-expanded', String(open));
+        if (open) loadDrafts();
+    });
+    el.saveDraftBtn.addEventListener('click', () => saveDraft());
+    el.copyDraftBtn.addEventListener('click', () => saveDraft(true));
+    el.newDraftBtn.addEventListener('click', () => {
+        if (busy || !scheduleReady || !canLeaveDraft()) return;
+        enterDraft({ id: null, name: '', blocks: [] });
+        markDraftDirty();
+        el.draftName.focus();
+    });
+    el.exitDraftBtn.addEventListener('click', async () => {
+        if (busy || !canLeaveDraft()) return;
+        activeDraft = null;
+        draftDirty = false;
+        el.draftEditor.classList.add('hidden');
+        await fetchSchedule(currentWeekStartDate);
+    });
+    el.draftName.addEventListener('input', markDraftDirty);
+    window.addEventListener('beforeunload', warnUnsavedDraft);
     el.prevWeekBtn.addEventListener('click', () => navigateWeek(7));
     el.nextWeekBtn.addEventListener('click', () => navigateWeek(-7));
     el.modal.addEventListener('click', (e) => { if (e.target === el.modal) closeModal(); });
@@ -646,7 +891,11 @@ export default function init() {
     window.ScheduleApp = { closeModal, saveEvent, deleteEvent };
 
     // Re-entering the schedule page must not stack resize listeners.
-    return () => window.removeEventListener('resize', updateMobileVisibility);
+    return () => {
+        window.removeEventListener('resize', updateMobileVisibility);
+        window.removeEventListener('beforeunload', warnUnsavedDraft);
+        draftListRequest++;
+    };
 }
 
 if (!window.sapienstechRouter) {

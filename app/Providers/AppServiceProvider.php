@@ -28,6 +28,8 @@ class AppServiceProvider extends ServiceProvider
         // the upcoming admin pages with ->middleware('can:manage-users')
         // and ->middleware('can:manage-website').
         Gate::define('manage-users', fn (User $user): bool => $user->isTenantAdmin());
-        Gate::define('manage-website', fn (User $user): bool => $user->isTenantAdmin());
+        Gate::define('manage-website', fn (User $user): bool => tenant()?->hierarchy_type
+                    ? $user->isTenantOwner()
+                    : $user->isTenantAdmin());
     }
 }

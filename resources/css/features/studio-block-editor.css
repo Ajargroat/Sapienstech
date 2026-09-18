@@ -1,0 +1,84 @@
+/* Only explicitly set instance variables override the tenant's primitives. */
+.lp-block-object[style*="--block-background"] > :not(.lp-blocks__buttons),
+.lp-block-object[style*="--block-background"] > .lp-blocks__buttons > .lp-btn {
+  background: var(--block-background);
+}
+.lp-block-object[style*="--block-color"] > *,
+.lp-block-object[style*="--block-color"] > * :is(p, h2, h3, a, figcaption) {
+  color: var(--block-color) !important; /* Override the shared primitives' inline muted text. */
+}
+.lp-block-object[style*="--block-padding"] > :not(.lp-blocks__buttons),
+.lp-block-object[style*="--block-padding"] > .lp-blocks__buttons > .lp-btn {
+  padding: var(--block-padding);
+}
+.lp-block-object[style*="--block-radius"] > :not(.lp-blocks__buttons),
+.lp-block-object[style*="--block-radius"] > .lp-blocks__buttons > .lp-btn,
+.lp-block-object[style*="--block-radius"] > .lp-blocks__image img {
+  border-radius: var(--block-radius);
+}
+.lp-block-object[style*="--block-width"] > :not(.lp-blocks__buttons),
+.lp-block-object[style*="--block-width"] > .lp-blocks__buttons > .lp-btn {
+  inline-size: var(--block-width);
+  max-inline-size: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
+}
+.studio-canvas-editing .lp-block-object > * {
+  cursor: pointer;
+  min-block-size: 12px;
+}
+.studio-canvas-editing .lp-block-object:hover > *,
+.studio-canvas-editing .studio-object-selected > * {
+  outline: 2px solid var(--c-primary);
+  outline-offset: 4px;
+}
+.studio-canvas-editing .lp-block-object .reveal {
+  opacity: 1;
+  transform: none;
+}
+.studio-block-tools,
+.studio-block-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  margin-block-end: .75rem;
+}
+.studio-block-tools button,
+.studio-block-actions button {
+  padding: .4rem .7rem;
+  font-size: .8rem;
+}
+.studio-block-layers {
+  display: grid;
+  gap: .35rem;
+  max-block-size: 15rem;
+  overflow-y: auto;
+  margin-block: .75rem;
+}
+.studio-block-layer {
+  text-align: start;
+  border: 1px solid var(--c-border);
+  border-radius: .5rem;
+  padding: .5rem .75rem;
+  color: var(--c-text);
+  background: var(--c-surface);
+  cursor: grab;
+  overflow-wrap: anywhere;
+}
+.studio-block-layer[aria-pressed="true"] {
+  border-color: var(--c-primary);
+  background: var(--c-primary-soft);
+}
+.studio-block-layer:focus-visible {
+  outline: 2px solid var(--c-primary);
+  outline-offset: 2px;
+}
+[data-block-editor] [data-list-row][hidden],
+[data-block-editor] [data-list-add] {
+  display: none !important;
+}
+[data-block-status] {
+  color: var(--c-muted);
+  font-size: .8rem;
+}

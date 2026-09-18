@@ -14,10 +14,14 @@
 --}}
 @php
     $t       = site('theme');
-    $vars    = $t['vars'] ?? [];
+    // Font stacks are validated and emitted by theme-fonts, not HTML-escaped CSS.
+    $vars    = array_diff_key($t['vars'] ?? [], \App\Support\ThemeFonts::vars([]));
     $schemes = \App\Support\ThemeTokens::schemeVars($t);
     $animOff = empty($t['effects']['enable_animations']);
 @endphp
+@include('partials.theme-fonts', ['fontTheme' => $t])
+@include('partials.theme-icons')
+@unless ($fontsOnly ?? false)
 <style>
     :root {
 @foreach ($vars as $name => $value)
@@ -47,3 +51,4 @@
     {!! $t['custom']['css'] !!}
 @endif
 </style>
+@endunless

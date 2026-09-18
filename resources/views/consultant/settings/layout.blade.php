@@ -1,7 +1,7 @@
 {{--
     Profile hub shell (consultant), Telegram-style:
 
-      • a slim header row — just the title on the hub home, a back link plus
+      • a slim header row — hidden on the hub home, a back link plus
         the section title inside every other section (the settings list on
         the home page replaces the horizontal tab bar entirely: one vertical
         list instead of a fake navigation inside the page),
@@ -24,17 +24,17 @@
 
 @section('content')
 <div class="settings-shell">
+    @unless($isHome)
     <header class="profile-header">
-        @unless($isHome)
             <a class="profile-header-back" href="{{ route('consultant.settings.profile') }}" data-router="replace"
                aria-label="{{ $labels['settings_profile'] ?? 'پروفایل' }}">
                 <i class="fas fa-chevron-right" aria-hidden="true"></i>
             </a>
-        @endunless
         <span class="profile-header-title">
-            {{ $isHome ? ($labels['settings_profile'] ?? 'پروفایل') : $activeLabel }}
+            {{ $activeLabel }}
         </span>
     </header>
+    @endunless
 
     @if($isHome)
         @include('partials.profile-hero', ['profile' => auth()->user(), 'portal' => 'consultant'])

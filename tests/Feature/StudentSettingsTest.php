@@ -42,20 +42,21 @@ class StudentSettingsTest extends TestCase
         $student = $this->studentFor($tenant);
 
         // The hub home is the Telegram-style identity page: hero, info rows
-        // and a settings list (edit, password) — the forms themselves are
+        // and a settings list (edit) — the forms themselves are
         // separate ?tab= sections, not inline boxes.
         $html = $this->actingAs($student, 'student')
             ->get("http://{$host}/student/settings/profile")
             ->assertOk()
             ->assertSee('پروفایل')
             ->assertSee('ویرایش پروفایل')
-            ->assertSee('رمز عبور')
+            ->assertDontSee('tab=password', false)
+            ->assertDontSee('class="profile-header"', false)
             ->getContent();
 
         $this->assertStringNotContainsString('name="name"', $html);
     }
 
-    public function test_student_edit_and_password_sections_load_through_the_hub(): void
+    public function test_student_edit_section_includes_the_password_dialog(): void
     {
         [$tenant, $host] = $this->tenantWithDomain();
         $student = $this->studentFor($tenant);
@@ -66,11 +67,21 @@ class StudentSettingsTest extends TestCase
             ->getContent();
         $this->assertStringContainsString('name="name"', $edit);
 
-        $password = $this->actingAs($student, 'student')
-            ->get("http://{$host}/student/settings/profile?tab=password")
+        $this->assertStringContainsString('name="current_password"', $edit);
+        $this->assertStringContainsString('data-profile-open="profile-dialog-password"', $edit);
+        $this->assertStringNotContainsString('data-profile-auto-open', $edit);
+        $this->assertSame(1, substr_count($edit, 'data-profile-dialogs'));
+        $this->assertSame(1, substr_count($edit, 'data-profile-open="profile-dialog-avatar"'));
+        $this->assertStringContainsString('data-profile-avatar-toggle aria-expanded="false"', $edit);
+        $this->assertStringNotContainsString('profile-edit-row-label">تصویر پروفایل', $edit);
+
+        $student->forceFill(['avatar' => 'avatars/example.jpg'])->save();
+        $this->get("http://{$host}/student/settings/profile?tab=edit")
             ->assertOk()
-            ->getContent();
-        $this->assertStringContainsString('name="current_password"', $password);
+            ->assertSee('data-profile-avatar-delete hidden', false)
+            ->assertSee('aria-label="حذف تصویر پروفایل"', false);
+
+        $this->get("http://{$host}/student/settings/profile?tab=password")->assertNotFound();
 
         // Same gating vocabulary as the consultant hub.
         $this->actingAs($student, 'student')

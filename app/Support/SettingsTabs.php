@@ -6,7 +6,7 @@ namespace App\Support;
  * Single source of truth for the profile hub's sections.
  *
  * The hub is ONE route (`…settings.profile`); every personal part —
- * account details, edit, password, the appearance studio, chat settings —
+ * account details, edit (including password), the appearance studio, chat settings —
  * renders through it with a `?tab=` selector instead of owning a route of
  * its own, so the top navigation needs nothing but a direct link to the
  * profile. Sections still disappear the moment their feature flag is off,
@@ -43,15 +43,15 @@ class SettingsTabs
         return [
             ['key' => 'profile',    'label_key' => 'settings_profile',     'fallback' => 'پروفایل',          'feature' => 'settings_profile', 'icon' => 'fa-user'],
             ['key' => 'edit',       'label_key' => 'settings_profile_edit', 'fallback' => 'ویرایش پروفایل',  'feature' => 'settings_profile', 'icon' => 'fa-user-pen'],
-            ['key' => 'password',   'label_key' => 'settings_password',    'fallback' => 'رمز عبور',         'feature' => 'settings_profile', 'icon' => 'fa-key'],
+
             ['key' => 'appearance', 'label_key' => 'settings_appearance',  'fallback' => 'ظاهر',             'feature' => 'theme_studio',     'icon' => 'fa-palette'],
             ['key' => 'chat',       'label_key' => 'settings_chat',        'fallback' => 'گفتگو',            'feature' => 'settings_chat',    'icon' => 'fa-comments'],
         ];
     }
 
     /**
-     * The student portal has no studio/chat section yet; account, edit and
-     * password are the same mechanism. Dropping another entry in here gives
+     * The student portal has no studio/chat section yet; account and edit
+     * use the same mechanism. Dropping another entry in here gives
      * it a row, a feature gate and a URL in one move.
      *
      * @return list<array{key: string, label_key: string, fallback: string, feature: string, icon: string}>
@@ -61,7 +61,7 @@ class SettingsTabs
         return [
             ['key' => 'profile',  'label_key' => 'settings_profile',      'fallback' => 'پروفایل',         'feature' => 'settings_profile', 'icon' => 'fa-user'],
             ['key' => 'edit',     'label_key' => 'settings_profile_edit', 'fallback' => 'ویرایش پروفایل', 'feature' => 'settings_profile', 'icon' => 'fa-user-pen'],
-            ['key' => 'password', 'label_key' => 'settings_password',     'fallback' => 'رمز عبور',        'feature' => 'settings_profile', 'icon' => 'fa-key'],
+
         ];
     }
 
@@ -72,11 +72,20 @@ class SettingsTabs
      */
     public static function visible(string $portal = 'consultant'): array
     {
+        $user = auth('web')->user();
+        if ($portal !== 'student' && $user
+            && ($user->isTeacher() || (tenant()?->hierarchy_type && ! $user->isTenantOwner()))) {
+            return [];
+        }
+
         $tabs = $portal === 'student' ? self::forStudent() : self::forConsultant();
 
         $visible = [];
 
         foreach ($tabs as $tab) {
+            if ($tab['key'] === 'appearance' && tenant()?->hierarchy_type && $user && ! $user->isTenantOwner()) {
+                continue;
+            }
             if (! (bool) site("features.{$tab['feature']}", false)) {
                 continue;
             }

@@ -17,15 +17,20 @@ return Application::configure(basePath: dirname(__DIR__))
             // Same tenant-resolved feature-flag middleware, named for the
             // student portal's route group for readability.
             'student.feature' => \App\Http\Middleware\EnsureConsultantFeature::class,
+            // …and for the teacher panel. Role gating lives in EnsureTeacher.
+            'teacher.feature' => \App\Http\Middleware\EnsureConsultantFeature::class,
+            'teacher.role' => \App\Http\Middleware\EnsureTeacher::class,
         ]);
 
         $middleware->web(append: [
             \App\Http\Middleware\IdentifyTenant::class,
             \App\Http\Middleware\EnsureUserDomain::class,
+            \App\Http\Middleware\EnsureHierarchyAccess::class,
             \App\Http\Middleware\ApplyPersonalTheme::class,
         ]);
 
-        // Smart redirect: keeps students on /student/* and consultants on /consultant/*
+        // Smart redirect: keeps students on /student/*, teachers on /teacher/*
+        // and consultants on /consultant/*.
         $middleware->redirectGuestsTo(function () {
             if (request()->is('student/*') || request()->routeIs('student.*')) {
                 return route('student.login');
@@ -36,6 +41,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectUsersTo(function () {
             if (request()->is('student/*') || request()->routeIs('student.*')) {
                 return route('student.dashboard');
+            }
+            if (request()->is('teacher/*') || request()->routeIs('teacher.*')) {
+                return route('teacher.dashboard');
             }
             return route('consultant.dashboard');
         });

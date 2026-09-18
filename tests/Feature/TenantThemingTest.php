@@ -418,7 +418,8 @@ class TenantThemingTest extends TestCase
             $this->assertStringNotContainsString($token, $block, "{$token} must not be overridden by the colour scheme");
         }
 
-        // ...and the tenant's own heading font still reaches the page overall.
-        $this->assertStringContainsString('--font-heading: Amiri', $html);
+        // ...and the tenant's own heading font still reaches the page overall
+        // (ThemeFonts publishes stacks with quoted family names).
+        $this->assertStringContainsString('--font-heading: "Amiri", sans-serif', $html);
     }
 }

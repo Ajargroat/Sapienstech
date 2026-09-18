@@ -24,6 +24,42 @@
                 </a>
             @endif
 
+            @if(site('features.student_materials', false) && \Illuminate\Support\Facades\Route::has('student.lessons.index'))
+                <a
+                    href="{{ route('student.lessons.index') }}"
+                    class="topnav-link {{ request()->routeIs('student.lessons*') ? 'active' : '' }}"
+                >
+                    درس‌ها
+                </a>
+            @endif
+
+            @if(site('features.student_assignments', false) && \Illuminate\Support\Facades\Route::has('student.assignments.index'))
+                <a
+                    href="{{ route('student.assignments.index') }}"
+                    class="topnav-link {{ request()->routeIs('student.assignments*') ? 'active' : '' }}"
+                >
+                    تکالیف
+                </a>
+            @endif
+
+            @if(site('features.student_timetable', false) && \Illuminate\Support\Facades\Route::has('student.timetable'))
+                <a
+                    href="{{ route('student.timetable') }}"
+                    class="topnav-link {{ request()->routeIs('student.timetable') ? 'active' : '' }}"
+                >
+                    جدول کلاس
+                </a>
+            @endif
+
+            @if(site('features.deals', false) && \Illuminate\Support\Facades\Route::has('student.deals.index'))
+                <a
+                    href="{{ route('student.deals.index') }}"
+                    class="topnav-link {{ request()->routeIs('student.deals*') ? 'active' : '' }}"
+                >
+                    دورهٔ من
+                </a>
+            @endif
+
             @if(site('features.student_chat', false) && \Illuminate\Support\Facades\Route::has('student.direct-chat.page'))
                 <a
                     href="{{ route('student.direct-chat.page') }}"

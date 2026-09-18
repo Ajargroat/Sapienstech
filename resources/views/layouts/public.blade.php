@@ -7,6 +7,7 @@
     <title>@yield('title', $tenant->name)</title>
     <style>:root { --brand: {{ $config->primary_color ?? '#2563eb' }}; }</style>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @include('partials.theme-vars', ['fontsOnly' => true])
 </head>
 <body class="bg-gray-50 text-gray-900 min-h-screen flex flex-col">
 

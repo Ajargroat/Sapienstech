@@ -12,14 +12,14 @@
     </div>
 @endif
 
-<div class="studio-toolbar">
+<div class="studio-toolbar studio-workspace-toolbar">
     <span class="studio-toolbar-title">
         <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i>
         استودیوی ظاهر
     </span>
 
     <label class="studio-live-toggle">
-        <input type="checkbox" data-studio-live>
+        <input type="checkbox" data-studio-live checked>
         <span>پیش‌نمایش زنده</span>
     </label>
 </div>
@@ -54,22 +54,78 @@
     $initialGroup = $errorGroup ?? (array_key_first($studioGroups) ?? null);
 @endphp
 
-<div class="studio-split" id="studio-split">
-    <div class="studio-main">
-        {{-- Inspector rail: one tab per group; clicking a tab shows only that
-             group's panel (theme-studio.js switches panels). --}}
+<div class="studio-split studio-workspace" id="studio-split">
+    <aside class="studio-workspace-rail" aria-label="ابزارهای استودیو">
+        <div class="studio-workspace-tools" role="group" aria-label="حالت ابزار">
+            <button type="button" class="studio-workspace-tool" data-workspace-tool="select"
+                    title="انتخاب عنصر" aria-label="انتخاب عنصر" aria-pressed="true">
+                <i class="fas fa-arrow-pointer" aria-hidden="true"></i>
+            </button>
+            <button type="button" class="studio-workspace-tool" data-workspace-tool="interact"
+                    title="تعامل با صفحه" aria-label="تعامل با صفحه" aria-pressed="false">
+                <i class="fas fa-hand" aria-hidden="true"></i>
+            </button>
+        </div>
+
         <nav class="studio-tabs" aria-label="بخش‌های تنظیمات ظاهر">
             @foreach($studioGroups as $groupKey => $group)
                 <button type="button" class="studio-tab" data-studio-tab="{{ $groupKey }}"
-                        aria-controls="studio-group-{{ $groupKey }}" aria-current="{{ $initialGroup === $groupKey ? 'true' : 'false' }}">
+                        aria-controls="studio-group-{{ $groupKey }}" aria-current="{{ $initialGroup === $groupKey ? 'true' : 'false' }}"
+                        title="{{ $group['label'] }}" aria-label="{{ $group['label'] }}">
                     <i class="fas {{ $group['icon'] ?? 'fa-sliders-h' }}" aria-hidden="true"></i>
-                    <span>{{ $group['label'] }}</span>
                     @if($groupChanged[$groupKey] ?? false)
                         <span class="studio-badge" title="{{ $groupChanged[$groupKey] }} مورد تغییر کرده است" aria-hidden="true">●</span>
                     @endif
                 </button>
             @endforeach
         </nav>
+
+        @if(array_key_exists('blocks', $studioGroups))
+            <div class="studio-workspace-tools" role="group" aria-label="افزودن بلوک">
+                @foreach([
+                    'heading' => ['fa-heading', 'افزودن عنوان'],
+                    'text' => ['fa-align-right', 'افزودن متن'],
+                    'button' => ['fa-square-plus', 'افزودن دکمه'],
+                    'card' => ['fa-id-card', 'افزودن کارت'],
+                    'image' => ['fa-image', 'افزودن تصویر'],
+                    'spacer' => ['fa-arrows-up-down', 'افزودن فاصله'],
+                ] as $insertType => [$insertIcon, $insertLabel])
+                    <button type="button" class="studio-workspace-tool" data-workspace-insert="{{ $insertType }}"
+                            title="{{ $insertLabel }}" aria-label="{{ $insertLabel }}">
+                        <i class="fas {{ $insertIcon }}" aria-hidden="true"></i>
+                    </button>
+                @endforeach
+            </div>
+            <div class="studio-workspace-tools" role="group" aria-label="عملیات بلوک‌ها">
+                @foreach([
+                    'undo' => ['fa-rotate-left', 'واگرد تغییر بلوک‌ها'],
+                    'redo' => ['fa-rotate-right', 'انجام دوبارهٔ تغییر بلوک‌ها'],
+                    'duplicate' => ['fa-clone', 'تکثیر بلوک انتخاب‌شده'],
+                    'reset-style' => ['fa-eraser', 'بازنشانی سبک بلوک انتخاب‌شده'],
+                ] as $workspaceAction => [$actionIcon, $actionLabel])
+                    <button type="button" class="studio-workspace-tool" data-workspace-action="{{ $workspaceAction }}"
+                            title="{{ $actionLabel }}" aria-label="{{ $actionLabel }}">
+                        <i class="fas {{ $actionIcon }}" aria-hidden="true"></i>
+                    </button>
+                @endforeach
+            </div>
+        @endif
+    </aside>
+
+    <div class="studio-main">
+        <section class="studio-object-inspector" data-object-inspector aria-label="ویژگی‌های عنصر انتخاب‌شده">
+            <header class="studio-object-head">
+                <span class="studio-object-eyebrow">بازرس عنصر</span>
+                <h2 data-object-title aria-live="polite">عنصری انتخاب نشده است</h2>
+                <p data-object-scope>برای مشاهدهٔ ویژگی‌ها، عنصری را در پیش‌نمایش انتخاب کنید.</p>
+            </header>
+            <dl class="studio-object-metrics" data-object-metrics aria-label="ابعاد و موقعیت عنصر"></dl>
+            <div class="studio-object-controls" data-object-controls role="group" aria-label="میان‌برهای عنصر"></div>
+            <details class="studio-page-layers">
+                <summary><i class="fas fa-layer-group" aria-hidden="true"></i> بخش‌های صفحه</summary>
+                <ul data-page-layers aria-label="لایه‌های صفحه"></ul>
+            </details>
+        </section>
 
         <form method="POST" action="{{ route('consultant.settings.appearance.save') }}"
               enctype="multipart/form-data" class="studio-form" data-router="off" id="studio-form"
@@ -173,21 +229,38 @@
         <div class="studio-preview-head">
             <span class="studio-live-dot" data-studio-live-dot data-state="idle" aria-hidden="true"></span>
             <span>پیش‌نمایش زنده</span>
+            <label class="studio-live-toggle">
+                <input type="checkbox" data-studio-interact>
+                <span>تعامل با صفحه</span>
+            </label>
             <div class="studio-preview-devices" role="group" aria-label="اندازهٔ نمایش">
-                <button type="button" class="studio-preview-device" data-studio-preview-device="desktop" title="نمایش دسکتاپ">
+                <button type="button" class="studio-preview-device" data-studio-preview-device="desktop" title="نمایش دسکتاپ" aria-label="نمایش دسکتاپ" aria-pressed="true">
                     <i class="fas fa-display" aria-hidden="true"></i>
                 </button>
-                <button type="button" class="studio-preview-device" data-studio-preview-device="mobile" title="نمایش موبایل">
+                <button type="button" class="studio-preview-device" data-studio-preview-device="tablet" title="نمایش تبلت" aria-label="نمایش تبلت" aria-pressed="false">
+                    <i class="fas fa-tablet-screen-button" aria-hidden="true"></i>
+                </button>
+                <button type="button" class="studio-preview-device" data-studio-preview-device="mobile" title="نمایش موبایل" aria-label="نمایش موبایل" aria-pressed="false">
                     <i class="fas fa-mobile-screen-button" aria-hidden="true"></i>
                 </button>
             </div>
-            <button type="button" class="studio-preview-action" data-studio-preview-reload title="بارگذاری دوباره">
+            <label class="studio-workspace-zoom">
+                <span>بزرگ‌نمایی</span>
+                <select data-studio-zoom aria-label="بزرگ‌نمایی پیش‌نمایش">
+                    <option value="fit" selected>متناسب</option>
+                    <option value=".5">۵۰٪</option>
+                    <option value=".75">۷۵٪</option>
+                    <option value="1">۱۰۰٪</option>
+                    <option value="1.25">۱۲۵٪</option>
+                </select>
+            </label>
+            <button type="button" class="studio-preview-action" data-studio-preview-reload title="بارگذاری دوباره" aria-label="بارگذاری دوبارهٔ پیش‌نمایش">
                 <i class="fas fa-rotate" aria-hidden="true"></i>
             </button>
-            <a class="studio-preview-action" href="{{ route('home') }}" target="_blank" rel="noopener" title="باز کردن در تب جدید">
+            <a class="studio-preview-action" href="{{ route('home') }}" target="_blank" rel="noopener" title="باز کردن در تب جدید" aria-label="باز کردن پیش‌نمایش در تب جدید">
                 <i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i>
             </a>
-            <button type="button" class="studio-preview-action" data-studio-preview-max title="تمام‌صفحه">
+            <button type="button" class="studio-preview-action" data-studio-preview-max title="تمام‌صفحه" aria-label="تغییر حالت تمام‌صفحهٔ پیش‌نمایش">
                 <i class="fas fa-expand" aria-hidden="true"></i>
             </button>
         </div>

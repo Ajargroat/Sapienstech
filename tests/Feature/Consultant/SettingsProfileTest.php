@@ -13,7 +13,7 @@ use Tests\TestCase;
 
 /**
  * The profile hub: the Telegram-style home (hero, action tiles, info rows,
- * settings list), its edit/password/appearance/chat sections on the one
+ * settings list), its edit/appearance/chat sections on the one
  * profile route, the moved logout, feature gating, and the per-user
  * ("just for me") config layer applied by ApplyPersonalTheme.
  */
@@ -55,7 +55,9 @@ class SettingsProfileTest extends TestCase
             ->assertSee('پروفایل')
             ->assertSee('تنظیمات')
             ->assertSee('ویرایش پروفایل')
-            ->assertSee('رمز عبور')
+            ->assertDontSee('tab=password', false)
+            ->assertDontSee('class="profile-header"', false)
+            ->assertSee('tab=appearance', false)
             ->assertSee($user->email)
             ->getContent();
 
@@ -69,7 +71,7 @@ class SettingsProfileTest extends TestCase
         $this->assertStringContainsString('/consultant/direct-chat', $html);
     }
 
-    public function test_edit_and_password_sections_render_forms_through_the_hub(): void
+    public function test_edit_section_includes_the_password_dialog(): void
     {
         [$tenant, $host] = $this->tenantWithDomain();
         $user = $this->consultantFor($tenant);
@@ -82,13 +84,49 @@ class SettingsProfileTest extends TestCase
 
         $this->assertStringContainsString('name="name"', $edit);
         $this->assertStringContainsString('name="bio"', $edit);
+        foreach (['avatar', 'name', 'email', 'bio', 'password'] as $field) {
+            $this->assertStringContainsString('data-profile-open="profile-dialog-'.$field.'"', $edit);
+            $this->assertStringContainsString('<dialog class="profile-dialog" id="profile-dialog-'.$field.'"', $edit);
+        }
+        $this->assertStringNotContainsString('profile-edit-row-editor', $edit);
+        $this->assertStringNotContainsString('profile-dialog-header', $edit);
+        $this->assertStringNotContainsString('profile-dialog-close', $edit);
+        $this->assertStringContainsString('aria-label="تصویر پروفایل"', $edit);
+        $this->assertStringContainsString('aria-label="تغییر رمز عبور"', $edit);
 
-        $password = $this->actingAs($user)
-            ->get("http://{$host}/consultant/settings/profile?tab=password")
+        $this->assertStringContainsString('name="current_password"', $edit);
+        $this->assertStringNotContainsString('data-profile-auto-open', $edit);
+        $this->assertSame(1, substr_count($edit, 'data-profile-dialogs'));
+        $this->assertSame(1, substr_count($edit, 'data-profile-open="profile-dialog-avatar"'));
+        $this->assertStringContainsString('data-profile-avatar-toggle aria-expanded="false"', $edit);
+        $this->assertStringNotContainsString('profile-edit-row-label">تصویر پروفایل', $edit);
+
+        $user->forceFill(['avatar' => 'avatars/example.jpg'])->save();
+        $this->get("http://{$host}/consultant/settings/profile?tab=edit")
             ->assertOk()
-            ->getContent();
+            ->assertSee('data-profile-avatar-delete hidden', false)
+            ->assertSee('aria-label="حذف تصویر پروفایل"', false);
 
-        $this->assertStringContainsString('name="current_password"', $password);
+        $this->get("http://{$host}/consultant/settings/profile?tab=password")->assertNotFound();
+    }
+
+    public function test_invalid_profile_edit_reopens_its_dialog_with_the_attempted_value(): void
+    {
+        [$tenant, $host] = $this->tenantWithDomain();
+        $user = $this->consultantFor($tenant);
+        $url = "http://{$host}/consultant/settings/profile?tab=edit";
+
+        $this->actingAs($user)->from($url)
+            ->patch("http://{$host}/consultant/settings/profile", [
+                'name' => $user->name,
+                'email' => 'not-an-email',
+                'bio' => $user->bio,
+            ])->assertSessionHasErrors('email');
+
+        $this->get($url)->assertOk()
+            ->assertSee('aria-label="ایمیل (شناسهٔ حساب شما)"  data-profile-auto-open', false)
+            ->assertSee('value="not-an-email"', false)
+            ->assertSee('id="profile-error-email"', false);
     }
 
     public function test_unknown_tab_is_a_not_found(): void
@@ -109,7 +147,17 @@ class SettingsProfileTest extends TestCase
         $this->actingAs($user)
             ->get("http://{$host}/consultant/settings/profile?tab=chat")
             ->assertOk()
-            ->assertSee('گفتگو');
+            ->assertSee('گفتگو')
+            ->assertSee('profile-chat-section', false)
+            ->assertSee('role="switch"', false)
+            ->assertDontSee('data-chat-hint', false)
+            ->assertDontSee('chat-setting-chat_read_receipts-help', false)
+                        ->assertDontSee('فرستنده از خوانده‌شدن پیام مطلع شود.')
+            ->assertDontSee('profile-chat-section-help', false)
+            ->assertDontSee('profile-chat-appearance', false)
+            ->assertDontSee('tab=appearance', false)
+            ->assertSee('حالت فقط خواندنی')
+            ->assertDontSee('profile-chat-save', false);
 
         // The old standalone tab URL redirects into the hub section.
         $this->actingAs($user)
@@ -169,11 +217,15 @@ class SettingsProfileTest extends TestCase
         [$tenant, $host] = $this->tenantWithDomain();
         $user = $this->consultantFor($tenant);
 
-        $this->actingAs($user)->put("http://{$host}/consultant/settings/profile/password", [
+        $editUrl = "http://{$host}/consultant/settings/profile?tab=edit";
+        $this->actingAs($user)->from($editUrl)->put("http://{$host}/consultant/settings/profile/password", [
             'current_password' => 'wrong-password',
             'password' => 'brand-new-secret',
             'password_confirmation' => 'brand-new-secret',
-        ])->assertSessionHasErrors('current_password');
+        ])->assertRedirect($editUrl)->assertSessionHasErrors('current_password');
+
+        $this->get($editUrl)->assertOk()
+            ->assertSee('aria-label="تغییر رمز عبور"  data-profile-auto-open', false);
 
         $this->actingAs($user)->put("http://{$host}/consultant/settings/profile/password", [
             'current_password' => 'password',

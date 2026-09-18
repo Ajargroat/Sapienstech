@@ -5,9 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $tenant['name'] }} | {{ $tenant['page_title'] }}</title>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="stylesheet" href="{{ $theme['assets']['font_url'] }}">
-    <link rel="stylesheet" href="{{ $theme['assets']['icon_library_url'] }}">
+
+
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @include('partials.theme-vars')
