@@ -13,3 +13,4 @@
 !/storage/logs/.gitkeep
 *.log
 /database/*.sqlite-journal
+/.kilo
