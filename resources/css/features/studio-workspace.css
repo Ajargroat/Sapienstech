@@ -291,6 +291,29 @@ body .studio-workspace .studio-tabs {
   cursor: pointer;
 }
 
+.studio-workspace .studio-context-align { display: inline-flex; border: 1px solid var(--workspace-border); border-radius: 6px; overflow: hidden; }
+.studio-workspace .studio-context-align button {
+  flex: 1;
+  padding: 4px 10px;
+  border: 0;
+  background: transparent;
+  color: var(--workspace-muted);
+  font: inherit;
+  cursor: pointer;
+}
+.studio-workspace .studio-context-align button + button { border-inline-start: 1px solid var(--workspace-border); }
+.studio-workspace .studio-context-align button[aria-pressed="true"] { background: var(--workspace-accent); color: #fff; }
+
+.studio-workspace .studio-context-style-full {
+  margin: 12px 0 0;
+  padding: 8px 10px;
+  border: 1px dashed var(--workspace-border);
+  border-radius: 6px;
+  color: var(--workspace-muted);
+  font-size: 11px;
+  line-height: 1.8;
+}
+
 .studio-workspace .studio-object-inspector { padding: 14px 16px; border-bottom: 1px solid var(--workspace-border); }
 .studio-workspace .studio-object-head { display: flex; align-items: center; gap: 8px; }
 .studio-workspace .studio-object-eyebrow { color: var(--workspace-muted); font-size: 10px; }

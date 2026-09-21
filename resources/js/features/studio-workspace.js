@@ -59,6 +59,7 @@ export default function initWorkspace(form) {
         { key: 'padding', label: 'فاصله داخلی', kind: 'range', min: 0, max: 128, unit: 'px' },
         { key: 'width', label: 'عرض', kind: 'range', min: 10, max: 100, unit: '%' },
         { key: 'font_scale', label: 'مقیاس قلم', kind: 'range', min: 50, max: 400, unit: '%' },
+        { key: 'align', label: 'تراز', kind: 'align' },
     ];
     const overridesField = fields.find((field) => field.dataset.studioField === 'public.landing.overrides');
     const overridesList = overridesField?.querySelector('[data-studio-list]');
@@ -115,6 +116,40 @@ export default function initWorkspace(form) {
             wrap.append(name, picker, clear);
             return wrap;
         }
+        if (spec.kind === 'align') {
+            // Segmented control: the physical icons stay put in RTL (start is
+            // the right-hand side), so they always match what the canvas does.
+            const group = document.createElement('div');
+            group.className = 'studio-context-align';
+            group.setAttribute('role', 'group');
+            group.setAttribute('aria-label', spec.label);
+            const choices = [
+                ['start', 'fa-align-right', 'تراز به شروع'],
+                ['center', 'fa-align-center', 'تراز به وسط'],
+                ['end', 'fa-align-left', 'تراز به پایان'],
+            ];
+            let stored = row ? rowInput(row, spec.key)?.value ?? '' : '';
+            const paint = () => group.querySelectorAll('button').forEach((button) => {
+                button.setAttribute('aria-pressed', String(button.dataset.align === stored));
+            });
+            for (const [value, icon, hint] of choices) {
+                const option = document.createElement('button');
+                option.type = 'button';
+                option.dataset.align = value;
+                option.title = hint;
+                option.setAttribute('aria-label', hint);
+                option.innerHTML = `<i class="fas ${icon}" aria-hidden="true"></i>`;
+                option.addEventListener('click', () => {
+                    stored = stored === value ? '' : value;
+                    writeOverride(path, spec.key, stored);
+                    paint();
+                });
+                group.append(option);
+            }
+            paint();
+            wrap.append(name, group);
+            return wrap;
+        }
         const bar = document.createElement('input');
         bar.type = 'range';
         bar.min = String(spec.min);
@@ -135,7 +170,14 @@ export default function initWorkspace(form) {
         if (!overridesField || !path) return null;
         // Offered only while a new row could still be created, unless this
         // element already owns one (which its controls then edit in place).
-        if (!findOverride(path) && !canAddOverride()) return null;
+        if (!findOverride(path) && !canAddOverride()) {
+            // Never fail silently: when the 64-row budget is spent, say so and
+            // point at the rows that can be removed or restyled instead.
+            const notice = document.createElement('p');
+            notice.className = 'studio-context-style-full';
+            notice.textContent = 'ظرفیت سبک‌های جداگانه پر شده است. یک ردیف بلااستفاده را حذف کنید یا سبک یک عنصر دیگر را ویرایش کنید تا جا خالی شود.';
+            return notice;
+        }
         const details = document.createElement('details');
         details.className = 'studio-context-style-box';
         const summary = document.createElement('summary');
@@ -482,8 +524,32 @@ export default function initWorkspace(form) {
         if (!doc.getElementById('studio-inspection-style')) {
             const style = doc.createElement('style');
             style.id = 'studio-inspection-style';
-            style.textContent = '.studio-canvas-editing .studio-inspected-object{outline:2px solid #4285fa!important;outline-offset:3px}.studio-canvas-editing [data-studio-section] :is(a,button,h1,h2,h3,p,img,.lp-card,[data-studio-path]):hover{outline:1px dashed #4285fa;cursor:crosshair}.studio-canvas-editing .reveal{opacity:1!important;transform:none!important}';
+            style.textContent = '.studio-canvas-editing .studio-inspected-object{outline:2px solid #4285fa!important;outline-offset:3px}.studio-canvas-editing [data-studio-section] :is(a,button,h1,h2,h3,p,img,.lp-card,[data-studio-path]):hover{outline:1px dashed #4285fa;cursor:crosshair}.studio-canvas-editing .reveal{opacity:1!important;transform:none!important}.studio-hover-label{position:absolute;z-index:2147483647;max-inline-size:220px;padding:2px 8px;border-radius:4px;background:#4285fa;color:#fff;font:11px/1.6 inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}';
             doc.head.append(style);
+            // Hover chip: names the element under the pointer (like Figma's
+            // hover overlay), so users know what a click would select before
+            // they commit. Fixed-position, so it must be re-pinned on scroll.
+            const hoverChip = doc.createElement('div');
+            hoverChip.className = 'studio-hover-label';
+            hoverChip.hidden = true;
+            doc.body.append(hoverChip);
+            let hoverTarget = null;
+            const hoverElement = (node) => node?.closest?.('[data-studio-path],[data-studio-section],[data-studio-block]');
+            const placeChip = () => {
+                if (!hoverTarget?.isConnected || interactive()) { hoverChip.hidden = true; return; }
+                const rect = hoverTarget.getBoundingClientRect();
+                hoverChip.textContent = leafLabel(hoverTarget);
+                hoverChip.style.insetInlineStart = Math.max(0, rect.left) + 'px';
+                hoverChip.style.top = Math.max(0, rect.top - 24) + 'px';
+                hoverChip.hidden = false;
+            };
+            doc.addEventListener('mouseover', (event) => {
+                if (interactive()) return;
+                hoverTarget = hoverElement(event.target);
+                placeChip();
+            }, true);
+            doc.addEventListener('scroll', placeChip, true);
+            toggle?.addEventListener('change', () => { hoverTarget = null; placeChip(); });
             doc.addEventListener('click', (click) => {
                 if (interactive()) return;
                 click.preventDefault();

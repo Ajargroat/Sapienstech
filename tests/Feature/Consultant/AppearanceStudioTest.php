@@ -1011,6 +1011,7 @@ class AppearanceStudioTest extends TestCase
                 'path' => 'public.landing.hero.title_line1',
                 'background' => '#112233', 'color' => '#AABBCC',
                 'radius' => 8, 'padding' => 12, 'width' => 60, 'font_scale' => 150,
+                'align' => 'center',
                 'visible' => '1',
             ]],
         ]);
@@ -1022,7 +1023,7 @@ class AppearanceStudioTest extends TestCase
             data_get(WebsiteConfig::withoutGlobalScopes()->where('tenant_id', $tenant->id)->first()->layout_config, 'public.landing.overrides')
         );
         $this->assertSame(
-            '[data-studio-path="public.landing.hero.title_line1"]{background:#112233;color:#AABBCC;border-radius:8px;padding:12px;inline-size:60%;font-size:150%;}',
+            '[data-studio-path="public.landing.hero.title_line1"]{background:#112233;color:#AABBCC;border-radius:8px;padding:12px;inline-size:60%;font-size:150%;text-align:center;}',
             $css
         );
         $this->get("http://{$host}/")->assertOk()
@@ -1073,6 +1074,16 @@ class AppearanceStudioTest extends TestCase
                 ['path' => 'public.landing.hero.subtitle', 'padding' => 128, 'width' => 10],
             ])
         );
+
+        // Choice keys accept exactly their word list and emit verbatim.
+        $this->assertSame(
+            '[data-studio-path="public.landing.hero.subtitle"]{text-align:center;}',
+            \App\Support\StudioStyles::css([['path' => 'public.landing.hero.subtitle', 'align' => 'center']])
+        );
+        $this->assertSame('', \App\Support\StudioStyles::css([
+            ['path' => 'public.landing.hero.subtitle', 'align' => 'justify-all'],
+            ['path' => 'public.landing.hero.subtitle', 'align' => 'center;color:red'],
+        ]));
 
         // An addressable row with no usable style emits nothing rather than an
         // empty rule.

@@ -37,7 +37,8 @@ class StudioStyles
 
     /**
      * Style key => [CSS property, unit, min, max]. Numeric keys are clamped to
-     * their range; colours must match a 6-digit hex.
+     * their range; colours must match a 6-digit hex. A key mapped to `choice`
+     * accepts one of a fixed word list and is emitted verbatim.
      */
     protected const KEYS = [
         'background' => ['background', '', 0, 0],
@@ -46,7 +47,10 @@ class StudioStyles
         'padding' => ['padding', 'px', 0, 128],
         'width' => ['inline-size', '%', 10, 100],
         'font_scale' => ['font-size', '%', 50, 400],
+        'align' => ['text-align', 'choice', 0, 0],
     ];
+
+    protected const ALIGN_CHOICES = ['start', 'center', 'end'];
 
     /**
      * Resolve a stored path against the studio schema. Exact fields, list rows
@@ -93,6 +97,14 @@ class StudioStyles
             $value = $row[$key] ?? null;
 
             if ($value === null || $value === '') {
+                continue;
+            }
+
+            if ($unit === 'choice') {
+                if (is_string($value) && in_array($value, self::ALIGN_CHOICES, true)) {
+                    $out[$property] = $value;
+                }
+
                 continue;
             }
 
