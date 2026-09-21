@@ -239,3 +239,78 @@ test('in-canvas row actions add, duplicate, move and remove list rows', () => {
     assert.equal(names().length, 1);
     assert.equal(action(0).disabled, false);
 });
+
+// The overrides list is a real schema list inside the form; the context panel
+// writes rows into it lazily, so select-only must not create anything and the
+// first control edit must materialize exactly one path-addressed row.
+function setupOverrides() {
+    const row = `<div data-list-row><div class="studio-list-row-head"></div><input name="items[__KEY__][path]"><input name="items[__KEY__][color]"><input name="items[__KEY__][radius]"></div>`;
+    const dom = new JSDOM(`<div id="studio-split">
+        <button data-studio-tab="hero"></button><button data-studio-tab="blocks"></button>
+        <button data-workspace-tool="select"></button><button data-workspace-tool="interact"></button>
+        <input type="checkbox" data-studio-interact>
+        <section data-object-inspector><h2 data-object-title></h2><p data-object-scope></p><dl data-object-metrics></dl><div data-object-controls></div><ul data-page-layers></ul></section>
+        <form>
+        <section data-context-panel hidden><strong data-context-title></strong><p data-context-note></p><div data-context-fields></div><button type="button" data-context-clear></button></section>
+        <div data-studio-group="hero"><div data-studio-field="public.landing.hero.title_line1"><input name="hero" value="Initial"></div>
+        <div data-studio-field="public.landing.overrides">
+            <div data-studio-list data-max="8"><div data-list-rows></div>
+            <template data-list-template>${row}</template><button type="button" data-list-add></button></div></div></div>
+        </form></div>`, { url: 'http://tenant.test' });
+    for (const key of ['document', 'Event', 'CustomEvent']) globalThis[key] = dom.window[key];
+    const form = document.querySelector('form');
+    initLists(form);
+    initWorkspace(form);
+    const canvas = new JSDOM('<!doctype html><html><head></head><body><section><h1 data-studio-path="public.landing.hero.title_line1">Hero title</h1></section></body></html>');
+    form.dispatchEvent(new CustomEvent('studio:frame-ready', { detail: { frame: { contentDocument: canvas.window.document } } }));
+    canvas.window.document.querySelector('h1').click();
+    const rows = () => [...document.querySelectorAll('[data-studio-field="public.landing.overrides"] [data-list-row]')];
+    return { form, rows };
+}
+
+test('override rows are written lazily: selection creates nothing, the first edit does', () => {
+    const { rows } = setupOverrides();
+    // Select-only: no row may exist yet, so tenants who never style anything
+    // store nothing and the 64-row budget stays untouched.
+    assert.equal(rows().length, 0);
+
+    const box = document.querySelector('.studio-context-style-box');
+    assert.equal(Boolean(box), true);
+    // The first two pickers are background and text color, in STYLE_KEYS order.
+    const color = box.querySelectorAll('input[type="color"]')[1];
+    color.value = '#112233';
+    color.dispatchEvent(new Event('input', { bubbles: true }));
+
+    // First edit: one row, addressed by the element's path, value written.
+    assert.equal(rows().length, 1);
+    const row = rows()[0];
+    assert.equal(row.querySelector('[name$="[path]"]').value, 'public.landing.hero.title_line1');
+    assert.equal(row.querySelector('[name$="[color]"]').value, '#112233');
+
+    // A second property reuses the same row instead of spawning another.
+    const radius = box.querySelector('input[type="range"]');
+    radius.value = '12';
+    radius.dispatchEvent(new Event('input', { bubbles: true }));
+    assert.equal(rows().length, 1);
+    assert.equal(row.querySelector('[name$="[radius]"]').value, '12');
+});
+
+test('layer tree lists sections with their named elements and mirrors selection', () => {
+    const { frame } = setupPaths();
+    const canvas = frame();
+    const buttons = () => [...document.querySelectorAll('[data-page-layers] button')];
+    // One section button + one leaf per data-studio-path element.
+    assert.equal(buttons().length, 3);
+    assert.equal(buttons()[0].textContent, 'Hero');
+    assert.equal(buttons()[1].textContent, 'Hero title');
+    assert.equal(buttons()[2].textContent, 'Start');
+
+    // Clicking a leaf selects that element in the canvas.
+    buttons()[2].click();
+    assert.equal(canvas.window.document.querySelector('a').classList.contains('studio-inspected-object'), true);
+    assert.match(decodeURIComponent(globalThis.location.hash), /buttons\.0/);
+
+    // The tree mirrors the current selection.
+    assert.equal(buttons()[2].getAttribute('aria-current'), 'true');
+    assert.equal(buttons()[1].getAttribute('aria-current'), 'false');
+});

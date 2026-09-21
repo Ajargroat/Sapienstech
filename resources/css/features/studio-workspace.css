@@ -302,6 +302,9 @@ body .studio-workspace .studio-tabs {
 .studio-workspace [data-page-layers] { display: grid; gap: 5px; max-height: 240px; overflow: auto; margin: 0; padding: 3px; list-style: none; }
 .studio-workspace [data-page-layers] button { width: 100%; }
 .studio-workspace [data-page-layers] :is(.is-active, [aria-current="true"], [aria-selected="true"]) { border-color: var(--workspace-accent); color: var(--workspace-accent); }
+.studio-workspace [data-page-layers] ul { display: grid; gap: 4px; margin: 4px 0 2px; padding: 0 12px 0 0; list-style: none; }
+.studio-workspace [data-page-layers] ul button { min-height: 30px; padding: 4px 8px; font-size: 11px; text-align: start; opacity: 0.92; }
+.studio-workspace [data-page-layers] ul button[aria-current="true"] { border-color: var(--workspace-accent); color: var(--workspace-accent); }
 
 .studio-workspace .settings-cards { gap: 0; }
 .studio-workspace .settings-card {

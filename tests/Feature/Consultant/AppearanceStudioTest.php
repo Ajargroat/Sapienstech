@@ -1078,4 +1078,12 @@ class AppearanceStudioTest extends TestCase
         // empty rule.
         $this->assertSame('', \App\Support\StudioStyles::css([['path' => 'public.landing.hero.subtitle']]));
     }
+
+    public function test_override_list_refreshes_the_preview_by_reload(): void
+    {
+        // Override rows change the rendered markup (a per-element stylesheet),
+        // so the live preview must classify the list as a full re-render and
+        // must never mistake it for a swappable CSS token.
+        $this->assertSame('reload', StudioSchema::liveMode('public.landing.overrides'));
+    }
 }

@@ -292,6 +292,59 @@ export default function initWorkspace(form) {
             metrics.append(cell);
         }
     };
+    // --- Layers --------------------------------------------------------------
+    // Sections with their named children (everything carrying a
+    // data-studio-path), built from the live frame so the tree always matches
+    // the rendered markup. A click selects the node; the row mirrors the
+    // current selection and dims elements that an override row has hidden.
+    const sectionLabel = (key) => {
+        const control = [...form.querySelectorAll('[data-section-row]')]
+            .find((row) => row.querySelector('input[type="checkbox"]')?.value === key);
+        return control?.textContent.trim() || tab(key)?.getAttribute('aria-label') || key;
+    };
+    const leafLabel = (node) => (node.getAttribute('aria-label')
+        || node.getAttribute('alt')
+        || node.textContent
+        || node.tagName).trim().slice(0, 48) || node.tagName;
+    const selectFromTree = (element) => {
+        element.scrollIntoView?.({ block: 'center' });
+        select(element);
+    };
+    const buildLayers = () => {
+        layers.replaceChildren();
+        doc.querySelectorAll('[data-studio-section]').forEach((section) => {
+            const item = document.createElement('li');
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.textContent = sectionLabel(section.dataset.studioSection);
+            button.addEventListener('click', () => selectFromTree(section));
+            item.append(button);
+            const leaves = [...section.querySelectorAll('[data-studio-path]')]
+                .filter((node) => node.closest('[data-studio-section]') === section);
+            if (leaves.length) {
+                const childList = document.createElement('ul');
+                for (const leaf of leaves) {
+                    const child = document.createElement('li');
+                    const childButton = document.createElement('button');
+                    childButton.type = 'button';
+                    childButton.dataset.leafPath = leaf.dataset.studioPath;
+                    childButton.textContent = leafLabel(leaf);
+                    childButton.addEventListener('click', () => selectFromTree(leaf));
+                    child.append(childButton);
+                    childList.append(child);
+                }
+                item.append(childList);
+            }
+            layers.append(item);
+        });
+        paintLayers();
+    };
+    const paintLayers = () => {
+        const path = identity?.path;
+        layers.querySelectorAll('[data-leaf-path]').forEach((button) => {
+            button.setAttribute('aria-current', String(button.dataset.leafPath === path));
+        });
+    };
     const clear = () => {
         selected?.classList.remove('studio-inspected-object');
         selected = null;
@@ -324,6 +377,7 @@ export default function initWorkspace(form) {
         title.textContent = (element.getAttribute('aria-label') || element.getAttribute('alt') || element.textContent || element.tagName).trim().slice(0, 72);
         shortcuts.replaceChildren();
         syncHash();
+        paintLayers();
         if (block) {
             scope.textContent = 'سبک‌های زیر فقط روی این بلوک اعمال می‌شوند. اندازه‌های بالا اندازهٔ محاسبه‌شده در بوم هستند.';
             closeContext();
@@ -437,28 +491,37 @@ export default function initWorkspace(form) {
                 if (!interactive()) { submit.preventDefault(); submit.stopImmediatePropagation(); }
             }, true);
             doc.addEventListener('keydown', (key) => {
-                if (!interactive() && key.key === 'Escape') {
+                if (interactive()) return;
+                if (key.key === 'Escape') {
                     form.querySelector('[data-block-editor]')?.studioEditor?.select(null);
                     clear();
+                    return;
+                }
+                // Delete removes the selected list row, Ctrl/Cmd+D duplicates it.
+                // Guarded against typing contexts, and both act through the list
+                // factory so the live preview is notified like every other edit.
+                if (key.key !== 'Delete' && !(key.key === 'd' && (key.ctrlKey || key.metaKey))) return;
+                if (key.target?.closest('input,textarea,select,[contenteditable]')) return;
+                const path = identity?.path;
+                if (!path) return;
+                const { fields: matched, row } = resolve(path);
+                if (row === undefined || !matched.length || !isListField(matched[0])) return;
+                const api = matched[0].querySelector('[data-studio-list]')?.studioList;
+                const target = [...matched[0].querySelectorAll('[data-list-row]')][Number(row)];
+                if (!api || !target) return;
+                key.preventDefault();
+                key.stopImmediatePropagation();
+                const label = contextTitle.textContent;
+                if (key.key === 'Delete') {
+                    api.remove(target);
+                    clear();
+                } else {
+                    api.duplicate(target);
+                    openContext(path, label);
                 }
             });
         }
-        layers.replaceChildren();
-        doc.querySelectorAll('[data-studio-section]').forEach((section) => {
-            const key = section.dataset.studioSection;
-            const item = document.createElement('li');
-            const button = document.createElement('button');
-            button.type = 'button';
-            const sectionControl = [...form.querySelectorAll('[data-section-row]')].find((row) => row.querySelector('input[type="checkbox"]')?.value === key);
-            button.textContent = sectionControl?.textContent.trim() || tab(key)?.getAttribute('aria-label') || key;
-            button.addEventListener('click', () => {
-                const element = section; 
-                element.scrollIntoView?.({ block: 'center' });
-                select(element);
-            });
-            item.append(button);
-            layers.append(item);
-        });
+        buildLayers();
         if (identity?.block) {
             const element = blockElement(identity.block);
             if (element) select(element); else clear();
