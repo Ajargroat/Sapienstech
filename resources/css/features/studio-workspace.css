@@ -34,6 +34,33 @@
 
 .studio-workspace-toolbar .studio-live-toggle { margin-inline-start: auto; }
 
+.studio-toolbar .studio-dirty {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid #8a6d2f;
+  border-radius: 999px;
+  background: #3a3324;
+  color: #f0d9a8;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.studio-toolbar .studio-dirty-dot { width: 7px; height: 7px; border-radius: 50%; background: #f0c35c; }
+.studio-toolbar .studio-toolbar-save {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--workspace-accent);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--workspace-accent);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
 body .studio-workspace.studio-split {
   display: grid;
   grid-template-columns: 56px minmax(0, 1fr);

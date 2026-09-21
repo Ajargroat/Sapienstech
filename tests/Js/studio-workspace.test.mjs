@@ -13,7 +13,7 @@ function setup() {
         <section data-object-inspector><h2 data-object-title></h2><p data-object-scope></p><dl data-object-metrics></dl><div data-object-controls></div><ul data-page-layers></ul></section>
         <form><div data-studio-group="hero"><div data-studio-field="public.landing.hero.title_line1"><label class="studio-field-label">Title</label><input name="hero" value="Initial"></div></div>
         <div data-block-editor><button type="button" data-block-insert="button"></button><button type="button" data-block-undo disabled></button></div></form></div>`, { url: 'http://tenant.test' });
-    for (const key of ['document', 'Event', 'CustomEvent']) globalThis[key] = dom.window[key];
+    for (const key of ['document', 'Event', 'CustomEvent', 'location', 'history']) globalThis[key] = dom.window[key];
     const form = document.querySelector('form');
     const editor = initWorkspace(form);
     const frame = () => {
@@ -85,7 +85,7 @@ test('hidden preview twins and cross-origin frames cannot replace the active ins
 
 // A second fixture whose canvas carries schema paths, plus a context panel and
 // two schema controls (a leaf text field and a list repeater).
-function setupPaths() {
+function setupPaths(hash = '') {
     const dom = new JSDOM(`<div id="studio-split">
         <button data-studio-tab="hero" aria-label="Hero"></button><button data-studio-tab="blocks"></button>
         <button data-workspace-tool="select"></button><button data-workspace-tool="interact"></button>
@@ -96,8 +96,8 @@ function setupPaths() {
         <div data-studio-group="hero"><div data-studio-field="public.landing.hero.title_line1"><label class="studio-field-label">Title</label><input name="hero" value="Initial"></div>
         <div data-studio-field="public.landing.hero.buttons" data-live="reload"><label class="studio-field-label">Buttons</label>
             <div data-studio-list data-max="4"><div data-list-rows><div data-list-row><input name="hero[buttons][0][label]" value="Start"></div></div></div></div></div>
-        </form></div>`, { url: 'http://tenant.test' });
-    for (const key of ['document', 'Event', 'CustomEvent']) globalThis[key] = dom.window[key];
+        </form></div>`, { url: `http://tenant.test/${hash}` });
+    for (const key of ['document', 'Event', 'CustomEvent', 'location', 'history']) globalThis[key] = dom.window[key];
     const form = document.querySelector('form');
     const editor = initWorkspace(form);
     const canvas = () => new JSDOM('<!doctype html><html><head></head><body><template data-studio-section-marker="hero"></template><section><h1 data-studio-path="public.landing.hero.title_line1">Hero title</h1><a data-studio-path="public.landing.hero.buttons.0" href="#">Start</a></section></body></html>');
@@ -171,6 +171,50 @@ function setupListOps() {
     const names = () => rows().map((node) => node.querySelector('input').getAttribute('name'));
     return { rows, names, form };
 }
+
+test('unsaved edits raise the pending indicator and saving clears it', () => {
+    const dom = new JSDOM(`<div id="studio-split">
+        <button data-studio-tab="hero"></button><button data-workspace-tool="select"></button><button data-workspace-tool="interact"></button>
+        <input type="checkbox" data-studio-interact>
+        <span data-studio-dirty hidden><span data-studio-dirty-text></span></span>
+        <button type="button" data-studio-save-jump hidden></button>
+        <section data-object-inspector><h2 data-object-title></h2><p data-object-scope></p><dl data-object-metrics></dl><div data-object-controls></div><ul data-page-layers></ul></section>
+        <form><section class="studio-save-card"><button type="submit"></button></section>
+        <div data-studio-field="public.landing.hero.title_line1"><input name="hero" value="Initial"></div></form></div>`, { url: 'http://tenant.test' });
+    for (const key of ['document', 'Event', 'CustomEvent']) globalThis[key] = dom.window[key];
+    const form = document.querySelector('form');
+    initWorkspace(form);
+    const banner = () => document.querySelector('[data-studio-dirty]');
+    const jump = () => document.querySelector('[data-studio-save-jump]');
+
+    // Untouched: nothing pending.
+    assert.equal(banner().hidden, true);
+    assert.equal(jump().hidden, true);
+
+    const input = form.querySelector('input[name="hero"]');
+    input.value = 'Changed';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    assert.equal(banner().hidden, false);
+    assert.equal(jump().hidden, false);
+    assert.match(document.querySelector('[data-studio-dirty-text]').textContent, /۱|1/);
+
+    // A save re-renders the page, so the baseline moves up with it.
+    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    assert.equal(banner().hidden, true);
+});
+
+test('selection mirrors into the URL hash and a deep link restores it', () => {
+    const { frame, canvas } = setupPaths();
+    frame().window.document.querySelector('h1').click();
+    assert.match(decodeURIComponent(globalThis.location.hash), /studio=public\.landing\.hero\.title_line1/);
+
+    // A fresh frame with nothing selected honours the hash the URL carries,
+    // which is what makes a reload or a shared link reopen the element.
+    const reopened = frame(canvas());
+    const heading = reopened.window.document.querySelector('h1');
+    assert.equal(heading.classList.contains('studio-inspected-object'), true);
+    assert.equal(document.querySelector('[data-object-title]').textContent, 'Hero title');
+});
 
 test('in-canvas row actions add, duplicate, move and remove list rows', () => {
     const { rows, names, form } = setupListOps();

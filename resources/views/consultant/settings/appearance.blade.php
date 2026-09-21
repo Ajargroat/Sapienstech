@@ -22,6 +22,17 @@
         <input type="checkbox" data-studio-live checked>
         <span>پیش‌نمایش زنده</span>
     </label>
+
+    {{-- Unsaved-changes indicator: the live preview writes to the session only,
+         so an edit is "pending" until one of the save buttons is used. --}}
+    <span class="studio-dirty" data-studio-dirty hidden role="status" aria-live="polite">
+        <span class="studio-dirty-dot" aria-hidden="true"></span>
+        <span data-studio-dirty-text>ذخیره‌نشده</span>
+    </span>
+    <button type="button" class="studio-toolbar-save" data-studio-save-jump hidden>
+        <i class="fas fa-save" aria-hidden="true"></i>
+        ذخیرهٔ تغییرات
+    </button>
 </div>
 
 @php

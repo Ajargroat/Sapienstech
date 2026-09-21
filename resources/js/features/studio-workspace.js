@@ -300,6 +300,7 @@ export default function initWorkspace(form) {
         metrics.replaceChildren();
         shortcuts.replaceChildren();
         closeContext();
+        syncHash();
         title.textContent = 'عنصری انتخاب نشده است';
         scope.textContent = 'برای مشاهدهٔ ویژگی‌ها، عنصری را در بوم انتخاب کنید.';
     };
@@ -322,6 +323,7 @@ export default function initWorkspace(form) {
         };
         title.textContent = (element.getAttribute('aria-label') || element.getAttribute('alt') || element.textContent || element.tagName).trim().slice(0, 72);
         shortcuts.replaceChildren();
+        syncHash();
         if (block) {
             scope.textContent = 'سبک‌های زیر فقط روی این بلوک اعمال می‌شوند. اندازه‌های بالا اندازهٔ محاسبه‌شده در بوم هستند.';
             closeContext();
@@ -461,16 +463,89 @@ export default function initWorkspace(form) {
             const element = blockElement(identity.block);
             if (element) select(element); else clear();
         } else if (identity?.path) {
-            const element = [...(doc.querySelectorAll('[data-studio-path]') || [])]
-                .find((node) => node.dataset.studioPath === identity.path);
+            const element = elementAtPath(identity.path);
             if (element) select(element); else clear();
         } else if (identity?.section) {
             const section = [...doc.querySelectorAll('[data-studio-section]')].find((node) => node.dataset.studioSection === identity.section);
             select(identity.index === -1 ? section : section?.querySelectorAll('*')[identity.index]);
+        } else {
+            // Nothing selected yet: honour a deep link, which is how a reloaded
+            // or shared studio link reopens the element it was pointing at.
+            const linked = hashPath();
+            if (linked && !selectPath(linked, { scroll: false })) selectPath(linked);
         }
         paintTools();
     });
+    const elementAtPath = (path) => [...(doc?.querySelectorAll('[data-studio-path]') || [])]
+        .find((node) => node.dataset.studioPath === path);
+    // Deep link: the selected element is mirrored into the URL hash, so a
+    // reload or a shared link reopens the same element. Only replacement is
+    // used, so selecting through the canvas never grows the history stack.
+    const selectPath = (path, { scroll = true } = {}) => {
+        const element = elementAtPath(path);
+        if (!element) return false;
+        select(element);
+        if (scroll) element.scrollIntoView?.({ block: 'center' });
+        return true;
+    };
+    // The URL helpers are guarded: the module can run where `location` or
+    // `history` is unavailable (a sandboxed frame, or a bare test document).
+    const view = () => globalThis.location;
+    const navigate = () => globalThis.history;
+    const syncHash = () => {
+        const loc = view();
+        if (!loc) return;
+        const path = identity?.path;
+        const next = path ? `#studio=${encodeURIComponent(path)}` : loc.pathname + loc.search;
+        try { navigate()?.replaceState(null, '', next); } catch { /* file: or sandboxed */ }
+    };
+    const hashPath = () => {
+        const hash = view()?.hash;
+        if (!hash) return null;
+        const match = /(?:^|[#&])studio=([^&]+)/.exec(hash);
+        try { return match ? decodeURIComponent(match[1]) : null; } catch { return null; }
+    };
     paintTools();
     syncActions();
-    return { select, clear, measure, openContext, closeContext };
+
+    // --- Unsaved-changes indicator -----------------------------------------
+    // The live preview persists nothing: every edit lands in the session
+    // preview layer, so "saved" means one of the three submit buttons was
+    // used. A baseline snapshot of the form's own values is enough to tell the
+    // two apart, and it is taken from the rendered form rather than tracked by
+    // handlers, so no edit path can escape it.
+    const dirty = document.querySelector('[data-studio-dirty]');
+    const dirtyText = document.querySelector('[data-studio-dirty-text]');
+    const saveJump = document.querySelector('[data-studio-save-jump]');
+    const saveCard = form.querySelector('.studio-save-card');
+    const serial = () => JSON.stringify([...form.elements]
+        .filter((el) => el.name && el.type !== 'file')
+        .map((el) => [el.name, el.type === 'checkbox' || el.type === 'radio' ? el.checked : el.value]));
+    let baseline = serial();
+    let dirtyCount = 0;
+    const paintDirty = () => {
+        const now = serial();
+        const isDirty = now !== baseline;
+        if (dirty) dirty.hidden = !isDirty;
+        if (saveJump) saveJump.hidden = !isDirty;
+        if (isDirty) {
+            dirtyCount += 1;
+            if (dirtyText) dirtyText.textContent = `ذخیره‌نشده (${dirtyCount} تغییر)`;
+        } else {
+            dirtyCount = 0;
+            if (dirtyText) dirtyText.textContent = 'ذخیره‌نشده';
+        }
+    };
+    form.addEventListener('input', paintDirty);
+    form.addEventListener('change', paintDirty);
+    // A successful save re-renders the page, so a form submit resets the
+    // baseline: anything still pending afterwards is a genuinely new edit.
+    form.addEventListener('submit', () => { baseline = serial(); paintDirty(); });
+    saveJump?.addEventListener('click', () => {
+        saveCard?.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
+        saveCard?.querySelector('button[type="submit"]')?.focus({ preventScroll: true });
+    });
+    paintDirty();
+
+    return { select, clear, measure, openContext, closeContext, selectPath };
 }
