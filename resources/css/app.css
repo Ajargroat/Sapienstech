@@ -5467,14 +5467,6 @@ select.settings-input option,
 
 .studio-list-add { align-self: flex-start; }
 
-.studio-save-card { border-color: color-mix(in srgb, var(--c-primary) 30%, var(--c-border)); }
-
-.studio-save-actions {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
 .studio-preview-banner {
   justify-content: space-between;
 }

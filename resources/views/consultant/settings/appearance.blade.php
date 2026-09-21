@@ -29,10 +29,28 @@
         <span class="studio-dirty-dot" aria-hidden="true"></span>
         <span data-studio-dirty-text>ذخیره‌نشده</span>
     </span>
-    <button type="button" class="studio-toolbar-save" data-studio-save-jump hidden>
-        <i class="fas fa-save" aria-hidden="true"></i>
-        ذخیرهٔ تغییرات
-    </button>
+    {{-- Save lives in the toolbar: the button opens a scope menu whose
+         buttons submit this form through the `form` attribute, so the old
+         bottom card (which pushed every panel far from the canvas) is gone. --}}
+    <div class="studio-save-wrap">
+        <button type="button" class="studio-toolbar-save" data-studio-save-jump hidden>
+            <i class="fas fa-save" aria-hidden="true"></i>
+            ذخیرهٔ تغییرات
+        </button>
+        <div class="studio-save-menu" data-studio-save-menu>
+            <button type="submit" form="studio-form" name="scope" value="preview">
+                <i class="fas fa-eye" aria-hidden="true"></i> پیش‌نمایش
+            </button>
+            <button type="submit" form="studio-form" name="scope" value="me">
+                <i class="fas fa-user" aria-hidden="true"></i> فقط برای من
+            </button>
+            @if($canPublishEveryone)
+                <button type="submit" form="studio-form" name="scope" value="everyone" class="is-primary">
+                    <i class="fas fa-globe" aria-hidden="true"></i> برای همه
+                </button>
+            @endif
+        </div>
+    </div>
 </div>
 
 @php
@@ -129,20 +147,6 @@
     </aside>
 
     <div class="studio-main">
-        <section class="studio-object-inspector" data-object-inspector aria-label="ویژگی‌های عنصر انتخاب‌شده">
-            <header class="studio-object-head">
-                <span class="studio-object-eyebrow">بازرس عنصر</span>
-                <h2 data-object-title aria-live="polite">عنصری انتخاب نشده است</h2>
-                <p data-object-scope>برای مشاهدهٔ ویژگی‌ها، عنصری را در پیش‌نمایش انتخاب کنید.</p>
-            </header>
-            <dl class="studio-object-metrics" data-object-metrics aria-label="ابعاد و موقعیت عنصر"></dl>
-            <div class="studio-object-controls" data-object-controls role="group" aria-label="میان‌برهای عنصر"></div>
-            <details class="studio-page-layers">
-                <summary><i class="fas fa-layer-group" aria-hidden="true"></i> بخش‌های صفحه</summary>
-                <ul data-page-layers aria-label="لایه‌های صفحه"></ul>
-            </details>
-        </section>
-
         <form method="POST" action="{{ route('consultant.settings.appearance.save') }}"
               enctype="multipart/form-data" class="studio-form" data-router="off" id="studio-form"
               data-live-url="{{ route('consultant.settings.appearance.live') }}"
@@ -163,6 +167,27 @@
                 </header>
                 <p class="studio-context-note" data-context-note></p>
                 <div class="studio-context-fields" data-context-fields></div>
+            </section>
+
+            {{-- Object inspector: title always visible, diagnostics (metrics,
+                 shortcuts, layers) collapsible so the editable fields above
+                 stay the first thing on screen. --}}
+            <section class="studio-object-inspector" data-object-inspector aria-label="ویژگی‌های عنصر انتخاب‌شده">
+                <header class="studio-object-head">
+                    <span class="studio-object-eyebrow">بازرس عنصر</span>
+                    <h2 data-object-title aria-live="polite">عنصری انتخاب نشده است</h2>
+                    <button type="button" class="studio-object-collapse" data-object-collapse
+                            aria-expanded="false" aria-label="نمایش یا بستن جزئیات عنصر">
+                        <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                    </button>
+                </header>
+                <p data-object-scope>برای مشاهدهٔ ویژگی‌ها، عنصری را در پیش‌نمایش انتخاب کنید.</p>
+                <dl class="studio-object-metrics" data-object-metrics aria-label="ابعاد و موقعیت عنصر"></dl>
+                <div class="studio-object-controls" data-object-controls role="group" aria-label="میان‌برهای عنصر"></div>
+                <details class="studio-page-layers">
+                    <summary><i class="fas fa-layer-group" aria-hidden="true"></i> بخش‌های صفحه</summary>
+                    <ul data-page-layers aria-label="لایه‌های صفحه"></ul>
+                </details>
             </section>
 
             <div class="settings-cards">
@@ -206,31 +231,6 @@
                         </div>
                     </details>
                 @endforeach
-
-                {{-- Scope decision: the tenant admin is in charge of "for everyone" --}}
-                <section class="settings-card studio-save-card">
-                    <h3 class="settings-card-title">اعمال تغییرات</h3>
-                    <p class="settings-card-text">
-                        مشخص کنید این تغییرات برای همهٔ بازدیدکنندگان اعمال شود یا فقط برای نمای شما.
-                        @unless($canPublishEveryone)
-                            <br><small>انتشار سراسری تنها برای مدیر مجموعه فعال است.</small>
-                        @endunless
-                    </p>
-
-                    <div class="studio-save-actions">
-                        <button type="submit" name="scope" value="preview" class="secondary-button">
-                            <i class="fas fa-eye" aria-hidden="true"></i> پیش‌نمایش
-                        </button>
-                        <button type="submit" name="scope" value="me" class="secondary-button">
-                            <i class="fas fa-user" aria-hidden="true"></i> فقط برای من
-                        </button>
-                        @if($canPublishEveryone)
-                            <button type="submit" name="scope" value="everyone" class="primary-button">
-                                <i class="fas fa-globe" aria-hidden="true"></i> برای همه
-                            </button>
-                        @endif
-                    </div>
-                </section>
             </div>
         </form>
 

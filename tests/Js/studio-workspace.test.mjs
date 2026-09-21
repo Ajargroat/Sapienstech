@@ -276,6 +276,8 @@ test('override rows are written lazily: selection creates nothing, the first edi
 
     const box = document.querySelector('.studio-context-style-box');
     assert.equal(Boolean(box), true);
+    // The style box opens by itself: the user picked an element to style it.
+    assert.equal(box.open, true);
     // The first two pickers are background and text color, in STYLE_KEYS order.
     const color = box.querySelectorAll('input[type="color"]')[1];
     color.value = '#112233';
@@ -313,4 +315,82 @@ test('layer tree lists sections with their named elements and mirrors selection'
     // The tree mirrors the current selection.
     assert.equal(buttons()[2].getAttribute('aria-current'), 'true');
     assert.equal(buttons()[1].getAttribute('aria-current'), 'false');
+});
+
+test('the inspector diagnostics collapse and the choice persists', () => {
+    const dom = new JSDOM(`<div id="studio-split">
+        <button data-studio-tab="hero"></button>
+        <input type="checkbox" data-studio-interact>
+        <section data-object-inspector><header class="studio-object-head"><h2 data-object-title></h2><button type="button" data-object-collapse aria-expanded="false"></button></header><p data-object-scope></p><dl data-object-metrics></dl><div data-object-controls></div><ul data-page-layers></ul></section>
+        <form><div data-studio-field="public.landing.hero.title_line1"><input name="hero" value="Initial"></div></form>
+    </div>`, { url: 'http://tenant.test' });
+    for (const key of ['document', 'Event', 'CustomEvent']) globalThis[key] = dom.window[key];
+    globalThis.localStorage = dom.window.localStorage;
+    try {
+        const inspector = document.querySelector('[data-object-inspector]');
+        const button = document.querySelector('[data-object-collapse]');
+        initWorkspace(document.querySelector('form'));
+        // Collapsed by default: read-mostly diagnostics must not crowd out
+        // the editable fields above them.
+        assert.equal(inspector.classList.contains('is-collapsed'), true);
+        assert.equal(button.getAttribute('aria-expanded'), 'false');
+        button.click();
+        assert.equal(inspector.classList.contains('is-collapsed'), false);
+        assert.equal(button.getAttribute('aria-expanded'), 'true');
+        assert.equal(localStorage.getItem('studio.inspector'), '1');
+        button.click();
+        assert.equal(inspector.classList.contains('is-collapsed'), true);
+        assert.equal(localStorage.getItem('studio.inspector'), '0');
+    } finally {
+        delete globalThis.localStorage;
+    }
+});
+
+// The save card is gone; the toolbar save button opens a scope menu whose
+// buttons submit the studio form through the `form` attribute.
+function setupSaveMenu() {
+    const dom = new JSDOM(`<div id="studio-split">
+        <button data-studio-tab="hero"></button>
+        <input type="checkbox" data-studio-interact>
+        <span data-studio-dirty hidden><span data-studio-dirty-text></span></span>
+        <button type="button" data-studio-save-jump hidden></button>
+        <div data-studio-save-menu>
+            <button type="submit" form="studio-form" name="scope" value="preview">preview</button>
+            <button type="submit" form="studio-form" name="scope" value="everyone">everyone</button>
+        </div>
+        <section data-object-inspector><h2 data-object-title></h2><p data-object-scope></p><dl data-object-metrics></dl><div data-object-controls></div><ul data-page-layers></ul></section>
+        <form id="studio-form"><div data-studio-field="public.landing.hero.title_line1"><input name="hero" value="Initial"></div></form>
+        <div id="outside">x</div>
+    </div>`, { url: 'http://tenant.test' });
+    for (const key of ['document', 'Event', 'CustomEvent']) globalThis[key] = dom.window[key];
+    const form = document.querySelector('form');
+    initWorkspace(form);
+    return {
+        form,
+        menu: () => document.querySelector('[data-studio-save-menu]'),
+        jump: () => document.querySelector('[data-studio-save-jump]'),
+    };
+}
+
+test('the toolbar save button opens a scope menu that submits the studio form', () => {
+    const { form, menu, jump } = setupSaveMenu();
+    assert.equal(menu().classList.contains('is-open'), false);
+    jump().click();
+    assert.equal(menu().classList.contains('is-open'), true);
+
+    // A click anywhere outside closes it without submitting anything.
+    document.getElementById('outside').dispatchEvent(new Event('click', { bubbles: true }));
+    assert.equal(menu().classList.contains('is-open'), false);
+
+    jump().click();
+    const submissions = [];
+    form.addEventListener('submit', (event) => {
+        event.preventDefault(); // jsdom would otherwise try to navigate
+        submissions.push(event.submitter?.value);
+    });
+    const everyone = menu().querySelector('button[value="everyone"]');
+    assert.equal(everyone.form, form);
+    everyone.click();
+    assert.deepEqual(submissions, ['everyone']);
+    assert.equal(menu().classList.contains('is-open'), false);
 });

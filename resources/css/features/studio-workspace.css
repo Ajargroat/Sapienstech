@@ -61,6 +61,43 @@
   cursor: pointer;
 }
 
+/* Save menu: anchored to the toolbar button, closed by default; opened by
+   studio-workspace.js (is-open), and its submit buttons post the studio form
+   through the `form` attribute with their scope value. */
+.studio-save-wrap { position: relative; display: inline-flex; }
+.studio-save-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  inset-inline-end: 0;
+  z-index: 40;
+  display: none;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 180px;
+  padding: 8px;
+  border: 1px solid var(--workspace-border);
+  border-radius: 8px;
+  background: var(--workspace-raised);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, .45);
+}
+.studio-save-menu.is-open { display: flex; }
+.studio-save-menu button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--workspace-border);
+  border-radius: 6px;
+  background: var(--workspace-bg);
+  color: var(--workspace-text);
+  font: inherit;
+  font-size: 12px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.studio-save-menu button:hover { border-color: var(--workspace-accent); color: var(--workspace-accent); }
+.studio-save-menu button.is-primary { border-color: var(--workspace-accent); color: var(--workspace-accent); }
+
 body .studio-workspace.studio-split {
   display: grid;
   grid-template-columns: 56px minmax(0, 1fr);
@@ -194,8 +231,8 @@ body .studio-workspace .studio-tabs {
 }
 
 .studio-workspace .studio-context-head { display: flex; align-items: center; gap: 8px; }
-.studio-workspace .studio-context-eyebrow { color: var(--workspace-muted); font-size: 11px; }
-.studio-workspace .studio-context-title { flex: 1; min-width: 0; font-size: 13px; font-weight: 700; overflow-wrap: anywhere; }
+.studio-workspace .studio-context-eyebrow { color: var(--workspace-muted); font-size: 10px; }
+.studio-workspace .studio-context-title { flex: 1; min-width: 0; font-size: 12px; font-weight: 700; overflow-wrap: anywhere; }
 .studio-workspace .studio-context-close {
   flex: none;
   width: 28px;
@@ -206,7 +243,7 @@ body .studio-workspace .studio-tabs {
   color: var(--workspace-text);
   cursor: pointer;
 }
-.studio-workspace .studio-context-note { margin: 8px 0 10px; color: var(--workspace-muted); font-size: 12px; line-height: 1.8; }
+.studio-workspace .studio-context-note { margin: 6px 0 8px; color: var(--workspace-muted); font-size: 11px; line-height: 1.7; }
 .studio-workspace .studio-context-fields { display: flex; flex-direction: column; gap: 10px; }
 .studio-workspace .studio-context-fields > .studio-field { margin: 0; }
 .studio-workspace [data-list-row].is-context-row {
@@ -229,14 +266,14 @@ body .studio-workspace .studio-tabs {
 .studio-workspace .studio-context-row-action:disabled { opacity: .4; cursor: default; }
 
 .studio-workspace .studio-context-style-box { margin-top: 12px; border-top: 1px dashed var(--workspace-border); padding-top: 10px; }
-.studio-workspace .studio-context-style-box > summary { font-size: 12px; font-weight: 700; cursor: pointer; }
+.studio-workspace .studio-context-style-box > summary { font-size: 11px; font-weight: 700; cursor: pointer; }
 .studio-workspace .studio-context-style-grid { display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 10px; }
 .studio-workspace .studio-context-style {
   display: grid;
   grid-template-columns: 84px minmax(0, 1fr) auto;
   align-items: center;
   gap: 8px;
-  font-size: 12px;
+  font-size: 11px;
 }
 .studio-workspace .studio-context-style > span { color: var(--workspace-muted); }
 .studio-workspace .studio-context-style output { min-inline-size: 3.5em; color: var(--workspace-muted); font-variant-numeric: tabular-nums; }
@@ -254,17 +291,33 @@ body .studio-workspace .studio-tabs {
   cursor: pointer;
 }
 
-.studio-workspace .studio-object-inspector { padding: 16px; border-bottom: 1px solid var(--workspace-border); }
-.studio-workspace .studio-object-eyebrow { color: var(--workspace-muted); font-size: 11px; }
-.studio-workspace [data-object-title] { margin: 6px 0; font-size: 15px; font-weight: 700; overflow-wrap: anywhere; }
-.studio-workspace [data-object-scope] { margin: 0; color: var(--workspace-muted); font-size: 12px; line-height: 1.8; overflow-wrap: anywhere; }
+.studio-workspace .studio-object-inspector { padding: 14px 16px; border-bottom: 1px solid var(--workspace-border); }
+.studio-workspace .studio-object-head { display: flex; align-items: center; gap: 8px; }
+.studio-workspace .studio-object-eyebrow { color: var(--workspace-muted); font-size: 10px; }
+.studio-workspace [data-object-title] { flex: 1; min-width: 0; margin: 0; font-size: 13px; font-weight: 700; overflow-wrap: anywhere; }
+.studio-workspace .studio-object-collapse {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--workspace-border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--workspace-muted);
+  cursor: pointer;
+}
+.studio-workspace .studio-object-collapse i { font-size: 11px; transition: transform var(--animation-duration, .2s) ease; }
+.studio-workspace .studio-object-collapse[aria-expanded="true"] i { transform: rotate(180deg); }
+.studio-workspace .studio-object-collapse:hover { border-color: var(--workspace-accent); color: var(--workspace-accent); }
+/* Collapsed: only the title row stays; the diagnostics fold away. */
+.studio-workspace .studio-object-inspector.is-collapsed :is([data-object-scope], [data-object-metrics], [data-object-controls], .studio-page-layers) { display: none; }
+.studio-workspace [data-object-scope] { margin: 4px 0 0; color: var(--workspace-muted); font-size: 11px; line-height: 1.7; overflow-wrap: anywhere; }
 
 .studio-workspace [data-object-metrics] {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px;
-  margin: 14px 0;
-  font-size: 12px;
+  gap: 5px;
+  margin: 12px 0;
+  font-size: 10.5px;
   font-variant-numeric: tabular-nums;
 }
 
@@ -276,34 +329,34 @@ body .studio-workspace .studio-tabs {
   background: var(--workspace-bg);
 }
 
-.studio-workspace [data-object-metrics] dt { color: var(--workspace-muted); font-size: 11px; }
-.studio-workspace [data-object-metrics] dd { margin: 4px 0 0; overflow-wrap: anywhere; }
-.studio-workspace [data-object-controls] { display: flex; flex-wrap: wrap; gap: 6px; margin-block: 12px; }
+.studio-workspace [data-object-metrics] dt { color: var(--workspace-muted); font-size: 10px; }
+.studio-workspace [data-object-metrics] dd { margin: 3px 0 0; overflow-wrap: anywhere; }
+.studio-workspace [data-object-controls] { display: flex; flex-wrap: wrap; gap: 5px; margin-block: 10px; }
 .studio-workspace :is([data-object-controls], [data-object-metrics]):empty { display: none; }
 
 .studio-workspace [data-object-controls] button,
 .studio-workspace [data-page-layers] button {
-  min-height: 36px;
-  padding: 6px 10px;
+  min-height: 32px;
+  padding: 5px 9px;
   border: 1px solid var(--workspace-border);
   border-radius: 4px;
   background: var(--workspace-raised);
   color: var(--workspace-text);
   font: inherit;
-  font-size: 12px;
+  font-size: 11px;
   text-align: start;
   overflow-wrap: anywhere;
   cursor: pointer;
 }
 
-.studio-workspace .studio-page-layers { margin-top: 14px; border-top: 1px solid var(--workspace-border); }
-.studio-workspace .studio-page-layers summary { padding: 12px 2px; font-size: 12px; cursor: pointer; }
+.studio-workspace .studio-page-layers { margin-top: 12px; border-top: 1px solid var(--workspace-border); }
+.studio-workspace .studio-page-layers summary { padding: 10px 2px; font-size: 11px; cursor: pointer; }
 .studio-workspace .studio-page-layers summary i { margin-inline: 4px; color: var(--workspace-muted); }
-.studio-workspace [data-page-layers] { display: grid; gap: 5px; max-height: 240px; overflow: auto; margin: 0; padding: 3px; list-style: none; }
+.studio-workspace [data-page-layers] { display: grid; gap: 4px; max-height: 200px; overflow: auto; margin: 0; padding: 3px; list-style: none; }
 .studio-workspace [data-page-layers] button { width: 100%; }
 .studio-workspace [data-page-layers] :is(.is-active, [aria-current="true"], [aria-selected="true"]) { border-color: var(--workspace-accent); color: var(--workspace-accent); }
 .studio-workspace [data-page-layers] ul { display: grid; gap: 4px; margin: 4px 0 2px; padding: 0 12px 0 0; list-style: none; }
-.studio-workspace [data-page-layers] ul button { min-height: 30px; padding: 4px 8px; font-size: 11px; text-align: start; opacity: 0.92; }
+.studio-workspace [data-page-layers] ul button { min-height: 28px; padding: 4px 8px; font-size: 10.5px; text-align: start; opacity: 0.92; }
 .studio-workspace [data-page-layers] ul button[aria-current="true"] { border-color: var(--workspace-accent); color: var(--workspace-accent); }
 
 .studio-workspace .settings-cards { gap: 0; }
@@ -317,15 +370,12 @@ body .studio-workspace .studio-tabs {
   box-shadow: none;
 }
 
-.studio-workspace .studio-group-head { padding: 14px 16px; gap: 8px; }
-.studio-workspace .studio-group-head .settings-card-title { font-size: 14px; }
+.studio-workspace .studio-group-head { padding: 12px 16px; gap: 8px; }
+.studio-workspace .studio-group-head .settings-card-title { font-size: 12.5px; }
 .studio-workspace .studio-group-body { padding: 4px 16px 18px; }
 .studio-workspace .studio-grid { grid-template-columns: minmax(0, 1fr); gap: 16px; }
 .studio-workspace .studio-field { min-width: 0; scroll-margin-block: 14px; }
 .studio-workspace .settings-input { min-width: 0; max-width: 100%; border-radius: 4px; }
-.studio-workspace .studio-save-card { padding: 16px; }
-.studio-workspace .studio-save-actions { flex-wrap: wrap; gap: 8px; }
-.studio-workspace .studio-save-actions button { flex: 1 1 auto; padding: 9px 12px; border-radius: 4px; font-size: 12px; }
 .studio-workspace .studio-reset-all { margin: 0; padding: 16px; font-size: 12px; }
 
 .studio-workspace .is-object-field {
@@ -356,7 +406,7 @@ body .studio-workspace.studio-split .studio-preview-pane {
 
 .studio-workspace .studio-live-toggle { gap: 5px; font-size: 11px; }
 .studio-workspace .studio-preview-devices { background: var(--workspace-bg); border-radius: 5px; }
-.studio-workspace .studio-preview-stage { overflow: auto; background: #191b1e; }
+.studio-workspace .studio-preview-stage { flex: 1 1 auto; min-height: 0; overflow: auto; background: #191b1e; }
 .studio-workspace .studio-preview-frame { background: #fff; box-shadow: 0 4px 24px #0006; }
 .studio-workspace .studio-workspace-zoom { display: inline-flex; align-items: center; gap: 6px; }
 .studio-workspace .studio-workspace-zoom select {
@@ -376,6 +426,10 @@ body .studio-workspace.studio-split .studio-preview-pane {
   body.studio-mode .studio-workspace.studio-split.is-live {
     display: grid;
     grid-template-columns: 56px minmax(0, 1fr) 320px;
+    /* Constrain the single implicit row to the container: without it the row
+       sizes to the rail's content, overflow:auto on the rail never engages,
+       and the tools below the fold are unreachable (the split clips them). */
+    grid-template-rows: minmax(0, 1fr);
     grid-template-areas: "rail canvas inspector";
     gap: 1px;
     flex: 1 1 auto;

@@ -143,6 +143,9 @@ export default function initWorkspace(form) {
         const grid = document.createElement('div');
         grid.className = 'studio-context-style-grid';
         for (const spec of STYLE_KEYS) grid.append(styleControl(path, spec));
+        // Open by default: the user just picked an element to style it, so
+        // hiding the controls behind a second click is friction, not tidiness.
+        details.open = true;
         details.append(summary, grid);
         return details;
     };
@@ -266,6 +269,11 @@ export default function initWorkspace(form) {
             ? 'این فهرست را می‌توانید همین‌جا ویرایش، جابه‌جا، تکثیر یا حذف کنید.'
             : 'با تغییر هر مقدار، پیش‌نمایش بی‌درنگ به‌روز می‌شود.';
         contextPanel.hidden = false;
+        // The panel sits at the top of the scrolling dock; `nearest` only
+        // scrolls when it is out of sight, so selecting in the canvas never
+        // yanks the page around, but a deep scroll down the form still brings
+        // the fields back into view.
+        contextPanel.scrollIntoView?.({ block: 'nearest' });
         return true;
     };
     const measure = () => {
@@ -571,6 +579,26 @@ export default function initWorkspace(form) {
     paintTools();
     syncActions();
 
+    // --- Inspector collapse --------------------------------------------------
+    // The metrics/shortcuts/layers block is read-mostly metadata; collapsed by
+    // default it stops crowding out the editable fields above it. The choice
+    // persists so the panel comes back exactly as the user left it.
+    const collapseButton = inspector.querySelector('[data-object-collapse]');
+    if (collapseButton) {
+        let open;
+        try { open = localStorage.getItem('studio.inspector') === '1'; } catch { open = false; }
+        const paintCollapse = () => {
+            inspector.classList.toggle('is-collapsed', !open);
+            collapseButton.setAttribute('aria-expanded', String(open));
+        };
+        collapseButton.addEventListener('click', () => {
+            open = !open;
+            try { localStorage.setItem('studio.inspector', open ? '1' : '0'); } catch { /* private mode */ }
+            paintCollapse();
+        });
+        paintCollapse();
+    }
+
     // --- Unsaved-changes indicator -----------------------------------------
     // The live preview persists nothing: every edit lands in the session
     // preview layer, so "saved" means one of the three submit buttons was
@@ -580,7 +608,7 @@ export default function initWorkspace(form) {
     const dirty = document.querySelector('[data-studio-dirty]');
     const dirtyText = document.querySelector('[data-studio-dirty-text]');
     const saveJump = document.querySelector('[data-studio-save-jump]');
-    const saveCard = form.querySelector('.studio-save-card');
+    const saveMenu = document.querySelector('[data-studio-save-menu]');
     const serial = () => JSON.stringify([...form.elements]
         .filter((el) => el.name && el.type !== 'file')
         .map((el) => [el.name, el.type === 'checkbox' || el.type === 'radio' ? el.checked : el.value]));
@@ -604,9 +632,20 @@ export default function initWorkspace(form) {
     // A successful save re-renders the page, so a form submit resets the
     // baseline: anything still pending afterwards is a genuinely new edit.
     form.addEventListener('submit', () => { baseline = serial(); paintDirty(); });
-    saveJump?.addEventListener('click', () => {
-        saveCard?.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
-        saveCard?.querySelector('button[type="submit"]')?.focus({ preventScroll: true });
+    // Saving moved from a card at the bottom of the panel into the toolbar:
+    // the save button toggles a small scope menu (preview / me / everyone)
+    // whose buttons submit the studio form via the `form` attribute.
+    saveJump?.addEventListener('click', () => saveMenu?.classList.toggle('is-open'));
+    document.addEventListener('click', (event) => {
+        if (!saveMenu?.classList.contains('is-open')) return;
+        if (saveJump?.contains(event.target) || saveMenu.contains(event.target)) return;
+        saveMenu.classList.remove('is-open');
+    });
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') saveMenu?.classList.remove('is-open');
+    });
+    saveMenu?.querySelectorAll('button[type="submit"]').forEach((button) => {
+        button.addEventListener('click', () => saveMenu.classList.remove('is-open'));
     });
     paintDirty();
 
