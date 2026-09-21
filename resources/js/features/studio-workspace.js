@@ -77,6 +77,55 @@ export default function initWorkspace(form) {
             node.classList.toggle('is-context-row', i === index);
         });
         rows[index]?.scrollIntoView?.({ block: 'nearest' });
+        return index;
+    };
+    // Row operations for a list adopted by the panel, driven through the list
+    // factory so add/duplicate/move/remove all go down the same path as the
+    // inline buttons (and therefore notify the live preview).
+    const rowActions = (listField, index) => {
+        // studioList is published by the list factory on the [data-studio-list]
+        // element itself, which is nested inside the field wrapper.
+        const listEl = listField.querySelector('[data-studio-list]');
+        const api = listEl?.studioList;
+        const bar = document.createElement('div');
+        bar.className = 'studio-context-row-actions';
+        if (!api) return bar;
+        const max = Number(listEl.dataset.max || 20);
+        const rows = () => [...listField.querySelectorAll('[data-list-row]')];
+        const at = () => rows()[index];
+        const after = (next) => {
+            const pos = next && rows().indexOf(next);
+            if (pos >= 0) index = pos;
+            highlightRow(listField, index);
+            build();
+        };
+        const control = (label, icon, run, disabled) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'studio-context-row-action';
+            button.title = label;
+            button.setAttribute('aria-label', label);
+            button.disabled = Boolean(disabled);
+            button.innerHTML = `<i class="fas ${icon}" aria-hidden="true"></i>`;
+            button.addEventListener('click', run);
+            return button;
+        };
+        const build = () => {
+            bar.replaceChildren();
+            const row = at();
+            const list = rows();
+            const full = list.length >= max;
+            bar.append(
+                control('افزودن مورد', 'fa-plus', () => after(api.add()), full),
+                control('تکثیر مورد', 'fa-clone', () => after(api.duplicate(row)), !row || full),
+                control('انتقال به بالا', 'fa-arrow-up', () => { api.move(row, -1); highlightRow(listField, index); build(); }, !row || index === 0),
+                control('انتقال به پایین', 'fa-arrow-down', () => { api.move(row, 1); highlightRow(listField, index); build(); }, !row || index === list.length - 1),
+                control('حذف مورد', 'fa-trash', () => { api.remove(row); after(rows()[Math.min(index, rows().length - 1)]); }, !row),
+            );
+            return bar;
+        };
+        build();
+        return bar;
     };
     const closeContext = () => {
         contextFields?.querySelectorAll('.is-context-row').forEach((node) => node.classList.remove('is-context-row'));
@@ -84,6 +133,9 @@ export default function initWorkspace(form) {
             if (field.isConnected) home.parent.insertBefore(field, home.next);
         }
         homes.clear();
+        // Row-action bars and any other panel-only scaffolding never move back
+        // into the form, so they are dropped outright.
+        contextFields?.replaceChildren();
         if (contextPanel) contextPanel.hidden = true;
     };
     const openContext = (path, label, fallback) => {
@@ -96,7 +148,10 @@ export default function initWorkspace(form) {
             homes.set(field, { parent: field.parentElement, next: field.nextElementSibling });
             contextFields.append(field);
         }
-        if (row !== undefined && isListField(matched[0])) highlightRow(matched[0], row);
+        if (row !== undefined && isListField(matched[0])) {
+            const index = highlightRow(matched[0], row);
+            contextFields.prepend(rowActions(matched[0], index));
+        }
 
         contextTitle.textContent = label || path;
         contextNote.textContent = matched.length === 1 && isListField(matched[0])

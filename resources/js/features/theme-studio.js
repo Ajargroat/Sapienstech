@@ -16,6 +16,7 @@
 // preview is the main content and the settings dock beside it as a bar.
 
 import initBlockEditor from './studio-block-editor.js';
+import initLists from './studio-lists.js';
 import initWorkspace from './studio-workspace.js';
 import '../../css/features/studio-workspace.css';
 
@@ -28,7 +29,7 @@ export default function init() {
     initToggles(form);
     initReset(form);
     initSections(form);
-    initLists(form);
+    initLists(form, initToggles);
     form.querySelectorAll('[data-block-editor]').forEach((wrap) => initBlockEditor(form, wrap));
     initRanges(form);
     initGroups();
@@ -88,96 +89,6 @@ function initSections(form) {
                 const next = row.nextElementSibling;
                 if (next && !isLocked(next)) list.insertBefore(next, row);
             });
-        });
-    });
-}
-
-// Lists: repeater rows for item-valued content (cards, buttons, links).
-// "Add" clones the <template> row, swapping its __KEY__ placeholders for a
-// unique browser-side key so a fresh row can never collide with a stored
-// index; delete/move just edit the DOM, and the submitted nested array's key
-// order carries the result (StudioSchema::normalizeList re-indexes it). An
-// abandoned empty row is dropped server-side before validation, and clearing
-// every row forgets the list override so the file-owned items show through.
-function initLists(form) {
-    form.querySelectorAll('[data-studio-list]').forEach((wrap) => {
-        const rows = wrap.querySelector('[data-list-rows]');
-        const tpl = wrap.querySelector('[data-list-template]');
-        const addBtn = wrap.querySelector('[data-list-add]');
-        if (!rows || !tpl) return;
-
-        const max = parseInt(wrap.dataset.max || '20', 10);
-        let seq = 0;
-
-        const rowList = () => Array.from(rows.querySelectorAll('[data-list-row]'));
-
-        const refresh = (notify) => {
-            rowList().forEach((row, i) => {
-                const num = row.querySelector('[data-list-num]');
-                if (num) num.textContent = i + 1;
-            });
-            if (addBtn) addBtn.hidden = wrap.hasAttribute('data-block-editor') || rowList().length >= max;
-            // Structural change: bubble an input event so the live preview
-            // (which listens on the form) re-renders the site.
-            if (notify) form.dispatchEvent(new Event('input', { bubbles: true }));
-            wrap.dispatchEvent(new CustomEvent('studio:list-changed', { detail: { notify } }));
-        };
-
-        const wireRow = (row) => {
-            // Typed rows: only show the cells the selected block type uses.
-            // Hidden inputs still submit; the server drops values the row's
-            // type does not own, so switching back restores what was typed.
-            const typeGroup = row.querySelector('[data-list-type]');
-            if (typeGroup) {
-                const applyType = () => {
-                    const checked = typeGroup.querySelector('input:checked');
-                    const type = checked ? checked.value : '';
-                    row.querySelectorAll('[data-show-for]').forEach((cell) => {
-                        cell.hidden = !cell.dataset.showFor.split(' ').includes(type);
-                    });
-                };
-                typeGroup.addEventListener('change', applyType);
-                applyType();
-            }
-
-            row.querySelector('.list-move-up')?.addEventListener('click', () => {
-                const prev = row.previousElementSibling;
-                if (prev) rows.insertBefore(row, prev);
-                refresh(true);
-            });
-            row.querySelector('.list-move-down')?.addEventListener('click', () => {
-                const next = row.nextElementSibling;
-                if (next) rows.insertBefore(next, row);
-                refresh(true);
-            });
-            row.querySelector('[data-list-del]')?.addEventListener('click', () => {
-                row.remove();
-                refresh(true);
-            });
-        };
-
-        wrap.studioList = { wireRow, refresh };
-        rowList().forEach(wireRow);
-        refresh(false);
-
-        addBtn?.addEventListener('click', () => {
-            const key = 'n' + (++seq) + '-' + Math.random().toString(36).slice(2, 8);
-            const node = tpl.content.firstElementChild?.cloneNode(true);
-            if (!node) return;
-
-            node.querySelectorAll('[name],[id],[for]').forEach((el) => {
-                ['name', 'id', 'for'].forEach((attr) => {
-                    const v = el.getAttribute(attr);
-                    if (v && v.includes('__KEY__')) el.setAttribute(attr, v.replaceAll('__KEY__', key));
-                });
-            });
-
-            rows.appendChild(node);
-            wireRow(node);
-            // Label sync for the new row's toggles (re-binding old ones is a
-            // no-op: the handler only rewrites the label text).
-            initToggles(form);
-            refresh(true);
         });
     });
 }

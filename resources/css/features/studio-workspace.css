@@ -187,6 +187,20 @@ body .studio-workspace .studio-tabs {
   box-shadow: 0 0 0 1px var(--workspace-accent);
 }
 
+.studio-workspace .studio-context-row-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.studio-workspace .studio-context-row-action {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--workspace-border);
+  border-radius: 6px;
+  background: var(--workspace-bg);
+  color: var(--workspace-text);
+  font-size: 12px;
+  cursor: pointer;
+}
+.studio-workspace .studio-context-row-action:hover:not(:disabled) { border-color: var(--workspace-accent); color: var(--workspace-accent); }
+.studio-workspace .studio-context-row-action:disabled { opacity: .4; cursor: default; }
+
 .studio-workspace .studio-object-inspector { padding: 16px; border-bottom: 1px solid var(--workspace-border); }
 .studio-workspace .studio-object-eyebrow { color: var(--workspace-muted); font-size: 11px; }
 .studio-workspace [data-object-title] { margin: 6px 0; font-size: 15px; font-weight: 700; overflow-wrap: anywhere; }
