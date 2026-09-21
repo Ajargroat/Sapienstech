@@ -43,11 +43,113 @@ export default function initWorkspace(form) {
     // per name, so the existing validation and tenant scoping still apply and
     // no duplicate value can reach the server. `homes` remembers where each
     // moved field came from so closing the panel puts the form back as it was.
+    const homes = new Map();
+
+    // --- Per-element style -------------------------------------------------
+    // "Recolour this one button" needs storage the shared tokens cannot give:
+    // an override row addressed by the element's own path. Rows live in the
+    // `public.landing.overrides` list (a normal schema list, so validation and
+    // tenant scoping apply unchanged) and are emitted as one stylesheet on the
+    // public page. The controls below are a view over those rows: they write
+    // into the row's real inputs, which stay the single source of truth.
+    const STYLE_KEYS = [
+        { key: 'background', label: 'پس‌زمینه', kind: 'color' },
+        { key: 'color', label: 'رنگ متن', kind: 'color' },
+        { key: 'radius', label: 'گردی گوشه', kind: 'range', min: 0, max: 128, unit: 'px' },
+        { key: 'padding', label: 'فاصله داخلی', kind: 'range', min: 0, max: 128, unit: 'px' },
+        { key: 'width', label: 'عرض', kind: 'range', min: 10, max: 100, unit: '%' },
+        { key: 'font_scale', label: 'مقیاس قلم', kind: 'range', min: 50, max: 400, unit: '%' },
+    ];
+    const overridesField = fields.find((field) => field.dataset.studioField === 'public.landing.overrides');
+    const overridesList = overridesField?.querySelector('[data-studio-list]');
+    const rowInput = (row, key) => row.querySelector(`[name$="[${key}]"]`);
+    // Reading never materializes a row: a path the tenant has not styled yet
+    // has no row, and creating one on mere selection would fill the stored
+    // layer (and the list's 64-row budget) with empty path-only rows.
+    const findOverride = (path) => {
+        if (!overridesList || !path) return null;
+        return [...overridesList.querySelectorAll('[data-list-row]')]
+            .find((row) => rowInput(row, 'path')?.value === path) ?? null;
+    };
+    const canAddOverride = () => {
+        if (!overridesList?.studioList) return false;
+        return overridesList.querySelectorAll('[data-list-row]').length < Number(overridesList.dataset.max || 0);
+    };
+    // Written only when a control actually changes: the row is created on that
+    // first edit, addressed by the element's path.
+    const writeOverride = (path, key, value) => {
+        let row = findOverride(path);
+        if (!row) {
+            if (!canAddOverride()) return null;
+            row = overridesList.studioList.add();
+            if (!row) return null;
+            const pathInput = rowInput(row, 'path');
+            if (pathInput) pathInput.value = path;
+        }
+        const input = rowInput(row, key);
+        if (!input) return null;
+        input.value = value;
+        // The existing live pipeline classifies this path as structural, so
+        // this is what makes the override visible in the canvas.
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        return row;
+    };
+    const styleControl = (path, spec) => {
+        const wrap = document.createElement('label');
+        wrap.className = 'studio-context-style';
+        const name = document.createElement('span');
+        name.textContent = spec.label;
+        const row = findOverride(path);
+        const stored = row ? rowInput(row, spec.key)?.value ?? '' : '';
+        if (spec.kind === 'color') {
+            const picker = document.createElement('input');
+            picker.type = 'color';
+            picker.value = /^#[0-9a-f]{6}$/i.test(stored) ? stored : '#000000';
+            const clear = document.createElement('button');
+            clear.type = 'button';
+            clear.className = 'studio-context-style-clear';
+            clear.textContent = 'پیش‌فرض';
+            clear.title = 'برداشتن این سبک و بازگشت به ظاهر قالب';
+            picker.addEventListener('input', () => writeOverride(path, spec.key, picker.value));
+            clear.addEventListener('click', () => writeOverride(path, spec.key, ''));
+            wrap.append(name, picker, clear);
+            return wrap;
+        }
+        const bar = document.createElement('input');
+        bar.type = 'range';
+        bar.min = String(spec.min);
+        bar.max = String(spec.max);
+        bar.step = '1';
+        const out = document.createElement('output');
+        const current = parseFloat(stored);
+        bar.value = String(Number.isNaN(current) ? Math.round((spec.min + spec.max) / 2) : current);
+        out.textContent = stored === '' ? 'پیش‌فرض' : `${stored}${spec.unit}`;
+        bar.addEventListener('input', () => {
+            writeOverride(path, spec.key, bar.value);
+            out.textContent = `${bar.value}${spec.unit}`;
+        });
+        wrap.append(name, bar, out);
+        return wrap;
+    };
+    const elementStyleSection = (path) => {
+        if (!overridesField || !path) return null;
+        // Offered only while a new row could still be created, unless this
+        // element already owns one (which its controls then edit in place).
+        if (!findOverride(path) && !canAddOverride()) return null;
+        const details = document.createElement('details');
+        details.className = 'studio-context-style-box';
+        const summary = document.createElement('summary');
+        summary.textContent = 'سبک همین عنصر';
+        const grid = document.createElement('div');
+        grid.className = 'studio-context-style-grid';
+        for (const spec of STYLE_KEYS) grid.append(styleControl(path, spec));
+        details.append(summary, grid);
+        return details;
+    };
     const contextPanel = form.querySelector('[data-context-panel]');
     const contextTitle = form.querySelector('[data-context-title]');
     const contextNote = form.querySelector('[data-context-note]');
     const contextFields = form.querySelector('[data-context-fields]');
-    const homes = new Map();
     const isListField = (field) => Boolean(field.querySelector('[data-studio-list]'));
 
     // A canvas path is a schema path in the common case, but list items and
@@ -118,8 +220,8 @@ export default function initWorkspace(form) {
             bar.append(
                 control('افزودن مورد', 'fa-plus', () => after(api.add()), full),
                 control('تکثیر مورد', 'fa-clone', () => after(api.duplicate(row)), !row || full),
-                control('انتقال به بالا', 'fa-arrow-up', () => { api.move(row, -1); highlightRow(listField, index); build(); }, !row || index === 0),
-                control('انتقال به پایین', 'fa-arrow-down', () => { api.move(row, 1); highlightRow(listField, index); build(); }, !row || index === list.length - 1),
+                control('انتقال به بالا', 'fa-sort-up', () => { api.move(row, -1); highlightRow(listField, index); build(); }, !row || index === 0),
+                control('انتقال به پایین', 'fa-sort-down', () => { api.move(row, 1); highlightRow(listField, index); build(); }, !row || index === list.length - 1),
                 control('حذف مورد', 'fa-trash', () => { api.remove(row); after(rows()[Math.min(index, rows().length - 1)]); }, !row),
             );
             return bar;
@@ -151,6 +253,12 @@ export default function initWorkspace(form) {
         if (row !== undefined && isListField(matched[0])) {
             const index = highlightRow(matched[0], row);
             contextFields.prepend(rowActions(matched[0], index));
+        }
+        // Per-element overrides target the element itself, so every path
+        // selection offers them (the list's own rows keep their row actions).
+        if (path && !matched.some(isListField)) {
+            const styleBox = elementStyleSection(path);
+            if (styleBox) contextFields.append(styleBox);
         }
 
         contextTitle.textContent = label || path;

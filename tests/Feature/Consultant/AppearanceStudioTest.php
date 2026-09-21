@@ -1001,4 +1001,81 @@ class AppearanceStudioTest extends TestCase
         $defs = array_column(StudioSchema::field('public.landing.blocks.items')['item'], null, 'key');
         $this->assertSame('hidden', $defs['id']['control']);
     }
+
+    public function test_element_overrides_publish_a_scoped_stylesheet(): void
+    {
+        [$tenant, $host] = $this->tenantWithDomain();
+        $admin = $this->userFor($tenant, 'tenant_admin');
+        $payload = $this->payload([
+            'public.landing.overrides' => [[
+                'path' => 'public.landing.hero.title_line1',
+                'background' => '#112233', 'color' => '#AABBCC',
+                'radius' => 8, 'padding' => 12, 'width' => 60, 'font_scale' => 150,
+                'visible' => '1',
+            ]],
+        ]);
+        $payload['scope'] = 'everyone';
+        $this->actingAs($admin)->post("http://{$host}/consultant/settings/appearance", $payload)
+            ->assertRedirect()->assertSessionHasNoErrors();
+
+        $css = \App\Support\StudioStyles::css(
+            data_get(WebsiteConfig::withoutGlobalScopes()->where('tenant_id', $tenant->id)->first()->layout_config, 'public.landing.overrides')
+        );
+        $this->assertSame(
+            '[data-studio-path="public.landing.hero.title_line1"]{background:#112233;color:#AABBCC;border-radius:8px;padding:12px;inline-size:60%;font-size:150%;}',
+            $css
+        );
+        $this->get("http://{$host}/")->assertOk()
+            ->assertSee('id="lp-element-overrides"', false)
+            ->assertSee('[data-studio-path="public.landing.hero.title_line1"]', false);
+    }
+
+    public function test_element_overrides_reject_unaddressable_paths_and_unsafe_values(): void
+    {
+        // Only schema-published paths may be addressed. The page-level roots
+        // name no element, so they are rejected along with unknown keys.
+        foreach (['public.landing.hero.does_not_exist', 'public.landing', 'public.nav', 'public.footer', 'theme.colors.text'] as $path) {
+            $this->assertFalse(\App\Support\StudioStyles::validPath($path), $path);
+        }
+        // Leaf fields, list rows and the containers a template emits.
+        foreach (['public.landing.hero.title_line1', 'public.landing.hero.buttons.0', 'public.nav.cta.label', 'public.landing.hero.buttons', 'public.nav.cta', 'public.landing.hero'] as $path) {
+            $this->assertTrue(\App\Support\StudioStyles::validPath($path), $path);
+        }
+
+        // A file-owned or tampered row cannot smuggle CSS regardless of shape.
+        $this->assertSame('', \App\Support\StudioStyles::css([
+            ['path' => 'public.landing.hero.title_line1', 'background' => 'red;}html{display:none'],
+            ['path' => 'public.landing.hero.title_line1', 'color' => '#GGGGGG'],
+            ['path' => 'public.landing.hero.title_line1', 'radius' => '8px'],
+            ['path' => 'public.landing.hero.title_line1', 'radius' => 999],
+            ['path' => 'public.landing.hero.title_line1', 'width' => 5],
+            ['path' => 'public.landing.hero.title_line1', 'font_scale' => '150px'],
+            ['path' => 'public.landing.hero.title_line1', 'color' => '#12345'],
+            ['path' => 'theme.colors.primary', 'color' => '#123456'],
+            ['path' => 'public.landing.hero.title_line1<string>', 'color' => '#123456'],
+            ['path' => 'public.landing', 'color' => '#123456'],
+            ['nope' => true],
+        ]));
+
+        // Numeric strings are accepted the same way BlockStyles accepts them,
+        // because file-owned config may store numbers as strings; they are
+        // still coerced to a bounded integer plus a fixed unit.
+        $this->assertSame(
+            '[data-studio-path="public.landing.hero.subtitle"]{border-radius:8px;font-size:150%;}',
+            \App\Support\StudioStyles::css([['path' => 'public.landing.hero.subtitle', 'radius' => '8', 'font_scale' => '150']])
+        );
+
+        // Bounds are inclusive, and the last row wins for the same path.
+        $this->assertSame(
+            '[data-studio-path="public.landing.hero.subtitle"]{padding:128px;inline-size:10%;}',
+            \App\Support\StudioStyles::css([
+                ['path' => 'public.landing.hero.subtitle', 'padding' => 4, 'width' => 100],
+                ['path' => 'public.landing.hero.subtitle', 'padding' => 128, 'width' => 10],
+            ])
+        );
+
+        // An addressable row with no usable style emits nothing rather than an
+        // empty rule.
+        $this->assertSame('', \App\Support\StudioStyles::css([['path' => 'public.landing.hero.subtitle']]));
+    }
 }

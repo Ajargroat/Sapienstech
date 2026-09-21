@@ -875,6 +875,11 @@ return [
                 'variant' => 'default',
                 'items'   => [],   // ['type' => 'heading', 'title' => '', 'visible' => true]
             ],
+
+            // Per-element style overrides for the fixed sections, addressed by
+            // each element's data-studio-path. Written from the canvas
+            // inspector and published as one stylesheet (StudioStyles).
+            'overrides' => [],   // ['path' => 'public.landing.hero.title_line1', 'color' => '#112233']
         ],
 
         'footer' => [

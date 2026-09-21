@@ -52,6 +52,11 @@
         }
     }
     $initialGroup = $errorGroup ?? (array_key_first($studioGroups) ?? null);
+
+    // Canvas-only groups (the per-element override store) are rendered so their
+    // inputs submit, but they get no rail tab: the inspector writes their rows,
+    // so exposing them as a settings panel would be a second, worse way in.
+    $railGroups = array_filter($studioGroups, fn ($g) => ! ($g['canvas_only'] ?? false));
 @endphp
 
 <div class="studio-split studio-workspace" id="studio-split">
@@ -68,7 +73,7 @@
         </div>
 
         <nav class="studio-tabs" aria-label="بخش‌های تنظیمات ظاهر">
-            @foreach($studioGroups as $groupKey => $group)
+            @foreach($railGroups as $groupKey => $group)
                 <button type="button" class="studio-tab" data-studio-tab="{{ $groupKey }}"
                         aria-controls="studio-group-{{ $groupKey }}" aria-current="{{ $initialGroup === $groupKey ? 'true' : 'false' }}"
                         title="{{ $group['label'] }}" aria-label="{{ $group['label'] }}">

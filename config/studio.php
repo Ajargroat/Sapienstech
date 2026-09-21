@@ -695,6 +695,37 @@ return [
             ],
         ],
 
+        'overrides' => [
+            'label' => 'سبک عناصر صفحه',
+            'icon'  => 'fa-palette',
+            'hint'  => 'سبک هر عنصر جداگانه؛ از بوم یک عنصر را انتخاب کنید و ظاهرش را همین‌جا تغییر دهید. خالی گذاشتن هر مقدار یعنی «مثل بقیهٔ قالب».',
+            // Driven from the canvas: its rows are written by the inspector, so
+            // it gets no rail tab of its own and its controls are not offered
+            // as a settings panel.
+            'canvas_only' => true,
+            'fields' => [
+                ['path' => 'public.landing.overrides', 'label' => 'سبک‌های عناصر', 'hint' => 'هر ردیف یک عنصر صفحه را هدف می‌گیرد؛ مسیر عنصر خودکار پر می‌شود.', 'control' => 'list', 'max' => 64,
+                    'rules' => ['nullable', 'array', 'max:64'],
+                    'item' => [
+                        ['key' => 'path', 'label' => 'مسیر عنصر', 'control' => 'hidden',
+                            'rules' => ['required', 'string', 'max:255', 'regex:/\Apublic\.(?:landing|nav|footer)(?:\.[a-z0-9_]+)+\z/']],
+                        ['key' => 'background', 'label' => 'پس‌زمینه', 'control' => 'color', 'content' => false,
+                            'rules' => ['nullable', 'string', 'regex:/\A#[0-9A-Fa-f]{6}\z/']],
+                        ['key' => 'color', 'label' => 'رنگ متن', 'control' => 'color', 'content' => false,
+                            'rules' => ['nullable', 'string', 'regex:/\A#[0-9A-Fa-f]{6}\z/']],
+                        ['key' => 'radius', 'label' => 'گردی گوشه (px)', 'control' => 'number', 'content' => false, 'min' => 0, 'max' => 128,
+                            'rules' => ['nullable', 'numeric', 'integer', 'between:0,128', 'regex:/\A[0-9]+\z/']],
+                        ['key' => 'padding', 'label' => 'فاصله داخلی (px)', 'control' => 'number', 'content' => false, 'min' => 0, 'max' => 128,
+                            'rules' => ['nullable', 'numeric', 'integer', 'between:0,128', 'regex:/\A[0-9]+\z/']],
+                        ['key' => 'width', 'label' => 'عرض (%)', 'control' => 'number', 'content' => false, 'min' => 10, 'max' => 100,
+                            'rules' => ['nullable', 'numeric', 'integer', 'between:10,100', 'regex:/\A[0-9]+\z/']],
+                        ['key' => 'font_scale', 'label' => 'مقیاس قلم (%)', 'control' => 'number', 'content' => false, 'min' => 50, 'max' => 400,
+                            'rules' => ['nullable', 'numeric', 'integer', 'between:50,400', 'regex:/\A[0-9]+\z/']],
+                        ['key' => 'visible', 'label' => 'نمایش', 'control' => 'toggle'],
+                    ]],
+            ],
+        ],
+
         'nav' => [
             'label' => 'منوی سایت',
             'icon'  => 'fa-bars',

@@ -201,6 +201,32 @@ body .studio-workspace .studio-tabs {
 .studio-workspace .studio-context-row-action:hover:not(:disabled) { border-color: var(--workspace-accent); color: var(--workspace-accent); }
 .studio-workspace .studio-context-row-action:disabled { opacity: .4; cursor: default; }
 
+.studio-workspace .studio-context-style-box { margin-top: 12px; border-top: 1px dashed var(--workspace-border); padding-top: 10px; }
+.studio-workspace .studio-context-style-box > summary { font-size: 12px; font-weight: 700; cursor: pointer; }
+.studio-workspace .studio-context-style-grid { display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 10px; }
+.studio-workspace .studio-context-style {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.studio-workspace .studio-context-style > span { color: var(--workspace-muted); }
+.studio-workspace .studio-context-style output { min-inline-size: 3.5em; color: var(--workspace-muted); font-variant-numeric: tabular-nums; }
+.studio-workspace .studio-context-style input[type="color"] { width: 100%; height: 28px; padding: 0; border: 1px solid var(--workspace-border); border-radius: 4px; background: none; }
+.studio-workspace .studio-context-style-clear {
+  grid-column: 2 / -1;
+  justify-self: start;
+  padding: 2px 8px;
+  border: 1px solid var(--workspace-border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--workspace-muted);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
 .studio-workspace .studio-object-inspector { padding: 16px; border-bottom: 1px solid var(--workspace-border); }
 .studio-workspace .studio-object-eyebrow { color: var(--workspace-muted); font-size: 11px; }
 .studio-workspace [data-object-title] { margin: 6px 0; font-size: 15px; font-weight: 700; overflow-wrap: anywhere; }
