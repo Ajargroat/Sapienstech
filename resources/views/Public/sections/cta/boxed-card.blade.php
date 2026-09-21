@@ -9,12 +9,12 @@
              style="background:var(--c-surface);border:var(--surface-border-w) solid var(--c-border)">
             @include('public.sections._glow-blobs', ['scope' => 'cta'])
 
-            <h2 class="relative z-10 mb-4"
+            <h2 class="relative z-10 mb-4" data-studio-path="public.landing.cta.heading"
                 style="font-size:var(--h2-size);font-weight:var(--heading-weight);line-height:var(--heading-line-height);text-transform:var(--heading-transform);letter-spacing:var(--heading-letter-spacing)">
                 {{ $cta['heading'] }}
             </h2>
-            <p class="relative z-10 mb-8" style="color:var(--c-muted);max-width:var(--measure);margin-inline:auto">{{ $cta['text'] }}</p>
-            <div class="relative z-10 flex flex-col sm:flex-row justify-center items-center gap-4">
+            <p class="relative z-10 mb-8" data-studio-path="public.landing.cta.text" style="color:var(--c-muted);max-width:var(--measure);margin-inline:auto">{{ $cta['text'] }}</p>
+            <div class="relative z-10 flex flex-col sm:flex-row justify-center items-center gap-4" data-studio-path="public.landing.cta.buttons">
                 @foreach ($cta['buttons'] ?? [] as $b)
                     @if ($b['visible'] ?? true)
                         @include('public.sections._button', [
@@ -23,6 +23,8 @@
                             'href'  => $b['href'] ?? '#',
                             'tone'  => $b['style'] ?? null,
                             'icon'  => $b['icon'] ?? null,
+                            'block' => false,
+                            'path'  => 'public.landing.cta.buttons.'.$loop->index,
                         ])
                     @endif
                 @endforeach

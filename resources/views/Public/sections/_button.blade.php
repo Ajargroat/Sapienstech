@@ -10,7 +10,9 @@
     theme.buttons, so an archetype can make every button on a site square,
     uppercase and hard-edged without touching a template.
 
-    Expects: $label, optional $href / $route / $tone / $icon / $block / $class.
+    Expects: $label, optional $href / $route / $tone / $icon / $block / $class /
+    $path. `$path` is the studio schema path of the list row that owns this
+    button; it is the element's identity in the visual editor.
 --}}
 @php
     $b    = site('buttons', []);
@@ -39,7 +41,7 @@
     ];
 @endphp
 
-<a href="{{ $url }}" class="{{ $cls }}">
+<a href="{{ $url }}" class="{{ $cls }}"@if (!empty($path)) data-studio-path="{{ $path }}"@endif>
     {{ $label ?? '' }}
     @if ($icon !== 'none' && isset($icons[$icon]))
         <i class="fa-solid {{ $icons[$icon] }} text-xs" aria-hidden="true"></i>

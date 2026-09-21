@@ -10,13 +10,15 @@
     $reveal   = $anim['reveal'] ?? true;
     $counters = $anim['counters'] ?? true;
     $items    = array_values(array_filter($st['items'] ?? [], static fn ($s) => $s['visible'] ?? true));
+    $visible  = array_filter($st['items'] ?? [], static fn ($s) => $s['visible'] ?? true);
+    $slugs    = array_keys($visible);
 @endphp
 
 @if ($items !== [])
 <section id="{{ $st['id'] ?? 'stats' }}" class="lp-section lp-section--tight">
     <div class="landing-container lp-inline-stats {{ $reveal ? 'reveal' : '' }}">
         @foreach ($items as $i => $s)
-            <div class="lp-inline-stats__item">
+            <div class="lp-inline-stats__item" data-studio-path="public.landing.stats.items.{{ $slugs[$i] }}">
                 <span class="lp-inline-stats__value {{ !empty($s['gradient']) ? 'text-transparent bg-clip-text' : '' }}"
                       @if(!empty($s['gradient'])) style="background-image:var(--brand-gradient)" @endif>
                     <span @if($counters) data-counter="{{ $s['value'] }}" @endif>{{ persian_digits($s['value']) }}</span>{{ $s['suffix'] ?? '' }}

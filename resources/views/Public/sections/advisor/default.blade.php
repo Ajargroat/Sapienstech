@@ -30,6 +30,7 @@
                     <div class="relative rounded-full overflow-hidden border-4"
                          style="width:{{ $a['image_size'] ?? '18rem' }};height:{{ $a['image_size'] ?? '18rem' }};border-color:var(--c-surface-alt);background:var(--c-background)">
                         <img src="{{ tenant_asset($a['image']) }}" alt="{{ $a['image_alt'] ?? '' }}"
+                             data-studio-path="public.landing.advisor.image"
                              class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 {{ ($a['grayscale'] ?? false) ? 'grayscale group-hover:grayscale-0' : '' }}">
                     </div>
                     @if ($a['badge']['visible'] ?? true)
@@ -53,11 +54,11 @@
                 @endif
 
                 <div>
-                    <h2 style="font-size:var(--h2-size);font-weight:var(--heading-weight);line-height:var(--heading-line-height);letter-spacing:var(--heading-letter-spacing);text-transform:var(--heading-transform)">{{ $a['name'] }}</h2>
-                    <p class="text-lg font-medium" style="color:{{ $tagColor }}">{{ $a['tagline'] }}</p>
+                    <h2 style="font-size:var(--h2-size);font-weight:var(--heading-weight);line-height:var(--heading-line-height);letter-spacing:var(--heading-letter-spacing);text-transform:var(--heading-transform)" data-studio-path="public.landing.advisor.name">{{ $a['name'] }}</h2>
+                    <p class="text-lg font-medium" data-studio-path="public.landing.advisor.tagline" style="color:{{ $tagColor }}">{{ $a['tagline'] }}</p>
                 </div>
 
-                <p class="text-base md:text-lg leading-relaxed" style="color:var(--c-muted);max-width:var(--measure)">{{ $a['bio'] }}</p>
+                <p class="text-base md:text-lg leading-relaxed" data-studio-path="public.landing.advisor.bio" style="color:var(--c-muted);max-width:var(--measure)">{{ $a['bio'] }}</p>
 
                 @if (!empty($a['stats']))
                     <div class="grid grid-cols-2 md:grid-cols-3 gap-4 my-2">
@@ -71,7 +72,7 @@
                     </div>
                 @endif
 
-                <div class="pt-4 flex flex-col sm:flex-row items-center gap-4">
+                <div class="pt-4 flex flex-col sm:flex-row items-center gap-4" data-studio-path="public.landing.advisor.buttons">
                     @foreach ($a['buttons'] ?? [] as $b)
                         @if ($b['visible'] ?? true)
                             @include('public.sections._button', [
@@ -79,7 +80,8 @@
                                 'href'  => $b['href'] ?? '#',
                                 'tone'  => $b['style'] ?? null,
                                 'icon'  => $b['icon'] ?? null,
-                                'block' => true,
+                                'block' => false,
+                                'path'  => 'public.landing.advisor.buttons.'.$loop->index,
                             ])
                         @endif
                     @endforeach

@@ -14,7 +14,7 @@
             </p>
         @endif
 
-        <blockquote class="{{ $reveal ? 'reveal' : '' }}">
+        <blockquote class="{{ $reveal ? 'reveal' : '' }}" data-studio-path="public.landing.advisor.tagline">
             <p style="font-size:var(--h2-size);font-weight:var(--heading-weight);line-height:1.4;text-transform:var(--heading-transform);letter-spacing:var(--heading-letter-spacing)">
                 {{ $a['tagline'] }}
             </p>
@@ -26,14 +26,14 @@
                      class="lp-avatar lp-avatar--lg {{ ($a['grayscale'] ?? false) ? 'grayscale' : '' }}">
             @endif
             <div>
-                <strong class="block" style="font-size:var(--h3-size)">{{ $a['name'] }}</strong>
+                <strong class="block" style="font-size:var(--h3-size)" data-studio-path="public.landing.advisor.name">{{ $a['name'] }}</strong>
                 @if (!empty($a['badge']['label']))
                     <span class="text-sm" style="color:{{ $tagColor }}">{{ $a['badge']['label'] }}</span>
                 @endif
             </div>
         </div>
 
-        <p class="leading-relaxed" style="color:var(--c-muted)">{{ $a['bio'] }}</p>
+        <p class="leading-relaxed" data-studio-path="public.landing.advisor.bio" style="color:var(--c-muted)">{{ $a['bio'] }}</p>
 
         @if (!empty($a['stats']))
             <div class="flex flex-wrap gap-x-10 gap-y-4 w-full">
@@ -46,10 +46,10 @@
             </div>
         @endif
 
-        <div class="flex flex-wrap gap-4 pt-2">
+        <div class="flex flex-wrap gap-4 pt-2" data-studio-path="public.landing.advisor.buttons">
             @foreach ($a['buttons'] ?? [] as $b)
                 @if ($b['visible'] ?? true)
-                    @include('public.sections._button', ['label' => $b['label'], 'href' => $b['href'] ?? '#', 'tone' => $b['style'] ?? null, 'icon' => $b['icon'] ?? null])
+                    @include('public.sections._button', ['label' => $b['label'], 'href' => $b['href'] ?? '#', 'tone' => $b['style'] ?? null, 'icon' => $b['icon'] ?? null, 'block' => false, 'path' => 'public.landing.advisor.buttons.'.$loop->index])
                 @endif
             @endforeach
         </div>

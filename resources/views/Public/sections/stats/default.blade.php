@@ -13,6 +13,7 @@
         @foreach ($st['items'] ?? [] as $i => $s)
             @if ($s['visible'] ?? true)
                 <div class="flex flex-col gap-2 {{ $reveal ? 'reveal' : '' }}"
+                     data-studio-path="public.landing.stats.items.{{ $i }}"
                      style="transition-delay:{{ $i * (int) site('landing.stagger_ms', 100) }}ms">
                     <span class="lp-stat__value {{ !empty($s['gradient']) ? 'text-transparent bg-clip-text bg-linear-to-l from-(--c-primary) to-(--c-secondary)' : '' }}">
                         <span @if($counters) data-counter="{{ $s['value'] }}" @endif>{{ persian_digits($s['value']) }}</span>{{ $s['suffix'] ?? '' }}

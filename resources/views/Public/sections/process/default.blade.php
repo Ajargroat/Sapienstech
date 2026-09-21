@@ -14,12 +14,14 @@
         @include('public.sections._heading', [
             'heading'    => $p['heading'] ?? null,
             'subheading' => $p['subheading'] ?? null,
+            'path'       => 'public.landing.process',
         ])
 
         <ol class="lp-process list-none p-0 m-0">
             @foreach ($p['items'] ?? [] as $i => $item)
                 @if ($item['visible'] ?? true)
                     <li class="lp-process__step {{ $reveal ? 'reveal' : '' }}"
+                        data-studio-path="public.landing.process.items.{{ $i }}"
                         style="{{ $reveal ? 'transition-delay:' . $i * (int) site('landing.stagger_ms', 100) . 'ms;' : '' }}">
                         <span class="lp-process__num" aria-hidden="true">{{ persian_digits($i + 1) }}</span>
                         <div>

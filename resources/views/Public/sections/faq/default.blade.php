@@ -13,12 +13,13 @@
         @include('public.sections._heading', [
             'heading'    => $f['heading'] ?? null,
             'subheading' => $f['subheading'] ?? null,
+            'path'       => 'public.landing.faq',
         ])
 
         <div class="flex flex-col gap-4">
-            @foreach ($f['items'] ?? [] as $item)
+            @foreach ($f['items'] ?? [] as $fi => $item)
                 @if ($item['visible'] ?? true)
-                    <details class="lp-faq {{ $reveal ? 'reveal' : '' }}">
+                    <details class="lp-faq {{ $reveal ? 'reveal' : '' }}" data-studio-path="public.landing.faq.items.{{ $fi }}">
                         <summary class="lp-faq__q">
                             {{ $item['question'] }}
                             <span class="lp-faq__chevron" aria-hidden="true"></span>

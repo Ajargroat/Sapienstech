@@ -7,7 +7,9 @@
 --}}
 @php
     $tm    = $cfg;
-    $items = array_values(array_filter($tm['items'] ?? [], static fn ($i) => $i['visible'] ?? true));
+    $visible = array_filter($tm['items'] ?? [], static fn ($i) => $i['visible'] ?? true);
+    $items  = array_values($visible);
+    $slugs  = array_keys($visible);
 @endphp
 
 @if ($items !== [])
@@ -16,6 +18,7 @@
         @include('public.sections._heading', [
             'heading'    => $tm['heading'] ?? null,
             'subheading' => $tm['subheading'] ?? null,
+            'path'       => 'public.landing.testimonials',
         ])
     </div>
 
@@ -23,8 +26,9 @@
     <div class="lp-marquee" style="--marquee-duration:{{ site('motion.marquee_speed', '38s') }}">
         @foreach ([0, 1] as $pass)
             <div class="lp-marquee__track" @if($pass) aria-hidden="true" @endif>
-                @foreach ($items as $item)
-                    <figure class="lp-marquee__item">
+                @foreach ($items as $i => $item)
+                    <figure class="lp-marquee__item"
+                            @if (!$pass) data-studio-path="public.landing.testimonials.items.{{ $slugs[$i] }}" @endif>
                         <span class="lp-avatar lp-avatar--sm"
                               style="background:linear-gradient(45deg, var(--c-{{ $item['from'] ?? 'primary' }}), var(--c-{{ $item['to'] ?? 'secondary' }}))">
                             {{ $item['initials'] }}

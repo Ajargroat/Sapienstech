@@ -2,7 +2,9 @@
 @php
     $tm     = $cfg;
     $reveal = $anim['reveal'] ?? true;
-    $items  = array_values(array_filter($tm['items'] ?? [], static fn ($i) => $i['visible'] ?? true));
+    $visible = array_filter($tm['items'] ?? [], static fn ($i) => $i['visible'] ?? true);
+    $items  = array_values($visible);
+    $slugs  = array_keys($visible);
 
     // Was derived from the item count, so a tenant with 5 testimonials got an
     // unreadable 5-column grid. `columns` now wins when set.
@@ -13,12 +15,14 @@
         @include('public.sections._heading', [
             'heading'    => $tm['heading'] ?? null,
             'subheading' => $tm['subheading'] ?? null,
+            'path'       => 'public.landing.testimonials',
         ])
 
         <div class="flex overflow-x-auto snap-x snap-mandatory gap-[var(--grid-gap)] pb-8 hide-scrollbar cursor-grab active:cursor-grabbing md:grid md:overflow-visible"
              style="grid-template-columns:repeat({{ max(1, $cols) }}, minmax(0, 1fr))">
             @foreach ($items as $i => $item)
                 <div class="lp-card min-w-[300px] w-full snap-center p-[var(--card-padding)] {{ $reveal ? 'reveal' : '' }}"
+                     data-studio-path="public.landing.testimonials.items.{{ $slugs[$i] }}"
                      style="transition-delay:{{ $i * (int) site('landing.stagger_ms', 100) }}ms">
                     <div class="flex items-center gap-4 mb-6">
                         <div class="lp-avatar"

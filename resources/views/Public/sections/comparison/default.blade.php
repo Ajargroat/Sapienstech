@@ -14,6 +14,7 @@
         @include('public.sections._heading', [
             'heading'    => $c['heading'] ?? null,
             'subheading' => $c['subheading'] ?? null,
+            'path'       => 'public.landing.comparison',
         ])
 
         <div class="overflow-x-auto hide-scrollbar">
@@ -26,9 +27,9 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach ($c['items'] ?? [] as $row)
+                    @foreach ($c['items'] ?? [] as $ci => $row)
                         @if ($row['visible'] ?? true)
-                            <tr>
+                            <tr data-studio-path="public.landing.comparison.items.{{ $ci }}">
                                 <th scope="row">{{ $row['label'] }}</th>
                                 @foreach ($row['cells'] ?? [] as $cell)
                                     <td>

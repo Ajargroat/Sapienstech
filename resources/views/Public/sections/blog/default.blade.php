@@ -16,6 +16,7 @@
             'subheading' => $bl['subheading'] ?? null,
             'align'      => 'between',
             'action'     => $seeAll,
+            'path'       => 'public.landing.blog',
         ])
 
         <div class="grid grid-cols-1 md:grid-cols-[repeat(var(--cols),minmax(0,1fr))] gap-[var(--grid-gap)]"
@@ -23,6 +24,7 @@
             @foreach ($bl['items'] ?? [] as $i => $post)
                 @continue(! ($post['visible'] ?? true))
                 <article class="lp-card group cursor-pointer p-5 {{ $reveal ? 'reveal' : '' }}"
+                         data-studio-path="public.landing.blog.items.{{ $i }}"
                          style="transition-delay:{{ $i * (int) site('landing.stagger_ms', 100) }}ms">
                     <a href="{{ $post['url'] ?? '#' }}" class="block">
                         <div class="w-full h-48 rounded-2xl mb-6 overflow-hidden relative"

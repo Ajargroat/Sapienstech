@@ -12,9 +12,9 @@
         {{-- Was `text-4xl md:text-6xl`, which ignored --h2-size entirely: this
              heading alone did not respond to the theme's type scale. --}}
         <h2 style="font-size:var(--h2-size);font-weight:var(--heading-weight);line-height:var(--heading-line-height);text-transform:var(--heading-transform);letter-spacing:var(--heading-letter-spacing)"
-            class="mb-6">{{ $cta['heading'] }}</h2>
-        <p class="mb-10" style="color:var(--c-muted);max-width:var(--measure);margin-inline:auto">{{ $cta['text'] }}</p>
-        <div class="flex flex-col sm:flex-row justify-center items-center gap-4">
+            data-studio-path="public.landing.cta.heading" class="mb-6">{{ $cta['heading'] }}</h2>
+        <p class="mb-10" data-studio-path="public.landing.cta.text" style="color:var(--c-muted);max-width:var(--measure);margin-inline:auto">{{ $cta['text'] }}</p>
+        <div class="flex flex-col sm:flex-row justify-center items-center gap-4" data-studio-path="public.landing.cta.buttons">
             @foreach ($cta['buttons'] ?? [] as $b)
                 @if ($b['visible'] ?? true)
                     @include('public.sections._button', [
@@ -23,6 +23,8 @@
                         'href'  => $b['href'] ?? '#',
                         'tone'  => $b['style'] ?? null,
                         'icon'  => $b['icon'] ?? null,
+                        'block' => false,
+                        'path'  => 'public.landing.cta.buttons.'.$loop->index,
                     ])
                 @endif
             @endforeach

@@ -16,24 +16,26 @@
         {{-- Text column --}}
         <div class="flex flex-col gap-6 {{ $reveal ? 'reveal' : '' }}"
              style="text-align:{{ $h['text_align'] ?? 'start' }};{{ $textFirst ? '' : 'order:2' }}">
-            <h1 style="font-size:var(--h1-size);font-weight:var(--heading-weight);line-height:var(--hero-line-height);letter-spacing:var(--heading-letter-spacing)">
+            <h1 data-studio-path="public.landing.hero.title_line1"
+                style="font-size:var(--h1-size);font-weight:var(--heading-weight);line-height:var(--hero-line-height);letter-spacing:var(--heading-letter-spacing)">
                 {{ $h['title_line1'] }} <br>
                 @if ($h['gradient_text'] ?? true)
                     {{-- Inline (not a utility class) because the direction comes
                          from config and Tailwind can't see runtime-built names. --}}
                     <span class="lp-hero__accent text-transparent bg-clip-text"
+                          data-studio-path="public.landing.hero.title_line2"
                           style="background-image:linear-gradient({{ ($h['gradient_dir'] ?? 'to-l') === 'to-r' ? 'to right' : 'to left' }}, var(--c-primary), var(--c-secondary))">
                         {{ $h['title_line2'] }}
                     </span>
                 @else
-                    <span class="lp-hero__accent" style="color:var(--c-primary)">{{ $h['title_line2'] }}</span>
+                    <span class="lp-hero__accent" data-studio-path="public.landing.hero.title_line2" style="color:var(--c-primary)">{{ $h['title_line2'] }}</span>
                 @endif
             </h1>
-            <p class="text-lg leading-relaxed" style="color:var(--c-muted);max-width:var(--measure)">{{ $h['subtitle'] }}</p>
-            <div class="flex flex-wrap gap-4 mt-4">
+            <p class="text-lg leading-relaxed" data-studio-path="public.landing.hero.subtitle" style="color:var(--c-muted);max-width:var(--measure)">{{ $h['subtitle'] }}</p>
+            <div class="flex flex-wrap gap-4 mt-4" data-studio-path="public.landing.hero.buttons">
                 @foreach ($h['buttons'] ?? [] as $b)
                     @if ($b['visible'] ?? true)
-                        @include('public.sections._button', ['label' => $b['label'], 'href' => $b['href'] ?? '#', 'tone' => $b['style'] ?? null, 'icon' => $b['icon'] ?? null])
+                        @include('public.sections._button', ['label' => $b['label'], 'href' => $b['href'] ?? '#', 'tone' => $b['style'] ?? null, 'icon' => $b['icon'] ?? null, 'block' => false, 'path' => 'public.landing.hero.buttons.'.$loop->index])
                     @endif
                 @endforeach
             </div>
@@ -42,11 +44,12 @@
         {{-- Media column --}}
         @if ($media === 'mockup')
             <div class="relative h-[500px] w-full {{ $reveal ? 'reveal' : '' }} hidden md:block"
+                 data-studio-path="public.landing.hero.media"
                  style="{{ $textFirst ? 'order:2' : 'order:1' }}">
                 @include('public.sections.hero._mockup', ['float' => $float, 'reveal' => $reveal])
             </div>
         @elseif ($media === 'photo' && !empty($h['image']))
-            <div class="{{ $reveal ? 'reveal' : '' }}" style="{{ $textFirst ? 'order:2' : 'order:1' }}">
+            <div class="{{ $reveal ? 'reveal' : '' }}" data-studio-path="public.landing.hero.image" style="{{ $textFirst ? 'order:2' : 'order:1' }}">
                 <img src="{{ tenant_asset($h['image']) }}" alt="{{ $h['image_alt'] ?? '' }}"
                      class="w-full rounded-[var(--radius-card)]" loading="lazy">
             </div>

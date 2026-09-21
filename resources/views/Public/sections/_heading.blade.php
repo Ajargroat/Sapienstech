@@ -9,7 +9,10 @@
     Alignment and the rule under the heading come from theme.decoration, so an
     archetype restyles every section heading in one place.
 
-    Expects: $heading, optional $subheading / $eyebrow / $align / $rule / $action.
+    Expects: $heading, optional $subheading / $eyebrow / $align / $rule / $action /
+    $path. `$path` is the section's studio schema prefix (e.g.
+    public.landing.services); the heading emits `{prefix}.heading` and the
+    subheading `{prefix}.subheading` as their studio element identities.
 --}}
 @php
     // @include gives no defaults, so every optional prop has to be guarded.
@@ -34,7 +37,7 @@
 
     <div class="{{ $isBetween ? 'flex flex-col md:flex-row justify-between items-end gap-4' : '' }}">
         <div>
-            <h2 class="lp-heading__title" style="{{ $titleStyle }}">{{ $heading }}</h2>
+            <h2 class="lp-heading__title" style="{{ $titleStyle }}"@if (!empty($path)) data-studio-path="{{ $path }}.heading"@endif>{{ $heading }}</h2>
 
             @if ($rule !== 'none')
                 <span class="lp-heading__rule lp-heading__rule--{{ $rule }} {{ $mxAuto }}" aria-hidden="true"></span>
@@ -42,6 +45,7 @@
 
             @if (!empty($subheading))
                 <p class="{{ $isBetween ? 'mt-3' : 'mt-4' }} {{ $mxAuto }}"
+                   @if (!empty($path)) data-studio-path="{{ $path }}.subheading" @endif
                    style="color:var(--c-muted);max-width:var(--measure)">{{ $subheading }}</p>
             @endif
         </div>

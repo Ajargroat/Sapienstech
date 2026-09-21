@@ -8,7 +8,9 @@
 @php
     $tm     = $cfg;
     $reveal = $anim['reveal'] ?? true;
-    $items  = array_values(array_filter($tm['items'] ?? [], static fn ($i) => $i['visible'] ?? true));
+    $visible = array_filter($tm['items'] ?? [], static fn ($i) => $i['visible'] ?? true);
+    $items  = array_values($visible);
+    $slugs  = array_keys($visible);
     $first  = $items[0] ?? null;
 @endphp
 
@@ -18,9 +20,10 @@
         @include('public.sections._heading', [
             'heading'    => $tm['heading'] ?? null,
             'subheading' => $tm['subheading'] ?? null,
+            'path'       => 'public.landing.testimonials',
         ])
 
-        <div class="lp-featured {{ $reveal ? 'reveal' : '' }}">
+        <div class="lp-featured {{ $reveal ? 'reveal' : '' }}" data-studio-path="public.landing.testimonials.items.{{ $slugs[0] }}">
             @if (($q = site('decoration.quote_mark', 'none')) !== 'none')
                 <span class="lp-featured__mark" data-quote="{{ $q }}" aria-hidden="true"></span>
             @endif

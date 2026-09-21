@@ -36,6 +36,75 @@ export default function initWorkspace(form) {
     };
     const visual = (element) => element?.matches('[data-studio-block]')
         ? element.querySelector('.lp-btn') || element.firstElementChild || element : element;
+
+    // --- Contextual properties ---------------------------------------------
+    // The real schema controls for the selected element are relocated into the
+    // context panel. Relocating rather than duplicating keeps exactly one input
+    // per name, so the existing validation and tenant scoping still apply and
+    // no duplicate value can reach the server. `homes` remembers where each
+    // moved field came from so closing the panel puts the form back as it was.
+    const contextPanel = form.querySelector('[data-context-panel]');
+    const contextTitle = form.querySelector('[data-context-title]');
+    const contextNote = form.querySelector('[data-context-note]');
+    const contextFields = form.querySelector('[data-context-fields]');
+    const homes = new Map();
+    const isListField = (field) => Boolean(field.querySelector('[data-studio-list]'));
+
+    // A canvas path is a schema path in the common case, but list items and
+    // grouped elements address a container instead of a leaf (`…hero.buttons.0`
+    // is a row of `…hero.buttons`). Resolve most-specific-first so a row opens
+    // the repeater that owns it, and only fall back to a prefix match.
+    const resolve = (path) => {
+        const exact = fields.filter((field) => field.dataset.studioField === path);
+        if (exact.length) return { fields: exact };
+
+        const parts = path.split('.');
+        for (let i = parts.length - 1; i > 0; i -= 1) {
+            const candidate = parts.slice(0, i).join('.');
+            const owner = fields.find((field) => field.dataset.studioField === candidate);
+            if (!owner) continue;
+            if (isListField(owner)) return { fields: [owner], row: parts[i] };
+            // A grouped container (nav cta, a heading split in two cells).
+            return { fields: [owner] };
+        }
+
+        return { fields: fields.filter((field) => field.dataset.studioField.startsWith(path + '.')) };
+    };
+    const highlightRow = (listField, row) => {
+        const rows = [...listField.querySelectorAll('[data-list-row]')];
+        const index = Number(row);
+        rows.forEach((node, i) => {
+            node.classList.toggle('is-context-row', i === index);
+        });
+        rows[index]?.scrollIntoView?.({ block: 'nearest' });
+    };
+    const closeContext = () => {
+        contextFields?.querySelectorAll('.is-context-row').forEach((node) => node.classList.remove('is-context-row'));
+        for (const [field, home] of homes) {
+            if (field.isConnected) home.parent.insertBefore(field, home.next);
+        }
+        homes.clear();
+        if (contextPanel) contextPanel.hidden = true;
+    };
+    const openContext = (path, label, fallback) => {
+        closeContext();
+        if (!contextPanel || !contextFields || !path) return false;
+        const { fields: matched, row } = resolve(path);
+        if (!matched.length) return false;
+
+        for (const field of matched) {
+            homes.set(field, { parent: field.parentElement, next: field.nextElementSibling });
+            contextFields.append(field);
+        }
+        if (row !== undefined && isListField(matched[0])) highlightRow(matched[0], row);
+
+        contextTitle.textContent = label || path;
+        contextNote.textContent = matched.length === 1 && isListField(matched[0])
+            ? 'این فهرست را می‌توانید همین‌جا ویرایش، جابه‌جا، تکثیر یا حذف کنید.'
+            : 'با تغییر هر مقدار، پیش‌نمایش بی‌درنگ به‌روز می‌شود.';
+        contextPanel.hidden = false;
+        return true;
+    };
     const measure = () => {
         metrics.replaceChildren();
         if (!selected?.isConnected) return;
@@ -67,6 +136,7 @@ export default function initWorkspace(form) {
         observer?.disconnect();
         metrics.replaceChildren();
         shortcuts.replaceChildren();
+        closeContext();
         title.textContent = 'عنصری انتخاب نشده است';
         scope.textContent = 'برای مشاهدهٔ ویژگی‌ها، عنصری را در بوم انتخاب کنید.';
     };
@@ -78,7 +148,12 @@ export default function initWorkspace(form) {
         if (!interactive()) selected.classList.add('studio-inspected-object');
         const section = sectionOf(element);
         const block = element.closest('[data-studio-block]');
-        identity = block ? { block: block.dataset.studioBlock } : {
+        // Path identity is stable across a preview reload (it is schema data,
+        // not a DOM position), so it is preferred whenever the markup carries
+        // it; the section/index pair stays as the fallback for older frames.
+        const pathElement = element.closest('[data-studio-path]');
+        const path = pathElement?.dataset.studioPath;
+        identity = block ? { block: block.dataset.studioBlock } : path ? { path } : {
             section,
             index: [...(element.closest('[data-studio-section]') || doc.body).querySelectorAll('*')].indexOf(element),
         };
@@ -86,14 +161,18 @@ export default function initWorkspace(form) {
         shortcuts.replaceChildren();
         if (block) {
             scope.textContent = 'سبک‌های زیر فقط روی این بلوک اعمال می‌شوند. اندازه‌های بالا اندازهٔ محاسبه‌شده در بوم هستند.';
+            closeContext();
             shortcut('ویرایش همین بلوک', () => {
                 tab('blocks')?.click();
                 blockRow?.scrollIntoView?.({ block: 'nearest' });
             });
         } else {
-            scope.textContent = 'اندازه‌ها و رنگ‌های بالا اطلاعات محاسبه‌شده‌اند. محتوای بخش از فرم زیر و سبک مشترک از میان‌برها ویرایش می‌شود؛ سبک مشترک روی عناصر دیگر هم اثر دارد.';
+            const opened = openContext(path, title.textContent, section);
+            scope.textContent = opened
+                ? 'این عنصر مستقیماً در پنل ویژگی‌ها ویرایش می‌شود؛ تغییرات بی‌درنگ در بوم اعمال می‌شوند.'
+                : 'اندازه‌ها و رنگ‌های بالا اطلاعات محاسبه‌شده‌اند. محتوای بخش از فرم زیر و سبک مشترک از میان‌برها ویرایش می‌شود؛ سبک مشترک روی عناصر دیگر هم اثر دارد.';
             const prefix = section === 'nav' || section === 'footer' ? `public.${section}.` : `public.landing.${section}.`;
-            const relevant = section ? fields.filter((field) => field.dataset.studioField.startsWith(prefix)) : [];
+            const relevant = section && !opened ? fields.filter((field) => field.dataset.studioField.startsWith(prefix)) : [];
             relevant.forEach((field) => shortcut(field.querySelector('.studio-field-label')?.textContent.trim() || field.dataset.studioField, () => openField(field)));
             if (relevant.length) {
                 tab(relevant[0].closest('[data-studio-group]')?.dataset.studioGroup)?.click();
@@ -101,7 +180,7 @@ export default function initWorkspace(form) {
             for (const [key, label] of [['colors', 'رنگ‌های مشترک'], ['typography', 'قلم‌های مشترک'], ['shape', 'گردی مشترک'], ['buttons', 'سبک مشترک دکمه‌ها']]) {
                 if (tab(key)) shortcut(label, () => tab(key).click());
             }
-            if (!relevant.length) scope.textContent = 'این عنصر کنترل محتوای مستقل ندارد. ویژگی‌های بالا فقط خواندنی هستند؛ ابزارهای سبک مشترک روی کل قالب اثر می‌گذارند.';
+            if (!opened && !relevant.length) scope.textContent = 'این عنصر کنترل محتوای مستقل ندارد. ویژگی‌های بالا فقط خواندنی هستند؛ ابزارهای سبک مشترک روی کل قالب اثر می‌گذارند.';
         }
         observer?.disconnect();
         if (doc.defaultView.ResizeObserver) {
@@ -138,6 +217,7 @@ export default function initWorkspace(form) {
         toggle.dispatchEvent(new Event('change', { bubbles: true }));
     }));
     toggle?.addEventListener('change', paintTools);
+    form.querySelector('[data-context-clear]')?.addEventListener('click', () => clear());
     const proxies = [...root.querySelectorAll('[data-workspace-insert],[data-workspace-action]')];
     const targetOf = (button) => button.hasAttribute('data-workspace-insert')
         ? form.querySelector(`[data-block-insert="${button.dataset.workspaceInsert}"]`)
@@ -175,14 +255,16 @@ export default function initWorkspace(form) {
         if (!doc.getElementById('studio-inspection-style')) {
             const style = doc.createElement('style');
             style.id = 'studio-inspection-style';
-            style.textContent = '.studio-canvas-editing .studio-inspected-object{outline:2px solid #4285fa!important;outline-offset:3px}.studio-canvas-editing [data-studio-section] :is(a,button,h1,h2,h3,p,img,.lp-card):hover{outline:1px dashed #4285fa;cursor:crosshair}.studio-canvas-editing .reveal{opacity:1!important;transform:none!important}';
+            style.textContent = '.studio-canvas-editing .studio-inspected-object{outline:2px solid #4285fa!important;outline-offset:3px}.studio-canvas-editing [data-studio-section] :is(a,button,h1,h2,h3,p,img,.lp-card,[data-studio-path]):hover{outline:1px dashed #4285fa;cursor:crosshair}.studio-canvas-editing .reveal{opacity:1!important;transform:none!important}';
             doc.head.append(style);
             doc.addEventListener('click', (click) => {
                 if (interactive()) return;
                 click.preventDefault();
                 click.stopImmediatePropagation();
                 if (click.target.closest('[data-studio-block]')) return;
-                const element = click.target.closest('a,button,h1,h2,h3,h4,p,img,input,label,.lp-card,section,nav,footer') || click.target;
+                const element = click.target.closest('[data-studio-path]')
+                    || click.target.closest('a,button,h1,h2,h3,h4,p,img,input,label,.lp-card,section,nav,footer')
+                    || click.target;
                 form.querySelector('[data-block-editor]')?.studioEditor?.select(null);
                 select(element);
             }, true);
@@ -215,6 +297,10 @@ export default function initWorkspace(form) {
         if (identity?.block) {
             const element = blockElement(identity.block);
             if (element) select(element); else clear();
+        } else if (identity?.path) {
+            const element = [...(doc.querySelectorAll('[data-studio-path]') || [])]
+                .find((node) => node.dataset.studioPath === identity.path);
+            if (element) select(element); else clear();
         } else if (identity?.section) {
             const section = [...doc.querySelectorAll('[data-studio-section]')].find((node) => node.dataset.studioSection === identity.section);
             select(identity.index === -1 ? section : section?.querySelectorAll('*')[identity.index]);
@@ -223,5 +309,5 @@ export default function initWorkspace(form) {
     });
     paintTools();
     syncActions();
-    return { select, clear, measure };
+    return { select, clear, measure, openContext, closeContext };
 }

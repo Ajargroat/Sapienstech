@@ -26,12 +26,12 @@
                 {{ $tenant['name'] }}
             </a>
             @if ($variant !== 'minimal')
-                <p class="max-w-sm text-sm leading-relaxed mb-6" style="color:{{ $onGradient ? 'inherit' : 'var(--c-subtle)' }}">{{ $f['blurb'] }}</p>
+                <p class="max-w-sm text-sm leading-relaxed mb-6" data-studio-path="public.footer.blurb" style="color:{{ $onGradient ? 'inherit' : 'var(--c-subtle)' }}">{{ $f['blurb'] }}</p>
             @endif
             <div class="flex items-center gap-4" style="color:{{ $onGradient ? 'inherit' : 'var(--c-subtle)' }}">
-                @foreach ($f['social'] as $s)
+                @foreach ($f['social'] as $si => $s)
                     @if ($s['visible'] ?? true)
-                        <a href="{{ $s['url'] }}" aria-label="{{ $s['label'] }}" class="transition-colors hover:text-(--c-text)">
+                        <a href="{{ $s['url'] }}" aria-label="{{ $s['label'] }}" data-studio-path="public.footer.social.{{ $si }}" class="transition-colors hover:text-(--c-text)">
                             <i class="{{ $s['icon'] }} text-xl"></i>
                         </a>
                     @endif
@@ -54,6 +54,6 @@
         @endif
     </div>
     <div class="landing-container pt-8 border-t text-center text-xs" style="border-color:var(--c-border);color:{{ $onGradient ? 'inherit' : 'var(--c-subtle)' }}">
-        <p>{{ str_replace([':name', ':year'], [$tenant['name'], persian_digits(now()->year)], $f['copyright']) }}</p>
+        <p data-studio-path="public.footer.copyright">{{ str_replace([':name', ':year'], [$tenant['name'], persian_digits(now()->year)], $f['copyright']) }}</p>
     </div>
 </footer>

@@ -8,19 +8,24 @@
     $s      = $cfg;
     $reveal = $anim['reveal'] ?? true;
     $cols   = max(1, (int) ($s['columns'] ?? 1));
+    $visible = array_filter($s['items'] ?? [], static fn ($i) => $i['visible'] ?? true);
+    $items  = array_values($visible);
+    $slugs  = array_keys($visible);
+    $base   = 'public.landing.services.items';
 @endphp
 <section id="{{ $s['id'] ?? 'services' }}" class="lp-section">
     <div class="landing-container">
         @include('public.sections._heading', [
             'heading'    => $s['heading'] ?? null,
             'subheading' => $s['subheading'] ?? null,
+            'path'       => 'public.landing.services',
         ])
 
         <ol class="lp-numbered list-none p-0 m-0 grid gap-0"
             style="grid-template-columns:repeat(var(--cols),minmax(0,1fr));--cols:{{ $cols }}">
-            @foreach (array_values(array_filter($s['items'] ?? [], static fn ($i) => $i['visible'] ?? true)) as $i => $item)
+            @foreach ($items as $i => $item)
                 @php($accent = 'var(--c-' . ($item['accent'] ?? 'primary') . ')')
-                <li class="lp-numbered__row {{ $reveal ? 'reveal' : '' }}">
+                <li class="lp-numbered__row {{ $reveal ? 'reveal' : '' }}" data-studio-path="{{ $base }}.{{ $slugs[$i] }}">
                     <span class="lp-numbered__num" style="color:{{ $accent }}">
                         {{ persian_digits(str_pad((string) ($i + 1), 2, '0', STR_PAD_LEFT)) }}
                     </span>

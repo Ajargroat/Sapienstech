@@ -9,12 +9,13 @@
             'heading'    => $bl['heading'] ?? null,
             'subheading' => $bl['subheading'] ?? null,
             'align'      => 'start',
+            'path'       => 'public.landing.blog',
         ])
 
         <div class="lp-post-list">
-            @foreach ($bl['items'] ?? [] as $post)
+            @foreach ($bl['items'] ?? [] as $bi => $post)
                 @continue(! ($post['visible'] ?? true))
-                <a href="{{ $post['url'] ?? '#' }}" class="lp-post-list__row {{ $reveal ? 'reveal' : '' }}">
+                <a href="{{ $post['url'] ?? '#' }}" class="lp-post-list__row {{ $reveal ? 'reveal' : '' }}" data-studio-path="public.landing.blog.items.{{ $bi }}">
                     @if (!empty($post['image']))
                         <img src="{{ tenant_asset($post['image']) }}" alt="" class="lp-post-list__thumb" loading="lazy">
                     @endif

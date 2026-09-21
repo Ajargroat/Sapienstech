@@ -7,7 +7,9 @@
 @php
     $tm     = $cfg;
     $reveal = $anim['reveal'] ?? true;
-    $items  = array_values(array_filter($tm['items'] ?? [], static fn ($i) => $i['visible'] ?? true));
+    $visible = array_filter($tm['items'] ?? [], static fn ($i) => $i['visible'] ?? true);
+    $items  = array_values($visible);
+    $slugs  = array_keys($visible);
     $cols   = $tm['columns'] ?? min(count($items), 3);
 @endphp
 <section id="{{ $tm['id'] ?? 'testimonials' }}" class="lp-section">
@@ -15,11 +17,13 @@
         @include('public.sections._heading', [
             'heading'    => $tm['heading'] ?? null,
             'subheading' => $tm['subheading'] ?? null,
+            'path'       => 'public.landing.testimonials',
         ])
 
         <div class="lp-masonry" style="--cols:{{ max(1, $cols) }}">
             @foreach ($items as $i => $item)
                 <div class="lp-card {{ $reveal ? 'reveal' : '' }}"
+                     data-studio-path="public.landing.testimonials.items.{{ $slugs[$i] }}"
                      style="transition-delay:{{ $i * (int) site('landing.stagger_ms', 100) }}ms">
                     <div class="flex items-center gap-4 mb-6">
                         <div class="lp-avatar"

@@ -133,6 +133,22 @@
               data-home-url="{{ route('home') }}">
             @csrf
 
+            {{-- Contextual properties: the real schema controls for the element
+                 selected in the canvas are relocated here (still inside the
+                 form, so they keep submitting). One field node is ever in one
+                 place, so no duplicate input names can reach the server. --}}
+            <section class="studio-context" data-context-panel hidden aria-label="ویژگی‌های عنصر انتخاب‌شده">
+                <header class="studio-context-head">
+                    <span class="studio-context-eyebrow">ویژگی‌ها</span>
+                    <strong class="studio-context-title" data-context-title></strong>
+                    <button type="button" class="studio-context-close" data-context-clear aria-label="بستن ویژگی‌ها">
+                        <i class="fas fa-xmark" aria-hidden="true"></i>
+                    </button>
+                </header>
+                <p class="studio-context-note" data-context-note></p>
+                <div class="studio-context-fields" data-context-fields></div>
+            </section>
+
             <div class="settings-cards">
                 @foreach($studioGroups as $groupKey => $group)
                     @php $changedCount = $groupChanged[$groupKey] ?? 0; @endphp

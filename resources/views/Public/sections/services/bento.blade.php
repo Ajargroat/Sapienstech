@@ -9,19 +9,24 @@
     $s      = $cfg;
     $reveal = $anim['reveal'] ?? true;
     $cols   = $s['columns'] ?? 3;
-    $items  = array_values(array_filter($s['items'] ?? [], static fn ($i) => $i['visible'] ?? true));
+    $visible = array_filter($s['items'] ?? [], static fn ($i) => $i['visible'] ?? true);
+    $items  = array_values($visible);
+    $slugs  = array_keys($visible);
+    $base   = 'public.landing.services.items';
 @endphp
 <section id="{{ $s['id'] ?? 'services' }}" class="lp-section">
     <div class="landing-container">
         @include('public.sections._heading', [
             'heading'    => $s['heading'] ?? null,
             'subheading' => $s['subheading'] ?? null,
+            'path'       => 'public.landing.services',
         ])
 
         <div class="lp-bento" style="--cols:{{ $cols }}">
             @foreach ($items as $i => $item)
                 @php($accent = 'var(--c-' . ($item['accent'] ?? 'primary') . ')')
                 <div class="lp-card {{ $i === 0 ? 'lp-bento__lead' : '' }} {{ $reveal ? 'reveal' : '' }}"
+                     data-studio-path="{{ $base }}.{{ $slugs[$i] }}"
                      style="{{ $reveal ? 'transition-delay:' . ($i % $cols) * (int) site('landing.stagger_ms', 100) . 'ms;' : '' }}">
                     @include('public.sections._icon', ['icon' => $item['icon'] ?? null, 'accent' => $accent])
                     <div>

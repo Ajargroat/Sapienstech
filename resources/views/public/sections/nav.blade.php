@@ -4,7 +4,7 @@
 <nav id="site-nav" class="site-nav site-nav--{{ $nav['style'] ?? 'solid' }} site-nav--links-{{ $nav['links_style'] ?? 'plain' }}{{ ($nav['sticky'] ?? true) ? '' : ' site-nav--static' }}">
     <div class="site-nav__inner">
         <div class="flex items-center gap-10">
-            <a href="{{ route('home') }}" class="brand group" style="font-size:1.5rem">
+            <a href="{{ route('home') }}" class="brand group" style="font-size:1.5rem" data-studio-path="theme.brand.src">
                 {{-- tenant.logo used to be settable and never rendered; the nav
                      always showed a text mark. Now an image logo works, with the
                      mark/word lockup selectable. --}}
@@ -23,7 +23,7 @@
             <ul class="site-nav__links">
                 @foreach ($nav['links'] ?? [] as $link)
                     @if ($link['visible'] ?? true)
-                        <li><a href="{{ $link['href'] }}">{{ $link['label'] }}</a></li>
+                        <li><a href="{{ $link['href'] }}" data-studio-path="public.nav.links.{{ $loop->index }}">{{ $link['label'] }}</a></li>
                     @endif
                 @endforeach
             </ul>
@@ -33,7 +33,7 @@
             {{-- The arrow had `group-hover:-translate-x-1` with no `group`
                  ancestor, so the transform never fired. --}}
             <a href="{{ route(auth()->check() ? 'consultant.dashboard' : $nav['cta']['route']) }}"
-               class="nav-cta nav-cta--{{ $nav['cta_style'] ?? 'glass' }} group">
+               class="nav-cta nav-cta--{{ $nav['cta_style'] ?? 'glass' }} group" data-studio-path="public.nav.cta">
                 {{ auth()->check() ? ($labels['dashboard'] ?? 'داشبورد') : ($nav['cta']['label'] ?? '') }}
                 <i class="fa-solid fa-arrow-left text-xs transition-transform group-hover:-translate-x-1" aria-hidden="true"></i>
             </a>
