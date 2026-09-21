@@ -42,6 +42,13 @@
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @include('partials.theme-vars')
+    {{-- Per-element overrides: one stylesheet for the whole page, emitted only
+         when the tenant has stored any. Keyed by data-studio-path, so it needs
+         no cooperation from the section partials. --}}
+    @php($lpOverrides = \App\Support\StudioStyles::css($L['overrides'] ?? []))
+    @if ($lpOverrides !== '')
+        <style id="lp-element-overrides">{!! $lpOverrides !!}</style>
+    @endif
 </head>
 <body class="landing">
 
