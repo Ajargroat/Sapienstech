@@ -1,0 +1,151 @@
+/*
+    studio-shell.css — the standalone Theme Studio's platform chrome.
+
+    The studio page (/studio) renders through `layouts.studio`, which includes
+    no tenant theme partials: no theme-vars, no theme-attrs, no color-scheme.
+    That means the CSS custom properties every studio component reads
+    (--c-primary, --c-surface, --radius-card, …) would otherwise be undefined
+    here — so this file pins them to the PLATFORM baseline (the values in
+    config/theme.php, mirrored by ThemeTokens' fallbacks), never to site().
+
+    Loaded by resources/js/features/studio-standalone.js; the workspace
+    components keep their own private palette (studio-workspace.css), which is
+    tenant-independent by design.
+
+    Everything is scoped under body.studio-shell so it cannot leak into other
+    pages that import app.css.
+*/
+
+body.studio-shell {
+    /* Platform baseline colors (config/theme.php → theme.colors). */
+    --c-primary: #06B6D4;
+    --c-secondary: #A855F7;
+    --c-background: #000000;
+    --c-surface: #111111;
+    --c-surface-alt: #1A1A1A;
+    --c-text: #FFFFFF;
+    --c-success: #34D399;
+    --c-info: #60A5FA;
+    --c-warning: #FBBF24;
+    --c-danger: #F87171;
+
+    /* Derived tokens, using the same color-mix formulas as
+       ThemeTokens::derivedColors() with the baseline palette. */
+    --c-primary-hover: color-mix(in oklab, #06B6D4 85%, black);
+    --c-secondary-hover: color-mix(in oklab, #A855F7 85%, black);
+    --c-primary-soft: color-mix(in oklab, #06B6D4 12%, transparent);
+    --c-secondary-soft: color-mix(in oklab, #A855F7 12%, transparent);
+    --c-border: color-mix(in oklab, #FFFFFF 8%, transparent);
+    --c-border-strong: color-mix(in oklab, #FFFFFF 18%, transparent);
+    --c-muted: color-mix(in oklab, #FFFFFF 62%, #000000);
+    --c-subtle: color-mix(in oklab, #FFFFFF 42%, #000000);
+    --c-surface-elevated: color-mix(in oklab, #1A1A1A 88%, #FFFFFF);
+    --c-heading: #FFFFFF;
+    --c-link: #06B6D4;
+    --c-on-primary: #003544;
+    --c-on-surface: #FFFFFF;
+
+    /* Neutral shape/spacing defaults (ThemeTokens fallbacks). */
+    --radius-sm: 10px;
+    --radius-md: 14px;
+    --radius-lg: 20px;
+    --radius-xl: 24px;
+    --radius-card: 24px;
+    --radius-button: 999px;
+    --radius-input: 14px;
+    --card-shadow: 0 15px 40px rgb(0 0 0 / 18%);
+    --topnav-height: 0px;
+    --content-padding: 24px;
+
+    color-scheme: dark;
+
+    /* The studio owns the whole viewport: it is not a page inside a hub. */
+    margin: 0;
+    min-height: 100dvh;
+    background: var(--c-background);
+    color: var(--c-text);
+    font-family: inherit;
+}
+
+/* The page is a column: flashes + banner, toolbar, then the workspace that
+   fills what remains (replaces the old body.studio-mode scaffolding that
+   used to live in app.css for the in-hub studio). */
+.studio-page {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-height: 100dvh;
+    max-width: 1680px;
+    margin-inline: auto;
+    padding: 20px var(--content-padding) 28px;
+}
+
+/* Flash rows (same visual language as the settings hub). */
+.studio-page .settings-flash {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid var(--c-border);
+    background: var(--c-surface);
+    color: var(--c-text);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.studio-page .settings-flash--success { border-color: color-mix(in oklab, var(--c-success) 45%, transparent); }
+.studio-page .settings-flash--error { border-color: color-mix(in oklab, var(--c-danger) 45%, transparent); }
+
+.studio-page .studio-preview-banner { flex-wrap: wrap; }
+.studio-page .studio-preview-banner form { margin-inline-start: auto; }
+
+/* Neutral secondary button (the hub's class, re-declared here so the shell
+   never depends on hub CSS for its own chrome). */
+.studio-page .secondary-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border: 1px solid var(--c-border-strong);
+    border-radius: var(--radius-button);
+    background: var(--c-surface-alt);
+    color: var(--c-text);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.studio-page .secondary-button:hover { background: var(--c-surface-elevated); }
+
+/* Wide screens, live preview on: the studio fills the viewport — preview as
+   the main canvas, settings docked as an inspector bar (the standalone
+   successor of the old body.studio-mode layout in app.css). The three-column
+   workspace grid itself comes from studio-workspace.css. */
+@media (min-width: 1024px) {
+    .studio-page {
+        box-sizing: border-box;
+        height: 100dvh;
+        gap: 12px;
+        padding-bottom: 20px;
+    }
+
+    .studio-page .studio-toolbar { flex: 0 0 auto; margin-bottom: 0; }
+
+    .studio-page .studio-split.is-live {
+        flex: 1 1 auto;
+        min-height: 0;
+    }
+
+    /* The tab rail floats above the panel scrolling inside the bar. */
+    .studio-page .studio-tabs {
+        position: sticky;
+        top: 0;
+        z-index: 6;
+    }
+}
+
+/* Maximize: the preview escapes the split and fills the viewport. */
+body.studio-shell .studio-split.is-live.is-max .studio-main { display: none; }

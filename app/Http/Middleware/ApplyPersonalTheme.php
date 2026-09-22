@@ -63,6 +63,21 @@ class ApplyPersonalTheme
     }
 
     /**
+     * The live studio preview's session key, namespaced per tenant.
+     *
+     * The web and student guards share ONE session store, and the studio now
+     * runs as its own page on the tenant's own host — but a single browser can
+     * still hold sessions across tenants (login screens, staff with accounts
+     * on two academies). Naming the key with the resolved tenant id keeps two
+     * tenants' preview layers from reading each other's state; the id comes
+     * from the Host-resolved tenant, never client input.
+     */
+    public static function previewSessionKey(): string
+    {
+        return 'studio.preview.'.(tenant()?->id ?? 0);
+    }
+
+    /**
      * The full per-user layer: saved personalisation plus the live studio
      * preview riding on top of it (until the previewer exits).
      *
@@ -73,11 +88,11 @@ class ApplyPersonalTheme
     {
         $layer = self::savedLayer($request);
 
-        // A live studio preview (session-scoped, set from the appearance tab)
-        // rides above the saved personal layer until the previewer exits it.
-        // Merge::structural, not array_replace_recursive: list-shaped values
-        // (sections, glow blobs) must replace wholesale.
-        $preview = $request->session()->get('studio.preview');
+        // A live studio preview (session-scoped, set from the standalone
+        // /studio page) rides above the saved personal layer until the
+        // previewer exits it. Merge::structural, not array_replace_recursive:
+        // list-shaped values (sections, glow blobs) must replace wholesale.
+        $preview = $request->session()->get(self::previewSessionKey());
 
         if (is_array($preview) && $preview !== []) {
             $layer = Merge::structural($layer, $preview);

@@ -40,11 +40,14 @@ class SettingsTabs
      */
     public static function forConsultant(): array
     {
+        // The appearance studio is no longer a hub section: it lives on its
+        // own /studio page (opened from the dashboard in a new tab), so the
+        // `appearance` key is gone from the tab list and the legacy
+        // `?tab=appearance` selector redirects there (ProfileController).
         return [
             ['key' => 'profile',    'label_key' => 'settings_profile',     'fallback' => 'پروفایل',          'feature' => 'settings_profile', 'icon' => 'fa-user'],
             ['key' => 'edit',       'label_key' => 'settings_profile_edit', 'fallback' => 'ویرایش پروفایل',  'feature' => 'settings_profile', 'icon' => 'fa-user-pen'],
 
-            ['key' => 'appearance', 'label_key' => 'settings_appearance',  'fallback' => 'ظاهر',             'feature' => 'theme_studio',     'icon' => 'fa-palette'],
             ['key' => 'chat',       'label_key' => 'settings_chat',        'fallback' => 'گفتگو',            'feature' => 'settings_chat',    'icon' => 'fa-comments'],
         ];
     }
@@ -83,9 +86,6 @@ class SettingsTabs
         $visible = [];
 
         foreach ($tabs as $tab) {
-            if ($tab['key'] === 'appearance' && tenant()?->hierarchy_type && $user && ! $user->isTenantOwner()) {
-                continue;
-            }
             if (! (bool) site("features.{$tab['feature']}", false)) {
                 continue;
             }

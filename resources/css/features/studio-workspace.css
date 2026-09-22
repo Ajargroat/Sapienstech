@@ -444,9 +444,9 @@ body .studio-workspace.studio-split .studio-preview-pane {
 }
 
 @media (min-width: 1024px) {
-  /* The existing studio-mode shell subtracts site navigation and padding.
+  /* The studio shell subtracts the site navigation and padding itself.
      Consume its remaining space rather than overlaying the exit navigation. */
-  body.studio-mode .studio-workspace.studio-split.is-live {
+  body.studio-shell .studio-workspace.studio-split.is-live {
     display: grid;
     grid-template-columns: 56px minmax(0, 1fr) 320px;
     /* Constrain the single implicit row to the container: without it the row
@@ -459,7 +459,7 @@ body .studio-workspace.studio-split .studio-preview-pane {
     min-height: 0;
   }
 
-  body.studio-mode .studio-workspace.studio-split.is-live .studio-main {
+  body.studio-shell .studio-workspace.studio-split.is-live .studio-main {
     height: 100%;
     min-height: 0;
     overflow: auto;
@@ -467,7 +467,7 @@ body .studio-workspace.studio-split .studio-preview-pane {
     scrollbar-width: thin;
   }
 
-  body.studio-mode .studio-workspace.studio-split.is-live .studio-preview-pane {
+  body.studio-shell .studio-workspace.studio-split.is-live .studio-preview-pane {
     position: static;
     height: 100%;
     min-height: 0;
@@ -537,8 +537,8 @@ body .studio-workspace.studio-split.is-live.is-max .studio-preview-pane {
   border-radius: 0;
 }
 
-/* Match the desktop studio-mode specificity even if app.css loads later. */
-body.studio-mode .studio-workspace.studio-split.is-live.is-max .studio-preview-pane {
+/* Match the desktop studio-shell specificity even if app.css loads later. */
+body.studio-shell .studio-workspace.studio-split.is-live.is-max .studio-preview-pane {
   position: fixed;
   height: 100dvh;
 }

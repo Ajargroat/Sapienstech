@@ -445,14 +445,23 @@ class HierarchyAccessTest extends TestCase
         $owner = $this->staff($tenant, User::ROLE_TENANT_ADMIN);
         $tenant->update(['owner_user_id' => $owner->id]);
         $this->mockViews();
+
         $this->actingAs($owner)->get($this->url($tenant, '/consultant/settings/profile'))->assertOk()
             ->assertViewHas('activeTab', 'profile');
-        $this->assertContains('appearance', array_column(SettingsTabs::visible('consultant'), 'key'));
-        $this->get($this->url($tenant, '/consultant/settings/profile?tab=appearance'))->assertOk()
-            ->assertViewHas('activeTab', 'appearance');
+
+        // The appearance tab left the profile hub: the selector is gone and
+        // the legacy tab URL redirects into the standalone studio, which the
+        // owner can open.
+        $this->assertNotContains('appearance', array_column(SettingsTabs::visible('consultant'), 'key'));
+        $this->get($this->url($tenant, '/consultant/settings/profile?tab=appearance'))
+            ->assertRedirect($this->url($tenant, '/studio'));
+        $this->get($this->url($tenant, '/studio'))->assertOk();
+
         $this->get($this->url($tenant, '/consultant/blog/create'))->assertOk();
+
+        // The old standalone tab URL redirects into the standalone page too.
         $this->get($this->url($tenant, '/consultant/settings/appearance'))
-            ->assertRedirect($this->url($tenant, '/consultant/settings/profile?tab=appearance'));
+            ->assertRedirect($this->url($tenant, '/studio'));
     }
 
     public static function scienceSubjects(): array

@@ -83,7 +83,7 @@ class ShellNavigationTest extends TestCase
         $payload['scope'] = 'everyone';
 
         $this->actingAs($admin)
-            ->post("http://{$host}/consultant/settings/appearance", $payload)
+            ->post("http://{$host}/studio", $payload)
             ->assertRedirect();
     }
 
@@ -164,7 +164,7 @@ class ShellNavigationTest extends TestCase
         $payload['scope'] = 'me';
 
         $this->actingAs($staff)
-            ->post("http://{$host}/consultant/settings/appearance", $payload)
+            ->post("http://{$host}/studio", $payload)
             ->assertRedirect();
 
         $this->assertStringContainsString(
@@ -186,7 +186,7 @@ class ShellNavigationTest extends TestCase
         $payload['scope'] = 'everyone';
 
         $this->actingAs($admin)
-            ->post("http://{$host}/consultant/settings/appearance", $payload)
+            ->post("http://{$host}/studio", $payload)
             ->assertSessionHasErrors('theme.layout.shell_nav');
 
         $row = WebsiteConfig::withoutGlobalScopes()->where('tenant_id', $tenant->id)->first();
@@ -200,7 +200,7 @@ class ShellNavigationTest extends TestCase
 
         $this->publish($tenant, $host, $admin, 'sidebar');
 
-        $this->actingAs($admin)->post("http://{$host}/consultant/settings/appearance/reset", [
+        $this->actingAs($admin)->post("http://{$host}/studio/reset", [
             'path' => 'theme.layout.shell_nav',
             'scope' => 'everyone',
         ])->assertRedirect();

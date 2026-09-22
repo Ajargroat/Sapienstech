@@ -20,7 +20,7 @@ import initLists from './studio-lists.js';
 import initWorkspace from './studio-workspace.js';
 import '../../css/features/studio-workspace.css';
 
-export default function init() {
+export default function init(options = {}) {
     const form = document.getElementById('studio-form');
     if (!form || form.dataset.studioReady) return;
     form.dataset.studioReady = '1';
@@ -35,7 +35,7 @@ export default function init() {
     initGroups();
     initHints();
     initWorkspace(form);
-    initLive(form);
+    initLive(form, options.shell === true);
 }
 
 // Color: keep the read-only hex field in sync with the picker.
@@ -398,7 +398,7 @@ function initPreviewChrome(pane, frame) {
 // classifies as structural (data-live="reload": variants, copy, nav...)
 // change markup, not just variables, so for those the frame is hot-swapped
 // with a freshly loaded twin instead of navigating in place.
-function initLive(form) {
+function initLive(form, shell) {
     const toggle = document.querySelector('[data-studio-live]');
     const split = document.getElementById('studio-split');
     const pane = document.getElementById('studio-preview-pane');
@@ -508,7 +508,9 @@ function initLive(form) {
         }).then((json) => {
             if (!json) return;
             lastTokens = { vars: json.vars, schemes: json.schemes };
-            paintVars(document, json.vars, json.schemes);
+            // The studio chrome is a platform surface: tenant tokens are
+            // painted into the preview iframe only, never onto the page
+            // itself (the standalone shell must not inherit tenant theming).
             paintVars(frameDoc(), json.vars, json.schemes);
             setDot('ok');
 
@@ -539,8 +541,12 @@ function initLive(form) {
         pane.hidden = !on;
         split.classList.toggle('is-live', on);
         // Wide screens: the whole page turns into the studio (preview as
-        // main content, settings as a docked bar). app.css owns the layout.
-        document.body.classList.toggle('studio-mode', on);
+        // main content, settings as a docked bar). In the standalone shell
+        // the page already IS the studio — no body class switch, and the
+        // page never carries a tenant-token paint to undo.
+        if (!shell) {
+            document.body.classList.toggle('studio-mode', on);
+        }
         if (on) {
             if (!frame.dataset.loaded) {
                 frame.src = homeUrl;
@@ -550,7 +556,9 @@ function initLive(form) {
         } else {
             // The panel must not keep a theme it is no longer previewing,
             // nor a maximized pane that would hide the form next time.
-            document.getElementById('studio-live-vars')?.remove();
+            if (!shell) {
+                document.getElementById('studio-live-vars')?.remove();
+            }
             chrome?.resetMax();
         }
         try { localStorage.setItem('studio.live', on ? '1' : '0'); } catch { /* private mode */ }

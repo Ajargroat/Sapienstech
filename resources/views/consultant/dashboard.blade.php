@@ -31,6 +31,14 @@
     </div>
 
     <div class="panel-heading-actions">
+        @if(site('features.theme_studio', false) && (!tenant()?->hierarchy_type || auth()->user()?->isTenantOwner()))
+            {{-- The Theme Studio is a standalone page: open it in a new tab so
+                 the tenant-themed hub never restyles the editor chrome. --}}
+            <a href="{{ route('studio.index') }}" class="secondary-button" target="_blank" rel="noopener" data-router="off">
+                <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i>
+                استودیوی ظاهر
+            </a>
+        @endif
         <div class="search-reveal @if($search !== '') is-open @endif" data-router-region="results">
             <form method="GET" action="{{ route('consultant.dashboard') }}" class="search-reveal-form" data-filter-sync>
                 <button type="submit" class="search-reveal-toggle" aria-label="{{ $labels['search_button'] }}">

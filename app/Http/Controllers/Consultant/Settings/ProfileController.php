@@ -16,10 +16,12 @@ use Illuminate\View\View;
  * The profile hub: the one page the top navigation's profile button leads
  * to. Its home is the Telegram-style identity page (centered avatar, quick
  * actions, info rows, a settings list) shared by both portals, and every
- * personal part of the consultant area — profile edit (including password), the
- * appearance studio, chat settings — renders *through* this route with a
- * `?tab=<section>` selector instead of owning a page route. The save
- * endpoints stay separate; only the browsing surface is unified.
+ * personal part of the consultant area — profile edit (including password),
+ * chat settings — renders *through* this route with a `?tab=<section>`
+ * selector instead of owning a page route. The save endpoints stay separate;
+ * only the browsing surface is unified. The appearance studio is the one
+ * exception: it outgrew the hub and lives on its own /studio page, with the
+ * legacy `?tab=appearance` selector redirecting there.
  *
  * Section visibility (and therefore `?tab=` access) is decided by
  * App\Support\SettingsTabs from the same `features.*` switches the old
@@ -28,13 +30,21 @@ use Illuminate\View\View;
  */
 class ProfileController extends Controller
 {
-    public function index(Request $request, AppearanceController $appearance, ChatSettingsController $chat): View
+    public function index(Request $request, ChatSettingsController $chat): View|RedirectResponse
     {
         $sections = collect(SettingsTabs::visible('consultant'))->keyBy('key');
 
         abort_if($sections->isEmpty(), 404);
 
         $tab = (string) $request->query('tab', '');
+
+        // The appearance studio moved to its own page (/studio, opened from
+        // the dashboard in a new tab). The legacy tab selector redirects so
+        // old bookmarks keep working; the studio's own middleware re-applies
+        // the feature + access gates on arrival.
+        if ($tab === 'appearance') {
+            return redirect()->route('studio.index');
+        }
 
         // An explicit tab must be one the tenant can actually see — the
         // equivalent of the `consultant.feature:*` middleware that used to
@@ -46,7 +56,6 @@ class ProfileController extends Controller
         }
 
         return match ($tab) {
-            'appearance' => $appearance->index($request),
             'chat' => $chat->index($request),
             'edit' => view('consultant.settings.edit', [
                 'user' => $request->user(),

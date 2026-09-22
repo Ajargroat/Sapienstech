@@ -16,6 +16,12 @@ use RuntimeException;
  *
  * Deliberately not on the "public" filesystem disk: that convention predates
  * the tenant split (question images) and would mix tenants into one folder.
+ *
+ * Same-host caveat (Theme Studio): the standalone /studio page is served from
+ * the tenant's own domain, so the "current tenant" here is always the tenant
+ * whose theme is being edited — uploads can never cross tenants. If the
+ * studio is ever moved to a central domain, this resolution (self::slug())
+ * must be revisited first.
  */
 class TenantUploads
 {

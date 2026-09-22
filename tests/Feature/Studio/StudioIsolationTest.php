@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Consultant;
+namespace Tests\Feature\Studio;
 
 use App\Models\Domain;
 use App\Models\Tenant;
@@ -16,11 +16,14 @@ use Illuminate\Support\Str;
 use Tests\TestCase;
 
 /**
- * The appearance studio: schema-whitelisted writes, the everyone/me/preview
- * scopes, the tenant-admin gate (decision #1), per-key reset, and rejection
- * of non-whitelisted paths and malformed values.
+ * The standalone Theme Studio (/studio): schema-whitelisted writes, the
+ * everyone/me/preview scopes, the tenant-admin gate (decision #1), per-key
+ * reset, rejection of non-whitelisted paths and malformed values — plus the
+ * decoupling contract: the studio page renders through the platform shell
+ * with no tenant theme tokens or consultant nav, the preview session key is
+ * per-tenant, and the legacy appearance URLs redirect into /studio.
  */
-class AppearanceStudioTest extends TestCase
+class StudioIsolationTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -71,20 +74,24 @@ class AppearanceStudioTest extends TestCase
         return $input;
     }
 
-    public function test_appearance_section_loads_inside_the_profile_hub(): void
+    public function test_studio_page_loads_standalone_with_platform_shell(): void
     {
         [$tenant, $host] = $this->tenantWithDomain();
         $user = $this->userFor($tenant, 'tenant_admin');
 
-        $response = $this->actingAs($user)
+        // The old profile-hub tab URL now redirects into the standalone page.
+        $this->actingAs($user)
             ->get("http://{$host}/consultant/settings/profile?tab=appearance")
-            ->assertOk()
-            ->assertSee('ظاهر');
+            ->assertRedirect('/studio');
 
-        // The old standalone tab URL redirects into the hub section.
+        // The old standalone tab URL redirects into the standalone page too.
         $this->actingAs($user)
             ->get("http://{$host}/consultant/settings/appearance")
-            ->assertRedirect('/consultant/settings/profile?tab=appearance');
+            ->assertRedirect('/studio');
+
+        $response = $this->actingAs($user)
+            ->get("http://{$host}/studio")
+            ->assertOk();
 
         $html = $response->getContent();
 
@@ -117,6 +124,126 @@ class AppearanceStudioTest extends TestCase
         );
     }
 
+    /**
+     * The decoupling contract: the studio page is a fixed platform shell.
+     * It must never render tenant theme tokens (the editor cannot restyle
+     * itself while the tenant edits them) nor the consultant dashboard nav.
+     */
+    public function test_studio_shell_carries_no_tenant_theme_tokens_or_consultant_nav(): void
+    {
+        [$tenant, $host] = $this->tenantWithDomain();
+        $admin = $this->userFor($tenant, 'tenant_admin');
+
+        // Distinctive tenant theme + a token the platform baseline never uses.
+        ConfigWriter::publishForTenant($tenant, [
+            'theme.colors.primary' => '#123ABC',
+            'theme.colors.background' => '#FFF0F0',
+        ]);
+
+        $html = $this->actingAs($admin)
+            ->get("http://{$host}/studio")
+            ->assertOk()
+            ->getContent();
+
+        // No tenant theme vars / color-scheme block / theme attrs.
+        $this->assertStringNotContainsString('--c-primary: #123ABC', $html);
+        $this->assertStringNotContainsString('--c-background: #FFF0F0', $html);
+        $this->assertStringNotContainsString('data-color-scheme', $html);
+        $this->assertStringNotContainsString('data-theme-attrs', $html);
+
+        // No consultant dashboard chrome.
+        $this->assertStringNotContainsString('consultant-topnav', $html);
+        $this->assertStringNotContainsString('consultant-sidebar', $html);
+        $this->assertStringNotContainsString('data-router-region', $html);
+
+        // The form still posts to the standalone routes.
+        $this->assertStringContainsString('action="http://'.$host.'/studio"', $html);
+        $this->assertStringContainsString('data-live-url="http://'.$host.'/studio/live"', $html);
+    }
+
+    public function test_studio_skeleton_is_independent_of_tenant_flags(): void
+    {
+        [$tenant, $host] = $this->tenantWithDomain();
+        $admin = $this->userFor($tenant, 'tenant_admin');
+
+        // Both tenants carry the same override set (values normalized away
+        // in the skeleton), so only the flag VALUES differ between renders —
+        // and the studio skeleton must not care about them.
+        ConfigWriter::publishForTenant($tenant, [
+            'theme.layout.shell_nav' => 'topnav',
+            'features.theme_studio' => true,
+            'features.appearance_staff_publish' => false,
+        ]);
+
+        $plain = $this->actingAs($admin)->get("http://{$host}/studio")->getContent();
+
+        // A second tenant flips every knob that reshapes the consultant hub
+        // (shell nav, staff publishing): the studio skeleton must not care.
+        [$other, $otherHost] = $this->tenantWithDomain();
+        $otherAdmin = $this->userFor($other, 'tenant_admin');
+        ConfigWriter::publishForTenant($other, [
+            'theme.layout.shell_nav' => 'sidebar',
+            'features.theme_studio' => true,
+            'features.appearance_staff_publish' => true,
+        ]);
+
+        $toggled = $this->actingAs($otherAdmin)->get("http://{$otherHost}/studio")->getContent();
+
+        $this->assertSame(
+            $this->skeleton($plain),
+            $this->skeleton($toggled)
+        );
+    }
+
+    /** Reduce a studio HTML render to its structural skeleton. */
+    private function skeleton(string $html): string
+    {
+        preg_match_all('/<(\w+)([^>]*)>/', $html, $m, PREG_SET_ORDER);
+
+        // Attribute values (and boolean state like checked/open, which the
+        // resolved config drives) are normalized away: CSRF tokens, session
+        // markers and per-tenant overrides live in values, not structure.
+        $normalize = static fn (string $tag, string $attrs): string => strtolower($tag).':'.trim(
+            preg_replace('/\s+(checked|open|selected)(?=\s|$)/', '', preg_replace('/="[^"]*"/', '', preg_replace('/\s+/', ' ', $attrs) ?? '') ?? '')
+        );
+
+        return implode("\n", array_map(
+            static fn ($s) => $normalize($s[1], $s[2]),
+            $m
+        ));
+    }
+
+    /**
+     * Preview state lives under a per-tenant session key: two tenants on the
+     * same session (or one tenant's staff visiting another's studio) can
+     * never see each other's preview layer.
+     */
+    public function test_preview_session_keys_are_isolated_per_tenant(): void
+    {
+        [$a, $hostA] = $this->tenantWithDomain();
+        [$b, $hostB] = $this->tenantWithDomain();
+        $adminA = $this->userFor($a, 'tenant_admin');
+        $adminB = $this->userFor($b, 'tenant_admin');
+
+        // Tenant A starts a preview.
+        $this->actingAs($adminA)->get("http://{$hostA}/studio")->assertOk();
+        $payload = $this->payload(['theme.colors.primary' => '#111111']);
+        $payload['scope'] = 'preview';
+        $this->post("http://{$hostA}/studio", $payload)->assertRedirect();
+
+        $this->assertTrue(session()->has('studio.preview.'.$a->id));
+        $this->assertFalse(session()->has('studio.preview.'.$b->id));
+
+        // The public site of tenant A shows it; tenant B's does not (the
+        // session carries only A's key, and B's middleware reads B's key).
+        $this->assertStringContainsString('--c-primary: #111111', $this->get("http://{$hostA}/")->getContent());
+        $this->assertStringNotContainsString('--c-primary: #111111', $this->get("http://{$hostB}/")->getContent());
+
+        // Exiting on A forgets A's key only.
+        $this->post("http://{$hostA}/studio/preview/exit")->assertRedirect();
+        $this->assertFalse(session()->has('studio.preview.'.$a->id));
+    }
+
     public function test_icon_set_is_selectable_in_the_studio_with_visual_previews(): void
     {
         [$otherTenant, $otherHost] = $this->tenantWithDomain();
@@ -127,7 +254,7 @@ class AppearanceStudioTest extends TestCase
         $admin = $this->userFor($tenant, 'tenant_admin');
 
         $html = $this->actingAs($admin)
-            ->get("http://{$host}/consultant/settings/profile?tab=appearance")
+            ->get("http://{$host}/studio")
             ->getContent();
 
         // The lever exists in the form and every choice renders a real icon
@@ -147,7 +274,7 @@ class AppearanceStudioTest extends TestCase
         $payload['scope'] = 'everyone';
 
         $this->actingAs($admin)
-            ->post("http://{$host}/consultant/settings/appearance", $payload)
+            ->post("http://{$host}/studio", $payload)
             ->assertRedirect();
 
         $row = WebsiteConfig::withoutGlobalScopes()->where('tenant_id', $tenant->id)->first();
@@ -173,7 +300,7 @@ class AppearanceStudioTest extends TestCase
         foreach (['feather', 'heroicons', '../other', 'unknown'] as $set) {
             $payload = $this->payload(['theme.icons.set' => $set]);
             $payload['scope'] = 'everyone';
-            $this->post("http://{$host}/consultant/settings/appearance", $payload)
+            $this->post("http://{$host}/studio", $payload)
                 ->assertSessionHasErrors('theme.icons.set');
         }
 
@@ -188,17 +315,17 @@ class AppearanceStudioTest extends TestCase
         $this->actingAs($staff)->get("http://{$host}/consultant/dashboard")->assertOk();
         $payload = $this->payload(['theme.icons.set' => 'bi']);
         $payload['scope'] = 'preview';
-        $this->postJson("http://{$host}/consultant/settings/appearance/live", $payload)->assertOk();
-        $this->assertSame('bi', session('studio.preview.theme.icons.set'));
+        $this->postJson("http://{$host}/studio/live", $payload)->assertOk();
+        $this->assertSame('bi', session('studio.preview.'.$tenant->id.'.theme.icons.set'));
         $row = WebsiteConfig::withoutGlobalScopes()->where('tenant_id', $tenant->id)->first();
         $this->assertNull(data_get($row?->layout_config, 'theme.icons.set'));
         $this->assertNull(data_get($staff->fresh()->preferences, 'site.theme.icons.set'));
 
         $payload['scope'] = 'me';
-        $this->post("http://{$host}/consultant/settings/appearance", $payload)
+        $this->post("http://{$host}/studio", $payload)
             ->assertSessionHasNoErrors()->assertRedirect();
         $this->assertSame('bi', data_get($staff->fresh()->preferences, 'site.theme.icons.set'));
-        $this->assertNull(session('studio.preview'));
+        $this->assertNull(session('studio.preview.'.$tenant->id));
     }
 
     public function test_tenant_admin_can_publish_site_wide_change(): void
@@ -210,7 +337,7 @@ class AppearanceStudioTest extends TestCase
         $payload['scope'] = 'everyone';
 
         $this->actingAs($admin)
-            ->post("http://{$host}/consultant/settings/appearance", $payload)
+            ->post("http://{$host}/studio", $payload)
             ->assertRedirect();
 
         $row = WebsiteConfig::withoutGlobalScopes()->where('tenant_id', $tenant->id)->first();
@@ -229,7 +356,7 @@ class AppearanceStudioTest extends TestCase
         $payload['scope'] = 'everyone';
 
         $this->actingAs($staff)
-            ->post("http://{$host}/consultant/settings/appearance", $payload)
+            ->post("http://{$host}/studio", $payload)
             ->assertForbidden();
 
         $row = WebsiteConfig::withoutGlobalScopes()->where('tenant_id', $tenant->id)->first();
@@ -245,13 +372,13 @@ class AppearanceStudioTest extends TestCase
         // Admin enables staff publishing.
         $grant = $this->payload(['features.appearance_staff_publish' => true]);
         $grant['scope'] = 'everyone';
-        $this->actingAs($admin)->post("http://{$host}/consultant/settings/appearance", $grant)->assertRedirect();
+        $this->actingAs($admin)->post("http://{$host}/studio", $grant)->assertRedirect();
 
         // Now staff can publish.
         $payload = $this->payload(['theme.colors.secondary' => '#00FF00']);
         $payload['scope'] = 'everyone';
         $this->actingAs($staff)
-            ->post("http://{$host}/consultant/settings/appearance", $payload)
+            ->post("http://{$host}/studio", $payload)
             ->assertRedirect();
 
         $row = WebsiteConfig::withoutGlobalScopes()->where('tenant_id', $tenant->id)->first();
@@ -268,7 +395,7 @@ class AppearanceStudioTest extends TestCase
         $payload['scope'] = 'me';
 
         $this->actingAs($staff)
-            ->post("http://{$host}/consultant/settings/appearance", $payload)
+            ->post("http://{$host}/studio", $payload)
             ->assertRedirect();
 
         $this->assertSame('#ABCDEF', data_get($staff->fresh()->preferences, 'site.theme.colors.primary'));
@@ -288,7 +415,7 @@ class AppearanceStudioTest extends TestCase
         // Attempt to smuggle an arbitrary key through.
         Arr::set($payload, 'app.debug', true);
 
-        $this->actingAs($admin)->post("http://{$host}/consultant/settings/appearance", $payload)->assertRedirect();
+        $this->actingAs($admin)->post("http://{$host}/studio", $payload)->assertRedirect();
 
         $row = WebsiteConfig::withoutGlobalScopes()->where('tenant_id', $tenant->id)->first();
         $this->assertNull(data_get($row?->layout_config, 'app.debug'));
@@ -304,7 +431,7 @@ class AppearanceStudioTest extends TestCase
         $payload['scope'] = 'everyone';
 
         $this->actingAs($admin)
-            ->post("http://{$host}/consultant/settings/appearance", $payload)
+            ->post("http://{$host}/studio", $payload)
             ->assertSessionHasErrors('theme.colors.primary');
     }
 
@@ -315,9 +442,9 @@ class AppearanceStudioTest extends TestCase
 
         $payload = $this->payload(['theme.colors.primary' => '#112233']);
         $payload['scope'] = 'everyone';
-        $this->actingAs($admin)->post("http://{$host}/consultant/settings/appearance", $payload);
+        $this->actingAs($admin)->post("http://{$host}/studio", $payload);
 
-        $this->actingAs($admin)->post("http://{$host}/consultant/settings/appearance/reset", [
+        $this->actingAs($admin)->post("http://{$host}/studio/reset", [
             'path' => 'theme.colors.primary',
             'scope' => 'everyone',
         ])->assertRedirect();
@@ -333,9 +460,9 @@ class AppearanceStudioTest extends TestCase
 
         $payload = $this->payload(['theme.colors.primary' => '#112233', 'theme.colors.secondary' => '#445566']);
         $payload['scope'] = 'everyone';
-        $this->actingAs($admin)->post("http://{$host}/consultant/settings/appearance", $payload);
+        $this->actingAs($admin)->post("http://{$host}/studio", $payload);
 
-        $this->actingAs($admin)->post("http://{$host}/consultant/settings/appearance/reset-all")->assertRedirect();
+        $this->actingAs($admin)->post("http://{$host}/studio/reset-all")->assertRedirect();
 
         $row = WebsiteConfig::withoutGlobalScopes()->where('tenant_id', $tenant->id)->first();
         $this->assertEmpty($row->layout_config);
@@ -350,7 +477,7 @@ class AppearanceStudioTest extends TestCase
         $payload['scope'] = 'preview';
 
         $this->actingAs($admin)
-            ->post("http://{$host}/consultant/settings/appearance", $payload)
+            ->post("http://{$host}/studio", $payload)
             ->assertRedirect();
 
         // Nothing persisted to the DB layer.
@@ -361,7 +488,7 @@ class AppearanceStudioTest extends TestCase
         $this->assertStringContainsString('--c-primary: #FEFEFE', $this->actingAs($admin)->get("http://{$host}/consultant/dashboard")->getContent());
 
         // Exit preview stops it.
-        $this->actingAs($admin)->post("http://{$host}/consultant/settings/appearance/preview/exit")->assertRedirect();
+        $this->actingAs($admin)->post("http://{$host}/studio/preview/exit")->assertRedirect();
         $this->assertStringNotContainsString('--c-primary: #FEFEFE', $this->actingAs($admin)->get("http://{$host}/consultant/dashboard")->getContent());
     }
 
@@ -375,7 +502,7 @@ class AppearanceStudioTest extends TestCase
         // staff tries to toggle a feature off
         Arr::set($payload, 'features.dashboard', '0');
 
-        $this->actingAs($staff)->post("http://{$host}/consultant/settings/appearance", $payload)->assertRedirect();
+        $this->actingAs($staff)->post("http://{$host}/studio", $payload)->assertRedirect();
 
         // The feature toggle was dropped (admin-only), so dashboard still enabled.
         $this->assertNotSame('0', data_get($staff->fresh()->preferences, 'site.features.dashboard'));
@@ -398,7 +525,7 @@ class AppearanceStudioTest extends TestCase
         $payload['scope'] = 'everyone';
 
         $this->actingAs($admin)
-            ->post("http://{$host}/consultant/settings/appearance", $payload)
+            ->post("http://{$host}/studio", $payload)
             ->assertRedirect();
 
         $row = WebsiteConfig::withoutGlobalScopes()->where('tenant_id', $tenant->id)->first();
@@ -412,7 +539,7 @@ class AppearanceStudioTest extends TestCase
         $payload['scope'] = 'everyone';
 
         $this->actingAs($admin)
-            ->post("http://{$host}/consultant/settings/appearance", $payload)
+            ->post("http://{$host}/studio", $payload)
             ->assertRedirect();
 
         $row = WebsiteConfig::withoutGlobalScopes()->where('tenant_id', $tenant->id)->first();
@@ -501,7 +628,7 @@ class AppearanceStudioTest extends TestCase
 
         $payload = $this->payload(['public.landing.hero.eyebrow' => 'یک برچسب آزمایشی']);
         $payload['scope'] = 'everyone';
-        $this->actingAs($admin)->post("http://{$host}/consultant/settings/appearance", $payload)->assertRedirect();
+        $this->actingAs($admin)->post("http://{$host}/studio", $payload)->assertRedirect();
 
         $row = WebsiteConfig::withoutGlobalScopes()->where('tenant_id', $tenant->id)->first();
         $this->assertSame('یک برچسب آزمایشی', data_get($row->layout_config, 'public.landing.hero.eyebrow'));
@@ -509,7 +636,7 @@ class AppearanceStudioTest extends TestCase
         // Now clear it: '' normalizes to null, which forgets the key again.
         $payload = $this->payload(['public.landing.hero.eyebrow' => '']);
         $payload['scope'] = 'everyone';
-        $this->actingAs($admin)->post("http://{$host}/consultant/settings/appearance", $payload)->assertRedirect();
+        $this->actingAs($admin)->post("http://{$host}/studio", $payload)->assertRedirect();
 
         $row = WebsiteConfig::withoutGlobalScopes()->where('tenant_id', $tenant->id)->first();
         $this->assertNull(data_get($row->layout_config, 'public.landing.hero.eyebrow'));
@@ -534,7 +661,7 @@ class AppearanceStudioTest extends TestCase
         $payload['scope'] = 'everyone';
 
         $this->actingAs($admin)
-            ->post("http://{$host}/consultant/settings/appearance", $payload)
+            ->post("http://{$host}/studio", $payload)
             ->assertRedirect();
 
         $items = data_get(
@@ -572,7 +699,7 @@ class AppearanceStudioTest extends TestCase
         $payload['scope'] = 'everyone';
 
         $this->actingAs($admin)
-            ->post("http://{$host}/consultant/settings/appearance", $payload)
+            ->post("http://{$host}/studio", $payload)
             ->assertRedirect();
 
         $row = WebsiteConfig::withoutGlobalScopes()->where('tenant_id', $tenant->id)->first();
@@ -596,7 +723,7 @@ class AppearanceStudioTest extends TestCase
         $payload['scope'] = 'everyone';
 
         $this->actingAs($admin)
-            ->post("http://{$host}/consultant/settings/appearance", $payload)
+            ->post("http://{$host}/studio", $payload)
             ->assertRedirect();
 
         $row = WebsiteConfig::withoutGlobalScopes()->where('tenant_id', $tenant->id)->first();
@@ -620,7 +747,7 @@ class AppearanceStudioTest extends TestCase
         $payload['scope'] = 'everyone';
 
         $this->actingAs($admin)
-            ->post("http://{$host}/consultant/settings/appearance", $payload)
+            ->post("http://{$host}/studio", $payload)
             ->assertSessionHasErrors('public.landing.services.items.0.title');
     }
 
@@ -640,7 +767,7 @@ class AppearanceStudioTest extends TestCase
         $payload['scope'] = 'everyone';
 
         $this->actingAs($admin)
-            ->post("http://{$host}/consultant/settings/appearance", $payload)
+            ->post("http://{$host}/studio", $payload)
             ->assertSessionHasErrors('public.nav.links');
 
         // Unknown per-row keys are stripped by normalization, not stored.
@@ -652,7 +779,7 @@ class AppearanceStudioTest extends TestCase
         $payload['scope'] = 'everyone';
 
         $this->actingAs($admin)
-            ->post("http://{$host}/consultant/settings/appearance", $payload)
+            ->post("http://{$host}/studio", $payload)
             ->assertRedirect();
 
         $stored = data_get(
@@ -677,12 +804,12 @@ class AppearanceStudioTest extends TestCase
             ],
         ]);
         $payload['scope'] = 'everyone';
-        $this->actingAs($admin)->post("http://{$host}/consultant/settings/appearance", $payload)->assertRedirect();
+        $this->actingAs($admin)->post("http://{$host}/studio", $payload)->assertRedirect();
 
         $row = WebsiteConfig::withoutGlobalScopes()->where('tenant_id', $tenant->id)->first();
         $this->assertNotNull(data_get($row->layout_config, 'public.landing.faq.items'));
 
-        $this->actingAs($admin)->post("http://{$host}/consultant/settings/appearance/reset", [
+        $this->actingAs($admin)->post("http://{$host}/studio/reset", [
             'path' => 'public.landing.faq.items',
             'scope' => 'everyone',
         ])->assertRedirect();
@@ -715,7 +842,7 @@ class AppearanceStudioTest extends TestCase
         $payload['scope'] = 'everyone';
 
         $this->actingAs($admin)
-            ->post("http://{$host}/consultant/settings/appearance", $payload)
+            ->post("http://{$host}/studio", $payload)
             ->assertRedirect();
 
         $items = data_get(
@@ -761,7 +888,7 @@ class AppearanceStudioTest extends TestCase
         $payload['scope'] = 'everyone';
 
         $this->actingAs($admin)
-            ->post("http://{$host}/consultant/settings/appearance", $payload)
+            ->post("http://{$host}/studio", $payload)
             ->assertSessionHasErrors([
                 'public.landing.blocks.items.0.title',
                 'public.landing.blocks.items.1.href',
@@ -776,7 +903,7 @@ class AppearanceStudioTest extends TestCase
         $payload['scope'] = 'everyone';
 
         $this->actingAs($admin)
-            ->post("http://{$host}/consultant/settings/appearance", $payload)
+            ->post("http://{$host}/studio", $payload)
             ->assertRedirect();
 
         // Unknown type: the discriminant's in: rule is the whitelist.
@@ -788,7 +915,7 @@ class AppearanceStudioTest extends TestCase
         $payload['scope'] = 'everyone';
 
         $this->actingAs($admin)
-            ->post("http://{$host}/consultant/settings/appearance", $payload)
+            ->post("http://{$host}/studio", $payload)
             ->assertSessionHasErrors('public.landing.blocks.items.0.type');
     }
 
@@ -811,7 +938,7 @@ class AppearanceStudioTest extends TestCase
         $payload['scope'] = 'everyone';
 
         $this->actingAs($admin)
-            ->post("http://{$host}/consultant/settings/appearance", $payload)
+            ->post("http://{$host}/studio", $payload)
             ->assertRedirect();
 
         $items = data_get(
@@ -847,7 +974,7 @@ class AppearanceStudioTest extends TestCase
         ]);
         $payload['scope'] = 'everyone';
 
-        $this->actingAs($admin)->post("http://{$host}/consultant/settings/appearance", $payload)
+        $this->actingAs($admin)->post("http://{$host}/studio", $payload)
             ->assertRedirect()->assertSessionHasNoErrors();
 
         $items = data_get(WebsiteConfig::withoutGlobalScopes()->where('tenant_id', $tenant->id)->first()->layout_config, 'public.landing.blocks.items');
@@ -904,7 +1031,7 @@ class AppearanceStudioTest extends TestCase
         }
         $payload = $this->payload(['public.landing.blocks.items' => $rows]);
         $payload['scope'] = 'everyone';
-        $this->actingAs($admin)->post("http://{$host}/consultant/settings/appearance", $payload)
+        $this->actingAs($admin)->post("http://{$host}/studio", $payload)
             ->assertSessionHasErrors($errors);
         $this->assertNull(data_get(WebsiteConfig::withoutGlobalScopes()->where('tenant_id', $tenant->id)->first()?->layout_config, 'public.landing.blocks.items'));
     }
@@ -923,7 +1050,7 @@ class AppearanceStudioTest extends TestCase
         $rows[] = ['type' => 'spacer', 'visible' => '1', ...$metadata];
         $payload = $this->payload(['public.landing.blocks.items' => $rows]);
         $payload['scope'] = 'everyone';
-        $this->actingAs($admin)->post("http://{$host}/consultant/settings/appearance", $payload)
+        $this->actingAs($admin)->post("http://{$host}/studio", $payload)
             ->assertRedirect()->assertSessionHasNoErrors();
         $items = data_get(WebsiteConfig::withoutGlobalScopes()->where('tenant_id', $tenant->id)->first()->layout_config, 'public.landing.blocks.items');
         $this->assertCount(3, $items);
@@ -940,7 +1067,7 @@ class AppearanceStudioTest extends TestCase
         $item = ['type' => 'card', 'title' => 'Published card', 'id' => $id, 'background' => '#112233', 'visible' => '1'];
         $payload = $this->payload(['public.landing.sections' => ['hero', 'blocks'], 'public.landing.blocks.items' => [$item]]);
         $payload['scope'] = 'everyone';
-        $this->actingAs($admin)->post("http://{$host}/consultant/settings/appearance", $payload)
+        $this->actingAs($admin)->post("http://{$host}/studio", $payload)
             ->assertRedirect()->assertSessionHasNoErrors();
         $row = WebsiteConfig::withoutGlobalScopes()->where('tenant_id', $tenant->id)->first();
         $before = $row->layout_config;
@@ -948,14 +1075,14 @@ class AppearanceStudioTest extends TestCase
 
         $preview = $this->payload(['public.landing.blocks.items' => [[...$item, 'background' => '#A1B2C3', 'padding' => 24]]]);
         $preview['scope'] = 'preview';
-        $this->actingAs($admin)->post("http://{$host}/consultant/settings/appearance", $preview)
+        $this->actingAs($admin)->post("http://{$host}/studio", $preview)
             ->assertRedirect()->assertSessionHasNoErrors();
         $this->assertSame($before, $row->fresh()->layout_config);
         $this->assertSame($preferences, $admin->fresh()->preferences);
         $this->get("http://{$host}/")->assertOk()
             ->assertSee('data-studio-block="'.$id.'"', false)
             ->assertSee('--block-background:#A1B2C3;--block-padding:24px', false);
-        $this->actingAs($admin)->post("http://{$host}/consultant/settings/appearance/preview/exit")->assertRedirect();
+        $this->actingAs($admin)->post("http://{$host}/studio/preview/exit")->assertRedirect();
         $this->get("http://{$host}/")->assertOk()
             ->assertSee('--block-background:#112233', false)
             ->assertDontSee('--block-background:#A1B2C3', false);
@@ -971,12 +1098,12 @@ class AppearanceStudioTest extends TestCase
         $styles = ['background' => '#112233', 'color' => '#445566', 'padding' => 128, 'radius' => 0, 'width' => 10];
         $payload = $this->payload(['public.landing.sections' => ['hero', 'blocks'], 'public.landing.blocks.items' => [[...$item, ...$styles], $sibling]]);
         $payload['scope'] = 'everyone';
-        $this->actingAs($admin)->post("http://{$host}/consultant/settings/appearance", $payload)
+        $this->actingAs($admin)->post("http://{$host}/studio", $payload)
             ->assertRedirect()->assertSessionHasNoErrors();
 
         $reset = $this->payload(['public.landing.blocks.items' => [[...$item, ...array_fill_keys(array_keys($styles), '')], $sibling]]);
         $reset['scope'] = 'everyone';
-        $this->actingAs($admin)->post("http://{$host}/consultant/settings/appearance", $reset)
+        $this->actingAs($admin)->post("http://{$host}/studio", $reset)
             ->assertRedirect()->assertSessionHasNoErrors();
         $items = data_get(WebsiteConfig::withoutGlobalScopes()->where('tenant_id', $tenant->id)->first()->layout_config, 'public.landing.blocks.items');
         foreach (array_keys($styles) as $key) {
@@ -1016,7 +1143,7 @@ class AppearanceStudioTest extends TestCase
             ]],
         ]);
         $payload['scope'] = 'everyone';
-        $this->actingAs($admin)->post("http://{$host}/consultant/settings/appearance", $payload)
+        $this->actingAs($admin)->post("http://{$host}/studio", $payload)
             ->assertRedirect()->assertSessionHasNoErrors();
 
         $css = \App\Support\StudioStyles::css(

@@ -23,7 +23,9 @@ class EnsureHierarchyAccess
             if (tenant()?->hierarchy_type && ! $user->isTenantOwner()) {
                 abort_if($request->is('consultant/settings', 'consultant/settings/*', 'consultant/blog', 'consultant/blog/*'), 404);
             }
-            if (tenant()?->hierarchy_type && $request->is('consultant/settings/appearance', 'consultant/settings/appearance/*')) {
+            if (tenant()?->hierarchy_type && $request->is('studio', 'studio/*', 'consultant/settings/appearance', 'consultant/settings/appearance/*')) {
+                // The appearance studio moved to /studio; the legacy paths
+                // stay covered so an old URL cannot reopen the hole.
                 abort_unless($user->isTenantOwner(), 404);
             }
         }

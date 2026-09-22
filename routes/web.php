@@ -10,9 +10,9 @@ use App\Http\Controllers\Consultant\Settings\ChatSettingsController as Consultan
 use App\Http\Controllers\Consultant\Bulk\BulkExamController;
 use App\Http\Controllers\Consultant\Bulk\BulkHistoryController;
 use App\Http\Controllers\Consultant\Bulk\BulkScheduleController;
-use App\Http\Controllers\Consultant\Settings\AppearanceController;
 use App\Http\Controllers\Consultant\BlogController as ConsultantBlogController;
 use App\Http\Controllers\Consultant\Settings\ProfileController as ConsultantProfileController;
+use App\Http\Controllers\Studio\StudioController;
 use App\Http\Controllers\Consultant\StudentExamController;
 use App\Http\Controllers\Consultant\StudentFeatureController;
 use App\Http\Controllers\Consultant\StudentReportCardController;
@@ -154,18 +154,19 @@ Route::middleware('auth')->prefix('consultant')->name('consultant.')->group(func
             ->name('chat.save');
 
         /*
-        | Appearance studio — schema-driven editor over the tenant's runtime
-        | config layer (see config/studio.php), shown as the hub's appearance
-        | section. "For everyone" is gated to the tenant admin inside the
-        | controller; the flag only hides the section + write endpoints.
+        | Appearance studio — moved to the standalone /studio page (the
+        | `studio.*` group at the bottom of the consultant area). Legacy
+        | appearances of the old URLs redirect there: GET with a 302 (the
+        | profile-hub tab is gone), POST endpoints with a 308 so method and
+        | body survive for anything still pointed at them.
         */
-        Route::redirect('appearance', '/consultant/settings/profile?tab=appearance');
-        Route::prefix('appearance')->middleware('consultant.feature:theme_studio')->group(function () {
-            Route::post('/', [AppearanceController::class, 'save'])->name('appearance.save');
-            Route::post('reset', [AppearanceController::class, 'resetKey'])->name('appearance.reset');
-            Route::post('reset-all', [AppearanceController::class, 'resetAll'])->name('appearance.reset.all');
-            Route::post('preview/exit', [AppearanceController::class, 'exitPreview'])->name('appearance.preview.exit');
-            Route::post('live', [AppearanceController::class, 'live'])->name('appearance.live');
+        Route::redirect('appearance', '/studio');
+        Route::prefix('appearance')->group(function () {
+            Route::post('/', fn () => redirect()->route('studio.save', [], 308));
+            Route::post('reset', fn () => redirect()->route('studio.reset', [], 308));
+            Route::post('reset-all', fn () => redirect()->route('studio.reset.all', [], 308));
+            Route::post('preview/exit', fn () => redirect()->route('studio.preview.exit', [], 308));
+            Route::post('live', fn () => redirect()->route('studio.live', [], 308));
         });
     });
 
@@ -263,6 +264,31 @@ Route::middleware('auth')->prefix('consultant')->name('consultant.')->group(func
         });
     });
 });
+
+/*
+|--------------------------------------------------------------------------
+| Theme Studio (standalone) — the appearance editor as its own page.
+|
+| Same host as the tenant site on purpose: IdentifyTenant resolves the
+| tenant from the Host header, so tenant resolution, session cookies,
+| uploads and the same-origin preview iframe all keep working unchanged.
+| The dashboard opens it in a new tab; the `studio.access` gate carries
+| the membership/owner rules, and `consultant.feature:theme_studio`
+| remains the tenant-level feature switch. The page renders through the
+| platform-only layouts.studio shell — no tenant theme partials.
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'consultant.feature:theme_studio', 'studio.access'])
+    ->prefix('studio')
+    ->name('studio.')
+    ->group(function () {
+        Route::get('/', [StudioController::class, 'index'])->name('index');
+        Route::post('/', [StudioController::class, 'save'])->name('save');
+        Route::post('reset', [StudioController::class, 'resetKey'])->name('reset');
+        Route::post('reset-all', [StudioController::class, 'resetAll'])->name('reset.all');
+        Route::post('preview/exit', [StudioController::class, 'exitPreview'])->name('preview.exit');
+        Route::post('live', [StudioController::class, 'live'])->name('live');
+    });
 
 /*
 |--------------------------------------------------------------------------

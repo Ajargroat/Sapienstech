@@ -269,16 +269,6 @@ function runPage(region, run, { animate }) {
     reviveInlineScripts(region);
     bindPage(region, run);
 
-    // Page-scoped body state must not outlive the page that set it: the
-    // studio's scroll lock (body.studio-mode => overflow hidden) would
-    // otherwise freeze scrolling on every page navigated to afterwards,
-    // and its live-preview style would keep restyling pages it is no
-    // longer previewing with unsaved values.
-    if (!document.getElementById('studio-form')) {
-        document.body.classList.remove('studio-mode');
-        document.getElementById('studio-live-vars')?.remove();
-    }
-
     if (animate) enter(region);
     prefetchLikely(region);
     document.dispatchEvent(new CustomEvent('page:load', { detail: { url: current.href } }));

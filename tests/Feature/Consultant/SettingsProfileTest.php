@@ -57,7 +57,9 @@ class SettingsProfileTest extends TestCase
             ->assertSee('ویرایش پروفایل')
             ->assertDontSee('tab=password', false)
             ->assertDontSee('class="profile-header"', false)
-            ->assertSee('tab=appearance', false)
+            // The appearance studio moved to its own page; the hub neither
+            // links to the old tab nor renders its section.
+            ->assertDontSee('tab=appearance', false)
             ->assertSee($user->email)
             ->getContent();
 

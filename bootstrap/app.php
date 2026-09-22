@@ -20,6 +20,8 @@ return Application::configure(basePath: dirname(__DIR__))
             // …and for the teacher panel. Role gating lives in EnsureTeacher.
             'teacher.feature' => \App\Http\Middleware\EnsureConsultantFeature::class,
             'teacher.role' => \App\Http\Middleware\EnsureTeacher::class,
+            // Standalone Theme Studio (/studio): tenant-membership + owner rule.
+            'studio.access' => \App\Http\Middleware\EnsureStudioAccess::class,
         ]);
 
         $middleware->web(append: [

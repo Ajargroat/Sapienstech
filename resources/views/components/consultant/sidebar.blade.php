@@ -68,6 +68,22 @@
             <i class="fas fa-sun"></i>
         </button>
 
+        @if(site('features.theme_studio', false) && \Illuminate\Support\Facades\Route::has('studio.index'))
+        {{-- The Theme Studio is a standalone page (new tab): its editor
+             chrome must not live inside the tenant-themed hub. --}}
+        @if(!tenant()?->hierarchy_type || auth()->user()?->isTenantOwner())
+        <a
+            href="{{ route('studio.index') }}"
+            class="topnav-icon-btn"
+            target="_blank" rel="noopener" data-router="off"
+            title="استودیوی ظاهر"
+            aria-label="استودیوی ظاهر"
+        >
+            <i class="fas fa-wand-magic-sparkles"></i>
+        </a>
+        @endif
+        @endif
+
         {{-- Profile hub (mirrors the topnav): direct link, no dropdown. --}}
         @if(!tenant()?->hierarchy_type || auth()->user()?->isTenantOwner())
         <a
