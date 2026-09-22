@@ -29,14 +29,32 @@
             </ul>
         </div>
 
-        @if ($nav['cta']['visible'] ?? true)
-            {{-- The arrow had `group-hover:-translate-x-1` with no `group`
-                 ancestor, so the transform never fired. --}}
-            <a href="{{ route(auth()->check() ? 'consultant.dashboard' : $nav['cta']['route']) }}"
-               class="nav-cta nav-cta--{{ $nav['cta_style'] ?? 'glass' }} group" data-studio-path="public.nav.cta">
-                {{ auth()->check() ? ($labels['dashboard'] ?? 'داشبورد') : ($nav['cta']['label'] ?? '') }}
-                <i class="fa-solid fa-arrow-left text-xs transition-transform group-hover:-translate-x-1" aria-hidden="true"></i>
-            </a>
-        @endif
+        <div class="site-nav__actions">
+            {{-- Colour-scheme toggle. Hidden by CSS when the tenant declares a
+                 single scheme (data-scheme-count), so a theme with one palette
+                 never shows a control that does nothing. --}}
+            @if (count((array) site('theme.scheme_names', ['dark'])) > 1)
+                <button
+                    type="button"
+                    id="theme-toggle-btn"
+                    class="topnav-icon-btn theme-toggle"
+                    title="تغییر حالت روشن/تاریک"
+                    aria-label="تغییر حالت روشن/تاریک"
+                >
+                    <i class="fas fa-moon" aria-hidden="true"></i>
+                    <i class="fas fa-sun" aria-hidden="true"></i>
+                </button>
+            @endif
+
+            @if ($nav['cta']['visible'] ?? true)
+                {{-- The arrow had `group-hover:-translate-x-1` with no `group`
+                     ancestor, so the transform never fired. --}}
+                <a href="{{ route(auth()->check() ? 'consultant.dashboard' : $nav['cta']['route']) }}"
+                   class="nav-cta nav-cta--{{ $nav['cta_style'] ?? 'glass' }} group" data-studio-path="public.nav.cta">
+                    {{ auth()->check() ? ($labels['dashboard'] ?? 'داشبورد') : ($nav['cta']['label'] ?? '') }}
+                    <i class="fa-solid fa-arrow-left text-xs transition-transform group-hover:-translate-x-1" aria-hidden="true"></i>
+                </a>
+            @endif
+        </div>
     </div>
 </nav>

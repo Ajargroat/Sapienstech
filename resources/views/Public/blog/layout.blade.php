@@ -40,6 +40,8 @@
     @include('partials.theme-vars')
 </head>
 <body class="landing">
+    @include('partials.color-scheme', ['schemeKey' => 'public-color-scheme'])
+
     @include('partials.preview-banner')
 
     <div class="lp-ground" aria-hidden="true"></div>

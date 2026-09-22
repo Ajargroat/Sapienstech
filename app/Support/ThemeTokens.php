@@ -243,6 +243,7 @@ final class ThemeTokens
         self::brand($t);
         self::i18n($t);
         self::accessibility($t);
+        self::schemes($t);
 
         $t['schemes'] ??= [];
         $t['vars'] = self::toVars($t);
@@ -286,12 +287,29 @@ final class ThemeTokens
      */
     public static function schemeVars(array $t): array
     {
-        $out = [];
+        $out  = [];
+        $base = $t['colors'] ?? [];
+
+        // Which derived values are auto-derived from the base primitives vs
+        // tenant-set? An auto-derived one must be recomputed from each
+        // scheme's own ink — merging overrides into the finished palette
+        // would otherwise freeze the base scheme's muted/border/glass into
+        // every other scheme (invisible text on dark backgrounds). A value a
+        // tenant explicitly configured is honoured as-is in every scheme.
+        $auto = self::derivedColors($base);
 
         foreach (($t['schemes'] ?? []) as $scheme => $overrides) {
+            $colors = [];
+            foreach ($base as $key => $value) {
+                if ($value === null || (isset($auto[$key]) && $value === $auto[$key])) {
+                    continue; // unset or auto-derived: this scheme's ink decides
+                }
+                $colors[$key] = $value;
+            }
+
             $out[$scheme] = array_filter(
                 self::resolve([
-                    'colors' => array_replace($t['colors'] ?? [], is_array($overrides) ? $overrides : []),
+                    'colors' => array_replace($colors, is_array($overrides) ? $overrides : []),
                 ])['vars'],
                 static fn (string $name): bool => str_starts_with($name, 'c-'),
                 ARRAY_FILTER_USE_KEY
@@ -323,21 +341,25 @@ final class ThemeTokens
     // =========================================================================
 
     /**
-     * Fills every unset color from the primitives (primary, secondary,
-     * background, text, surface_alt) using color-mix(), so hovers, borders,
-     * glass tints and muted text stay correct in light *and* dark schemes
-     * without a tenant restating them.
+     * The derived-colour formulas, shared by the base palette and every
+     * declared scheme: given a colours array whose primitives may be present,
+     * returns every key that should follow that palette's own ink/ground.
+     * Kept as a pure function so schemeVars() can tell "auto-derived" apart
+     * from "tenant-set" — the former re-derives per scheme, the latter is
+     * honoured verbatim.
+     *
+     * @param  array<string, mixed>  $c
+     * @return array<string, string> derived key => formula value
      */
-    private static function colors(array &$t): void
+    private static function derivedColors(array $c): array
     {
-        $c   = $t['colors'] ?? [];
         $p   = $c['primary']     ?? '#06B6D4';
         $s   = $c['secondary']   ?? '#A855F7';
         $bg  = $c['background']  ?? '#000000';
         $ink = $c['text']        ?? '#FFFFFF';
         $alt = $c['surface_alt'] ?? '#1A1A1A';
 
-        $derived = [
+        return [
             'heading'              => $ink,
             'link'                 => $p,
             'primary_hover'        => "color-mix(in oklab, {$p} 85%, black)",
@@ -357,8 +379,19 @@ final class ThemeTokens
             'selection_background' => $p,
             'selection_text'       => self::readableOn($p),
         ];
+    }
 
-        foreach ($derived as $key => $value) {
+    /**
+     * Fills every unset color from the primitives (primary, secondary,
+     * background, text, surface_alt) using color-mix(), so hovers, borders,
+     * glass tints and muted text stay correct in light *and* dark schemes
+     * without a tenant restating them.
+     */
+    private static function colors(array &$t): void
+    {
+        $c = $t['colors'] ?? [];
+
+        foreach (self::derivedColors($c) as $key => $value) {
             if (($c[$key] ?? null) === null) {
                 $c[$key] = $value;
             }
@@ -390,9 +423,10 @@ final class ThemeTokens
         // theme that omits `background` derives fine here but then trips an
         // undefined-key read in effects() and gradients(), which both consume
         // the finished palette.
-        foreach (['primary' => $p, 'secondary' => $s, 'background' => $bg, 'text' => $ink, 'surface_alt' => $alt] as $key => $value) {
+        foreach (['primary', 'secondary', 'background', 'text', 'surface_alt'] as $key) {
             if (($c[$key] ?? null) === null) {
-                $c[$key] = $value;
+                // Re-read the default the derivation itself fell back to.
+                $c[$key] = ['primary' => '#06B6D4', 'secondary' => '#A855F7', 'background' => '#000000', 'text' => '#FFFFFF', 'surface_alt' => '#1A1A1A'][$key];
             }
         }
 
@@ -734,6 +768,42 @@ final class ThemeTokens
             'calendar'    => 'gregorian',
             'date_format' => 'Y-m-d',
         ]);
+    }
+
+    /**
+     * The colour schemes a visitor may occupy, and the one they start in.
+     *
+     * The scheme a page boots with used to be hardcoded to 'dark' in
+     * partials/color-scheme, which broke every tenant whose *base* palette is
+     * light (the paper-bodied editorial archetypes): booting on 'dark' with no
+     * `schemes.dark` declaration meant both destinations resolved to the same
+     * paper palette, so the toggle visibly did nothing.
+     *
+     * `theme.schemes` is now the enumeration itself — a name with no overrides
+     * is simply "the base palette under a name", which is what the implicit
+     * default is. `scheme_names` is the ordered destination list the toggle
+     * cycles, and `default_scheme` is where a first-time visitor starts.
+     */
+    private static function schemes(array &$t): void
+    {
+        $schemes = is_array($t['schemes'] ?? null) ? $t['schemes'] : [];
+
+        $default = $t['default_scheme'] ?? null;
+
+        if (! is_string($default) || $default === '') {
+            // Tenants predating this token wrote a dark base palette and zero
+            // or one alternate scheme; booting on 'dark' keeps them unchanged.
+            $default = 'dark';
+        }
+
+        // The default is always a real destination, declared or not: a tenant
+        // that only names `schemes.light` still legitimately switches back to
+        // its unnamed base palette.
+        $names = array_values(array_unique(array_merge([$default], array_keys($schemes))));
+
+        $t['schemes']        = $schemes;
+        $t['default_scheme'] = $default;
+        $t['scheme_names']   = $names;
     }
 
     private static function accessibility(array &$t): void

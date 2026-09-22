@@ -51,6 +51,7 @@
     @endif
 </head>
 <body class="landing">
+    @include('partials.color-scheme', ['schemeKey' => 'public-color-scheme'])
 
     @include('partials.preview-banner')
 

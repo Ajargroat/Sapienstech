@@ -241,6 +241,14 @@ a {
   display: none;
 }
 
+/* A tenant that declares no alternate scheme has nowhere to toggle to, so the
+   control hides itself instead of offering a no-op. The count comes from the
+   resolved config (data-scheme-count on <html>/<body>). */
+[data-scheme-count="0"] .theme-toggle,
+[data-scheme-count="1"] .theme-toggle {
+  display: none;
+}
+
 [data-color-scheme="light"] .theme-toggle .fa-sun {
   display: inline;
 }
@@ -2791,6 +2799,14 @@ body.landing ::selection { background: var(--c-selection-bg); color: var(--c-sel
 }
 .site-nav__links a { transition: color var(--animation-duration); }
 .site-nav__links a:hover { color: var(--c-text); }
+
+/* Right-hand cluster: colour-scheme toggle + login CTA. */
+.site-nav__actions {
+  display: flex;
+  align-items: center;
+  gap: .625rem;
+  flex: 0 0 auto;
+}
 @media (min-width: 768px) { .site-nav__links { display: flex; } }
 
 /* Nav link hover treatment — public.nav.links_style. */

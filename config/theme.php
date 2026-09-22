@@ -404,6 +404,11 @@ return [
         // palette that used to be hardcoded in partials/color-scheme.blade.php,
         // so a tenant's light mode is now theirs. Only the tokens listed here
         // change; everything derived recomputes from them.
+        //
+        // A declared name with no overrides is "the base palette, under that
+        // name" — which is exactly what the implicit `default_scheme` already
+        // is. A tenant whose base palette is light (the paper archetypes) names
+        // it here so booting on 'dark' cannot land on an undeclared palette.
         'schemes' => [
             'light' => [
                 'background'       => '#F6F7FB',
@@ -412,7 +417,27 @@ return [
                 'surface_elevated' => '#FFFFFF',
                 'text'             => '#111827',
             ],
+            // Declared so the toggle's 'dark' destination is always a real,
+            // validated palette. Mirrors the baseline primitives (the platform
+            // default IS dark), so a tenant that adds a light scheme without
+            // declaring dark still boots and toggles onto the platform palette.
+            'dark' => [
+                'background'       => '#000000',
+                'surface'          => '#111111',
+                'surface_alt'      => '#1A1A1A',
+                'surface_elevated' => '#1A1A1A',
+                'text'             => '#FFFFFF',
+                'primary'          => '#06B6D4',
+                'secondary'        => '#A855F7',
+            ],
         ],
+
+        // Which scheme a first-time visitor boots in. Deliberately 'dark' in the
+        // baseline: the platform default palette is a dark one, so this keeps
+        // every existing tenant unchanged. A tenant whose base palette is light
+        // sets `default_scheme => 'light'` and lends its `schemes.dark` the
+        // dark palette, so the toggle has two real destinations.
+        'default_scheme' => 'dark',
 
         // Escape hatch for one-off requests. Appended verbatim to :root.
         // Admin-only: never expose this field to a tenant-facing UI.
@@ -790,6 +815,11 @@ return [
                 'variant' => 'default',              // default | inline-divider | band
                 'id'      => 'stats',
                 'columns' => 4,
+                // manual = the `value` below; roster = the tenant's own live
+                // count for `key` (see App\Support\TenantRoster). A row whose
+                // metric resolves to zero is dropped, so a metric a tenant's
+                // data does not support never renders an empty "۰".
+                'source'  => 'manual',               // manual | roster
                 'items' => [
                     ['value' => 0, 'suffix' => '+', 'label' => 'دانش‌آموز فعال', 'gradient' => false, 'visible' => true],
                 ],
@@ -849,6 +879,36 @@ return [
                 'heading' => null,
                 'variant' => 'default',
                 'items'   => [],   // ['name' => '', 'image' => null, 'visible' => true]
+            ],
+
+            // Faculty / staff roster. `source => roster` reads the tenant's own
+            // teachers (school) or consultants (consultancy) through
+            // App\Support\TenantRoster, so the section is live data rather than
+            // a copy of it; `items` is the manual fallback for a tenant whose
+            // staff are not provisioned as users.
+            'faculty' => [
+                'id'         => 'faculty',
+                'variant'    => 'default',
+                'source'     => 'roster',            // roster | items
+                'heading'    => 'کادر آموزشی',
+                'subheading' => null,
+                'columns'    => 3,
+                'limit'      => 12,
+                'show_bio'   => true,
+                'items'      => [],   // ['name' => '', 'subject' => '', 'bio' => '', 'visible' => true]
+            ],
+
+            // Classrooms by grade. `source => roster` reads the tenant's real
+            // classrooms and their student counts; a consultancy has none, so
+            // the section drops off its page entirely.
+            'classrooms' => [
+                'id'         => 'classrooms',
+                'variant'    => 'default',
+                'source'     => 'roster',            // roster | items
+                'heading'    => 'کلاس‌ها',
+                'subheading' => null,
+                'columns'    => 3,
+                'items'      => [],   // ['grade' => '', 'name' => '', 'students' => 0, 'visible' => true]
             ],
 
             // Numbered how-it-works timeline.

@@ -71,18 +71,15 @@ return [
             ],
             'stat_size' => 'clamp(2rem, 4vw, 3rem)',
         ],
-        // Warm-paper light scheme to match the editorial ground. Same
-        // ink-on-paper contrast as the archetype itself.
-        'schemes' => [
-            'light' => [
-                'background'       => '#FAF6EF',
-                'surface'          => '#FFFFFF',
-                'surface_alt'      => '#F0EADC',
-                'surface_elevated' => '#FFFFFF',
-                'text'             => '#1A1C19',
-            ],
-            'stat_size' => 'clamp(2rem, 4vw, 3rem)',
-        ],
+
+        // The base palette is warm paper, so the page boots LIGHT and the
+        // toggle offers the dark reading of the same paper stock. Declaring
+        // `default_scheme` is what makes the toggle real: before this, the
+        // control started on a hardcoded 'dark' that had no `schemes.dark`
+        // declaration, so both destinations resolved to the paper palette and
+        // tapping it appeared to do nothing.
+        'default_scheme' => 'light',
+
         // Warm-paper light scheme to match the editorial ground. Same
         // ink-on-paper contrast as the archetype itself.
         'schemes' => [
@@ -92,6 +89,21 @@ return [
                 'surface_alt'      => '#F3EFE7',
                 'surface_elevated' => '#FFFFFF',
                 'text'             => '#14161A',
+            ],
+            // The dark half: the same warm ink stock, inverted. Only the six
+            // primitives are named; borders, glass, muted text and shadows all
+            // recompute from them (ThemeTokens::colors), so nothing here can
+            // drift from the light palette.
+            'dark' => [
+                'background'       => '#191714',
+                'surface'          => '#211E1A',
+                'surface_alt'      => '#2A2621',
+                'surface_elevated' => '#2A2621',
+                'text'             => '#F5F0E6',
+                // The brand ink is too dark to read on a dark ground, so the
+                // accent roles lighten while keeping their hue.
+                'primary'          => '#9DB8DC',
+                'secondary'        => '#E8A45C',
             ],
         ],
     ],
@@ -109,7 +121,8 @@ return [
             'links' => [
                 ['label' => 'درباره ما',      'href' => '#about',   'visible' => true],
                 ['label' => 'مسیر ثبت‌نام',   'href' => '#process', 'visible' => true],
-                ['label' => 'دبیران',         'href' => '#blocks',  'visible' => true],
+                ['label' => 'دبیران',         'href' => '#faculty', 'visible' => true],
+                ['label' => 'کلاس‌ها',        'href' => '#classrooms', 'visible' => true],
                 ['label' => 'وبلاگ',          'href' => '#blog',    'visible' => true],
             ],
             'cta' => [
@@ -128,27 +141,34 @@ return [
 
             // Editorial lineup: trust bar + process replace the ecosystem
             // orbit; teachers get a free-composition strip of their own.
-            'sections' => ['hero', 'stats', 'logos', 'advisor', 'process', 'services', 'testimonials', 'faq', 'blocks', 'blog', 'cta'],
+            // Faculty and classrooms read the tenant's live hierarchy via
+            // TenantRoster: teachers for a school, consultants for a
+            // consultancy. Sections with no data drop off the page.
+            'sections' => ['hero', 'stats', 'logos', 'advisor', 'process', 'services', 'faculty', 'classrooms', 'testimonials', 'faq', 'blog', 'cta'],
 
             'hero' => [
                 'title_line1' => 'یادگیری و رشد در کنار هم',
                 'title_line2' => 'مؤسسه معین',
-                'subtitle' => 'مدرسه متوسطه اول؛ پایه‌های هفتم تا نهم، کلاس‌های الف، ب و ج و همراهی دبیران متخصص در هر درس. اطلاعات این صفحه نمونه است.',
+                'subtitle' => 'مدرسه متوسطه اول؛ پایه‌های هفتم تا نهم، کلاس‌های الف، ب و ج و همراهی دبیران متخصص در هر درس.',
                 'eyebrow' => 'مدرسه متوسطه اول · ثبت‌نام سال تحصیلی جدید',
                 'media' => 'none', // typographic hero; no photo asset shipped
                 'buttons' => [
                     ['label' => 'آشنایی با مسیر ثبت‌نام', 'href' => '#process',  'style' => 'primary', 'icon' => 'arrow-down', 'visible' => true],
-                    ['label' => 'آشنایی با دبیران',       'href' => '#blocks',   'style' => 'ghost',   'icon' => 'arrow',      'visible' => true],
+                    ['label' => 'آشنایی با دبیران',       'href' => '#faculty',  'style' => 'ghost',   'icon' => 'arrow',      'visible' => true],
                 ],
             ],
 
             'stats' => [
                 'variant' => 'inline-divider',
+                // Roster-driven: values resolve from the tenant's own users,
+                // classrooms and grades at request time. No deploy needed when
+                // a teacher joins or a class opens — the page just updates.
+                'source' => 'roster',
                 'items' => [
-                    ['value' => 45, 'suffix' => '', 'label' => 'دانش‌آموز نمونه', 'gradient' => false, 'visible' => true],
-                    ['value' => 9,  'suffix' => '', 'label' => 'کلاس فعال',      'gradient' => false, 'visible' => true],
-                    ['value' => 9,  'suffix' => '', 'label' => 'دبیر نمونه',     'gradient' => false, 'visible' => true],
-                    ['value' => 3,  'suffix' => '', 'label' => 'پایه تحصیلی',    'gradient' => false, 'visible' => true],
+                    ['key' => 'students',   'label' => 'دانش‌آموز',     'suffix' => '', 'gradient' => false, 'visible' => true],
+                    ['key' => 'classrooms', 'label' => 'کلاس فعال',    'suffix' => '', 'gradient' => false, 'visible' => true],
+                    ['key' => 'staff',      'label' => 'دبیر متخصص',   'suffix' => '', 'gradient' => false, 'visible' => true],
+                    ['key' => 'grades',     'label' => 'پایه تحصیلی',  'suffix' => '', 'gradient' => false, 'visible' => true],
                 ],
             ],
 
@@ -170,11 +190,11 @@ return [
                 'name' => 'مریم فرهمند',
                 'tagline' => 'مدیر مدرسه و همراه خانواده‌ها',
                 'badge' => ['label' => 'ثبت‌نام سال تحصیلی جدید', 'visible' => true],
-                'bio' => 'در مدرسه معین، مدیر و دبیران با همکاری یکدیگر رشد تحصیلی و فردی هر دانش‌آموز را دنبال می‌کنند؛ از کلاس‌بندی دقیق تا گزارش مستمر به خانواده‌ها. این معرفی برای نمایش سامانه تهیه شده است.',
+                'bio' => 'در مدرسه معین، مدیر و دبیران با همکاری یکدیگر رشد تحصیلی و فردی هر دانش‌آموز را دنبال می‌کنند؛ از کلاس‌بندی دقیق تا گزارش مستمر به خانواده‌ها.',
                 'stats' => [
                     ['value' => '۹',  'label' => 'کلاس در سه پایه'],
                     ['value' => '۹',  'label' => 'دبیر متخصص'],
-                    ['value' => '۴۵', 'label' => 'دانش‌آموز نمونه'],
+                    ['value' => '۴۵', 'label' => 'دانش‌آموز'],
                 ],
                 'buttons' => [
                     ['label' => 'مشاهده مسیر ثبت‌نام', 'href' => '#process', 'style' => 'primary', 'visible' => true],
@@ -244,21 +264,23 @@ return [
                 ],
             ],
 
-            // Free-composition strip: the teaching staff, by name — straight
-            // from the dashboard roster. No code involved, pure config blocks.
-            'blocks' => [
-                'items' => [
-                    ['type' => 'heading', 'title' => 'دبیران مؤسسه معین', 'text' => 'متخصص هر درس، همراه هر کلاس؛ همان دبیرانی که هر روز در پنل می‌بینید.', 'align' => 'center', 'visible' => true],
-                    ['type' => 'card', 'title' => 'علی رضایی · ریاضی', 'text' => 'آموزش مفهومی ریاضی با مسئله‌های روزمره و بازی‌های فکری.', 'fa_icon' => 'fa-solid fa-shapes', 'accent' => 'primary', 'visible' => true],
-                    ['type' => 'card', 'title' => 'نرگس احمدی · علوم تجربی', 'text' => 'یادگیری علوم با آزمایش‌های ساده و مشاهده طبیعت.', 'fa_icon' => 'fa-solid fa-bolt', 'accent' => 'accent_teal', 'visible' => true],
-                    ['type' => 'card', 'title' => 'رضا کریمی · فارسی', 'text' => 'علاقه‌مند به داستان‌خوانی، نگارش خلاق و ادبیات نوجوان.', 'fa_icon' => 'fa-solid fa-feather-pointed', 'accent' => 'secondary', 'visible' => true],
-                    ['type' => 'card', 'title' => 'سارا محمدی · زبان انگلیسی', 'text' => 'تمرین مکالمه و واژگان با داستان و فعالیت گروهی.', 'fa_icon' => 'fa-solid fa-language', 'accent' => 'accent_blue', 'visible' => true],
-                    ['type' => 'card', 'title' => 'حسین موسوی · عربی', 'text' => 'آموزش واژگان و درک متن عربی با تمرین‌های کوتاه و پیوسته.', 'fa_icon' => 'fa-solid fa-book-open', 'accent' => 'accent_amber', 'visible' => true],
-                    ['type' => 'card', 'title' => 'الهام نادری · مطالعات اجتماعی', 'text' => 'پیوند تاریخ و جغرافیا با پروژه‌های محلی و مسئولیت اجتماعی.', 'fa_icon' => 'fa-solid fa-globe', 'accent' => 'accent_rose', 'visible' => true],
-                    ['type' => 'text', 'text' => 'فیزیک، زیست‌شناسی و شیمی هر پایه نیز با دبیران متخصص خود و فعالیت‌های مشاهده‌محور متناسب با متوسطه اول برگزار می‌شود.', 'align' => 'center', 'visible' => true],
-                    ['type' => 'button', 'title' => 'مشاهده مسیر ثبت‌نام', 'href' => '#process', 'style' => 'primary', 'icon' => 'arrow-down', 'visible' => true],
-                    ['type' => 'divider', 'visible' => true],
-                ],
+            // The teaching staff, by name — resolved live from the dashboard
+            // roster (TenantRoster::staff), not hand-written cards. Subjects
+            // come from each teacher's real classroom assignments.
+            'faculty' => [
+                'columns' => 3,
+                'limit' => 9,
+                'show_bio' => true,
+                'heading' => 'دبیران مؤسسه معین',
+                'subheading' => 'متخصص هر درس، همراه هر کلاس؛ همان دبیرانی که هر روز در پنل می‌بینید.',
+            ],
+
+            // Classrooms by grade, read from the tenant's own hierarchy with
+            // live student counts per room (TenantRoster::classrooms).
+            'classrooms' => [
+                'columns' => 3,
+                'heading' => 'کلاس‌های مدرسه',
+                'subheading' => 'سه پایه، سه کلاس در هر پایه؛ کلاس‌های کم‌جمعیت برای توجه بیشتر به هر دانش‌آموز.',
             ],
 
             'blog' => [
@@ -293,7 +315,7 @@ return [
                 ['title' => 'مدرسه', 'links' => [
                     ['label' => 'درباره ما',      'href' => '#about'],
                     ['label' => 'مسیر ثبت‌نام',  'href' => '#process'],
-                    ['label' => 'دبیران',        'href' => '#blocks'],
+                    ['label' => 'دبیران',        'href' => '#faculty'],
                     ['label' => 'وبلاگ مدرسه',   'href' => '#blog'],
                 ]],
                 ['title' => 'همراهان', 'links' => [
