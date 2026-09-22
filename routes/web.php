@@ -196,6 +196,15 @@ Route::middleware('auth')->prefix('consultant')->name('consultant.')->group(func
         Route::post('{deal}/remind', [ConsultantDealController::class, 'remind'])->name('remind');
     });
 
+    /*
+    | Notification center — the topnav bell. Panels land pre-filtered (due,
+    | receipts, reminders); everything deal-related flows here instead of a
+    | dead dropdown. Gated by the same `deals` flag.
+    */
+    Route::get('notifications', [ConsultantDealController::class, 'notifications'])
+        ->middleware('consultant.feature:deals')
+        ->name('notifications');
+
     Route::get('/permissions', [ConsultantFeatureController::class, 'show'])->defaults('feature', 'permissions')->middleware('consultant.feature:book_access')->name('permissions');
     Route::get('/questions', [ConsultantFeatureController::class, 'show'])->defaults('feature', 'questions')->middleware('consultant.feature:question_management')->name('questions');
     Route::get('/quizzes', [ConsultantFeatureController::class, 'show'])->defaults('feature', 'quizzes')->middleware('consultant.feature:quiz_management')->name('quizzes');
@@ -348,9 +357,23 @@ Route::middleware('auth:student')->prefix('student')->name('student.')->group(fu
         Route::get('/', [StudentDealController::class, 'index'])->name('index');
         Route::post('{deal}/decision', [StudentDealController::class, 'decide'])->name('decide');
         Route::post('{deal}/payments', [StudentDealController::class, 'submitPayment'])->name('payments.store');
-        Route::post('notifications/{notification}/read', [StudentDealController::class, 'readNotification'])->name('notifications.read');
-        Route::post('notifications/read-all', [StudentDealController::class, 'readAll'])->name('notifications.readAll');
+        Route::post('{deal}/pay-online', [StudentDealController::class, 'payOnline'])->name('payments.online');
     });
+
+    /*
+    | Notification center — the student portal's bell. The deal feed moved
+    | here from the deals page; mark-read endpoints stay so the same page can
+    | clear items inline. Gated by the `deals` flag that produces them.
+    */
+    Route::get('notifications', [StudentDealController::class, 'notifications'])
+        ->middleware('student.feature:deals')
+        ->name('notifications');
+    Route::post('notifications/{notification}/read', [StudentDealController::class, 'readNotification'])
+        ->middleware('student.feature:deals')
+        ->name('notifications.read');
+    Route::post('notifications/read-all', [StudentDealController::class, 'readAll'])
+        ->middleware('student.feature:deals')
+        ->name('notifications.readAll');
 
     Route::get('timetable', [StudentTimetableController::class, 'index'])
         ->middleware('student.feature:student_timetable')

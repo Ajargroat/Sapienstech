@@ -6435,3 +6435,467 @@ button.teacher-class-row:hover {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* ==========================================================================
+   Notification center (topnav bell) + deal renewal (تمدید و پرداخت)
+   ========================================================================== */
+
+/* Bell + dropdown ------------------------------------------------------- */
+.topnav-notif { position: relative; }
+
+.topnav-notif .topnav-icon-btn { position: relative; }
+
+.topnav-notif-badge {
+  position: absolute;
+  top: -4px;
+  inset-inline-end: -4px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--c-on-primary, #fff);
+  background: var(--c-danger, #F87171);
+  border: 2px solid var(--c-surface, transparent);
+  pointer-events: none;
+}
+
+.notif-panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  inset-inline-end: 0;
+  width: min(340px, calc(100vw - 32px));
+  border-radius: 16px;
+  border: 1px solid var(--c-border);
+  background: var(--c-surface, #fff);
+  box-shadow: 0 18px 48px -12px rgb(0 0 0 / .28);
+  overflow: hidden;
+  z-index: 60;
+}
+
+.notif-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--c-border);
+  font-size: 13px;
+}
+
+.notif-panel-head a {
+  color: var(--c-primary);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.notif-panel-body { max-height: 320px; overflow-y: auto; }
+
+.notif-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: var(--c-text);
+  text-decoration: none;
+  border-bottom: 1px solid var(--c-border);
+  transition: background 140ms ease;
+}
+
+.notif-item:last-child { border-bottom: 0; }
+.notif-item:hover { background: color-mix(in srgb, var(--c-text) 5%, transparent); }
+
+.notif-item i { flex-shrink: 0; margin-top: 2px; color: var(--c-muted); }
+.notif-item--unread i { color: var(--c-primary); }
+
+.notif-item span { min-width: 0; }
+.notif-item small { display: block; margin-top: 2px; color: var(--c-muted); font-size: 11px; }
+
+.notif-empty {
+  padding: 24px 16px;
+  text-align: center;
+  color: var(--c-muted);
+  font-size: 13px;
+}
+
+.notif-empty i { display: block; font-size: 18px; margin-bottom: 6px; }
+
+/* Deal stats (demo's hero stats) ---------------------------------------- */
+.deal-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.deal-stat {
+  border: 1px solid var(--c-border);
+  border-radius: 18px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.deal-stat-lbl {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--c-muted);
+}
+
+.deal-stat-num { font-size: 22px; font-weight: 800; }
+.deal-stat-num small { font-size: 12px; font-weight: 500; color: var(--c-muted); }
+
+.deal-stat--due .deal-stat-num { color: var(--c-danger, #F87171); }
+.deal-stat--pending .deal-stat-num { color: var(--c-warning, #FBBF24); }
+.deal-stat--money .deal-stat-num { color: var(--c-success, #34D399); }
+
+/* Consultant cards (demo's «مشاوران») ------------------------------------ */
+.deal-consultant-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.deal-con-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1.4fr) repeat(3, auto) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--c-border);
+  border-radius: 18px;
+  text-decoration: none;
+  color: var(--c-text);
+  transition: border-color 160ms ease, background 160ms ease;
+}
+
+.deal-con-card:hover {
+  border-color: color-mix(in srgb, var(--c-primary) 40%, transparent);
+  background: color-mix(in srgb, var(--c-primary) 4%, transparent);
+}
+
+.deal-ava {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 17px;
+  color: #04211f;
+  flex-shrink: 0;
+}
+
+.deal-ava--sm { width: 36px; height: 36px; border-radius: 11px; font-size: 14px; }
+
+.deal-hue-1 { background: linear-gradient(135deg, #7dd3fc, #38bdf8); }
+.deal-hue-2 { background: linear-gradient(135deg, #fcd34d, #f59e0b); }
+.deal-hue-3 { background: linear-gradient(135deg, #86efac, #34d399); }
+.deal-hue-4 { background: linear-gradient(135deg, #fda4af, #fb7185); }
+.deal-hue-5 { background: linear-gradient(135deg, #c4b5fd, #a78bfa); }
+.deal-hue-6 { background: linear-gradient(135deg, #5eead4, #2dd4bf); }
+
+.deal-con-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.deal-con-info b { font-size: 14px; }
+.deal-con-info small { font-size: 11px; color: var(--c-muted); }
+
+.deal-metric { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.deal-metric i { font-style: normal; font-size: 17px; font-weight: 800; }
+.deal-metric small { font-size: 10px; color: var(--c-muted); }
+.deal-metric--warn i { color: var(--c-danger, #F87171); }
+.deal-metric--ok i { color: var(--c-success, #34D399); }
+
+.deal-mix { display: flex; flex-direction: column; gap: 5px; min-width: 90px; }
+.deal-mixbar {
+  display: flex;
+  height: 6px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--c-text) 8%, transparent);
+}
+.deal-mixbar i { display: block; height: 100%; }
+.deal-mixbar .a { background: var(--c-success, #34D399); }
+.deal-mixbar .b { background: var(--c-warning, #FBBF24); }
+.deal-mixbar .c { background: var(--c-danger, #F87171); }
+.deal-mix-lbl { font-size: 10px; color: var(--c-muted); }
+
+.deal-go { color: var(--c-muted); font-size: 13px; }
+.deal-con-card:hover .deal-go { color: var(--c-primary); }
+
+/* Due rows (demo's «سررسیدهای تمدید») ------------------------------------- */
+.deal-due-list { display: flex; flex-direction: column; gap: 8px; }
+
+.deal-due-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1.4fr) auto auto auto auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--c-border);
+  border-radius: 14px;
+  background: none;
+  color: var(--c-text);
+  text-align: start;
+  cursor: pointer;
+  font: inherit;
+  transition: background 140ms ease;
+}
+
+.deal-due-row:hover { background: color-mix(in srgb, var(--c-text) 4%, transparent); }
+
+.deal-due-name { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.deal-due-name b { font-size: 13px; }
+.deal-due-name small { font-size: 11px; color: var(--c-muted); }
+
+.deal-con-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  background: color-mix(in srgb, var(--c-text) 6%, transparent);
+  color: var(--c-muted);
+}
+
+.deal-due-date {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--c-muted);
+}
+
+/* Sent messages (demo's «پیام‌های ارسالی») -------------------------------- */
+.deal-msg-list { display: flex; flex-direction: column; gap: 4px; }
+
+.deal-msg {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 4px;
+  border-bottom: 1px solid var(--c-border);
+}
+
+.deal-msg:last-child { border-bottom: 0; }
+
+.deal-ch-ic {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  font-size: 13px;
+}
+
+.deal-ch-ic--sms {
+  color: var(--c-primary);
+  background: color-mix(in srgb, var(--c-primary) 10%, transparent);
+}
+
+.deal-msg-body { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+
+.deal-msg-to { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; }
+
+.deal-who {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--c-primary);
+  background: color-mix(in srgb, var(--c-primary) 10%, transparent);
+}
+
+.deal-msg-cnt { font-size: 11px; color: var(--c-muted); }
+.deal-msg-text { font-size: 12px; color: var(--c-muted); line-height: 1.7; }
+
+
+.deal-msg-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 11px; color: var(--c-muted); }
+
+.deal-msg-tag {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--c-text) 6%, transparent);
+}
+
+.deal-msg-ok { display: inline-flex; align-items: center; gap: 4px; color: var(--c-success, #34D399); }
+.deal-msg-queue { display: inline-flex; align-items: center; gap: 4px; }
+
+/* Chips (demo's quick filters) */
+.deal-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+
+.deal-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--c-border);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--c-muted);
+  text-decoration: none;
+  transition: all 150ms ease;
+}
+
+.deal-chip:hover { color: var(--c-text); border-color: color-mix(in srgb, var(--c-text) 30%, transparent); }
+
+.deal-chip.on {
+  color: var(--c-on-primary, #fff);
+  background: var(--c-primary);
+  border-color: transparent;
+}
+
+.deal-chip i {
+  font-style: normal;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  font-weight: 800;
+  background: color-mix(in srgb, var(--c-text) 8%, transparent);
+}
+
+.deal-chip.on i { background: rgb(0 0 0 / .2); }
+
+/* Confirm action */
+.icon-action--confirm:hover {
+  color: var(--c-success, #34D399);
+  background: color-mix(in srgb, var(--c-success, #34D399) 12%, transparent);
+}
+
+/* Drawer (demo's per-deal detail) */
+.deal-drawer-back {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / .45);
+  opacity: 0;
+  transition: opacity 240ms ease;
+  z-index: 70;
+}
+
+.deal-drawer-back.show { opacity: 1; }
+
+.deal-drawer {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  inset-inline-end: 0;
+  width: min(420px, 100vw);
+  background: var(--c-surface, #fff);
+  border-inline-start: 1px solid var(--c-border);
+  padding: 24px;
+  overflow-y: auto;
+  transform: translateX(-100%);
+  transition: transform 260ms cubic-bezier(.2, .8, .2, 1);
+  z-index: 71;
+}
+
+[dir="ltr"] .deal-drawer { transform: translateX(100%); }
+.deal-drawer.open { transform: translateX(0); }
+
+.deal-drawer-close {
+  position: absolute;
+  top: 16px;
+  inset-inline-start: 16px;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: 1px solid var(--c-border);
+  background: none;
+  color: var(--c-muted);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.deal-drawer-close:hover { color: var(--c-text); }
+
+.deal-drawer-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-inline-start: 40px;
+}
+
+.deal-drawer-head h3 { margin: 0; font-size: 17px; }
+.deal-drawer-head p { margin: 4px 0 0; font-size: 12px; color: var(--c-muted); }
+
+.deal-drawer-sec { padding: 18px 0; border-bottom: 1px solid var(--c-border); }
+
+.deal-drawer-status { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.deal-drawer-due { font-size: 12px; color: var(--c-muted); }
+.deal-drawer-due b { color: var(--c-text); }
+
+.deal-prog-wrap { margin-top: 12px; }
+.deal-prog-lbl { display: flex; justify-content: space-between; font-size: 11px; color: var(--c-muted); margin-bottom: 6px; }
+
+.deal-prog {
+  height: 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--c-text) 8%, transparent);
+  overflow: hidden;
+}
+
+.deal-prog i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--c-primary), var(--c-warning, #FBBF24));
+  transition: width 600ms cubic-bezier(.2, .8, .2, 1);
+}
+
+.deal-drawer-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.deal-drawer-item small { display: block; font-size: 10px; color: var(--c-muted); margin-bottom: 3px; }
+.deal-drawer-item b { font-size: 13px; }
+
+.deal-drawer-acts { display: flex; gap: 8px; }
+
+.deal-hist-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--c-border);
+}
+
+.deal-hist-item:last-child { border-bottom: 0; }
+.deal-hist-item p { margin: 0; font-size: 12px; line-height: 1.7; }
+.deal-hist-item small { font-size: 10px; color: var(--c-muted); }
+
+/* Responsive */
+@media (max-width: 1080px) {
+  .deal-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .deal-consultant-grid { grid-template-columns: 1fr; }
+  .deal-con-card { grid-template-columns: auto minmax(0, 1fr) auto auto; }
+  .deal-con-card .deal-mix,
+  .deal-con-card .deal-go { display: none; }
+  .deal-due-row { grid-template-columns: auto minmax(0, 1fr) auto auto; }
+  .deal-due-row .deal-con-tag,
+  .deal-due-row .deal-go { display: none; }
+}
+
+@media (max-width: 640px) {
+  .deal-due-row { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .deal-due-row .deal-due-date { display: none; }
+  .deal-drawer { width: 100vw; }
+  .notif-panel { position: fixed; top: 64px; inset-inline: 16px; width: auto; }
+}

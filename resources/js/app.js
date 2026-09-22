@@ -14,6 +14,32 @@ document.addEventListener('click', (event) => {
 });
 
 /*
+ * Topnav notification bell (consultant + student shells): a lightweight
+ * dropdown toggled from #topnav-notif-btn, closing on outside click or
+ * Escape. Delegated at document level so it survives page-router swaps.
+ */
+document.addEventListener('click', (event) => {
+    const btn = event.target.closest?.('#topnav-notif-btn');
+    const panel = document.getElementById('topnav-notif-panel');
+    if (!panel) return;
+
+    if (btn) {
+        panel.hidden = !panel.hidden;
+        return;
+    }
+
+    if (!event.target.closest?.('.topnav-notif')) {
+        panel.hidden = true;
+    }
+});
+
+document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    const panel = document.getElementById('topnav-notif-panel');
+    if (panel) panel.hidden = true;
+});
+
+/*
  * Upload tiles (consultant/partials/upload-tile): the native file input is
  * a transparent layer over the dashed box, so echo the picked file's name
  * into the tile's text line and mark the box as filled. Delegated at

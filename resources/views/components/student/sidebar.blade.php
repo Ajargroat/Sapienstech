@@ -82,6 +82,33 @@
     </nav>
 
     <div class="sidebar-user topnav-user">
+        @if(site('features.deals', false) && \Illuminate\Support\Facades\Route::has('student.notifications'))
+            @php
+                $notifs = \App\Models\DealNotification::query()
+                    ->where('student_id', auth('student')->id())
+                    ->orderByRaw('read_at is null desc')
+                    ->orderByDesc('created_at')
+                    ->limit(1)
+                    ->get();
+                $notifUnread = \App\Models\DealNotification::query()
+                    ->where('student_id', auth('student')->id())
+                    ->whereNull('read_at')
+                    ->count();
+            @endphp
+            <a
+                href="{{ route('student.notifications') }}"
+                class="topnav-icon-btn {{ request()->routeIs('student.notifications') ? 'active' : '' }}"
+                title="اطلاعیه‌ها"
+                aria-label="اطلاعیه‌ها"
+                @if(request()->routeIs('student.notifications')) aria-current="page" @endif
+            >
+                <i class="fas fa-bell"></i>
+                @if($notifUnread)
+                    <span class="topnav-notif-badge">{{ persian_digits($notifUnread) }}</span>
+                @endif
+            </a>
+        @endif
+
         <button
             type="button"
             id="theme-toggle-btn"

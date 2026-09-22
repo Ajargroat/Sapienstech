@@ -1,6 +1,6 @@
 {
   "lucide": {
-    "mapped": 174,
+    "mapped": 177,
     "fallback": [],
     "icons": {
       "align-center": "text-align-center",
@@ -43,6 +43,9 @@
       "circle": "circle",
       "circle-check": "circle-check",
       "circle-exclamation": "circle-alert",
+      "triangle-exclamation": "triangle-alert",
+      "coins": "coins",
+      "bell-slash": "bell-off",
       "circle-info": "info",
       "circle-question": "circle-question-mark",
       "circle-xmark": "circle-x",
@@ -180,7 +183,7 @@
     }
   },
   "tabler": {
-    "mapped": 174,
+    "mapped": 177,
     "fallback": [],
     "icons": {
       "align-center": "align-center",
@@ -223,6 +226,9 @@
       "circle": "circle",
       "circle-check": "circle-check",
       "circle-exclamation": "exclamation-circle",
+      "triangle-exclamation": "alert-triangle",
+      "coins": "coins",
+      "bell-slash": "bell-off",
       "circle-info": "info-circle",
       "circle-question": "help-circle",
       "circle-xmark": "circle-x",
@@ -360,7 +366,7 @@
     }
   },
   "bi": {
-    "mapped": 174,
+    "mapped": 177,
     "fallback": [],
     "icons": {
       "align-center": "text-center",
@@ -403,6 +409,9 @@
       "circle": "circle",
       "circle-check": "check-circle",
       "circle-exclamation": "exclamation-circle",
+      "triangle-exclamation": "exclamation-triangle",
+      "coins": "coin",
+      "bell-slash": "bell-slash",
       "circle-info": "info-circle",
       "circle-question": "question-circle",
       "circle-xmark": "x-circle",
@@ -540,7 +549,7 @@
     }
   },
   "la": {
-    "mapped": 174,
+    "mapped": 177,
     "fallback": [],
     "icons": {
       "align-center": "align-center",
@@ -583,6 +592,9 @@
       "circle": "circle",
       "circle-check": "check-circle",
       "circle-exclamation": "exclamation-circle",
+      "triangle-exclamation": "exclamation-triangle",
+      "coins": "coins",
+      "bell-slash": "bell-slash",
       "circle-info": "info-circle",
       "circle-question": "question-circle",
       "circle-xmark": "times-circle",

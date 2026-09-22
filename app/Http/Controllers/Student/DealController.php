@@ -84,6 +84,21 @@ class DealController extends Controller
         return back()->with('status', 'رسید شما ثبت شد و در انتظار تأیید مجموعه است.');
     }
 
+    /**
+     * Simulated online payment: the stand-in gateway. The receipt is issued
+     * and auto-approved in one step (DealService::payOnline), so the period
+     * renews immediately — the real PSP callback replaces this server-side.
+     */
+    public function payOnline(Request $request, StudentDeal $deal)
+    {
+        $student = $request->user('student');
+        $this->authorizeDeal($student, $deal);
+
+        DealService::payOnline($deal);
+
+        return back()->with('status', 'پرداخت با موفقیت انجام شد و دورهٔ شما تمدید گردید.');
+    }
+
     public function readNotification(Request $request, DealNotification $notification)
     {
         $student = $request->user('student');
@@ -108,6 +123,33 @@ class DealController extends Controller
             ->update(['read_at' => now()]);
 
         return back()->with('status', 'همهٔ اطلاعیه‌ها خوانده شد.');
+    }
+
+    /**
+     * The bell's notification center: the full deal feed (reminders, decision
+     * confirmations, payment outcomes) that used to live on the deals page.
+     */
+    public function notifications(Request $request): View
+    {
+        $student = $request->user('student');
+
+        DealService::notifyDueForStudent($student);
+
+        $notifications = DealNotification::query()
+            ->where('student_id', $student->id)
+            ->with('deal:id,ends_on,amount,decision')
+            ->orderByRaw('read_at is null desc')
+            ->orderByDesc('created_at')
+            ->paginate(20);
+
+        return view('student.notifications', [
+            'student' => $student,
+            'notifications' => $notifications,
+            'unread' => DealNotification::query()
+                ->where('student_id', $student->id)
+                ->whereNull('read_at')
+                ->count(),
+        ]);
     }
 
     /** Bindings resolve before the tenant middleware; verify ownership here. */

@@ -519,7 +519,7 @@ class StudentDealTest extends TestCase
 
         $notification = DealNotification::query()->sole();
         $this->actingAs($student, 'student')
-            ->post($this->url($tenant, '/student/deals/notifications/'.$notification->id.'/read'))
+            ->post($this->url($tenant, '/student/notifications/'.$notification->id.'/read'))
             ->assertRedirect();
         $this->assertNotNull($notification->fresh()->read_at);
     }

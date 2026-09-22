@@ -94,6 +94,53 @@ class DealService
         });
     }
 
+    /**
+     * The tenant's built-in simulated gateway. Same guards as the real
+     * (bank-transfer) path, but the receipt is issued and auto-approved in
+     * one step — the period renews immediately, no owner verification.
+     * A stand-in until the server-side gateway lands; swap the body for the
+     * real PSP callback flow when it does.
+     */
+    public static function payOnline(StudentDeal $deal): DealPayment
+    {
+        return DB::transaction(function () use ($deal) {
+            $deal = StudentDeal::query()->whereKey($deal->id)->lockForUpdate()->firstOrFail();
+            self::assertDecidable($deal);
+
+            if ($deal->decision !== StudentDeal::DECISION_CONTINUE) {
+                throw ValidationException::withMessages([
+                    'payment' => 'برای پرداخت ابتدا باید ادامهٔ دوره را انتخاب کنید.',
+                ]);
+            }
+
+            $pending = DealPayment::query()
+                ->where('deal_id', $deal->id)
+                ->where('status', DealPayment::STATUS_PENDING)
+                ->lockForUpdate()
+                ->first();
+
+            if ($pending) {
+                throw ValidationException::withMessages([
+                    'payment' => 'شما یک رسید در انتظار بررسی دارید؛ لطفاً منتظر تأیید بمانید.',
+                ]);
+            }
+
+            $payment = DealPayment::create([
+                'tenant_id' => $deal->tenant_id,
+                'deal_id' => $deal->id,
+                'student_id' => $deal->student_id,
+                'amount' => $deal->amount,
+                'currency' => $deal->currency,
+                'reference' => sprintf('SIM-%s-%06d', now()->format('Ymd'), random_int(0, 999999)),
+                'status' => DealPayment::STATUS_PENDING,
+            ]);
+
+            self::reviewPayment($payment, DealPayment::STATUS_PAID, 'درگاه آزمایشی (شبیه‌سازی)');
+
+            return $payment;
+        });
+    }
+
     /** Student submits the bank-transfer reference; amount is copied from the deal. */
     public static function submitPayment(StudentDeal $deal, string $reference): DealPayment
     {
@@ -145,10 +192,11 @@ class DealService
     /**
      * Owner verification. Rejecting only closes the receipt; approving also
      * renews: paid + renewed_at + the next deal in one transaction.
+     * `$reviewer` is null for system-side approvals (the simulated gateway).
      *
      * @return StudentDeal|null the opened next period when approved, else null
      */
-    public static function reviewPayment(DealPayment $payment, string $status, ?string $note, User $reviewer): ?StudentDeal
+    public static function reviewPayment(DealPayment $payment, string $status, ?string $note, ?User $reviewer = null): ?StudentDeal
     {
         if (! in_array($status, [DealPayment::STATUS_PAID, DealPayment::STATUS_REJECTED], true)) {
             throw ValidationException::withMessages(['status' => 'وضعیت بررسی نامعتبر است.']);
@@ -166,7 +214,7 @@ class DealService
             if ($status === DealPayment::STATUS_REJECTED) {
                 $payment->forceFill([
                     'status' => DealPayment::STATUS_REJECTED,
-                    'reviewed_by' => $reviewer->id,
+                    'reviewed_by' => $reviewer?->id,
                     'reviewed_at' => now(),
                     'review_note' => $note,
                 ])->save();
@@ -192,7 +240,7 @@ class DealService
 
             $payment->forceFill([
                 'status' => DealPayment::STATUS_PAID,
-                'reviewed_by' => $reviewer->id,
+                'reviewed_by' => $reviewer?->id,
                 'reviewed_at' => now(),
                 'review_note' => $note,
             ])->save();
@@ -210,7 +258,7 @@ class DealService
                 'currency' => $deal->currency,
                 'period_days' => $deal->period_days,
                 'decision' => StudentDeal::DECISION_PENDING,
-                'created_by' => $reviewer->id,
+                'created_by' => $reviewer?->id,
             ]);
 
             self::notifyPayment($deal, 'پرداخت شما تأیید شد و دوره تمدید گردید.');

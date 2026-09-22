@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Consultant;
 
 use App\Http\Controllers\Controller;
+use App\Models\DealNotification;
 use App\Models\DealPayment;
 use App\Models\Student;
 use App\Models\StudentDeal;
@@ -114,10 +115,74 @@ class DealController extends Controller
                 ->get()
             : collect();
 
+        // The demo's «سررسیدهای تمدید» view: every open deal in (or past) the
+        // decision window, most overdue first, across the whole roster.
+        $dueDeals = StudentDeal::query()
+            ->whereNull('renewed_at')
+            ->where('decision', '!=', StudentDeal::DECISION_WITHDRAW)
+            ->whereDate('ends_on', '<=', $today->copy()->addDays(DealService::WINDOW_DAYS))
+            ->with(['student:id,tenant_id,name,grade,major', 'consultant:id,name'])
+            ->orderBy('ends_on')
+            ->limit(30)
+            ->get();
+
+        // Sent reminders (demo's «پیام‌های ارسالی»): what was nudged, to whom,
+        // when — and whether the student has seen it yet.
+        $reminders = DealNotification::query()
+            ->where('kind', DealNotification::KIND_REMINDER)
+            ->with(['student:id,tenant_id,name', 'deal:id,ends_on'])
+            ->latest('id')
+            ->limit(40)
+            ->get();
+
+        // Demo's consultant cards: one row per consultant with their open-deal
+        // rollup; each row drills into the filtered list below.
+        $consultantGroups = $consultants->map(function (User $consultant) use ($today) {
+            $open = StudentDeal::query()
+                ->where('consultant_id', $consultant->id)
+                ->whereNull('renewed_at');
+
+            $deals = (clone $open)
+                ->with(['student:id,tenant_id,name,grade,major', 'payments' => fn ($q) => $q->latest('id')])
+                ->orderBy('ends_on')
+                ->get();
+
+            $withdrawn = $deals->where('decision', StudentDeal::DECISION_WITHDRAW);
+            $active = $deals->where('decision', '!=', StudentDeal::DECISION_WITHDRAW);
+            $due = $active->filter(fn ($deal) => $deal->daysLeft($today) <= 0);
+            $soon = $active->filter(fn ($deal) => ($left = $deal->daysLeft($today)) > 0 && $left <= DealService::WINDOW_DAYS);
+
+            return [
+                'consultant' => $consultant,
+                'deals' => $deals,
+                'total' => $deals->count(),
+                'due' => $due->count(),
+                'soon' => $soon->count(),
+                'ok' => $active->count() - $due->count() - $soon->count(),
+                'withdrawn' => $withdrawn->count(),
+                'revenue' => (int) $active->sum('amount'),
+            ];
+        })->filter(fn ($group) => $group['total'] > 0)->values();
+
+        // Bell dropdown: pending receipts (owner) plus deals already overdue.
+        $overdueDeals = StudentDeal::query()
+            ->whereNull('renewed_at')
+            ->where('decision', '!=', StudentDeal::DECISION_WITHDRAW)
+            ->whereDate('ends_on', '<', $today)
+            ->with(['student:id,tenant_id,name', 'consultant:id,name'])
+            ->orderBy('ends_on')
+            ->limit(12)
+            ->get();
+
         return view('consultant.deals', [
             'deals' => $deals,
             'summary' => $summary,
             'pendingPayments' => $pendingPayments,
+            'dueDeals' => $dueDeals,
+            'reminders' => $reminders,
+            'consultantGroups' => $consultantGroups,
+            'notifCount' => $pendingPayments->count() + $overdueDeals->count(),
+            'overdueDeals' => $overdueDeals,
             'students' => $students,
             'consultants' => $consultants,
             'canManage' => $user->isTenantAdmin(),
@@ -208,5 +273,46 @@ class DealController extends Controller
         return back()->with('status', $next
             ? 'پرداخت تأیید شد و دورهٔ جدید آغاز گردید.'
             : 'پرداخت رد شد.');
+    }
+
+    /**
+     * The bell's notification center: everything deal-related that needs the
+     * tenant's attention — receipts awaiting verification (owner only), deals
+     * in/past the decision window, and the sent-reminder log.
+     */
+    public function notifications(Request $request): View
+    {
+        $user = $request->user();
+        $today = Carbon::today();
+
+        $pendingPayments = $user->isTenantAdmin()
+            ? DealPayment::query()
+                ->where('status', DealPayment::STATUS_PENDING)
+                ->with(['deal:id,tenant_id,student_id,ends_on', 'deal.student:id,tenant_id,name'])
+                ->orderBy('id')
+                ->get()
+            : collect();
+
+        $dueDeals = StudentDeal::query()
+            ->whereNull('renewed_at')
+            ->where('decision', '!=', StudentDeal::DECISION_WITHDRAW)
+            ->whereDate('ends_on', '<=', $today->copy()->addDays(DealService::WINDOW_DAYS))
+            ->with(['student:id,tenant_id,name,grade,major', 'consultant:id,name'])
+            ->orderBy('ends_on')
+            ->paginate(20);
+
+        $reminders = DealNotification::query()
+            ->where('kind', DealNotification::KIND_REMINDER)
+            ->with(['student:id,tenant_id,name', 'deal:id,ends_on'])
+            ->latest('id')
+            ->limit(40)
+            ->get();
+
+        return view('consultant.notifications', [
+            'pendingPayments' => $pendingPayments,
+            'dueDeals' => $dueDeals,
+            'reminders' => $reminders,
+            'canManage' => $user->isTenantAdmin(),
+        ]);
     }
 }

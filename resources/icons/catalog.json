@@ -246,6 +246,24 @@
       "bi": "exclamation-circle",
       "la": "exclamation-circle"
     },
+    "triangle-exclamation": {
+      "lucide": "triangle-alert",
+      "tabler": "alert-triangle",
+      "bi": "exclamation-triangle",
+      "la": "exclamation-triangle"
+    },
+    "coins": {
+      "lucide": "coins",
+      "tabler": "coins",
+      "bi": "coin",
+      "la": "coins"
+    },
+    "bell-slash": {
+      "lucide": "bell-off",
+      "tabler": "bell-off",
+      "bi": "bell-slash",
+      "la": "bell-slash"
+    },
     "circle-info": {
       "lucide": "info",
       "tabler": "info-circle",

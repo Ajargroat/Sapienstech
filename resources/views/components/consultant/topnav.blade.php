@@ -82,14 +82,75 @@
             </form>
             @endif
 
-            <button
-                type="button"
-                class="topnav-icon-btn"
-                title="اطلاعیه‌ها"
-                aria-label="اطلاعیه‌ها"
-            >
-                <i class="fas fa-bell"></i>
-            </button>
+            @if(site('features.deals', false) && \Illuminate\Support\Facades\Route::has('consultant.notifications'))
+                @php
+                    $notifDue = \App\Models\StudentDeal::query()
+                        ->whereNull('renewed_at')
+                        ->where('decision', '!=', \App\Models\StudentDeal::DECISION_WITHDRAW)
+                        ->whereDate('ends_on', '<', \Illuminate\Support\Carbon::today())
+                        ->with(['student:id,tenant_id,name', 'consultant:id,name'])
+                        ->orderBy('ends_on')
+                        ->limit(6)
+                        ->get();
+                    $notifPayments = auth()->user()?->isTenantAdmin()
+                        ? \App\Models\DealPayment::query()
+                            ->where('status', \App\Models\DealPayment::STATUS_PENDING)
+                            ->with('deal.student:id,tenant_id,name')
+                            ->latest('id')
+                            ->limit(6)
+                            ->get()
+                        : collect();
+                    $notifCount = $notifDue->count() + $notifPayments->count();
+                @endphp
+                <div class="topnav-notif">
+                    <button
+                        type="button"
+                        class="topnav-icon-btn"
+                        id="topnav-notif-btn"
+                        title="اطلاعیه‌ها"
+                        aria-label="اطلاعیه‌ها"
+                        aria-haspopup="true"
+                    >
+                        <i class="fas fa-bell"></i>
+                        @if($notifCount)
+                            <span class="topnav-notif-badge">{{ persian_digits($notifCount) }}</span>
+                        @endif
+                    </button>
+                    <div class="notif-panel" id="topnav-notif-panel" hidden>
+                        <div class="notif-panel-head">
+                            <b>اطلاعیه‌ها</b>
+                            <a href="{{ route('consultant.notifications') }}" data-router="off">مشاهدهٔ همه</a>
+                        </div>
+                        <div class="notif-panel-body">
+                            @forelse($notifPayments as $payment)
+                                <a href="{{ route('consultant.deals.index', ['status' => 'pending']) }}" class="notif-item" data-router="off">
+                                    <i class="fas fa-sack-dollar"></i>
+                                    <span>
+                                        رسید در انتظار تأیید — <b>{{ $payment->deal->student->name ?? '—' }}</b>
+                                        <small>{{ persian_digits(number_format($payment->amount)) }} تومان</small>
+                                    </span>
+                                </a>
+                            @empty
+                            @endforelse
+                            @foreach($notifDue as $deal)
+                                <a href="{{ route('consultant.deals.index', ['status' => 'due']) }}" class="notif-item" data-router="off">
+                                    <i class="fas fa-triangle-exclamation"></i>
+                                    <span>
+                                        سررسید گذشته — <b>{{ $deal->student->name }}</b>
+                                        <small>{{ persian_digits($deal->ends_on->format('Y/m/d')) }}@if($deal->consultant) · {{ $deal->consultant->name }}@endif</small>
+                                    </span>
+                                </a>
+                            @endforeach
+                            @if($notifCount === 0)
+                                <div class="notif-empty">
+                                    <i class="fas fa-check-circle"></i>
+                                    اطلاعیهٔ جدیدی نیست.
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            @endif
         </div>
     </div>
 </header>

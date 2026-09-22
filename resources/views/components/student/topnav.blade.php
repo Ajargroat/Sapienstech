@@ -72,6 +72,58 @@
         </nav>
 
         <div class="topnav-user">
+            @if(site('features.deals', false) && \Illuminate\Support\Facades\Route::has('student.notifications'))
+                @php
+                    $notifs = \App\Models\DealNotification::query()
+                        ->where('student_id', auth('student')->id())
+                        ->with('deal:id,ends_on')
+                        ->orderByRaw('read_at is null desc')
+                        ->orderByDesc('created_at')
+                        ->limit(8)
+                        ->get();
+                    $notifUnread = $notifs->whereNull('read_at')->count();
+                @endphp
+                <div class="topnav-notif">
+                    <button
+                        type="button"
+                        class="topnav-icon-btn"
+                        id="topnav-notif-btn"
+                        title="اطلاعیه‌ها"
+                        aria-label="اطلاعیه‌ها"
+                        aria-haspopup="true"
+                    >
+                        <i class="fas fa-bell"></i>
+                        @if($notifUnread)
+                            <span class="topnav-notif-badge">{{ persian_digits($notifUnread) }}</span>
+                        @endif
+                    </button>
+                    <div class="notif-panel" id="topnav-notif-panel" hidden>
+                        <div class="notif-panel-head">
+                            <b>اطلاعیه‌ها</b>
+                            <a href="{{ route('student.notifications') }}" data-router="off">مشاهدهٔ همه</a>
+                        </div>
+                        <div class="notif-panel-body">
+                            @forelse($notifs as $notification)
+                                <a href="{{ route('student.notifications') }}" class="notif-item {{ $notification->read_at ? '' : 'notif-item--unread' }}" data-router="off">
+                                    @if($notification->kind === 'payment')<i class="fas fa-sack-dollar"></i>
+                                    @elseif($notification->kind === 'decision')<i class="fas fa-comment"></i>
+                                    @else <i class="fas fa-bell"></i> @endif
+                                    <span>
+                                        {{ \Illuminate\Support\Str::limit($notification->message, 72) }}
+                                        <small>{{ persian_digits($notification->created_at->format('Y/m/d H:i')) }}</small>
+                                    </span>
+                                </a>
+                            @empty
+                                <div class="notif-empty">
+                                    <i class="fas fa-bell-slash"></i>
+                                    اطلاعیه‌ای نیست.
+                                </div>
+                            @endforelse
+                        </div>
+                    </div>
+                </div>
+            @endif
+
             <button
                 type="button"
                 id="theme-toggle-btn"

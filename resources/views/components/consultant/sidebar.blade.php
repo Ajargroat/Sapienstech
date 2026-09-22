@@ -88,13 +88,30 @@
         </form>
         @endif
 
-        <button
-            type="button"
-            class="topnav-icon-btn"
-            title="اطلاعیه‌ها"
-            aria-label="اطلاعیه‌ها"
-        >
-            <i class="fas fa-bell"></i>
-        </button>
+        @if(site('features.deals', false) && \Illuminate\Support\Facades\Route::has('consultant.notifications'))
+            @php
+                $notifDueCount = \App\Models\StudentDeal::query()
+                    ->whereNull('renewed_at')
+                    ->where('decision', '!=', \App\Models\StudentDeal::DECISION_WITHDRAW)
+                    ->whereDate('ends_on', '<', \Illuminate\Support\Carbon::today())
+                    ->count();
+                $notifPaymentCount = auth()->user()?->isTenantAdmin()
+                    ? \App\Models\DealPayment::query()->where('status', \App\Models\DealPayment::STATUS_PENDING)->count()
+                    : 0;
+                $notifCount = $notifDueCount + $notifPaymentCount;
+            @endphp
+            <a
+                href="{{ route('consultant.notifications') }}"
+                class="topnav-icon-btn {{ request()->routeIs('consultant.notifications') ? 'active' : '' }}"
+                title="اطلاعیه‌ها"
+                aria-label="اطلاعیه‌ها"
+                @if(request()->routeIs('consultant.notifications')) aria-current="page" @endif
+            >
+                <i class="fas fa-bell"></i>
+                @if($notifCount)
+                    <span class="topnav-notif-badge">{{ persian_digits($notifCount) }}</span>
+                @endif
+            </a>
+        @endif
     </div>
 </aside>

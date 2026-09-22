@@ -28,24 +28,50 @@ return [
                 'icons' => ['set' => 'lucide'], // Choices: resources/icons/catalog.json
 
         /*
-        | Colors. Primitives (primary/secondary/background/…) inherit from the
-        | archetype; these are the semantic overrides and the extended accent
-        | palette that items[].accent / from / to can now name.
+        | Colors — the "neon garden" palette: emerald + gold on a deep green-
+        | black, so جنت reads as its own brand instead of the default cyan/
+        | violet platform identity. Derived tokens (hovers, borders, glass,
+        | on_primary…) all recompute from these primitives in ThemeTokens.
+        | The accent palette is retuned to the same warm story so every
+        | items[].accent / from / to below lands in-family.
         */
         'colors' => [
-            'heading' => null,      // null = derive from text (see ThemeTokens)
-            'link'    => '#22D3EE', // footer/nav link hover colour
+            'primary'    => '#34D399', // emerald
+            'secondary'  => '#F59E0B', // gold
+            'background' => '#04120C', // deep garden green-black
+            'surface'    => '#0A1F16',
+            'surface_alt'=> '#0F2A1E',
+            'text'       => '#F2FBF6',
+            'link'       => '#6EE7B7', // footer/nav link hover colour
+            'danger'     => '#F87171',
+
+            // Accents retuned: cool cyans/blues/violets move to greens,
+            // golds and corals so the bento + masonry gradients stay on-brand.
+            'accent_blue'    => '#7DD3FC',
+            'accent_emerald' => '#34D399',
+            'accent_orange'  => '#FB923C',
+            'accent_teal'    => '#2DD4BF',
+            'accent_red'     => '#F87171',
+            'accent_violet'  => '#C4B5FD',
+            'accent_pink'    => '#F9A8D4',
+            'accent_lime'    => '#BEF264',
+            'accent_cyan'    => '#67E8F9',
+            'accent_amber'   => '#FBBF24',
+            'accent_rose'    => '#FDA4AF',
         ],
 
         /*
         | Typography. Tighter headings, balanced wrapping, bigger stat numbers.
+        | Vazirmatn ExtraBold carries the display voice — the only bundled
+        | family, so weight does the work a display face would do elsewhere.
         */
         'typography' => [
             // Uses the platform's local Vazirmatn face; no remote stylesheet.
             'font_family' => 'Vazirmatn, sans-serif',
             'font_heading' => 'Vazirmatn, sans-serif',
             'font_button' => 'Vazirmatn, sans-serif',
-            'heading_line_height' => '1.3',
+            'heading_weight' => '900',
+            'heading_line_height' => '1.25',
             'heading_balance'     => 'balance',
             'stat_size'           => 'clamp(2.5rem, 5.5vw, 3.75rem)',
         ],
@@ -53,14 +79,26 @@ return [
         /*
         | Motion identity: a different reveal, a different card hover, an
         | animated hero headline, a scroll-progress bar and pointer tilt.
+        | The aurora ground drifts behind everything.
         */
         'motion' => [
             'reveal'          => 'rise',
-            'hover'           => 'shadow-grow',
+            'hover'           => 'glow',
             'text_effect'     => 'gradient-shift',
             'scroll_progress' => true,
             'marquee_pause'   => true,
             'tilt'            => true,
+            'parallax'        => 'subtle',
+        ],
+
+        /*
+        | Page ground: aurora instead of the archetype's hand-placed glow
+        | blobs — three large radial washes (emerald, gold, teal) behind the
+        | whole page, so the brand reads even between sections. Glow blobs
+        | stay scoped to the hero/advisor/cta where the archetype put them.
+        */
+        'background' => [
+            'mode' => 'aurora',
         ],
 
         /*
@@ -178,19 +216,19 @@ return [
                 'items' => [
                     [
                         'icon' => 'fa-solid fa-bolt',
-                        'accent' => 'accent-cyan',
+                        'accent' => 'accent-emerald',
                         'title' => 'مشاوره هوشمند',
                         'text' => 'تحلیل لحظه‌ای وضعیت تحصیلی و ارائه پیشنهادات هوشمندانه برای بهبود راندمان.',
                     ],
                     [
                         'icon' => 'fa-solid fa-calendar-days',
-                        'accent' => 'accent-violet',
+                        'accent' => 'accent-amber',
                         'title' => 'برنامه‌ریزی شخصی',
                         'text' => 'تولید برنامه مطالعاتی دینامیک بر اساس اهداف، زمان خالی و سرعت یادگیری شما.',
                     ],
                     [
                         'icon' => 'fa-solid fa-chart-line',
-                        'accent' => 'accent-blue',
+                        'accent' => 'accent-teal',
                         'title' => 'تحلیل عملکرد',
                         'text' => 'نمودارهای پیشرفته و داشبورد مدیریتی برای رصد دقیق پیشرفت تحصیلی.',
                     ],
@@ -208,7 +246,7 @@ return [
                     ],
                     [
                         'icon' => 'fa-solid fa-robot',
-                        'accent' => 'accent-rose',
+                        'accent' => 'accent-orange',
                         'title' => 'دستیار هوش مصنوعی',
                         'text' => 'پاسخگویی ۲۴ ساعته به سوالات درسی و رفع اشکالات توسط دستیار اختصاصی.',
                     ],
@@ -256,8 +294,8 @@ return [
                         'initials' => 'ع.ر',
                         'name' => 'علی رضایی',
                         'result' => 'رتبه ۱۵۲ کنکور ریاضی',
-                        'from' => 'accent-blue',
-                        'to' => 'accent-violet',
+                        'from' => 'accent-teal',
+                        'to' => 'accent-lime',
                         'text' => '«دستیار هوش مصنوعی و تحلیل‌های دقیق نموداری به من کمک کرد تا نقاط ضعفم را در دروس اختصاصی پیدا کنم. برنامه‌ریزی‌ها کاملا منطبق بر توانایی من بود.»',
                         'visible' => true,
                     ],
@@ -275,7 +313,7 @@ return [
                         'name' => 'امیرحسین کریمی',
                         'result' => 'رتبه ۸۷ کنکور انسانی',
                         'from' => 'accent-emerald',
-                        'to' => 'accent-teal',
+                        'to' => 'accent-lime',
                         'text' => '«لذت‌بخش‌ترین قسمت برای من رابط کاربری مینیمال و بدون حواس‌پرتی پلتفرم بود. همه چیز سر جای خودش قرار داشت و سرعت پیشرفتم دو برابر شد.»',
                         'visible' => true,
                     ],

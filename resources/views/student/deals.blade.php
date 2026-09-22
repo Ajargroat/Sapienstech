@@ -9,29 +9,25 @@
     - «ادامهٔ دوره» / «انصراف» — the decision, changeable until the period is
       renewed; withdrawing cancels a pending receipt but keeps access until
       ends_on (DealService::decide).
-    - A transfer-reference form — students pay by bank transfer and submit the
-      tracking reference; the tenant owner verifies the deposit in the panel
-      (DealService::submitPayment / reviewPayment). No online gateway here.
+    - Payment: either the transfer-reference form (bank transfer, verified by
+      the owner) or the built-in simulated gateway (auto-approves; stand-in
+      until the server-side PSP lands).
 
-    Below, the persisted notification feed (deal_notifications): scheduler
-    reminders, decision confirmations and payment outcomes, with mark-read.
+    The notification feed lives on its own page now (student.notifications),
+    reached from the topnav bell.
 --}}
 @extends('layouts.student')
 
 @section('content')
-<div class="student-welcome">
-    <section class="student-profile-head">
-        <span class="student-avatar-lg">{{ mb_substr($student->name, 0, 1) }}</span>
-        <div>
-            <h2>دوره‌های مشاورهٔ من</h2>
-            <span class="student-email">در پایان هر دوره می‌توانید ادامهٔ مسیر یا انصراف را همین‌جا انتخاب کنید.</span>
-        </div>
-    </section>
-</div>
-
 @if(session('status'))
-    <div class="mt-4 rounded-2xl border border-[var(--c-border)] p-3 text-sm" style="color:var(--c-success,#34D399)">
+    <div class="rounded-2xl border border-[var(--c-border)] p-3 text-sm" style="color:var(--c-success,#34D399)">
         {{ session('status') }}
+    </div>
+@endif
+
+@if($errors->any())
+    <div class="mt-3 rounded-2xl border border-[var(--c-border)] p-3 text-sm" style="color:var(--c-danger,#F87171)">
+        <i class="fas fa-exclamation-circle" aria-hidden="true"></i> {{ $errors->first() }}
     </div>
 @endif
 
@@ -45,7 +41,6 @@
     <section class="panel student-panel">
         <header class="student-panel-head">
             <h2><i class="fas fa-file-invoice"></i> دوره‌های فعال</h2>
-            <span class="count-badge">{{ persian_digits($activeDeals->count()) }} دوره</span>
         </header>
 
         @forelse($activeDeals as $deal)
@@ -125,7 +120,22 @@
                                     رسید قبلی تأیید نشد@if($rejected->review_note): {{ $rejected->review_note }}@endif. می‌توانید رسید دیگری ثبت کنید.
                                 </div>
                             @endif
-                            <form method="POST" action="{{ route('student.deals.payments.store', $deal) }}" class="mt-3 flex flex-wrap items-center gap-2" data-router="off">
+
+                            {{-- Simulated gateway: auto-approves, renews immediately. --}}
+                            <form method="POST" action="{{ route('student.deals.payments.online', $deal) }}" class="mt-3" data-router="off"
+                                  onsubmit="return confirm('پرداخت آزمایشی انجام و دوره بلافاصله تمدید شود؟');">
+                                @csrf
+                                <button type="submit" class="rounded-xl px-4 py-2 text-sm font-bold"
+                                        style="background:var(--c-primary);color:var(--c-on-primary,#fff)">
+                                    <i class="fas fa-bolt"></i> پرداخت آنلاین (آزمایشی)
+                                </button>
+                            </form>
+                            <p class="mt-1 text-xs text-[var(--c-muted)]">درگاه شبیه‌سازی‌شدهٔ مجموعه است؛ رسید صادر و بلافاصله تأیید می‌شود و دوره تمدید می‌گردد.</p>
+
+                            <div class="mt-4 border-t border-[var(--c-border)] pt-3 text-xs text-[var(--c-muted)]">
+                                یا با کارت‌به‌کارت واریز کنید و شمارهٔ پیگیری را ثبت کنید:
+                            </div>
+                            <form method="POST" action="{{ route('student.deals.payments.store', $deal) }}" class="mt-2 flex flex-wrap items-center gap-2" data-router="off">
                                 @csrf
                                 <input type="text" name="reference" required minlength="4" maxlength="120"
                                        placeholder="شماره پیگیری واریز"
@@ -135,7 +145,7 @@
                                     <i class="fas fa-sack-dollar"></i> ثبت رسید پرداخت
                                 </button>
                             </form>
-                            <p class="mt-1 text-xs text-[var(--c-muted)]">پرداخت به‌صورت کارت‌به‌کارت انجام می‌شود؛ پس از ثبت، مجموعه واریزی را بررسی و تمدید را تأیید می‌کند.</p>
+                            <p class="mt-1 text-xs text-[var(--c-muted)]">پرداخت کارت‌به‌کارت پس از بررسی مجموعه تأیید می‌شود.</p>
                         @endif
                     @endif
                 @else
@@ -159,12 +169,12 @@
     </section>
 
     {{-- Renewed history ------------------------------------------------ --}}
-    @if($deals->getCollection()->whereNotNull('renewed_at')->isNotEmpty())
+    @if($renewedDeals->isNotEmpty())
         <section class="panel student-panel">
             <header class="student-panel-head">
                 <h2><i class="fas fa-redo"></i> دوره‌های تمدیدشده</h2>
             </header>
-            @foreach($deals->getCollection()->whereNotNull('renewed_at') as $deal)
+            @foreach($renewedDeals as $deal)
                 <div class="flex flex-wrap items-center justify-between gap-2 py-3 text-sm">
                     <span>
                         <i class="fas fa-check-circle" style="color:var(--c-success,#34D399)"></i>
@@ -176,49 +186,5 @@
             @endforeach
         </section>
     @endif
-
-    {{-- Notifications -------------------------------------------------- --}}
-    <section class="panel student-panel">
-        <header class="student-panel-head">
-            <h2><i class="fas fa-bell"></i> اطلاعیه‌ها</h2>
-            <span class="count-badge">
-                @if($unread)
-                    {{ persian_digits($unread) }} خوانده‌نشده
-                    <form method="POST" action="{{ route('student.deals.notifications.readAll') }}" class="inline" data-router="off">
-                        @csrf
-                        <button type="submit" class="count-badge count-badge--link">خواندن همه</button>
-                    </form>
-                @endif
-            </span>
-        </header>
-
-        @forelse($notifications as $notification)
-            <div class="flex items-start justify-between gap-3 border-b border-[var(--c-border)] py-3 text-sm last:border-0 {{ $notification->read_at ? 'opacity-60' : 'font-bold' }}">
-                <span>
-                    @if($notification->kind === 'reminder')<i class="fas fa-bell"></i>
-                    @elseif($notification->kind === 'payment') <i class="fas fa-sack-dollar"></i>
-                    @else <i class="fas fa-comment"></i> @endif
-                    {{ $notification->message }}
-                    <span class="block text-xs font-normal text-[var(--c-muted)]">
-                        {{ persian_digits($notification->created_at->format('Y/m/d H:i')) }}
-                    </span>
-                </span>
-                @if($notification->isUnread())
-                    <form method="POST" action="{{ route('student.deals.notifications.read', $notification) }}" data-router="off">
-                        @csrf
-                        <button type="submit" class="icon-action" title="خوانده شد">
-                            <i class="fas fa-check-circle"></i>
-                        </button>
-                    </form>
-                @endif
-            </div>
-        @empty
-            <div class="empty-state empty-state--compact">
-                <i class="fas fa-bell"></i>
-                <h3>اطلاعیه‌ای نیست</h3>
-                <p>یادآوری‌های پایان دوره و نتیجهٔ بررسی پرداخت‌ها اینجا نمایش داده می‌شود.</p>
-            </div>
-        @endforelse
-    </section>
 </div>
 @endsection

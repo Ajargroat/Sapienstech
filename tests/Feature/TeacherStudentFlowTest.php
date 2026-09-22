@@ -10,7 +10,7 @@ use App\Models\Student;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Support\TenantUploads;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
@@ -22,7 +22,7 @@ use Tests\TestCase;
  */
 class TeacherStudentFlowTest extends TestCase
 {
-    use DatabaseTransactions;
+    use RefreshDatabase;
 
     private const HOST = 'flow.test';
 
