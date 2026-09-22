@@ -1,6 +1,6 @@
 {
   "lucide": {
-    "mapped": 177,
+    "mapped": 178,
     "fallback": [],
     "icons": {
       "align-center": "text-align-center",
@@ -68,6 +68,7 @@
       "face-smile": "smile",
       "feather-pointed": "feather",
       "file": "file",
+      "file-csv": "file-spreadsheet",
       "file-invoice": "receipt",
       "file-lines": "file-text",
       "file-pdf": "file-type",
@@ -183,7 +184,7 @@
     }
   },
   "tabler": {
-    "mapped": 177,
+    "mapped": 178,
     "fallback": [],
     "icons": {
       "align-center": "align-center",
@@ -251,6 +252,7 @@
       "face-smile": "mood-smile",
       "feather-pointed": "feather",
       "file": "file",
+      "file-csv": "file-type-csv",
       "file-invoice": "receipt",
       "file-lines": "file-text",
       "file-pdf": "file-type-pdf",
@@ -366,7 +368,7 @@
     }
   },
   "bi": {
-    "mapped": 177,
+    "mapped": 178,
     "fallback": [],
     "icons": {
       "align-center": "text-center",
@@ -434,6 +436,7 @@
       "face-smile": "emoji-smile",
       "feather-pointed": "feather",
       "file": "file",
+      "file-csv": "filetype-csv",
       "file-invoice": "receipt",
       "file-lines": "file-text",
       "file-pdf": "file-earmark-pdf",
@@ -549,7 +552,7 @@
     }
   },
   "la": {
-    "mapped": 177,
+    "mapped": 178,
     "fallback": [],
     "icons": {
       "align-center": "align-center",
@@ -617,6 +620,7 @@
       "face-smile": "smile",
       "feather-pointed": "feather",
       "file": "file",
+      "file-csv": "file-csv",
       "file-invoice": "file-invoice",
       "file-lines": "file-alt",
       "file-pdf": "file-pdf",

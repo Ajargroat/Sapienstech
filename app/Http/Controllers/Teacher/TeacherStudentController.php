@@ -59,6 +59,9 @@ class TeacherStudentController extends Controller
 
         $assignments = $teacher->assignments()
             ->where(fn ($q) => $q->whereNull('grade')->orWhere('grade', $student->grade))
+            ->where(fn ($q) => $q
+                ->whereNull('classroom_id')
+                ->orWhereIn('classroom_id', $student->classrooms()->select('classrooms.id')))
             ->with(['submissions' => fn ($q) => $q->where('student_id', $student->id)])
             ->orderByDesc('created_at')
             ->get();

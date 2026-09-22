@@ -589,6 +589,16 @@ return [
             'types'  => ['pdf', 'jpg', 'jpeg', 'png', 'webp', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'zip'],
             'folder' => 'materials',
         ],
+
+        // Assignment attachments, both halves of the exchange: the teacher's
+        // brief and the file the student hands in. Same size ceiling as
+        // materials, but deliberately a picture-or-PDF shortlist — the student
+        // side is a phone photo of the finished work far more often than not.
+        'assignments' => [
+            'max_kb' => 20480,
+            'types'  => ['pdf', 'png', 'jpg', 'jpeg'],
+            'folder' => 'assignments',
+        ],
     ],
 
     /*

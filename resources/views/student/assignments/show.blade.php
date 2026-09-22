@@ -40,6 +40,13 @@
         <p class="teacher-material-desc">{{ $assignment->description }}</p>
     @endif
 
+    @if($assignment->hasFile())
+        <p class="teacher-material-desc">
+            <i class="fas fa-paperclip"></i>
+            <a href="{{ $assignment->fileUrl() }}" target="_blank" rel="noopener">فایل پیوست تکلیف</a>
+        </p>
+    @endif
+
     <div class="student-side">
         @if($submission)
             <section class="panel student-panel">
@@ -62,16 +69,30 @@
                     @if($submission->note)
                         <li><i class="fas fa-note-sticky"></i>{{ $submission->note }}</li>
                     @endif
+                    @if($submission->hasFile())
+                        <li>
+                            <i class="fas fa-paperclip"></i>
+                            <a href="{{ $submission->fileUrl() }}" target="_blank" rel="noopener">فایل تحویل‌شده</a>
+                        </li>
+                    @endif
                 </ul>
 
                 @if($submission->status === 'submitted')
-                    <form method="POST" action="{{ route('student.assignments.submit', $assignment) }}" class="teacher-form-actions">
+                    <form method="POST" action="{{ route('student.assignments.submit', $assignment) }}" enctype="multipart/form-data" class="teacher-form-actions">
                         @csrf
                         <label class="settings-field teacher-form-grow">
                             <span class="settings-field-label">یادداشت جدید (اختیاری)</span>
                             <input type="text" name="note" class="settings-input" maxlength="2000">
                         </label>
-                        <button type="submit" class="secondary-button"><i class="fas fa-rotate"></i> به‌روزرسانی یادداشت</button>
+                        <label class="settings-field teacher-form-grow">
+                            <span class="settings-field-label">فایل جدید (اختیاری)</span>
+                            <label class="file-picker">
+                                <i class="fas fa-paperclip" aria-hidden="true"></i>
+                                <input type="file" name="file" accept="image/*,.pdf" capture="environment">
+                            </label>
+                            @error('file')<span class="settings-error">{{ $message }}</span>@enderror
+                        </label>
+                        <button type="submit" class="secondary-button"><i class="fas fa-rotate"></i> به‌روزرسانی</button>
                     </form>
                 @endif
             </section>
@@ -83,12 +104,20 @@
                     <h2><i class="fas fa-paper-plane"></i> تحویل تکلیف</h2>
                 </header>
 
-                <form method="POST" action="{{ route('student.assignments.submit', $assignment) }}" class="teacher-form">
+                <form method="POST" action="{{ route('student.assignments.submit', $assignment) }}" enctype="multipart/form-data" class="teacher-form">
                     @csrf
                     <label class="settings-field">
                         <span class="settings-field-label">یادداشت تحویل (اختیاری)</span>
                         <textarea name="note" rows="3" class="settings-input" maxlength="2000"
                                   placeholder="مثلاً: در دفتر کار نوشته‌ام / فایل را به معلم دادم…"></textarea>
+                    </label>
+                    <label class="settings-field">
+                        <span class="settings-field-label">فایل تکلیف (اختیاری — عکس یا PDF)</span>
+                        <label class="file-picker">
+                            <i class="fas fa-camera" aria-hidden="true"></i>
+                            <input type="file" name="file" accept="image/*,.pdf" capture="environment">
+                        </label>
+                        @error('file')<span class="settings-error">{{ $message }}</span>@enderror
                     </label>
                     <div class="teacher-form-actions">
                         <span class="student-email">پس از تحویل، وضعیت «تحویل‌شده» و پس از تأیید معلم «تکمیل‌شده» می‌شود.</span>

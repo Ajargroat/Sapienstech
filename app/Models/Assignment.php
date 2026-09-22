@@ -3,20 +3,22 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\HasFileAttachment;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * A task a teacher assigns to a class (a grade of the tenant). Grade null
- * targets every grade. Status tracking happens per student in the
- * assignment_students pivot, created lazily: a student of the target
- * grade without a pivot row is implicitly 'pending'.
+ * A task a teacher assigns to a class of the tenant: a grade, optionally
+ * narrowed to one classroom of that grade. Status tracking happens per
+ * student in the assignment_students pivot, created lazily: a student of
+ * the target grade (or classroom) without a pivot row is implicitly
+ * 'pending'.
  */
 class Assignment extends Model
 {
-    use HasFactory, BelongsToTenant;
+    use BelongsToTenant, HasFactory, HasFileAttachment;
 
     public const STATUS_PENDING = 'pending';
     public const STATUS_SUBMITTED = 'submitted';
@@ -33,8 +35,10 @@ class Assignment extends Model
         'teacher_id',
         'title',
         'description',
+        'file_path',
         'subject',
         'grade',
+        'classroom_id',
         'due_at',
         'max_score',
         'is_published',
@@ -59,6 +63,12 @@ class Assignment extends Model
         return $this->belongsTo(User::class, 'teacher_id');
     }
 
+    /** The classroom this task is narrowed to, when it is not grade-wide. */
+    public function classroom(): BelongsTo
+    {
+        return $this->belongsTo(Classroom::class);
+    }
+
     public function submissions(): HasMany
     {
         return $this->hasMany(AssignmentStudent::class, 'assignment_id');
@@ -76,10 +86,14 @@ class Assignment extends Model
         return $this->submissionFor($studentId)?->status ?? self::STATUS_PENDING;
     }
 
+    /** Published tasks for the student's grade, narrowed to their classroom when set. */
     public function scopeVisibleTo($query, Student $student)
     {
         return $query
             ->where('is_published', true)
-            ->where(fn ($q) => $q->whereNull('grade')->orWhere('grade', $student->grade));
+            ->where('grade', $student->grade)
+            ->where(fn ($q) => $q
+                ->whereNull('classroom_id')
+                ->orWhereIn('classroom_id', $student->classrooms()->select('classrooms.id')));
     }
 }

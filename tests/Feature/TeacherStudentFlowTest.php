@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Assignment;
+use App\Models\Classroom;
 use App\Models\ClassSchedule;
 use App\Models\Domain;
 use App\Models\LessonMaterial;
@@ -258,6 +259,235 @@ class TeacherStudentFlowTest extends TestCase
         $this->actingAs($studentNinth, 'student')
             ->get($this->url("/student/assignments/{$assignment->id}"))
             ->assertNotFound();
+    }
+
+    public function test_new_assignment_requires_a_grade(): void
+    {
+        $this->setUpTenant();
+
+        $this->actingAs($this->teacher)
+            ->post($this->url('/teacher/assignments'), [
+                'title' => 'تکلیف بدون پایه',
+            ])
+            ->assertSessionHasErrors(['grade']);
+
+        $this->assertSame(0, Assignment::query()->count());
+    }
+
+    public function test_assignment_can_be_narrowed_to_one_classroom(): void
+    {
+        $this->setUpTenant();
+        $classroom = Classroom::create(['tenant_id' => $this->tenant->id, 'grade' => 'هفتم', 'name' => '۷۱']);
+        $inClass = Student::factory()->for($this->tenant)->create(['grade' => 'هفتم']);
+        $gradeOnly = Student::factory()->for($this->tenant)->create(['grade' => 'هفتم']);
+        $classroom->students()->attach($inClass->id, ['tenant_id' => $this->tenant->id]);
+
+        $this->actingAs($this->teacher)
+            ->post($this->url('/teacher/assignments'), [
+                'title' => 'تکلیف کلاس ۷۱',
+                'grade' => 'هفتم',
+                'classroom_id' => $classroom->id,
+                'is_published' => '1',
+            ])
+            ->assertRedirect(route('teacher.assignments.index'));
+
+        $assignment = Assignment::query()->firstOrFail();
+        $this->assertSame($classroom->id, $assignment->classroom_id);
+
+        // The dialog is rendered inline on the list page, carrying the
+        // grade-grouped classroom options for its picker.
+        $this->actingAs($this->teacher)
+            ->get($this->url('/teacher/assignments'))
+            ->assertOk()
+            ->assertSee('data-assignment-dialog', false)
+            ->assertSee('data-classroom-options', false);
+
+        // Only the classroom's own roster is on the board.
+        $this->actingAs($this->teacher)
+            ->get($this->url("/teacher/assignments/{$assignment->id}"))
+            ->assertOk()
+            ->assertSee($inClass->name)
+            ->assertDontSee($gradeOnly->name);
+
+        // ……and only its students see the task.
+        $this->actingAs($inClass, 'student')
+            ->get($this->url('/student/assignments'))
+            ->assertOk()
+            ->assertSee('تکلیف کلاس ۷۱');
+
+        $this->actingAs($gradeOnly, 'student')
+            ->get($this->url('/student/assignments'))
+            ->assertOk()
+            ->assertDontSee('تکلیف کلاس ۷۱');
+
+        $this->actingAs($gradeOnly, 'student')
+            ->get($this->url("/student/assignments/{$assignment->id}"))
+            ->assertNotFound();
+    }
+
+    public function test_classroom_of_another_grade_is_rejected(): void
+    {
+        $this->setUpTenant();
+        $classroom = Classroom::create(['tenant_id' => $this->tenant->id, 'grade' => 'نهم', 'name' => '۹۱']);
+
+        $this->actingAs($this->teacher)
+            ->post($this->url('/teacher/assignments'), [
+                'title' => 'ناسازگار',
+                'grade' => 'هفتم',
+                'classroom_id' => $classroom->id,
+            ])
+            ->assertSessionHasErrors(['classroom_id']);
+
+        $this->assertSame(0, Assignment::query()->count());
+    }
+
+    // ------------------------------------------------------------------
+    // Assignment attachments
+    // ------------------------------------------------------------------
+
+    public function test_teacher_attachment_rides_along_to_the_student(): void
+    {
+        $this->setUpTenant();
+        $student = $this->student('هفتم');
+
+        $this->actingAs($this->teacher)
+            ->post($this->url('/teacher/assignments'), [
+                'title' => 'کاربرگ ریاضی',
+                'grade' => 'هفتم',
+                'file' => UploadedFile::fake()->create('worksheet.pdf', 40, 'application/pdf'),
+                'is_published' => '1',
+            ])
+            ->assertRedirect(route('teacher.assignments.index'));
+
+        $assignment = Assignment::query()->firstOrFail();
+        $this->assertTrue(str_starts_with($assignment->file_path, 'assignments/'));
+        $this->assertFileExists(public_path("tenants/{$this->tenant->slug}/".$assignment->file_path));
+        $this->assertFalse($assignment->isImageFile());
+
+        // The student sees the brief's attachment on the detail page.
+        $this->actingAs($student, 'student')
+            ->get($this->url("/student/assignments/{$assignment->id}"))
+            ->assertOk()
+            ->assertSee('فایل پیوست تکلیف');
+
+        TenantUploads::delete($assignment->file_path);
+    }
+
+    public function test_student_submits_a_photo_and_the_teacher_sees_a_thumbnail(): void
+    {
+        $this->setUpTenant();
+        $student = $this->student('هفتم');
+
+        $assignment = Assignment::query()->create([
+            'tenant_id' => $this->tenant->id,
+            'teacher_id' => $this->teacher->id,
+            'title' => 'تمرین صفحه ۱۲',
+            'grade' => 'هفتم',
+        ]);
+
+        $this->actingAs($student, 'student')
+            ->post($this->url("/student/assignments/{$assignment->id}/submit"), [
+                'note' => 'عکس دفترم',
+                'file' => UploadedFile::fake()->create('work.jpg', 120, 'image/jpeg'),
+            ])
+            ->assertRedirect(route('student.assignments.show', $assignment));
+
+        $submission = $assignment->submissions()->firstOrFail();
+        $this->assertSame('submitted', $submission->status);
+        $this->assertTrue(str_starts_with($submission->file_path, 'assignments/'));
+        $this->assertTrue($submission->isImageFile());
+        $this->assertFileExists(public_path("tenants/{$this->tenant->slug}/".$submission->file_path));
+
+        // The board renders the photo as an inline thumbnail link.
+        $this->actingAs($this->teacher)
+            ->get($this->url("/teacher/assignments/{$assignment->id}"))
+            ->assertOk()
+            ->assertSee($submission->fileUrl(), false);
+
+        TenantUploads::delete($submission->file_path);
+    }
+
+    public function test_resubmitting_replaces_the_previous_upload(): void
+    {
+        $this->setUpTenant();
+        $student = $this->student('هفتم');
+
+        $assignment = Assignment::query()->create([
+            'tenant_id' => $this->tenant->id,
+            'teacher_id' => $this->teacher->id,
+            'title' => 'تمرین دوباره',
+            'grade' => 'هفتم',
+        ]);
+
+        $this->actingAs($student, 'student')
+            ->post($this->url("/student/assignments/{$assignment->id}/submit"), [
+                'file' => UploadedFile::fake()->create('first.jpg', 120, 'image/jpeg'),
+            ]);
+
+        $first = $assignment->submissions()->firstOrFail()->file_path;
+        $this->assertFileExists(public_path("tenants/{$this->tenant->slug}/{$first}"));
+
+        $this->actingAs($student, 'student')
+            ->post($this->url("/student/assignments/{$assignment->id}/submit"), [
+                'file' => UploadedFile::fake()->create('second.jpg', 120, 'image/jpeg'),
+            ]);
+
+        $second = $assignment->fresh()->submissions()->firstOrFail()->file_path;
+        $this->assertNotSame($first, $second);
+        $this->assertFileExists(public_path("tenants/{$this->tenant->slug}/{$second}"));
+
+        // The superseded upload is gone from disk, not merely orphaned.
+        $this->assertFileDoesNotExist(public_path("tenants/{$this->tenant->slug}/{$first}"));
+
+        TenantUploads::delete($second);
+    }
+
+    public function test_an_upload_of_the_wrong_type_is_rejected(): void
+    {
+        $this->setUpTenant();
+
+        $this->actingAs($this->teacher)
+            ->post($this->url('/teacher/assignments'), [
+                'title' => 'پیوست نامعتبر',
+                'grade' => 'هفتم',
+                'file' => UploadedFile::fake()->create('notes.zip', 10, 'application/zip'),
+            ])
+            ->assertSessionHasErrors(['file']);
+
+        $this->assertSame(0, Assignment::query()->count());
+    }
+
+    public function test_deleting_an_assignment_clears_stored_attachments(): void
+    {
+        $this->setUpTenant();
+        $student = $this->student('هفتم');
+
+        $this->actingAs($this->teacher)
+            ->post($this->url('/teacher/assignments'), [
+                'title' => 'با پیوست',
+                'grade' => 'هفتم',
+                'file' => UploadedFile::fake()->create('brief.pdf', 12, 'application/pdf'),
+                'is_published' => '1',
+            ]);
+
+        $assignment = Assignment::query()->firstOrFail();
+
+        $this->actingAs($student, 'student')
+            ->post($this->url("/student/assignments/{$assignment->id}/submit"), [
+                'file' => UploadedFile::fake()->create('handin.jpg', 120, 'image/jpeg'),
+            ]);
+
+        $brief = $assignment->file_path;
+        $handin = $assignment->fresh()->submissions()->firstOrFail()->file_path;
+
+        $this->actingAs($this->teacher)
+            ->delete($this->url("/teacher/assignments/{$assignment->id}"))
+            ->assertRedirect(route('teacher.assignments.index'));
+
+        // Both halves are removed from disk with the row.
+        $this->assertFileDoesNotExist(public_path("tenants/{$this->tenant->slug}/{$brief}"));
+        $this->assertFileDoesNotExist(public_path("tenants/{$this->tenant->slug}/{$handin}"));
+        $this->assertSame(0, Assignment::query()->count());
     }
 
     public function test_teacher_cannot_touch_another_teachers_assignment(): void

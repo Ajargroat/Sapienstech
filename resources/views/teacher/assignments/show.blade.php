@@ -17,6 +17,18 @@
         <span class="count-badge">{{ $assignment->grade ?: 'همه پایه‌ها' }}</span>
     </header>
 
+    @if($assignment->description)
+        <p class="teacher-material-desc">{{ $assignment->description }}</p>
+    @endif
+
+    @if($assignment->hasFile())
+        <p class="teacher-material-desc">
+            <i class="fas fa-paperclip"></i>
+            پیوست تکلیف:
+            <a href="{{ $assignment->fileUrl() }}" target="_blank" rel="noopener">مشاهده فایل</a>
+        </p>
+    @endif
+
     @include('consultant.blog.flash')
 
     <ul class="exam-card-facts teacher-assignment-facts">
@@ -32,10 +44,6 @@
             <li><i class="fas fa-star-half-stroke"></i>نمره بیشینه: {{ persian_digits($assignment->max_score) }}</li>
         @endif
     </ul>
-
-    @if($assignment->description)
-        <p class="teacher-material-desc">{{ $assignment->description }}</p>
-    @endif
 
     @if($students->isNotEmpty())
         <div class="teacher-table" role="table">
@@ -58,22 +66,37 @@
                         {{ $student->name }}
                     </a>
 
-                    <span>
+                    <span class="teacher-table-cell">
                         <span class="status-pill status-pill--{{ $status }}">{{ $statuses[$status] }}</span>
                     </span>
 
-                    <span class="teacher-table-time">
+                    <span class="teacher-table-cell teacher-table-time">
                         @if($submission?->submitted_at)
                             <time class="fa-date" datetime="{{ $submission->submitted_at->format('Y-m-d\TH:i') }}Z">{{ persian_digits($submission->submitted_at->format('Y/m/d')) }}</time>
                         @else
-                            —
+                            <span class="teacher-table-empty">—</span>
                         @endif
                     </span>
 
-                    <span class="teacher-table-note">
-                        @if($submission?->score !== null){{ persian_digits($submission->score) }}@endif
-                        @if($submission?->note)<em>{{ $submission->note }}</em>@endif
-                        @if(! $submission && ($assignment->max_score || $assignment->due_at))—@endif
+                    <span class="teacher-table-cell teacher-table-note">
+                        @if($submission?->score !== null || $submission?->note)
+                            <span class="teacher-table-note-text">
+                                @if($submission?->score !== null)<span class="teacher-table-score">{{ persian_digits($submission->score) }}</span>@endif
+                                @if($submission?->note)<em>{{ $submission->note }}</em>@endif
+                            </span>
+                        @endif
+                        @if($submission?->hasFile())
+                            {{-- A phone photo gets a thumbnail; a PDF only a link. --}}
+                            <a href="{{ $submission->fileUrl() }}" target="_blank" rel="noopener"
+                               class="teacher-attachment-link" title="فایل تحویل‌شدهٔ {{ $student->name }}">
+                                @if($submission->isImageFile())
+                                    <img src="{{ $submission->fileUrl() }}" alt="فایل تحویل‌شدهٔ {{ $student->name }}" loading="lazy">
+                                @else
+                                    <i class="fas fa-file-pdf" aria-hidden="true"></i> فایل
+                                @endif
+                            </a>
+                        @endif
+                        @if(! $submission && ($assignment->max_score || $assignment->due_at))<span class="teacher-table-empty">—</span>@endif
                     </span>
 
                     <form
@@ -84,7 +107,36 @@
                         @csrf
                         @method('PATCH')
                         <input type="hidden" name="status" value="{{ $status === 'completed' ? 'submitted' : 'completed' }}">
-                        <input type="hidden" name="score" value="{{ $submission?->score ?? '' }}">
+
+                        @if($assignment->max_score)
+                            <input
+                                type="number"
+                                name="score"
+                                value="{{ $submission?->score }}"
+                                min="0"
+                                step="0.5"
+                                max="{{ $assignment->max_score }}"
+                                placeholder="نمره"
+                                aria-label="نمره {{ $student->name }}"
+                                class="teacher-table-input teacher-table-input--score"
+                                dir="ltr"
+                            >
+                        @else
+                            {{-- Without a maximum there is nothing to score against,
+                                 so the stored value simply travels along untouched. --}}
+                            <input type="hidden" name="score" value="{{ $submission?->score ?? '' }}">
+                        @endif
+
+                        <input
+                            type="text"
+                            name="note"
+                            value="{{ $submission?->note }}"
+                            placeholder="یادداشت"
+                            maxlength="2000"
+                            aria-label="یادداشت {{ $student->name }}"
+                            class="teacher-table-input teacher-table-input--note"
+                        >
+
                         <button type="submit" class="secondary-button">
                             @if($status === 'completed')
                                 <i class="fas fa-rotate-left"></i> بازگشت به بررسی

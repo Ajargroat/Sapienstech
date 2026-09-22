@@ -396,6 +396,12 @@
       "bi": "file",
       "la": "file"
     },
+    "file-csv": {
+      "lucide": "file-spreadsheet",
+      "tabler": "file-type-csv",
+      "bi": "filetype-csv",
+      "la": "file-csv"
+    },
     "file-invoice": {
       "lucide": "receipt",
       "tabler": "receipt",

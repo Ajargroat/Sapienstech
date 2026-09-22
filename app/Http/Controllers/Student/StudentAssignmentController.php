@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Student;
 use App\Http\Controllers\Controller;
 use App\Models\Assignment;
 use App\Models\AssignmentStudent;
+use App\Support\AssignmentFiles;
 use App\Support\StudentAccess;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -66,6 +67,8 @@ class StudentAssignmentController extends Controller
 
         $data = $request->validate([
             'note' => ['nullable', 'string', 'max:2000'],
+            // The student's own file: usually a phone photo of the finished work.
+            'file' => AssignmentFiles::rules(),
         ]);
 
         $submission = AssignmentStudent::query()->firstOrNew([
@@ -82,6 +85,13 @@ class StudentAssignmentController extends Controller
         $submission->status = Assignment::STATUS_SUBMITTED;
         $submission->submitted_at = $submission->submitted_at ?? now();
         $submission->note = $data['note'] ?? $submission->note;
+
+        // Re-submitting with a new file replaces the previous upload, which
+        // TenantUploads removes; no file in the request leaves it in place.
+        if ($request->hasFile('file')) {
+            $submission->file_path = AssignmentFiles::store($request->file('file'), $submission->file_path);
+        }
+
         $submission->save();
 
         return redirect()
@@ -91,9 +101,13 @@ class StudentAssignmentController extends Controller
 
     private function visible($student, Assignment $assignment): bool
     {
+        $sameClassroom = $assignment->classroom_id === null
+            || $student->classrooms()->whereKey($assignment->classroom_id)->exists();
+
         return (int) $assignment->tenant_id === (int) $student->tenant_id
             && $assignment->is_published
             && ($assignment->grade === null || $assignment->grade === $student->grade)
+            && $sameClassroom
             && $assignment->teacher
             && StudentAccess::allows($assignment->teacher, $student);
     }

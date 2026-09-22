@@ -39,7 +39,8 @@ body {
 }
 
 body.consultant-shell,
-body.student-shell {
+body.student-shell,
+body.teacher-shell {
   margin: 0;
   background: var(--c-background);
   color: var(--c-text);
@@ -307,6 +308,11 @@ a {
 .primary-button:hover {
   background: var(--c-primary-hover);
   transform: translateY(-2px);
+}
+
+/* Icon-only variant: drop the label padding so the button stays square. */
+.primary-button.draft-btn--icon {
+  padding: 12px;
 }
 
 .secondary-button {
@@ -6326,7 +6332,7 @@ button.teacher-class-row:hover {
 .teacher-table-head,
 .teacher-table-row {
   display: grid;
-  grid-template-columns: minmax(140px, 1.4fr) minmax(110px, 1fr) minmax(90px, 0.8fr) minmax(120px, 1.2fr) auto;
+  grid-template-columns: minmax(130px, 1.3fr) minmax(100px, 0.9fr) minmax(92px, 0.8fr) minmax(130px, 1.6fr) auto;
   align-items: center;
   gap: 12px;
 }
@@ -6360,6 +6366,25 @@ button.teacher-class-row:hover {
   color: var(--c-primary);
 }
 
+/* Data cells are centered flex lines, so a status pill, a date, a score and
+   the «—» placeholder all sit on the same visual axis. */
+.teacher-table-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.teacher-table-empty {
+  color: var(--c-muted);
+  opacity: 0.7;
+}
+
+.teacher-table-score {
+  font-weight: 700;
+  color: var(--c-text);
+}
+
 .teacher-table-time {
   font-size: 12.5px;
   color: var(--c-muted);
@@ -6372,6 +6397,77 @@ button.teacher-class-row:hover {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* The truncated text and the attachment thumbnail share the cell; only the
+   text may collapse, so the thumb stays fully visible. */
+.teacher-table-note-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.teacher-attachment-link {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--c-primary);
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.teacher-attachment-link img {
+  width: 34px;
+  height: 34px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--c-border);
+  background: color-mix(in srgb, var(--c-text) 5%, transparent);
+}
+
+.teacher-table-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Inline scoring: the score/note travelled in hidden inputs before, so a
+   teacher could neither see nor type them. */
+.teacher-table-input {
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--c-border);
+  background: color-mix(in srgb, var(--c-text) 4%, transparent);
+  color: var(--c-text);
+  font-family: inherit;
+  font-size: 12.5px;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.teacher-table-input:focus {
+  outline: none;
+  border-color: var(--c-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-primary) 22%, transparent);
+}
+
+.teacher-table-input::placeholder {
+  color: var(--c-muted);
+  opacity: 0.7;
+}
+
+.teacher-table-input--score {
+  flex: 0 0 auto;
+  width: 58px;
+  text-align: center;
+}
+
+.teacher-table-input--note {
+  flex: 1 1 90px;
+  min-width: 0;
 }
 
 .teacher-table-actions .secondary-button {
@@ -6387,6 +6483,16 @@ button.teacher-class-row:hover {
   background: var(--c-surface);
   color: var(--c-text);
   padding: 24px;
+  margin: auto;
+}
+
+@keyframes teacher-dialog-pop {
+  from { opacity: 0; transform: translate(35%, -35%) scale(.92); }
+  to { opacity: 1; transform: none; }
+}
+
+.teacher-dialog--animated[open] {
+  animation: teacher-dialog-pop 240ms var(--animation-timing, ease) both;
 }
 
 .teacher-dialog::backdrop {
@@ -6397,7 +6503,205 @@ button.teacher-class-row:hover {
 .teacher-dialog-title {
   font-size: 17px;
   font-weight: 800;
+  margin: 0;
+}
+
+.teacher-dialog-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   margin-block-end: 18px;
+}
+
+.teacher-csv-import {
+  cursor: pointer;
+  display: inline-flex;
+}
+
+/* --- Swatch color picker --- */
+.color-swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--swatch);
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.color-swatch:hover {
+  transform: scale(1.15);
+}
+
+.color-swatch.selected {
+  border-color: var(--c-text);
+  box-shadow: 0 0 0 2px var(--c-surface), 0 0 0 4px var(--c-text);
+}
+
+.teacher-color-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+/* --- Grid time configuration bar --- */
+.teacher-schedule-config {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  margin-block-end: 20px;
+  padding: 14px 16px;
+  background: var(--c-surface-alt);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-card);
+}
+
+.teacher-schedule-config .settings-field {
+  margin: 0;
+  flex: 0 1 auto;
+}
+
+.teacher-schedule-config .settings-input {
+  width: 90px;
+  text-align: center;
+}
+
+.teacher-schedule-config input[type="number"].settings-input {
+  width: 72px;
+}
+
+/* --- Schedule grid (days vertical right, time horizontal RTL) --- */
+.teacher-schedule-grid {
+  direction: rtl;
+  display: grid;
+  grid-template-columns: 90px repeat(var(--grid-cols, 6), 1fr);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  background: var(--c-surface);
+  margin-block-end: 24px;
+}
+
+.teacher-grid-header,
+.teacher-grid-day {
+  display: contents;
+}
+
+.teacher-grid-corner {
+  background: var(--c-surface-alt);
+  border-block-end: 1px solid var(--c-border);
+}
+
+.teacher-grid-slot-head {
+  padding: 8px 4px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--c-muted);
+  background: var(--c-surface-alt);
+  border-block-end: 1px solid var(--c-border);
+  border-inline-start: 1px dashed var(--c-border);
+}
+
+.teacher-grid-day-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 8px;
+  font-weight: 700;
+  font-size: 13px;
+  border-block-end: 1px solid var(--c-border);
+  background: var(--c-surface);
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  justify-content: center;
+}
+
+.teacher-grid-day--today .teacher-grid-day-label {
+  color: var(--c-primary);
+  background: color-mix(in srgb, var(--c-primary) 8%, var(--c-surface));
+}
+
+.teacher-grid-cell {
+  min-height: 64px;
+  padding: 4px;
+  border-block-end: 1px solid var(--c-border);
+  border-inline-start: 1px dashed var(--c-border);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.teacher-grid-card {
+  border-inline-start: 3px solid var(--accent, var(--c-primary));
+  background: var(--c-surface-alt);
+  border-radius: 10px;
+  padding: 6px 8px;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.teacher-grid-card strong {
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.teacher-grid-card-meta {
+  color: var(--c-muted);
+  font-size: 11px;
+}
+
+.teacher-grid-card-tools {
+  display: flex;
+  gap: 4px;
+  margin-block-start: 2px;
+}
+
+.teacher-grid-card-tools .topnav-icon-btn {
+  width: 26px;
+  height: 26px;
+  font-size: 11px;
+}
+
+/* --- Grade/class grouped list --- */
+.teacher-grade-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.teacher-grade-block {
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-card);
+  padding: 14px 16px;
+  background: var(--c-surface);
+}
+
+.teacher-grade-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 800;
+  margin: 0 0 10px;
+  color: var(--c-primary);
+}
+
+.teacher-class-block + .teacher-class-block {
+  margin-block-start: 12px;
+}
+
+.teacher-class-block-title {
+  font-size: 13px;
+  font-weight: 700;
+  margin: 0 0 6px;
+  color: var(--c-text);
 }
 
 /* --- Count badge that doubles as a link --- */
@@ -6424,6 +6728,7 @@ button.teacher-class-row:hover {
   .teacher-table-time,
   .teacher-table-note {
     grid-column: 1 / -1;
+    justify-content: flex-start;
   }
 
   .teacher-table-actions {
@@ -6433,6 +6738,20 @@ button.teacher-class-row:hover {
 
   .student-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .teacher-grid-cell {
+    min-height: 48px;
+    padding: 2px;
+  }
+
+  .teacher-schedule-config {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .teacher-schedule-config .settings-input {
+    width: 100%;
   }
 }
 

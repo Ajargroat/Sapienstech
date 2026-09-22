@@ -296,7 +296,6 @@ Route::middleware(['auth', 'teacher.role'])
 
         Route::prefix('assignments')->name('assignments.')->middleware('teacher.feature:teacher_assignments')->group(function () {
             Route::get('/', [TeacherAssignmentController::class, 'index'])->name('index');
-            Route::get('/create', [TeacherAssignmentController::class, 'create'])->name('create');
             Route::post('/', [TeacherAssignmentController::class, 'store'])->name('store');
             Route::get('/{assignment}', [TeacherAssignmentController::class, 'show'])->name('show');
             Route::patch('/{assignment}', [TeacherAssignmentController::class, 'update'])->name('update');
