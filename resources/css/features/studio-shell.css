@@ -67,37 +67,61 @@ body.studio-shell {
     font-family: inherit;
 }
 
-/* The page is a column: flashes + banner, toolbar, then the workspace that
-   fills what remains (replaces the old body.studio-mode scaffolding that
-   used to live in app.css for the in-hub studio). */
+/* The page is a full-viewport application column: the workspace fills it
+   edge to edge and the status bar pins to the bottom. No max-width box, no
+   page padding — flashes moved out of the flow (toasts) so they consume no
+   layout row. (Replaces the old body.studio-mode scaffolding that used to
+   live in app.css for the in-hub studio.) */
 .studio-page {
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    min-height: 100dvh;
-    max-width: 1680px;
-    margin-inline: auto;
-    padding: 20px var(--content-padding) 28px;
+    gap: 0;
+    box-sizing: border-box;
+    height: 100dvh;
+    padding: 0;
+    overflow: hidden;
 }
 
-/* Flash rows (same visual language as the settings hub). */
-.studio-page .settings-flash {
+/* Success flash: a fixed top-right toast (out of the layout flow), faded
+   and removed by app.js's dismissal (data-flash-timeout sets the delay). */
+.studio-toast {
+    position: fixed;
+    top: 16px;
+    inset-inline-end: 16px;
+    z-index: 100;
     display: flex;
     align-items: center;
     gap: 10px;
+    max-width: min(420px, calc(100vw - 32px));
     padding: 12px 16px;
     border-radius: 12px;
-    border: 1px solid var(--c-border);
+    border: 1px solid color-mix(in oklab, var(--c-success) 45%, transparent);
     background: var(--c-surface);
     color: var(--c-text);
     font-size: 13px;
     font-weight: 700;
+    box-shadow: 0 12px 32px rgb(0 0 0 / 45%);
 }
 
-.studio-page .settings-flash--success { border-color: color-mix(in oklab, var(--c-success) 45%, transparent); }
-.studio-page .settings-flash--error { border-color: color-mix(in oklab, var(--c-danger) 45%, transparent); }
+/* The one intentional persistent strip: preview mode is active site-wide.
+   Slim, in-flow, above the workspace. */
+.studio-page .studio-preview-banner {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 0;
+    padding: 6px 16px;
+    border: 0;
+    border-bottom: 1px solid var(--c-border);
+    border-radius: 0;
+    background: var(--c-surface);
+    color: var(--c-text);
+    font-size: 12px;
+    font-weight: 700;
+}
 
-.studio-page .studio-preview-banner { flex-wrap: wrap; }
 .studio-page .studio-preview-banner form { margin-inline-start: auto; }
 
 /* Neutral secondary button (the hub's class, re-declared here so the shell
@@ -120,32 +144,14 @@ body.studio-shell {
 
 .studio-page .secondary-button:hover { background: var(--c-surface-elevated); }
 
-/* Wide screens, live preview on: the studio fills the viewport — preview as
-   the main canvas, settings docked as an inspector bar (the standalone
-   successor of the old body.studio-mode layout in app.css). The three-column
-   workspace grid itself comes from studio-workspace.css. */
-@media (min-width: 1024px) {
-    .studio-page {
-        box-sizing: border-box;
-        height: 100dvh;
-        gap: 12px;
-        padding-bottom: 20px;
-    }
-
-    .studio-page .studio-toolbar { flex: 0 0 auto; margin-bottom: 0; }
-
-    .studio-page .studio-split.is-live {
-        flex: 1 1 auto;
-        min-height: 0;
-    }
-
-    /* The tab rail floats above the panel scrolling inside the bar. */
-    .studio-page .studio-tabs {
-        position: sticky;
-        top: 0;
-        z-index: 6;
-    }
+/* Two-row application column: the workspace fills what the (optional)
+   preview banner leaves, and the status bar pins to the bottom. */
+.studio-page .studio-split {
+    flex: 1 1 auto;
+    min-height: 0;
 }
 
+.studio-page .studio-statusbar { flex: 0 0 auto; }
+
 /* Maximize: the preview escapes the split and fills the viewport. */
-body.studio-shell .studio-split.is-live.is-max .studio-main { display: none; }
+body.studio-shell .studio-split.is-max .studio-main { display: none; }

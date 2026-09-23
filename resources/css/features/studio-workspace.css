@@ -1,6 +1,5 @@
 /* Keep editor chrome independent of the tenant tokens being edited. */
-.studio-workspace,
-.studio-toolbar.studio-workspace-toolbar {
+.studio-workspace {
   --workspace-bg: #202226;
   --workspace-panel: #292c31;
   --workspace-raised: #34383f;
@@ -24,34 +23,87 @@
   color-scheme: dark;
 }
 
-.studio-toolbar.studio-workspace-toolbar {
-  padding: 10px 14px;
-  gap: 12px;
-  border: 1px solid var(--workspace-border);
-  border-radius: 6px;
+/* Bottom status bar: the thin application chrome that replaced the old top
+   toolbar — devices, zoom and frame actions on one side, errors, dirty
+   state and save on the other. */
+.studio-statusbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 3px 10px;
+  border-top: 1px solid var(--workspace-border);
   background: var(--workspace-panel);
+  direction: rtl;
 }
 
-.studio-workspace-toolbar .studio-live-toggle { margin-inline-start: auto; }
+.studio-statusbar-spacer { flex: 1 1 auto; }
 
-.studio-toolbar .studio-dirty {
+.studio-statusbar .studio-preview-devices {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 6px;
+  background: var(--workspace-bg);
+}
+
+.studio-statusbar-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  min-width: 32px;
+  height: 32px;
+  margin: 0;
+  padding: 0 6px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--workspace-muted);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.studio-statusbar .studio-preview-devices .studio-preview-device { width: 36px; height: 28px; }
+
+.studio-statusbar :is(.studio-statusbar-btn, .studio-preview-device):hover {
+  background: var(--workspace-raised);
+  color: var(--workspace-text);
+}
+
+.studio-statusbar :is(.studio-statusbar-btn, .studio-preview-device):is(.is-active, [aria-pressed="true"]) {
+  border-color: var(--workspace-border);
+  background: var(--workspace-raised);
+  color: var(--workspace-accent);
+}
+
+.studio-statusbar :is(button, a, input):focus-visible {
+  outline: 2px solid var(--workspace-accent);
+  outline-offset: 2px;
+}
+
+.studio-statusbar .studio-dirty {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 10px;
+  padding: 3px 10px;
   border: 1px solid #8a6d2f;
   border-radius: 999px;
   background: #3a3324;
   color: #f0d9a8;
-  font-size: 12px;
+  font-size: 11px;
   white-space: nowrap;
 }
-.studio-toolbar .studio-dirty-dot { width: 7px; height: 7px; border-radius: 50%; background: #f0c35c; }
-.studio-toolbar .studio-toolbar-save {
+.studio-statusbar .studio-dirty-dot { width: 7px; height: 7px; border-radius: 50%; background: #f0c35c; }
+.studio-statusbar .studio-statusbar-save {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 12px;
+  padding: 5px 12px;
   border: 1px solid var(--workspace-accent);
   border-radius: 6px;
   background: transparent;
@@ -61,13 +113,13 @@
   cursor: pointer;
 }
 
-/* Save menu: anchored to the toolbar button, closed by default; opened by
-   studio-workspace.js (is-open), and its submit buttons post the studio form
-   through the `form` attribute with their scope value. */
+/* Save menu: anchored to the status-bar button, opening UPWARD as a dropup;
+   opened by studio-workspace.js (is-open), and its submit buttons post the
+   studio form through the `form` attribute with their scope value. */
 .studio-save-wrap { position: relative; display: inline-flex; }
 .studio-save-menu {
   position: absolute;
-  top: calc(100% + 6px);
+  bottom: calc(100% + 6px);
   inset-inline-end: 0;
   z-index: 40;
   display: none;
@@ -98,16 +150,63 @@
 .studio-save-menu button:hover { border-color: var(--workspace-accent); color: var(--workspace-accent); }
 .studio-save-menu button.is-primary { border-color: var(--workspace-accent); color: var(--workspace-accent); }
 
+/* Validation indicator: icon + count; hidden while there is nothing to
+   report. Its popover lists the messages and each row jumps to the field. */
+.studio-errors-toggle { color: var(--c-danger); }
+.studio-errors-toggle:hover { color: var(--c-danger); }
+.studio-errors-count { font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.studio-errors-popover {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  inset-inline-end: 0;
+  z-index: 45;
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 260px;
+  max-width: min(360px, calc(100vw - 24px));
+  max-height: 300px;
+  overflow: auto;
+  margin: 0;
+  padding: 8px;
+  border: 1px solid var(--workspace-border);
+  border-radius: 8px;
+  background: var(--workspace-raised);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, .45);
+  list-style: none;
+}
+.studio-errors-popover.is-open { display: flex; }
+.studio-errors-popover button {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--workspace-border);
+  border-radius: 6px;
+  background: var(--workspace-bg);
+  color: var(--workspace-text);
+  font: inherit;
+  font-size: 12px;
+  text-align: start;
+  cursor: pointer;
+}
+.studio-errors-popover button:hover { border-color: var(--c-danger); color: var(--c-danger); }
+.studio-errors-popover .studio-errors-empty {
+  padding: 8px 10px;
+  border: 0;
+  background: none;
+  color: var(--workspace-muted);
+  cursor: default;
+}
+
 body .studio-workspace.studio-split {
   display: grid;
-  grid-template-columns: 56px minmax(0, 1fr);
+  grid-template-columns: 88px minmax(0, 1fr);
   grid-template-areas: "rail inspector";
   gap: 1px;
   min-width: 0;
   direction: ltr;
   background: var(--workspace-border);
-  border: 1px solid var(--workspace-border);
-  border-radius: 6px;
   overflow: hidden;
 }
 
@@ -137,19 +236,23 @@ body .studio-workspace.studio-split .studio-main::-webkit-scrollbar {
   gap: 8px;
   min-height: 0;
   padding: 6px 4px;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
   overscroll-behavior: contain;
   scrollbar-width: thin;
   scrollbar-color: var(--workspace-border) var(--workspace-bg);
   background: var(--workspace-bg);
 }
 
+/* Two icon lanes per group (Illustrator-style): the rail is ~88px wide, so
+   every button group flows as a 2×40px grid instead of a single column. */
 .studio-workspace .studio-workspace-tools,
 body .studio-workspace .studio-tabs {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(2, 40px);
+  justify-content: center;
+  align-content: start;
   flex: 0 0 auto;
-  flex-direction: column;
-  align-items: center;
   gap: 4px;
   width: 100%;
   padding: 0 0 8px;
@@ -214,8 +317,7 @@ body .studio-workspace .studio-tabs {
   box-shadow: none;
 }
 
-.studio-workspace :is(button, a, input, select, textarea, summary):focus-visible,
-.studio-workspace-toolbar input:focus-visible {
+.studio-workspace :is(button, a, input, select, textarea, summary):focus-visible {
   outline: 2px solid var(--workspace-accent);
   outline-offset: 2px;
 }
@@ -417,38 +519,47 @@ body .studio-workspace.studio-split .studio-preview-pane {
   box-shadow: none;
 }
 
+/* The preview head shrank to just the sync dot + label: every other control
+   (devices, zoom, reload, maximize) lives in the bottom status bar. */
 .studio-workspace .studio-preview-head {
   flex: 0 0 auto;
-  flex-wrap: wrap;
+  display: flex;
+  align-items: center;
   gap: 6px;
-  padding: 8px 10px;
+  padding: 6px 10px;
   background: var(--workspace-panel);
   color: var(--workspace-muted);
   font-size: 11px;
 }
 
-.studio-workspace .studio-live-toggle { gap: 5px; font-size: 11px; }
-.studio-workspace .studio-preview-devices { background: var(--workspace-bg); border-radius: 5px; }
 .studio-workspace .studio-preview-stage { flex: 1 1 auto; min-height: 0; overflow: auto; background: #191b1e; }
 .studio-workspace .studio-preview-frame { background: #fff; box-shadow: 0 4px 24px #0006; }
-.studio-workspace .studio-workspace-zoom { display: inline-flex; align-items: center; gap: 6px; }
-.studio-workspace .studio-workspace-zoom select {
-  min-height: 36px;
-  max-width: 100%;
-  padding: 4px 6px;
-  border: 1px solid var(--workspace-border);
-  border-radius: 4px;
-  background: var(--workspace-bg);
-  color: var(--workspace-text);
-  font: inherit;
+
+/* Zoom slider in the status bar: a range bar + a fit toggle + a % readout.
+   While "fit" is armed the bar is inert decoration (the auto path sizes the
+   frame); dragging it takes over with a manual clamp. */
+.studio-statusbar .studio-workspace-zoom { display: inline-flex; align-items: center; gap: 8px; }
+.studio-statusbar .studio-zoom-bar {
+  width: 130px;
+  margin: 0;
+  accent-color: var(--workspace-accent);
+  cursor: pointer;
+}
+.studio-statusbar .studio-zoom-bar:disabled { opacity: .4; cursor: default; }
+.studio-statusbar .studio-zoom-value {
+  min-inline-size: 4.5em;
+  color: var(--workspace-muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
 }
 
 @media (min-width: 1024px) {
   /* The studio shell subtracts the site navigation and padding itself.
      Consume its remaining space rather than overlaying the exit navigation. */
-  body.studio-shell .studio-workspace.studio-split.is-live {
+  body.studio-shell .studio-workspace.studio-split {
     display: grid;
-    grid-template-columns: 56px minmax(0, 1fr) 320px;
+    grid-template-columns: 88px minmax(0, 1fr) 320px;
     /* Constrain the single implicit row to the container: without it the row
        sizes to the rail's content, overflow:auto on the rail never engages,
        and the tools below the fold are unreachable (the split clips them). */
@@ -457,9 +568,20 @@ body .studio-workspace.studio-split .studio-preview-pane {
     gap: 1px;
     flex: 1 1 auto;
     min-height: 0;
+    /* Inspector collapse animates as the column closing on it. */
+    transition: grid-template-columns .2s ease;
   }
 
-  body.studio-shell .studio-workspace.studio-split.is-live .studio-main {
+  body.studio-shell .studio-workspace.studio-split.is-inspector-closed {
+    grid-template-columns: 88px minmax(0, 1fr) 0;
+  }
+
+  body.studio-shell .studio-workspace.studio-split.is-inspector-closed .studio-main {
+    visibility: hidden;
+    overflow: hidden;
+  }
+
+  body.studio-shell .studio-workspace.studio-split .studio-main {
     height: 100%;
     min-height: 0;
     overflow: auto;
@@ -467,36 +589,36 @@ body .studio-workspace.studio-split .studio-preview-pane {
     scrollbar-width: thin;
   }
 
-  body.studio-shell .studio-workspace.studio-split.is-live .studio-preview-pane {
+  body.studio-shell .studio-workspace.studio-split .studio-preview-pane {
     position: static;
     height: 100%;
     min-height: 0;
   }
-
-  .studio-workspace:not(.is-live) .studio-workspace-rail { max-height: 75dvh; }
 }
 
 @media (max-width: 1023.98px) {
-  body .studio-workspace.studio-split,
-  body .studio-workspace.studio-split.is-live {
+  body .studio-workspace.studio-split {
     display: flex;
     flex-direction: column;
     gap: 1px;
     overflow: visible;
   }
 
+  /* The rail becomes a horizontal strip; its groups keep their two-lane
+     grid, rotated into two rows. */
   .studio-workspace .studio-workspace-rail {
     order: 0;
     flex-direction: row;
     align-items: stretch;
     max-width: 100%;
     padding: 6px;
-    border-radius: 5px 5px 0 0;
   }
 
   .studio-workspace .studio-workspace-tools,
   body .studio-workspace .studio-tabs {
-    flex-direction: row;
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-template-rows: repeat(2, 44px);
     width: auto;
     padding: 0;
     padding-inline-end: 8px;
@@ -504,9 +626,9 @@ body .studio-workspace.studio-split .studio-preview-pane {
     border-inline-end: 1px solid var(--workspace-border);
   }
 
-  .studio-workspace :is(.studio-workspace-tool, .studio-tab, .studio-preview-device, .studio-preview-action) { width: 44px; height: 44px; }
+  .studio-workspace :is(.studio-workspace-tool, .studio-tab) { width: 44px; height: 44px; }
 
-  body .studio-workspace.studio-split.is-live .studio-preview-pane {
+  body .studio-workspace.studio-split .studio-preview-pane {
     order: 1;
     position: static;
     flex: none;
@@ -520,13 +642,16 @@ body .studio-workspace.studio-split .studio-preview-pane {
     height: auto;
     overflow: visible;
   }
+
+  /* Inspector collapse on narrow screens: the panel folds away entirely. */
+  body .studio-workspace.studio-split.is-inspector-closed .studio-main { display: none; }
 }
 
 /* Maximize deliberately hides both docks, including on narrow screens. */
-body .studio-workspace.studio-split.is-live.is-max .studio-main,
-body .studio-workspace.studio-split.is-live.is-max .studio-workspace-rail { display: none; }
+body .studio-workspace.studio-split.is-max .studio-main,
+body .studio-workspace.studio-split.is-max .studio-workspace-rail { display: none; }
 
-body .studio-workspace.studio-split.is-live.is-max .studio-preview-pane {
+body .studio-workspace.studio-split.is-max .studio-preview-pane {
   position: fixed;
   inset: 0;
   z-index: 60;
@@ -538,7 +663,7 @@ body .studio-workspace.studio-split.is-live.is-max .studio-preview-pane {
 }
 
 /* Match the desktop studio-shell specificity even if app.css loads later. */
-body.studio-shell .studio-workspace.studio-split.is-live.is-max .studio-preview-pane {
+body.studio-shell .studio-workspace.studio-split.is-max .studio-preview-pane {
   position: fixed;
   height: 100dvh;
 }

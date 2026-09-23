@@ -273,9 +273,10 @@ export default function initBlockEditor(form, wrap) {
         paintSelection();
     };
     form.addEventListener('studio:frame-ready', (event) => bindFrame(event.detail.frame));
-    const interactionToggle = document.querySelector('[data-studio-interact]');
-    interactionToggle?.addEventListener('change', () => {
-        interactive = interactionToggle.checked;
+    // Interaction mode comes from the workspace tool (select vs interact);
+    // studio-workspace.js broadcasts the switch on the form.
+    form.addEventListener('studio:tool', (event) => {
+        interactive = event.detail?.tool === 'interact';
         previewDocument?.documentElement.classList.toggle('studio-canvas-editing', !interactive);
         paintSelection();
     });

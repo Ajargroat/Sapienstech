@@ -14,3 +14,6 @@
 *.log
 /database/*.sqlite-journal
 /.kilo
+/AGENTS.md
+/.agent
+/Tasks.md

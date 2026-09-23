@@ -69,10 +69,13 @@ document.addEventListener('change', (event) => {
 const dismissFlash = (flash) => {
     if (flash.dataset.flashArmed) return;
     flash.dataset.flashArmed = '1';
+    // A flash may ask for a longer stay (studio toasts use 5s) without
+    // forking the dismissal logic.
+    const timeout = Number(flash.dataset.flashTimeout) || 4000;
     setTimeout(() => {
         flash.classList.add('is-leaving');
         setTimeout(() => flash.remove(), 500);
-    }, 4000);
+    }, timeout);
 };
 
 const armFlashDismissal = (root) =>

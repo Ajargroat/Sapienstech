@@ -9,7 +9,6 @@ function setup() {
         <button data-studio-tab="hero" aria-label="Hero"></button><button data-studio-tab="colors"></button><button data-studio-tab="blocks"></button>
         <button data-workspace-tool="select"></button><button data-workspace-tool="interact"></button>
         <button data-workspace-insert="button"></button><button data-workspace-action="undo"></button>
-        <input type="checkbox" data-studio-interact>
         <section data-object-inspector><h2 data-object-title></h2><p data-object-scope></p><dl data-object-metrics></dl><div data-object-controls></div><ul data-page-layers></ul></section>
         <form><div data-studio-group="hero"><div data-studio-field="public.landing.hero.title_line1"><label class="studio-field-label">Title</label><input name="hero" value="Initial"></div></div>
         <div data-block-editor><button type="button" data-block-insert="button"></button><button type="button" data-block-undo disabled></button></div></form></div>`, { url: 'http://tenant.test' });
@@ -89,7 +88,6 @@ function setupPaths(hash = '') {
     const dom = new JSDOM(`<div id="studio-split">
         <button data-studio-tab="hero" aria-label="Hero"></button><button data-studio-tab="blocks"></button>
         <button data-workspace-tool="select"></button><button data-workspace-tool="interact"></button>
-        <input type="checkbox" data-studio-interact>
         <section data-object-inspector><h2 data-object-title></h2><p data-object-scope></p><dl data-object-metrics></dl><div data-object-controls></div><ul data-page-layers></ul></section>
         <form>
         <section data-context-panel hidden><strong data-context-title></strong><p data-context-note></p><div data-context-fields></div><button type="button" data-context-clear></button></section>
@@ -152,7 +150,6 @@ function setupListOps() {
     const dom = new JSDOM(`<div id="studio-split">
         <button data-studio-tab="hero"></button><button data-studio-tab="blocks"></button>
         <button data-workspace-tool="select"></button><button data-workspace-tool="interact"></button>
-        <input type="checkbox" data-studio-interact>
         <section data-object-inspector><h2 data-object-title></h2><p data-object-scope></p><dl data-object-metrics></dl><div data-object-controls></div><ul data-page-layers></ul></section>
         <form>
         <section data-context-panel hidden><strong data-context-title></strong><p data-context-note></p><div data-context-fields></div><button type="button" data-context-clear></button></section>
@@ -175,7 +172,6 @@ function setupListOps() {
 test('unsaved edits raise the pending indicator and saving clears it', () => {
     const dom = new JSDOM(`<div id="studio-split">
         <button data-studio-tab="hero"></button><button data-workspace-tool="select"></button><button data-workspace-tool="interact"></button>
-        <input type="checkbox" data-studio-interact>
         <span data-studio-dirty hidden><span data-studio-dirty-text></span></span>
         <button type="button" data-studio-save-jump hidden></button>
         <section data-object-inspector><h2 data-object-title></h2><p data-object-scope></p><dl data-object-metrics></dl><div data-object-controls></div><ul data-page-layers></ul></section>
@@ -248,7 +244,6 @@ function setupOverrides() {
     const dom = new JSDOM(`<div id="studio-split">
         <button data-studio-tab="hero"></button><button data-studio-tab="blocks"></button>
         <button data-workspace-tool="select"></button><button data-workspace-tool="interact"></button>
-        <input type="checkbox" data-studio-interact>
         <section data-object-inspector><h2 data-object-title></h2><p data-object-scope></p><dl data-object-metrics></dl><div data-object-controls></div><ul data-page-layers></ul></section>
         <form>
         <section data-context-panel hidden><strong data-context-title></strong><p data-context-note></p><div data-context-fields></div><button type="button" data-context-clear></button></section>
@@ -320,7 +315,6 @@ test('layer tree lists sections with their named elements and mirrors selection'
 test('the inspector diagnostics collapse and the choice persists', () => {
     const dom = new JSDOM(`<div id="studio-split">
         <button data-studio-tab="hero"></button>
-        <input type="checkbox" data-studio-interact>
         <section data-object-inspector><header class="studio-object-head"><h2 data-object-title></h2><button type="button" data-object-collapse aria-expanded="false"></button></header><p data-object-scope></p><dl data-object-metrics></dl><div data-object-controls></div><ul data-page-layers></ul></section>
         <form><div data-studio-field="public.landing.hero.title_line1"><input name="hero" value="Initial"></div></form>
     </div>`, { url: 'http://tenant.test' });
@@ -346,12 +340,11 @@ test('the inspector diagnostics collapse and the choice persists', () => {
     }
 });
 
-// The save card is gone; the toolbar save button opens a scope menu whose
-// buttons submit the studio form through the `form` attribute.
+// The save card and the top toolbar are gone; the status-bar save button
+// opens a scope menu whose buttons submit the studio form via `form`.
 function setupSaveMenu() {
     const dom = new JSDOM(`<div id="studio-split">
         <button data-studio-tab="hero"></button>
-        <input type="checkbox" data-studio-interact>
         <span data-studio-dirty hidden><span data-studio-dirty-text></span></span>
         <button type="button" data-studio-save-jump hidden></button>
         <div data-studio-save-menu>
@@ -372,7 +365,7 @@ function setupSaveMenu() {
     };
 }
 
-test('the toolbar save button opens a scope menu that submits the studio form', () => {
+test('the status-bar save button opens a scope menu that submits the studio form', () => {
     const { form, menu, jump } = setupSaveMenu();
     assert.equal(menu().classList.contains('is-open'), false);
     jump().click();
@@ -393,4 +386,90 @@ test('the toolbar save button opens a scope menu that submits the studio form', 
     everyone.click();
     assert.deepEqual(submissions, ['everyone']);
     assert.equal(menu().classList.contains('is-open'), false);
+});
+
+test('the workspace tool buttons drive interaction mode without a checkbox', () => {
+    const { frame } = setup();
+    const canvas = frame();
+    // Default tool is select: the canvas is in editing mode.
+    assert.equal(canvas.window.document.documentElement.classList.contains('studio-canvas-editing'), true);
+    assert.equal(document.querySelector('[data-workspace-tool="select"]').getAttribute('aria-pressed'), 'true');
+
+    document.querySelector('[data-workspace-tool="interact"]').click();
+    assert.equal(canvas.window.document.documentElement.classList.contains('studio-canvas-editing'), false);
+    assert.equal(document.querySelector('[data-workspace-tool="interact"]').getAttribute('aria-pressed'), 'true');
+
+    // Interactions pass through while the hand tool is active.
+    const event = new canvas.window.MouseEvent('click', { bubbles: true, cancelable: true });
+    canvas.window.document.querySelector('a').dispatchEvent(event);
+    assert.equal(event.defaultPrevented, false);
+
+    document.querySelector('[data-workspace-tool="select"]').click();
+    assert.equal(canvas.window.document.documentElement.classList.contains('studio-canvas-editing'), true);
+});
+
+test('the inspector column collapses, persists, and reopens on selection', () => {
+    const dom = new JSDOM(`<div id="studio-split">
+        <button data-studio-tab="hero" aria-label="Hero"></button>
+        <section data-object-inspector><header class="studio-object-head"><h2 data-object-title></h2><button type="button" data-inspector-toggle aria-expanded="true"></button></header><p data-object-scope></p><dl data-object-metrics></dl><div data-object-controls></div><ul data-page-layers></ul></section>
+        <form><div data-studio-group="hero"><div data-studio-field="public.landing.hero.title_line1"><input name="hero" value="Initial"></div></div></form>
+    </div>`, { url: 'http://tenant.test' });
+    for (const key of ['document', 'Event', 'CustomEvent', 'location', 'history']) globalThis[key] = dom.window[key];
+    globalThis.localStorage = dom.window.localStorage;
+    try {
+        const root = document.getElementById('studio-split');
+        const toggle = document.querySelector('[data-inspector-toggle]');
+        initWorkspace(document.querySelector('form'));
+
+        // Open by default; the toggle folds the column away and persists.
+        assert.equal(root.classList.contains('is-inspector-closed'), false);
+        toggle.click();
+        assert.equal(root.classList.contains('is-inspector-closed'), true);
+        assert.equal(toggle.getAttribute('aria-expanded'), 'false');
+        assert.equal(localStorage.getItem('studio.inspector.open'), '0');
+
+        // A rail tab click reopens a collapsed inspector.
+        document.querySelector('[data-studio-tab="hero"]').click();
+        assert.equal(root.classList.contains('is-inspector-closed'), false);
+        assert.equal(localStorage.getItem('studio.inspector.open'), '1');
+    } finally {
+        delete globalThis.localStorage;
+    }
+});
+
+test('the status-bar error indicator merges the server seed with live 422s', () => {
+    const dom = new JSDOM(`<div id="studio-split">
+        <button data-studio-tab="hero"></button>
+        <ul data-studio-error-seed hidden><li data-message="Server error one"></li></ul>
+        <footer class="studio-statusbar">
+            <span><button type="button" data-studio-errors-toggle hidden><span data-studio-errors-count>0</span></button></span>
+        </footer>
+        <section data-object-inspector><h2 data-object-title></h2><p data-object-scope></p><dl data-object-metrics></dl><div data-object-controls></div><ul data-page-layers></ul></section>
+        <form><div data-studio-group="hero"><div data-studio-field="public.landing.hero.title_line1"><input name="hero" value="Initial"></div></div></form>
+    </div>`, { url: 'http://tenant.test' });
+    for (const key of ['document', 'Event', 'CustomEvent']) globalThis[key] = dom.window[key];
+    const form = document.querySelector('form');
+    initWorkspace(form);
+    const toggle = () => document.querySelector('[data-studio-errors-toggle]');
+    const count = () => document.querySelector('[data-studio-errors-count]');
+
+    // Seeded from the server-rendered list.
+    assert.equal(toggle().hidden, false);
+    assert.equal(count().textContent, '۱');
+
+    // Live 422s join in; an empty list clears only the live side.
+    form.dispatchEvent(new CustomEvent('studio:errors', { detail: { errors: [
+        { path: 'public.landing.hero.title_line1', message: 'Live error two' },
+    ] } }));
+    assert.equal(count().textContent, '۲');
+    form.dispatchEvent(new CustomEvent('studio:errors', { detail: { errors: [] } }));
+    assert.equal(count().textContent, '۱');
+
+    // The popover lists the messages and a row jumps to its field.
+    toggle().click();
+    const rows = [...document.querySelectorAll('.studio-errors-popover button')];
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0].textContent, 'Server error one');
+    toggle().click();
+    assert.equal(document.querySelector('.studio-errors-popover').classList.contains('is-open'), false);
 });

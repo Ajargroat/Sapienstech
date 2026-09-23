@@ -10,17 +10,51 @@ export default function initWorkspace(form) {
     const metrics = inspector.querySelector('[data-object-metrics]');
     const shortcuts = inspector.querySelector('[data-object-controls]');
     const layers = inspector.querySelector('[data-page-layers]');
-    const toggle = document.querySelector('[data-studio-interact]');
     const fields = [...form.querySelectorAll('[data-studio-field]')];
     let doc = null;
     let selected = null;
     let identity = null;
     let observer = null;
-    const interactive = () => Boolean(toggle?.checked);
+    // Interaction mode derives from the active workspace tool (select vs
+    // interact); the old preview-head checkbox is gone.
+    let activeTool = 'select';
+    const interactive = () => activeTool === 'interact';
     const fieldAt = (path) => fields.find((field) => field.dataset.studioField === path);
     const tab = (key) => [...root.querySelectorAll('[data-studio-tab]')].find((button) => button.dataset.studioTab === key);
+
+    // --- Inspector column -------------------------------------------------
+    // The whole inspector (`.studio-main`) can fold away so the canvas gets
+    // the full width. Selecting an object or clicking a rail tab reopens it;
+    // the choice persists like the device choice does.
+    const inspectorToggle = root.querySelector('[data-inspector-toggle]');
+    let inspectorOpen = true;
+    try { inspectorOpen = localStorage.getItem('studio.inspector.open') !== '0'; } catch { inspectorOpen = true; }
+    // Clicking a rail tab reopens a collapsed inspector (same affordance as
+    // selecting a canvas object): the tab's panel lives in that column.
+    root.addEventListener('click', (event) => {
+        if (event.target.closest?.('[data-studio-tab]')) openInspector();
+    });
+    const paintInspector = () => {
+        root.classList.toggle('is-inspector-closed', !inspectorOpen);
+        inspectorToggle?.setAttribute('aria-expanded', String(inspectorOpen));
+        if (inspectorToggle) inspectorToggle.title = inspectorOpen ? 'بستن پنل بازرس' : 'باز کردن پنل بازرس';
+    };
+    const openInspector = () => {
+        if (inspectorOpen) return;
+        inspectorOpen = true;
+        try { localStorage.setItem('studio.inspector.open', '1'); } catch { /* private mode */ }
+        paintInspector();
+    };
+    inspectorToggle?.addEventListener('click', () => {
+        inspectorOpen = !inspectorOpen;
+        try { localStorage.setItem('studio.inspector.open', inspectorOpen ? '1' : '0'); } catch { /* private mode */ }
+        paintInspector();
+    });
+    paintInspector();
+
     const openField = (field) => {
         if (!field) return;
+        openInspector();
         tab(field.closest('[data-studio-group]')?.dataset.studioGroup)?.click();
         form.querySelectorAll('.is-object-field').forEach((node) => node.classList.remove('is-object-field'));
         field.classList.add('is-object-field');
@@ -311,6 +345,7 @@ export default function initWorkspace(form) {
             ? 'این فهرست را می‌توانید همین‌جا ویرایش، جابه‌جا، تکثیر یا حذف کنید.'
             : 'با تغییر هر مقدار، پیش‌نمایش بی‌درنگ به‌روز می‌شود.';
         contextPanel.hidden = false;
+        openInspector();
         // The panel sits at the top of the scrolling dock; `nearest` only
         // scrolls when it is out of sight, so selecting in the canvas never
         // yanks the page around, but a deep scroll down the form still brings
@@ -410,6 +445,7 @@ export default function initWorkspace(form) {
     const sectionOf = (element) => element.closest('[data-studio-section]')?.dataset.studioSection;
     const select = (element, blockRow = null) => {
         if (!element) { clear(); return; }
+        openInspector();
         selected?.classList.remove('studio-inspected-object');
         selected = element;
         if (!interactive()) selected.classList.add('studio-inspected-object');
@@ -480,12 +516,14 @@ export default function initWorkspace(form) {
         doc?.documentElement.classList.toggle('studio-canvas-editing', !interactive());
         selected?.classList.toggle('studio-inspected-object', !interactive());
     };
+    const setTool = (tool) => {
+        activeTool = tool === 'interact' ? 'interact' : 'select';
+        paintTools();
+        form.dispatchEvent(new CustomEvent('studio:tool', { detail: { tool: activeTool } }));
+    };
     root.querySelectorAll('[data-workspace-tool]').forEach((button) => button.addEventListener('click', () => {
-        if (!toggle) return;
-        toggle.checked = button.dataset.workspaceTool === 'interact';
-        toggle.dispatchEvent(new Event('change', { bubbles: true }));
+        setTool(button.dataset.workspaceTool);
     }));
-    toggle?.addEventListener('change', paintTools);
     form.querySelector('[data-context-clear]')?.addEventListener('click', () => clear());
     const proxies = [...root.querySelectorAll('[data-workspace-insert],[data-workspace-action]')];
     const targetOf = (button) => button.hasAttribute('data-workspace-insert')
@@ -498,10 +536,7 @@ export default function initWorkspace(form) {
     proxies.forEach((button) => button.addEventListener('click', () => {
         if (button.disabled) return;
         tab('blocks')?.click();
-        if (toggle?.checked) {
-            toggle.checked = false;
-            toggle.dispatchEvent(new Event('change', { bubbles: true }));
-        }
+        if (interactive()) setTool('select');
         targetOf(button)?.click();
         syncActions();
     }));
@@ -549,7 +584,7 @@ export default function initWorkspace(form) {
                 placeChip();
             }, true);
             doc.addEventListener('scroll', placeChip, true);
-            toggle?.addEventListener('change', () => { hoverTarget = null; placeChip(); });
+            form.addEventListener('studio:tool', () => { hoverTarget = null; placeChip(); });
             doc.addEventListener('click', (click) => {
                 if (interactive()) return;
                 click.preventDefault();
@@ -714,6 +749,81 @@ export default function initWorkspace(form) {
         button.addEventListener('click', () => saveMenu.classList.remove('is-open'));
     });
     paintDirty();
+
+    // --- Status-bar error indicator ----------------------------------------
+    // Two sources merge here: the server-rendered seed list (a failed save
+    // re-render) and live-preview 422s (theme-studio.js dispatches
+    // `studio:errors` on the form). The icon + count sit in the status bar;
+    // clicking opens a popover whose rows jump to the offending field.
+    const errorsToggle = document.querySelector('[data-studio-errors-toggle]');
+    const errorsCount = document.querySelector('[data-studio-errors-count]');
+    let serverErrors = [...document.querySelectorAll('[data-studio-error-seed] [data-message]')]
+        .map((node) => ({ path: node.dataset.path || null, message: node.dataset.message }))
+        .filter((entry) => entry.message);
+    let liveErrors = [];
+    const persian = (n) => String(n).replace(/\d/g, (d) => '۰۱۲۳۴۵۶۷۸۹'[d]);
+
+    const popover = document.createElement('ul');
+    popover.className = 'studio-errors-popover';
+    popover.setAttribute('aria-label', 'خطاهای اعتبارسنجی');
+
+    const closePopover = () => {
+        popover.classList.remove('is-open');
+        errorsToggle?.setAttribute('aria-expanded', 'false');
+    };
+    const paintErrors = () => {
+        const entries = [...serverErrors, ...liveErrors];
+        const shown = entries.length > 0;
+        if (errorsToggle) {
+            errorsToggle.hidden = !shown;
+            errorsToggle.title = shown ? entries[0].message : '';
+        }
+        if (errorsCount) errorsCount.textContent = persian(entries.length);
+        if (!shown) closePopover();
+    };
+    const fillPopover = () => {
+        popover.replaceChildren();
+        const entries = [...serverErrors, ...liveErrors];
+        for (const entry of entries) {
+            const item = document.createElement('li');
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.textContent = entry.message;
+            button.addEventListener('click', () => {
+                closePopover();
+                if (entry.path) openField(fieldAt(entry.path));
+            });
+            item.append(button);
+            popover.append(item);
+        }
+    };
+    if (errorsToggle) {
+        errorsToggle.parentElement.style.position ||= 'relative';
+        errorsToggle.parentElement.append(popover);
+        errorsToggle.addEventListener('click', (event) => {
+            event.stopPropagation();
+            const opening = !popover.classList.contains('is-open');
+            if (opening) fillPopover();
+            popover.classList.toggle('is-open', opening);
+            errorsToggle.setAttribute('aria-expanded', String(opening));
+        });
+        document.addEventListener('click', (event) => {
+            if (!popover.classList.contains('is-open')) return;
+            if (popover.contains(event.target) || errorsToggle.contains(event.target)) return;
+            closePopover();
+        });
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') closePopover();
+        });
+    }
+    form.addEventListener('studio:errors', (event) => {
+        liveErrors = Array.isArray(event.detail?.errors) ? event.detail.errors : [];
+        paintErrors();
+    });
+    // A full save re-renders the page, so a submit means the server seed is
+    // about to be replaced; drop the live list with it.
+    form.addEventListener('submit', () => { liveErrors = []; paintErrors(); });
+    paintErrors();
 
     return { select, clear, measure, openContext, closeContext, selectPath };
 }

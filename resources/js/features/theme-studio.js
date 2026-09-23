@@ -35,7 +35,7 @@ export default function init(options = {}) {
     initGroups();
     initHints();
     initWorkspace(form);
-    initLive(form, options.shell === true);
+    initLive(form);
 }
 
 // Color: keep the read-only hex field in sync with the picker.
@@ -170,13 +170,18 @@ function initGroups() {
         main?.scrollTo({ top: 0, behavior: 'smooth' });
     }));
 
-    // A vertical wheel over the rail scrolls it sideways instead of being
-    // eaten by the bar behind it — but only while there is overflow, so the
-    // page still scrolls normally once the rail fits all tabs.
+    // Wheel over the rail: on narrow screens the rail is a horizontal strip
+    // (vertical wheel scrolls it sideways); on wide screens the wheel
+    // scrolls the rail's own overflow directly, which also guarantees the
+    // event reaches the rail even when it lands on a button's hover area.
     if (rail) rail.addEventListener('wheel', (e) => {
-        if (rail.scrollWidth <= rail.clientWidth || Math.abs(e.deltaY) < Math.abs(e.deltaX)) return;
-        e.preventDefault();
-        rail.scrollBy({ left: (rtl ? -1 : 1) * e.deltaY, top: 0 });
+        if (Math.abs(e.deltaY) < Math.abs(e.deltaX)) return;
+        if (rail.scrollHeight > rail.clientHeight) {
+            rail.scrollTop += e.deltaY;
+        } else if (rail.scrollWidth > rail.clientWidth) {
+            e.preventDefault();
+            rail.scrollBy({ left: (rtl ? -1 : 1) * e.deltaY, top: 0 });
+        }
     }, { passive: false });
 
     const focusTab = (t) => {
@@ -291,25 +296,43 @@ const tameFrameScrolling = (frame) => {
 };
 
 // Preview chrome: a desktop/mobile device switch plus a maximize button.
-// The iframe always renders at the *device's* CSS width (1440 or 390 px)
-// and is scaled down to fit the pane — otherwise a narrow pane would
-// silently be a mobile-only preview, which is exactly what made the old
-// fixed-width frame useless for theme work.
+// The controls live in the bottom status bar (outside the pane) since the
+// restructure, so they are queried at document scope. The iframe always
+// renders at the *device's* CSS width (1440 or 390 px) and is scaled down
+// to fit the pane — otherwise a narrow pane would silently be a mobile-only
+// preview, which is exactly what made the old fixed-width frame useless for
+// theme work.
 function initPreviewChrome(pane, frame) {
     const stage = pane.querySelector('[data-studio-preview-stage]');
-    const deviceBtns = Array.from(pane.querySelectorAll('[data-studio-preview-device]'));
-    const maxBtn = pane.querySelector('[data-studio-preview-max]');
+    const deviceBtns = Array.from(document.querySelectorAll('[data-studio-preview-device]'));
+    const maxBtn = document.querySelector('[data-studio-preview-max]');
     const split = document.getElementById('studio-split');
     if (!stage || !deviceBtns.length) return;
 
     const DEVICES = { desktop: { w: 1440, h: 900 }, tablet: { w: 768, h: 1024 }, mobile: { w: 390, h: 844 } };
-    const zoom = pane.querySelector('[data-studio-zoom]');
+    const zoom = document.querySelector('[data-studio-zoom]');
+    const zoomFit = document.querySelector('[data-studio-zoom-fit]');
+    const zoomValue = document.querySelector('[data-studio-zoom-value]');
 
     let device = 'desktop';
     try {
         const saved = localStorage.getItem('studio.preview.device');
         if (saved in DEVICES) device = saved;
     } catch { /* private mode */ }
+
+    // Zoom: null means the auto "fit" path (the slider is inert); dragging
+    // the slider takes over with a manual value until the fit button resets.
+    let manualZoom = null;
+    const persianDigits = (text) => String(text).replace(/\d/g, (d) => '۰۱۲۳۴۵۶۷۸۹'[d]);
+    const paintZoom = () => {
+        if (zoomFit) zoomFit.setAttribute('aria-pressed', String(manualZoom === null));
+        if (zoom) zoom.disabled = manualZoom === null;
+        if (zoomValue) {
+            zoomValue.textContent = manualZoom === null
+                ? 'متناسب'
+                : persianDigits(Math.round(manualZoom * 100)) + '٪';
+        }
+    };
 
     const fit = () => {
         const w = stage.clientWidth;
@@ -320,7 +343,7 @@ function initPreviewChrome(pane, frame) {
         // Contain-scale a real device viewport into the stage. A fixed
         // internal size (not stageHeight/scale) keeps svh units and the
         // hero's proportions honest, exactly like browser device mode.
-        const requested = Number(zoom?.value);
+        const requested = manualZoom;
         const scale = requested > 0 ? Math.min(1.25, Math.max(0.25, requested)) : Math.min(1, w / dev.w, h / dev.h);
         // Size every frame in the stage, not just the visible one: the
         // hot-swap twin must already be laid out when it trades places
@@ -360,7 +383,6 @@ function initPreviewChrome(pane, frame) {
 
     // Maximize is transient on purpose: reloading the studio should never
     // strand the tenant with the form hidden behind a full-width pane.
-    // resetMax() is called by setLive() when the preview closes.
     const resetMax = () => {
         if (!split?.classList.contains('is-max')) return;
         split.classList.remove('is-max');
@@ -380,7 +402,19 @@ function initPreviewChrome(pane, frame) {
         maxBtn.querySelector('i')?.classList.toggle('fa-expand', !on);
     });
 
-    zoom?.addEventListener('change', fit);
+    // `input` (not `change`) so the zoom tracks the drag live.
+    zoom?.addEventListener('input', () => {
+        const value = Number(zoom.value);
+        manualZoom = value > 0 ? value : null;
+        paintZoom();
+        fit();
+    });
+    zoomFit?.addEventListener('click', () => {
+        manualZoom = null;
+        paintZoom();
+        fit();
+    });
+    paintZoom();
     if (window.ResizeObserver) new ResizeObserver(fit).observe(stage);
     window.addEventListener('resize', fit);
 
@@ -398,14 +432,13 @@ function initPreviewChrome(pane, frame) {
 // classifies as structural (data-live="reload": variants, copy, nav...)
 // change markup, not just variables, so for those the frame is hot-swapped
 // with a freshly loaded twin instead of navigating in place.
-function initLive(form, shell) {
-    const toggle = document.querySelector('[data-studio-live]');
+function initLive(form) {
     const split = document.getElementById('studio-split');
     const pane = document.getElementById('studio-preview-pane');
     let frame = pane?.querySelector('[data-studio-preview-frame]');
     const dot = pane?.querySelector('[data-studio-live-dot]');
-    const reloadBtn = pane?.querySelector('[data-studio-preview-reload]');
-    if (!toggle || !split || !pane || !frame) return;
+    const reloadBtn = document.querySelector('[data-studio-preview-reload]');
+    if (!split || !pane || !frame) return;
 
     const chrome = initPreviewChrome(pane, frame);
     frame.addEventListener('load', (event) => {
@@ -416,6 +449,7 @@ function initLive(form, shell) {
 
     const liveUrl = form.dataset.liveUrl;
     const homeUrl = form.dataset.homeUrl;
+    if (!liveUrl || !homeUrl) return;
 
     // dotted path => 'token' | 'reload', straight from the rendered schema.
     const modes = {};
@@ -484,7 +518,6 @@ function initLive(form, shell) {
     };
 
     const sync = () => {
-        if (!toggle.checked) return;
         setDot('sync');
 
         const data = new FormData(form);
@@ -502,11 +535,28 @@ function initLive(form, shell) {
         }).then((res) => {
             if (!res.ok) {
                 setDot(res.status === 422 ? 'invalid' : 'error');
+                if (res.status === 422) {
+                    // Validation failure: feed the messages to the status-bar
+                    // indicator (studio-workspace.js listens for this).
+                    return res.json().catch(() => null).then((body) => {
+                        const errors = body?.errors && typeof body.errors === 'object'
+                            ? Object.entries(body.errors).map(([path, messages]) => ({
+                                path,
+                                message: [].concat(messages)[0],
+                            })).filter((entry) => entry.message)
+                            : [];
+                        form.dispatchEvent(new CustomEvent('studio:errors', { detail: { errors } }));
+                        return null;
+                    });
+                }
                 return null;
             }
             return res.json();
         }).then((json) => {
             if (!json) return;
+            // A successful sync clears any live-validation errors the
+            // indicator was showing.
+            form.dispatchEvent(new CustomEvent('studio:errors', { detail: { errors: [] } }));
             lastTokens = { vars: json.vars, schemes: json.schemes };
             // The studio chrome is a platform surface: tenant tokens are
             // painted into the preview iframe only, never onto the page
@@ -529,43 +579,18 @@ function initLive(form, shell) {
     };
 
     const queue = () => {
-        if (!toggle.checked) return;
         clearTimeout(syncTimer);
         syncTimer = setTimeout(sync, 300);
     };
     form.addEventListener('input', queue);
     form.addEventListener('change', queue);
 
-    const setLive = (on) => {
-        toggle.checked = on;
-        pane.hidden = !on;
-        split.classList.toggle('is-live', on);
-        // Wide screens: the whole page turns into the studio (preview as
-        // main content, settings as a docked bar). In the standalone shell
-        // the page already IS the studio — no body class switch, and the
-        // page never carries a tenant-token paint to undo.
-        if (!shell) {
-            document.body.classList.toggle('studio-mode', on);
-        }
-        if (on) {
-            if (!frame.dataset.loaded) {
-                frame.src = homeUrl;
-                frame.dataset.loaded = '1';
-            }
-            sync();
-        } else {
-            // The panel must not keep a theme it is no longer previewing,
-            // nor a maximized pane that would hide the form next time.
-            if (!shell) {
-                document.getElementById('studio-live-vars')?.remove();
-            }
-            chrome?.resetMax();
-        }
-        try { localStorage.setItem('studio.live', on ? '1' : '0'); } catch { /* private mode */ }
-    };
-
-    toggle.addEventListener('change', () => setLive(toggle.checked));
+    // The preview is always on: it is the studio's main canvas, not an
+    // opt-in panel. Load the frame once and sync immediately on boot.
+    if (!frame.dataset.loaded) {
+        frame.src = homeUrl;
+        frame.dataset.loaded = '1';
+    }
     reloadBtn?.addEventListener('click', swapFrame);
-
-    setLive(toggle.checked);
+    sync();
 }

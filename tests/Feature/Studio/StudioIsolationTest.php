@@ -113,9 +113,20 @@ class StudioIsolationTest extends TestCase
             'data-object-metrics',
             'data-studio-preview-device="tablet"',
             'data-studio-zoom',
+            'studio-statusbar',
+            'data-studio-save-jump',
+            'data-inspector-toggle',
         ] as $marker) {
             $this->assertStringContainsString($marker, $html);
         }
+
+        // The old top toolbar and its live/interact toggles are gone: the
+        // preview is always on and interaction derives from the rail tools.
+        $this->assertStringNotContainsString('studio-workspace-toolbar', $html);
+        $this->assertStringNotContainsString('data-studio-live', preg_replace('/data-studio-live-dot/', '', $html) ?? '');
+        $this->assertStringNotContainsString('data-studio-interact', $html);
+        // The preview pane renders visible (always-on), not hidden.
+        $this->assertStringNotContainsString('id="studio-preview-pane" hidden', $html);
 
         // The baseline placeholder service card renders as an editable row.
         $this->assertStringContainsString(

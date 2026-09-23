@@ -15,15 +15,23 @@
 @section('content')
 
 @if(session('success'))
-    <div class="settings-flash settings-flash--success" role="status">
+    {{-- Success notices are transient toasts, not in-flow rows: app.js fades
+         and removes them after data-flash-timeout ms. --}}
+    <div class="settings-flash settings-flash--success studio-toast" role="status" data-flash-timeout="5000">
         <i class="fas fa-check-circle" aria-hidden="true"></i> {{ session('success') }}
     </div>
 @endif
 
 @if($errors->any())
-    <div class="settings-flash settings-flash--error" role="alert">
-        <i class="fas fa-exclamation-circle" aria-hidden="true"></i> {{ $errors->first() }}
-    </div>
+    {{-- Validation errors no longer render as a big banner: the status-bar
+         indicator (bottom of the page) surfaces them as an icon + count and
+         its popover lists every message, each clickable to the field. This
+         hidden list is the server-rendered seed; live-preview 422s join in. --}}
+    <ul class="studio-error-seed" data-studio-error-seed hidden>
+        @foreach($errors->all() as $message)
+            <li data-message="{{ $message }}"></li>
+        @endforeach
+    </ul>
 @endif
 
 @if($previewing)
@@ -36,47 +44,6 @@
         </form>
     </div>
 @endif
-
-<div class="studio-toolbar studio-workspace-toolbar">
-    <span class="studio-toolbar-title">
-        <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i>
-        استودیوی ظاهر
-    </span>
-
-    <label class="studio-live-toggle">
-        <input type="checkbox" data-studio-live checked>
-        <span>پیش‌نمایش زنده</span>
-    </label>
-
-    {{-- Unsaved-changes indicator: the live preview writes to the session only,
-         so an edit is "pending" until one of the save buttons is used. --}}
-    <span class="studio-dirty" data-studio-dirty hidden role="status" aria-live="polite">
-        <span class="studio-dirty-dot" aria-hidden="true"></span>
-        <span data-studio-dirty-text>ذخیره‌نشده</span>
-    </span>
-    {{-- Save lives in the toolbar: the button opens a scope menu whose
-         buttons submit this form through the `form` attribute, so the old
-         bottom card (which pushed every panel far from the canvas) is gone. --}}
-    <div class="studio-save-wrap">
-        <button type="button" class="studio-toolbar-save" data-studio-save-jump hidden>
-            <i class="fas fa-save" aria-hidden="true"></i>
-            ذخیرهٔ تغییرات
-        </button>
-        <div class="studio-save-menu" data-studio-save-menu>
-            <button type="submit" form="studio-form" name="scope" value="preview">
-                <i class="fas fa-eye" aria-hidden="true"></i> پیش‌نمایش
-            </button>
-            <button type="submit" form="studio-form" name="scope" value="me">
-                <i class="fas fa-user" aria-hidden="true"></i> فقط برای من
-            </button>
-            @if($canPublishEveryone)
-                <button type="submit" form="studio-form" name="scope" value="everyone" class="is-primary">
-                    <i class="fas fa-globe" aria-hidden="true"></i> برای همه
-                </button>
-            @endif
-        </div>
-    </div>
-</div>
 
 @php
     // The rail and the panels iterate the same filtered groups, so a tab can
@@ -205,6 +172,10 @@
                             aria-expanded="false" aria-label="نمایش یا بستن جزئیات عنصر">
                         <i class="fas fa-chevron-down" aria-hidden="true"></i>
                     </button>
+                    <button type="button" class="studio-object-collapse" data-inspector-toggle
+                            aria-expanded="true" title="بستن پنل بازرس" aria-label="بستن یا باز کردن پنل بازرس">
+                        <i class="fas fa-xmark" aria-hidden="true"></i>
+                    </button>
                 </header>
                 <p data-object-scope>برای مشاهدهٔ ویژگی‌ها، عنصری را در پیش‌نمایش انتخاب کنید.</p>
                 <dl class="studio-object-metrics" data-object-metrics aria-label="ابعاد و موقعیت عنصر"></dl>
@@ -281,45 +252,12 @@
 
     {{-- Live preview: an iframe of the public site, same session, so the
          studio's preview layer renders in it. Token changes are patched in
-         as CSS variables without a reload; structural ones reload it. --}}
-    <aside class="studio-preview-pane" id="studio-preview-pane" hidden>
+         as CSS variables without a reload; structural ones reload it. The
+         pane is always visible — the preview is the studio's main canvas. --}}
+    <aside class="studio-preview-pane" id="studio-preview-pane">
         <div class="studio-preview-head">
             <span class="studio-live-dot" data-studio-live-dot data-state="idle" aria-hidden="true"></span>
             <span>پیش‌نمایش زنده</span>
-            <label class="studio-live-toggle">
-                <input type="checkbox" data-studio-interact>
-                <span>تعامل با صفحه</span>
-            </label>
-            <div class="studio-preview-devices" role="group" aria-label="اندازهٔ نمایش">
-                <button type="button" class="studio-preview-device" data-studio-preview-device="desktop" title="نمایش دسکتاپ" aria-label="نمایش دسکتاپ" aria-pressed="true">
-                    <i class="fas fa-display" aria-hidden="true"></i>
-                </button>
-                <button type="button" class="studio-preview-device" data-studio-preview-device="tablet" title="نمایش تبلت" aria-label="نمایش تبلت" aria-pressed="false">
-                    <i class="fas fa-tablet-screen-button" aria-hidden="true"></i>
-                </button>
-                <button type="button" class="studio-preview-device" data-studio-preview-device="mobile" title="نمایش موبایل" aria-label="نمایش موبایل" aria-pressed="false">
-                    <i class="fas fa-mobile-screen-button" aria-hidden="true"></i>
-                </button>
-            </div>
-            <label class="studio-workspace-zoom">
-                <span>بزرگ‌نمایی</span>
-                <select data-studio-zoom aria-label="بزرگ‌نمایی پیش‌نمایش">
-                    <option value="fit" selected>متناسب</option>
-                    <option value=".5">۵۰٪</option>
-                    <option value=".75">۷۵٪</option>
-                    <option value="1">۱۰۰٪</option>
-                    <option value="1.25">۱۲۵٪</option>
-                </select>
-            </label>
-            <button type="button" class="studio-preview-action" data-studio-preview-reload title="بارگذاری دوباره" aria-label="بارگذاری دوبارهٔ پیش‌نمایش">
-                <i class="fas fa-rotate" aria-hidden="true"></i>
-            </button>
-            <a class="studio-preview-action" href="{{ route('home') }}" target="_blank" rel="noopener" title="باز کردن در تب جدید" aria-label="باز کردن پیش‌نمایش در تب جدید">
-                <i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i>
-            </a>
-            <button type="button" class="studio-preview-action" data-studio-preview-max title="تمام‌صفحه" aria-label="تغییر حالت تمام‌صفحهٔ پیش‌نمایش">
-                <i class="fas fa-expand" aria-hidden="true"></i>
-            </button>
         </div>
         {{-- The iframe is sized to the emulated device's CSS width and
              scaled to fit this stage (theme-studio.js). --}}
@@ -328,5 +266,79 @@
         </div>
     </aside>
 </div>
+
+{{-- Bottom status bar: preview chrome (devices, zoom, frame actions) on one
+     side, save + dirty + error indicator on the other — the classic thin
+     application status bar that replaced the old top toolbar. --}}
+<footer class="studio-statusbar studio-workspace" aria-label="نوار وضعیت استودیو">
+    <div class="studio-preview-devices" role="group" aria-label="اندازهٔ نمایش">
+        <button type="button" class="studio-preview-device" data-studio-preview-device="desktop" title="نمایش دسکتاپ" aria-label="نمایش دسکتاپ" aria-pressed="true">
+            <i class="fas fa-display" aria-hidden="true"></i>
+        </button>
+        <button type="button" class="studio-preview-device" data-studio-preview-device="tablet" title="نمایش تبلت" aria-label="نمایش تبلت" aria-pressed="false">
+            <i class="fas fa-tablet-screen-button" aria-hidden="true"></i>
+        </button>
+        <button type="button" class="studio-preview-device" data-studio-preview-device="mobile" title="نمایش موبایل" aria-label="نمایش موبایل" aria-pressed="false">
+            <i class="fas fa-mobile-screen-button" aria-hidden="true"></i>
+        </button>
+    </div>
+
+    <div class="studio-workspace-zoom" role="group" aria-label="بزرگ‌نمایی پیش‌نمایش">
+        <button type="button" class="studio-statusbar-btn" data-studio-zoom-fit title="بزرگ‌نمایی متناسب" aria-label="بزرگ‌نمایی متناسب" aria-pressed="true">
+            <i class="fas fa-expand" aria-hidden="true"></i>
+        </button>
+        <input type="range" id="studio-zoom" class="studio-zoom-bar" data-studio-zoom min="0.25" max="1.25" step="0.05" value="1" aria-label="بزرگ‌نمایی پیش‌نمایش">
+        <output class="studio-zoom-value" data-studio-zoom-value for="studio-zoom">متناسب</output>
+    </div>
+
+    <button type="button" class="studio-preview-action studio-statusbar-btn" data-studio-preview-reload title="بارگذاری دوباره" aria-label="بارگذاری دوبارهٔ پیش‌نمایش">
+        <i class="fas fa-rotate" aria-hidden="true"></i>
+    </button>
+    <a class="studio-preview-action studio-statusbar-btn" href="{{ route('home') }}" target="_blank" rel="noopener" title="باز کردن در تب جدید" aria-label="باز کردن پیش‌نمایش در تب جدید">
+        <i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i>
+    </a>
+    <button type="button" class="studio-preview-action studio-statusbar-btn" data-studio-preview-max title="تمام‌صفحه" aria-label="تغییر حالت تمام‌صفحهٔ پیش‌نمایش">
+        <i class="fas fa-expand" aria-hidden="true"></i>
+    </button>
+
+    <span class="studio-statusbar-spacer" aria-hidden="true"></span>
+
+    {{-- Error/validation indicator: seeded from the server-rendered error
+         list and fed by live-preview 422s; click opens the message popover. --}}
+    <button type="button" class="studio-statusbar-btn studio-errors-toggle" data-studio-errors-toggle hidden
+            title="خطاهای اعتبارسنجی" aria-label="خطاهای اعتبارسنجی" aria-expanded="false">
+        <i class="fas fa-circle-exclamation" aria-hidden="true"></i>
+        <span class="studio-errors-count" data-studio-errors-count>0</span>
+    </button>
+
+    {{-- Unsaved-changes indicator: the live preview writes to the session
+         only, so an edit is "pending" until one of the save buttons is used. --}}
+    <span class="studio-dirty" data-studio-dirty hidden role="status" aria-live="polite">
+        <span class="studio-dirty-dot" aria-hidden="true"></span>
+        <span data-studio-dirty-text>ذخیره‌نشده</span>
+    </span>
+
+    {{-- Save: the button opens a scope dropup whose buttons submit the
+         studio form through the `form` attribute. --}}
+    <div class="studio-save-wrap">
+        <button type="button" class="studio-statusbar-save" data-studio-save-jump hidden>
+            <i class="fas fa-save" aria-hidden="true"></i>
+            ذخیرهٔ تغییرات
+        </button>
+        <div class="studio-save-menu" data-studio-save-menu>
+            <button type="submit" form="studio-form" name="scope" value="preview">
+                <i class="fas fa-eye" aria-hidden="true"></i> پیش‌نمایش
+            </button>
+            <button type="submit" form="studio-form" name="scope" value="me">
+                <i class="fas fa-user" aria-hidden="true"></i> فقط برای من
+            </button>
+            @if($canPublishEveryone)
+                <button type="submit" form="studio-form" name="scope" value="everyone" class="is-primary">
+                    <i class="fas fa-globe" aria-hidden="true"></i> برای همه
+                </button>
+            @endif
+        </div>
+    </div>
+</footer>
 
 @endsection
