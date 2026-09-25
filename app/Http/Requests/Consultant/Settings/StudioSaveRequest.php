@@ -33,6 +33,29 @@ class StudioSaveRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
+        // The canvas document travels as a JSON blob in one hidden field
+        // (its map keys are element ids, which contain dots and so cannot be
+        // submitted as nested form inputs). Decode it here so validation and
+        // normalization see the same array shape the emitter reads; a blob
+        // that is not an object stays as-is and fails the `array` rule.
+        foreach (StudioSchema::fields() as $path => $field) {
+            if (($field['control'] ?? '') !== 'canvas') {
+                continue;
+            }
+
+            $raw = $this->input($path);
+
+            if (! is_string($raw) || $raw === '') {
+                $this->merge([$path => null]);
+
+                continue;
+            }
+
+            $decoded = json_decode($raw, true);
+
+            $this->merge([$path => is_array($decoded) ? $decoded : $raw]);
+        }
+
         foreach (StudioSchema::fields() as $path => $field) {
             if (($field['control'] ?? '') !== 'list') {
                 continue;

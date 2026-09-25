@@ -93,7 +93,7 @@ class ShellNavigationTest extends TestCase
 
         $this->assertNotNull($field, 'shell_nav must be whitelisted in config/studio.php');
         $this->assertSame('layout', $field['group']);
-        $this->assertSame(['topnav' => 'نوار بالا', 'sidebar' => 'نوار کناری'], $field['options']);
+        $this->assertSame(['topnav' => 'Top bar', 'sidebar' => 'Sidebar'], $field['options']);
     }
 
     public function test_the_shell_defaults_to_the_topnav(): void

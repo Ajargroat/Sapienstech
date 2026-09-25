@@ -12,6 +12,9 @@
 @endphp
 
 @section('content')
+{{-- Studio ids: top-level regions of the consultant dashboard, addressable from
+     the canvas under the template-owned `public.consultant.*` root (see
+     StudioStyles::TEMPLATE_ROOTS). --}}
 @if(session('success'))
     <div class="settings-flash settings-flash--success" role="status">
         <i class="fas fa-check-circle" aria-hidden="true"></i> {{ session('success') }}
@@ -24,7 +27,8 @@
     </div>
 @endif
 
-<div class="panel-heading">
+<template data-studio-section-marker="heading"></template>
+<div class="panel-heading" data-studio-path="public.consultant.heading">
     <div class="panel-heading-title">
         <h2>{{ $labels['student_list'] }}</h2>
         <span class="count-badge" data-router-region="results">{{ persian_digits($students->total()) }} نفر</span>
@@ -442,9 +446,9 @@
     </div>
 </div>
 
-<div data-router-region="results">
+<div data-router-region="results" data-studio-path="public.consultant.students">
     @if($students->count() > 0)
-        <div class="student-grid" data-stagger>
+        <div class="student-grid" data-stagger data-studio-path="public.consultant.students.grid">
             @foreach($students as $student)
             <a
                 href="{{ route('consultant.student.profile', $student) }}"

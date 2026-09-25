@@ -23,7 +23,11 @@
 @extends('layouts.student')
 
 @section('content')
-<div class="student-welcome">
+{{-- Studio ids: top-level regions of the student dashboard, addressable from
+     the canvas under the template-owned `public.student.*` root (see
+     StudioStyles::TEMPLATE_ROOTS). --}}
+<template data-studio-section-marker="welcome"></template>
+<div class="student-welcome" data-studio-path="public.student.welcome">
     <section class="student-profile-head">
         <span class="student-avatar-lg">{{ mb_substr($student->name, 0, 1) }}</span>
         <div>
@@ -61,7 +65,8 @@
     </a>
 @endif
 
-<div class="student-stats" data-stagger>
+<template data-studio-section-marker="stats"></template>
+<div class="student-stats" data-stagger data-studio-path="public.student.stats">
     <div class="student-stat">
         <span class="student-stat-icon student-stat-icon--primary"><i class="fas fa-calendar-alt"></i></span>
         <div class="student-stat-text">
@@ -98,7 +103,7 @@
 </div>
 
 <div class="student-side">
-    <section class="panel student-panel">
+    <section class="panel student-panel" data-studio-path="public.student.schedule">
         <header class="student-panel-head">
             <h2><i class="fas fa-calendar-week"></i> برنامه هفتگی</h2>
             <span class="count-badge">{{ persian_digits($stats['week_sessions']) }} مورد</span>
@@ -164,7 +169,7 @@
         @endif
     </section>
 
-    <section class="panel student-panel">
+    <section class="panel student-panel" data-studio-path="public.student.exams">
         <header class="student-panel-head">
             <h2><i class="fas fa-tasks"></i> آزمون‌های پیش‌رو</h2>
             @if($upcomingExams->isNotEmpty())
@@ -225,7 +230,7 @@
         @endif
     </section>
 
-    <section class="panel student-panel">
+    <section class="panel student-panel" data-studio-path="public.student.results">
         <header class="student-panel-head">
             <h2><i class="fas fa-chart-line"></i> آخرین نتایج</h2>
             @if($stats['completed_exams'] > 0)

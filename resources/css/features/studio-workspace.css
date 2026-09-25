@@ -1,12 +1,14 @@
-/* Keep editor chrome independent of the tenant tokens being edited. */
+/* Keep editor chrome independent of the tenant tokens being edited.
+   The palette is the Figma dark editor theme, a shade darker so the
+   panels read as chrome rather than content. */
 .studio-workspace {
-  --workspace-bg: #202226;
-  --workspace-panel: #292c31;
-  --workspace-raised: #34383f;
-  --workspace-border: #484d56;
-  --workspace-text: #f1f3f5;
-  --workspace-muted: #b7bec9;
-  --workspace-accent: #a9ccff;
+  --workspace-bg: #1E1E1E;
+  --workspace-panel: #252525;
+  --workspace-raised: #333333;
+  --workspace-border: #3F3F3F;
+  --workspace-text: #FFFFFF;
+  --workspace-muted: #A6A6A6;
+  --workspace-accent: #0D99FF;
   --c-background: var(--workspace-bg);
   --c-surface: var(--workspace-panel);
   --c-text: var(--workspace-text);
@@ -25,7 +27,7 @@
 
 /* Bottom status bar: the thin application chrome that replaced the old top
    toolbar — devices, zoom and frame actions on one side, errors, dirty
-   state and save on the other. */
+   state and save on the other. LTR with the English shell. */
 .studio-statusbar {
   display: flex;
   align-items: center;
@@ -34,7 +36,6 @@
   padding: 3px 10px;
   border-top: 1px solid var(--workspace-border);
   background: var(--workspace-panel);
-  direction: rtl;
 }
 
 .studio-statusbar-spacer { flex: 1 1 auto; }
@@ -46,6 +47,17 @@
   border-radius: 6px;
   background: var(--workspace-bg);
 }
+
+/* Page switcher: text chips beside the device buttons — the label is the
+   page's name, so no icon needs registering for them. */
+.studio-statusbar .studio-preview-pages {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 6px;
+  background: var(--workspace-bg);
+}
+.studio-statusbar .studio-preview-page { height: 28px; padding: 0 10px; font-size: 12px; }
 
 .studio-statusbar-btn {
   position: relative;
@@ -113,42 +125,41 @@
   cursor: pointer;
 }
 
-/* Save menu: anchored to the status-bar button, opening UPWARD as a dropup;
-   opened by studio-workspace.js (is-open), and its submit buttons post the
-   studio form through the `form` attribute with their scope value. */
+/* Save: one button + a confirmation dialog (the scope menu is gone).
+   The dialog is a native <dialog> in the status bar, themed to the rest
+   of the studio; its submit button posts the form with the scope. */
 .studio-save-wrap { position: relative; display: inline-flex; }
-.studio-save-menu {
-  position: absolute;
-  bottom: calc(100% + 6px);
-  inset-inline-end: 0;
-  z-index: 40;
-  display: none;
-  flex-direction: column;
-  gap: 6px;
-  min-width: 180px;
-  padding: 8px;
+.studio-confirm {
+  width: min(420px, calc(100vw - 32px));
+  padding: 18px;
   border: 1px solid var(--workspace-border);
-  border-radius: 8px;
+  border-radius: 10px;
   background: var(--workspace-raised);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, .45);
+  color: var(--workspace-text);
+  font-family: inherit;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, .55);
 }
-.studio-save-menu.is-open { display: flex; }
-.studio-save-menu button {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
+.studio-confirm::backdrop { background: rgba(0, 0, 0, .55); }
+.studio-confirm h3 { margin: 0 0 8px; font-size: 14px; font-weight: 700; }
+.studio-confirm p { margin: 0; color: var(--workspace-muted); font-size: 12px; line-height: 1.7; }
+.studio-confirm-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+.studio-confirm-actions button {
+  padding: 7px 14px;
   border: 1px solid var(--workspace-border);
   border-radius: 6px;
   background: var(--workspace-bg);
   color: var(--workspace-text);
   font: inherit;
   font-size: 12px;
-  white-space: nowrap;
   cursor: pointer;
 }
-.studio-save-menu button:hover { border-color: var(--workspace-accent); color: var(--workspace-accent); }
-.studio-save-menu button.is-primary { border-color: var(--workspace-accent); color: var(--workspace-accent); }
+.studio-confirm-actions .studio-confirm-go {
+  border-color: var(--workspace-accent);
+  background: var(--workspace-accent);
+  color: #101010;
+  font-weight: 700;
+}
+.studio-confirm-actions button:hover { border-color: var(--workspace-accent); }
 
 /* Validation indicator: icon + count; hidden while there is nothing to
    report. Its popover lists the messages and each row jumps to the field. */
@@ -200,8 +211,9 @@
 }
 
 body .studio-workspace.studio-split {
+  position: relative;
   display: grid;
-  grid-template-columns: 88px minmax(0, 1fr);
+  grid-template-columns: var(--rail-w, 240px) minmax(0, 1fr);
   grid-template-areas: "rail inspector";
   gap: 1px;
   min-width: 0;
@@ -210,9 +222,36 @@ body .studio-workspace.studio-split {
   overflow: hidden;
 }
 
+/* Panel sashes: invisible borders that light up on hover and drag to
+   resize the rail / inspector (studio-workspace.js). Absolutely
+   positioned on the column boundary, so they claim no grid cell. */
+.studio-sash {
+  display: none;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 7px;
+  z-index: 15;
+  cursor: col-resize;
+  background: transparent;
+  touch-action: none;
+}
+.studio-sash[data-studio-sash="rail"] { left: max(0px, calc(var(--rail-w, 240px) - 3px)); }
+.studio-sash[data-studio-sash="inspector"] { right: max(0px, calc(var(--inspector-w, 340px) - 3px)); }
+
+.studio-split.is-resizing { transition: none !important; }
+.studio-split.is-resizing .studio-sash,
+.studio-sash:hover,
+.studio-sash:focus-visible {
+  outline: none;
+  background: color-mix(in srgb, var(--workspace-accent) 45%, transparent);
+}
+
+/* The shell is English/LTR, so the panels inherit it — the tenant's own
+   RTL lives inside the preview iframe, which is a separate document. */
 .studio-workspace > .studio-main,
 .studio-workspace > .studio-preview-pane,
-.studio-workspace > .studio-workspace-rail { direction: rtl; }
+.studio-workspace > .studio-workspace-rail { direction: ltr; }
 
 body .studio-workspace.studio-split .studio-main {
   grid-area: inspector;
@@ -244,28 +283,198 @@ body .studio-workspace.studio-split .studio-main::-webkit-scrollbar {
   background: var(--workspace-bg);
 }
 
-/* Two icon lanes per group (Illustrator-style): the rail is ~88px wide, so
-   every button group flows as a 2×40px grid instead of a single column. */
-.studio-workspace .studio-workspace-tools,
-body .studio-workspace .studio-tabs {
-  display: grid;
-  grid-template-columns: repeat(2, 40px);
-  justify-content: center;
-  align-content: start;
-  flex: 0 0 auto;
-  gap: 4px;
+/* The layer tree owns the rail below the tool groups: it names the whole
+   document, so it stretches to the rail's width (the rail centres its
+   children) and scrolls on its own. */
+.studio-workspace .studio-workspace-tree {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
   width: 100%;
-  padding: 0 0 8px;
-  margin: 0;
-  border: 0;
-  border-bottom: 1px solid var(--workspace-border);
-  border-radius: 0;
-  background: transparent;
-  position: static;
-  overflow: visible;
+  min-height: 0;
 }
 
-.studio-workspace .studio-workspace-tools:last-child { border-bottom: 0; }
+.studio-workspace .studio-workspace-tree-title {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  padding: 0 3px 6px;
+  border-bottom: 1px solid var(--workspace-border);
+  color: var(--workspace-muted);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.studio-workspace .studio-workspace-tree [data-page-layers] {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0;
+  padding: 0 2px;
+  list-style: none;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--workspace-border) var(--workspace-bg);
+}
+
+.studio-workspace .studio-layer,
+.studio-workspace .studio-layer-children {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Rows wrap so the name truncates on the first line while a nested list
+   drops onto its own. Rows stretch, so each depth guide spans the full row
+   height and the dashed connectors join across neighbours. */
+.studio-workspace .studio-layer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+}
+
+.studio-workspace .studio-layer.is-collapsed > .studio-layer-children { display: none; }
+
+/* The indentation lives on the ROWS (one dashed guide per depth level), not
+   on the nested lists — that keeps the guide lines continuous and lets every
+   level step right by the same fixed amount. */
+.studio-workspace .studio-layer-children {
+  flex: 1 0 100%;
+  margin-inline-start: 0;
+  padding-inline-start: 0;
+  border-inline-start: 0;
+}
+
+.studio-workspace .studio-layer-guide {
+  position: relative;
+  flex: 0 0 14px;
+  align-self: stretch;
+}
+.studio-workspace .studio-layer-guide::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 6px;
+  border-inline-start: 1px dashed #4D4D4D;
+}
+/* The last guide of a row also ticks right toward the row's chevron. */
+.studio-workspace .studio-layer-guide.is-connect::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  inset-inline-start: 6px;
+  width: 8px;
+  border-top: 1px dashed #4D4D4D;
+}
+
+.studio-workspace .studio-layer-toggle,
+.studio-workspace .studio-layer-spacer {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  min-height: 20px;
+  align-self: stretch;
+  color: var(--workspace-muted);
+  font-size: 9px;
+}
+
+.studio-workspace .studio-layer-toggle { cursor: pointer; }
+.studio-workspace .studio-layer-toggle[aria-expanded="false"] i { transform: rotate(-90deg); }
+
+.studio-workspace .studio-layer-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 4px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--workspace-muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-align: start;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.studio-workspace .studio-layer-name i { flex: 0 0 auto; font-size: 10px; opacity: .75; }
+
+.studio-workspace .studio-layer-name:hover { background: var(--workspace-raised); color: var(--workspace-text); }
+
+.studio-workspace .studio-layer-name[aria-current="true"] {
+  background: var(--workspace-raised);
+  color: var(--workspace-accent);
+  box-shadow: inset 2px 0 0 var(--workspace-accent);
+}
+
+/* Lock & visibility toggles: spans with role=button (the tree keeps one real
+   <button> per addressable element). Unpressed flags sit faint; a pressed
+   flag lights up, and the row itself dims to show the state at a glance. */
+.studio-workspace .studio-layer-flags {
+  flex: 0 0 auto;
+  display: inline-flex;
+  gap: 2px;
+  padding-inline-end: 3px;
+}
+
+.studio-workspace .studio-layer-flag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  color: var(--workspace-muted);
+  font-size: 9px;
+  opacity: .4;
+  cursor: pointer;
+}
+
+.studio-workspace .studio-layer-flag:hover { opacity: 1; background: var(--workspace-raised); }
+.studio-workspace .studio-layer-flag[aria-pressed="true"] { opacity: 1; color: var(--workspace-accent); }
+.studio-workspace .studio-layer.is-locked .studio-layer-name { opacity: .6; }
+.studio-workspace .studio-layer.is-hidden .studio-layer-name { opacity: .4; text-decoration: line-through; }
+
+/* Design area heading: the global schema groups moved here from the rail. */
+.studio-workspace .studio-design-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 10px;
+  color: var(--workspace-muted);
+  font-size: 11.5px;
+  font-weight: 800;
+}
+
+/* Floating tool bar: an overlaid pill at the bottom-center of the canvas
+   (Figma's tool shelf) — the pointer and hand live here now, not in the
+   rail, so the canvas keeps every pixel they used to occupy. */
+.studio-tool-dock {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  z-index: 20;
+  display: flex;
+  gap: 4px;
+  padding: 5px;
+  border: 1px solid var(--workspace-border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--workspace-panel) 94%, transparent);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 45%);
+  backdrop-filter: blur(8px);
+}
+.studio-tool-dock .studio-workspace-tool { width: 34px; height: 34px; }
 
 .studio-workspace .studio-workspace-tool,
 .studio-workspace .studio-tab,
@@ -378,6 +587,161 @@ body .studio-workspace .studio-tabs {
   font-size: 11px;
 }
 .studio-workspace .studio-context-style > span { color: var(--workspace-muted); }
+
+/* Origin chip: where this value actually comes from — Token / Local / State /
+   Breakpoint / Inherited / Component. */
+.studio-workspace .studio-context-style > span:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.studio-workspace .studio-context-origin {
+  font-size: 9px;
+  font-weight: 700;
+  font-style: normal;
+  color: var(--workspace-muted);
+}
+.studio-workspace .studio-context-origin[data-kind="local"] { color: var(--workspace-accent); }
+.studio-workspace .studio-context-origin[data-kind="token"] { color: var(--workspace-accent); }
+.studio-workspace .studio-context-origin[data-kind="state"] { color: var(--workspace-accent); }
+.studio-workspace .studio-context-origin[data-kind="breakpoint"] { color: var(--workspace-accent); }
+.studio-workspace .studio-context-origin[data-kind="inherited"] { opacity: .7; }
+
+/* Value-source row: token picker + promote ("create a token") actions. */
+.studio-workspace .studio-context-token {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+.studio-workspace .studio-context-token select {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 3px 6px;
+  border: 1px solid var(--workspace-border);
+  border-radius: 4px;
+  background: var(--workspace-raised);
+  color: var(--workspace-text);
+  font: inherit;
+  font-size: 10.5px;
+}
+.studio-workspace .studio-context-promote {
+  padding: 2px 8px;
+  border: 1px solid var(--workspace-border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--workspace-muted);
+  font: inherit;
+  font-size: 10.5px;
+  cursor: pointer;
+}
+.studio-workspace .studio-context-promote:hover:not(:disabled) { border-color: var(--workspace-accent); color: var(--workspace-accent); }
+.studio-workspace .studio-context-promote:disabled { opacity: .4; cursor: default; }
+
+/* Editing layer: the state / breakpoint switcher above the capability
+   sections, plus the per-layer reset. The breakpoint select mirrors the
+   status-bar device buttons — one width, two doors. */
+.studio-workspace .studio-context-layers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  padding-bottom: 8px;
+  margin-bottom: 4px;
+  border-bottom: 1px dashed var(--workspace-border);
+}
+.studio-workspace .studio-context-layers span { color: var(--workspace-muted); font-size: 10.5px; }
+.studio-workspace .studio-context-layers select {
+  padding: 3px 6px;
+  border: 1px solid var(--workspace-border);
+  border-radius: 4px;
+  background: var(--workspace-raised);
+  color: var(--workspace-text);
+  font: inherit;
+  font-size: 10.5px;
+}
+.studio-workspace .studio-context-layer-clear { margin-inline-start: auto; grid-column: auto; justify-self: auto; }
+
+/* Draft panel: the single checkpoint at the top of the rail (the layer tree
+   below it shares the title style). Actions are text chips — the panel is
+   document-level, not a toolbar, and every verb needs to read at a glance. */
+.studio-workspace .studio-workspace-draft {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed var(--workspace-border);
+}
+/* The draft panel is a collapsible details row: collapsed by default, its
+   summary doubles as the section title (rule: anything collapsible is). */
+.studio-workspace .studio-workspace-draft > summary {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  list-style: none;
+}
+.studio-workspace .studio-workspace-draft > summary::-webkit-details-marker { display: none; }
+.studio-workspace .studio-workspace-draft > summary::after {
+  content: "";
+  margin-inline-start: auto;
+  flex: 0 0 auto;
+  width: 5px;
+  height: 5px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform .15s ease;
+}
+.studio-workspace .studio-workspace-draft[open] > summary::after { transform: rotate(45deg); }
+.studio-workspace .studio-workspace-draft-body { display: flex; flex-direction: column; gap: 6px; }
+.studio-workspace .studio-workspace-draft-head { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.studio-workspace .studio-workspace-draft-title {
+  font-size: 11.5px;
+  color: var(--workspace-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.studio-workspace .studio-workspace-draft-time { font-size: 9.5px; color: var(--workspace-muted); }
+.studio-workspace .studio-workspace-draft-actions { display: flex; flex-wrap: wrap; gap: 4px; }
+.studio-workspace .studio-workspace-draft-action,
+.studio-workspace .studio-workspace-draft-create {
+  padding: 3px 8px;
+  border: 1px solid var(--workspace-border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--workspace-muted);
+  font: inherit;
+  font-size: 10.5px;
+  cursor: pointer;
+}
+.studio-workspace .studio-workspace-draft-action:hover,
+.studio-workspace .studio-workspace-draft-create:hover { border-color: var(--workspace-accent); color: var(--workspace-accent); }
+.studio-workspace .studio-workspace-draft-create { align-self: flex-start; }
+.studio-workspace .studio-workspace-draft-name {
+  width: 100%;
+  padding: 4px 6px;
+  border: 1px solid var(--workspace-border);
+  border-radius: 4px;
+  background: var(--workspace-raised);
+  color: var(--workspace-text);
+  font: inherit;
+  font-size: 11px;
+}
+.studio-workspace .studio-workspace-draft-status { margin: 0; font-size: 10.5px; color: var(--workspace-muted); }
+.studio-workspace .studio-workspace-draft-inspect {
+  margin: 0;
+  padding-inline-start: 14px;
+  max-height: 160px;
+  overflow: auto;
+  font-size: 10px;
+  color: var(--workspace-muted);
+  direction: ltr;
+  text-align: left;
+}
 .studio-workspace .studio-context-style output { min-inline-size: 3.5em; color: var(--workspace-muted); font-variant-numeric: tabular-nums; }
 .studio-workspace .studio-context-style input[type="color"] { width: 100%; height: 28px; padding: 0; border: 1px solid var(--workspace-border); border-radius: 4px; background: none; }
 .studio-workspace .studio-context-style-clear {
@@ -393,28 +757,113 @@ body .studio-workspace .studio-tabs {
   cursor: pointer;
 }
 
-.studio-workspace .studio-context-align { display: inline-flex; border: 1px solid var(--workspace-border); border-radius: 6px; overflow: hidden; }
-.studio-workspace .studio-context-align button {
-  flex: 1;
-  padding: 4px 10px;
-  border: 0;
+.studio-workspace .studio-context-style select {
+  width: 100%;
+  padding: 4px 6px;
+  border: 1px solid var(--workspace-border);
+  border-radius: 4px;
+  background: var(--workspace-raised);
+  color: var(--workspace-text);
+  font: inherit;
+  font-size: 11px;
+}
+
+/* Composer rows: structured multi-field controls (size, shadow, transform,
+   filter) — never a free-text CSS surface. */
+.studio-workspace .studio-context-compose {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+.studio-workspace .studio-context-compose input[type="number"] {
+  width: 3.6em;
+  padding: 3px 4px;
+  border: 1px solid var(--workspace-border);
+  border-radius: 4px;
+  background: none;
+  color: var(--workspace-text);
+  font-size: 11px;
+}
+.studio-workspace .studio-context-compose input[type="color"] {
+  width: 28px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--workspace-border);
+  border-radius: 4px;
+  background: none;
+}
+.studio-workspace .studio-context-compose input[type="checkbox"] { accent-color: var(--workspace-accent); }
+.studio-workspace .studio-context-compose select {
+  padding: 2px 4px;
+  border: 1px solid var(--workspace-border);
+  border-radius: 4px;
+  background: var(--workspace-raised);
+  color: var(--workspace-text);
+  font-size: 11px;
+}
+.studio-workspace .studio-context-compose output { color: var(--workspace-muted); font-size: 11px; }
+
+/* One bordered block per capability module inside the style box. Modules are
+   collapsible (details) — only the first one opens, so a node never fills
+   the panel on selection. */
+.studio-workspace .studio-context-cap + .studio-context-cap {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--workspace-border);
+}
+.studio-workspace .studio-context-cap-title { margin: 0; font-size: 11px; font-weight: 800; color: var(--workspace-muted); }
+.studio-workspace .studio-context-cap > summary.studio-context-cap-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0;
+  cursor: pointer;
+  list-style: none;
+}
+.studio-workspace .studio-context-cap > summary.studio-context-cap-title::-webkit-details-marker { display: none; }
+.studio-workspace .studio-context-cap > summary.studio-context-cap-title::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 5px;
+  height: 5px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform .15s ease;
+}
+.studio-workspace .studio-context-cap[open] > summary.studio-context-cap-title::before { transform: rotate(45deg); }
+.studio-workspace .studio-context-cap > .studio-context-style-grid { margin-top: 6px; }
+
+/* Scoped list: while a single row is selected, its siblings (which belong to
+   other elements) and the in-row move/delete controls stay hidden — the
+   action bar above already offers them for this row. */
+.studio-field.is-context-scoped .studio-list-rows > [data-list-row]:not(.is-context-row) { display: none; }
+.studio-field.is-context-scoped .studio-list-add { display: none; }
+.studio-field.is-context-scoped .is-context-row :is(.studio-list-move, .studio-list-del) { display: none; }
+
+/* Selection breadcrumb: the path chain of the selected node, root first.
+   Selection itself already persists through the URL hash. */
+.studio-workspace .studio-context-crumb {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  margin: 6px 0 0;
+}
+.studio-workspace .studio-context-crumb[hidden] { display: none; }
+.studio-workspace .studio-context-crumb-item {
+  padding: 1px 6px;
+  border: 1px solid var(--workspace-border);
+  border-radius: 999px;
   background: transparent;
   color: var(--workspace-muted);
   font: inherit;
+  font-size: 10.5px;
   cursor: pointer;
 }
-.studio-workspace .studio-context-align button + button { border-inline-start: 1px solid var(--workspace-border); }
-.studio-workspace .studio-context-align button[aria-pressed="true"] { background: var(--workspace-accent); color: #fff; }
-
-.studio-workspace .studio-context-style-full {
-  margin: 12px 0 0;
-  padding: 8px 10px;
-  border: 1px dashed var(--workspace-border);
-  border-radius: 6px;
-  color: var(--workspace-muted);
-  font-size: 11px;
-  line-height: 1.8;
-}
+.studio-workspace .studio-context-crumb-item:hover { border-color: var(--workspace-accent); color: var(--workspace-accent); }
+.studio-workspace .studio-context-crumb-sep { color: var(--workspace-border); }
 
 .studio-workspace .studio-object-inspector { padding: 14px 16px; border-bottom: 1px solid var(--workspace-border); }
 .studio-workspace .studio-object-head { display: flex; align-items: center; gap: 8px; }
@@ -459,8 +908,7 @@ body .studio-workspace .studio-tabs {
 .studio-workspace [data-object-controls] { display: flex; flex-wrap: wrap; gap: 5px; margin-block: 10px; }
 .studio-workspace :is([data-object-controls], [data-object-metrics]):empty { display: none; }
 
-.studio-workspace [data-object-controls] button,
-.studio-workspace [data-page-layers] button {
+.studio-workspace [data-object-controls] button {
   min-height: 32px;
   padding: 5px 9px;
   border: 1px solid var(--workspace-border);
@@ -473,16 +921,6 @@ body .studio-workspace .studio-tabs {
   overflow-wrap: anywhere;
   cursor: pointer;
 }
-
-.studio-workspace .studio-page-layers { margin-top: 12px; border-top: 1px solid var(--workspace-border); }
-.studio-workspace .studio-page-layers summary { padding: 10px 2px; font-size: 11px; cursor: pointer; }
-.studio-workspace .studio-page-layers summary i { margin-inline: 4px; color: var(--workspace-muted); }
-.studio-workspace [data-page-layers] { display: grid; gap: 4px; max-height: 200px; overflow: auto; margin: 0; padding: 3px; list-style: none; }
-.studio-workspace [data-page-layers] button { width: 100%; }
-.studio-workspace [data-page-layers] :is(.is-active, [aria-current="true"], [aria-selected="true"]) { border-color: var(--workspace-accent); color: var(--workspace-accent); }
-.studio-workspace [data-page-layers] ul { display: grid; gap: 4px; margin: 4px 0 2px; padding: 0 12px 0 0; list-style: none; }
-.studio-workspace [data-page-layers] ul button { min-height: 28px; padding: 4px 8px; font-size: 10.5px; text-align: start; opacity: 0.92; }
-.studio-workspace [data-page-layers] ul button[aria-current="true"] { border-color: var(--workspace-accent); color: var(--workspace-accent); }
 
 .studio-workspace .settings-cards { gap: 0; }
 .studio-workspace .settings-card {
@@ -507,10 +945,11 @@ body .studio-workspace .studio-tabs {
   outline: 2px solid var(--workspace-accent);
   outline-offset: 5px;
   border-radius: 3px;
-  background: #303b4a;
+  background: color-mix(in srgb, var(--workspace-accent) 16%, transparent);
 }
 
 body .studio-workspace.studio-split .studio-preview-pane {
+  position: relative;
   grid-area: canvas;
   min-width: 0;
   border: 0;
@@ -532,7 +971,7 @@ body .studio-workspace.studio-split .studio-preview-pane {
   font-size: 11px;
 }
 
-.studio-workspace .studio-preview-stage { flex: 1 1 auto; min-height: 0; overflow: auto; background: #191b1e; }
+.studio-workspace .studio-preview-stage { flex: 1 1 auto; min-height: 0; overflow: auto; background: #1A1A1A; }
 .studio-workspace .studio-preview-frame { background: #fff; box-shadow: 0 4px 24px #0006; }
 
 /* Zoom slider in the status bar: a range bar + a fit toggle + a % readout.
@@ -559,21 +998,27 @@ body .studio-workspace.studio-split .studio-preview-pane {
      Consume its remaining space rather than overlaying the exit navigation. */
   body.studio-shell .studio-workspace.studio-split {
     display: grid;
-    grid-template-columns: 88px minmax(0, 1fr) 320px;
+    /* The sashes write these variables (studio-workspace.js): drag to
+       resize, drag under the snap threshold to fold a panel away. */
+    grid-template-columns: var(--rail-w, 240px) minmax(0, 1fr) var(--inspector-w, 340px);
     /* Constrain the single implicit row to the container: without it the row
        sizes to the rail's content, overflow:auto on the rail never engages,
-       and the tools below the fold are unreachable (the split clips them). */
+       and rows below the fold are unreachable (the split clips them). */
     grid-template-rows: minmax(0, 1fr);
     grid-template-areas: "rail canvas inspector";
     gap: 1px;
     flex: 1 1 auto;
     min-height: 0;
-    /* Inspector collapse animates as the column closing on it. */
+    /* Inspector collapse animates as the column closing on it; a live
+       drag disables the transition (`.is-resizing` in the base rules). */
     transition: grid-template-columns .2s ease;
   }
 
+  /* The sashes exist only in the three-column desktop layout. */
+  .studio-sash { display: block; }
+
   body.studio-shell .studio-workspace.studio-split.is-inspector-closed {
-    grid-template-columns: 88px minmax(0, 1fr) 0;
+    grid-template-columns: var(--rail-w, 240px) minmax(0, 1fr) 0;
   }
 
   body.studio-shell .studio-workspace.studio-split.is-inspector-closed .studio-main {
@@ -605,25 +1050,20 @@ body .studio-workspace.studio-split .studio-preview-pane {
   }
 
   /* The rail becomes a horizontal strip; its groups keep their two-lane
-     grid, rotated into two rows. */
+     grid, rotated into two rows. The layer tree wraps onto its own full-width
+     row beneath them rather than shrinking into the strip. */
   .studio-workspace .studio-workspace-rail {
     order: 0;
     flex-direction: row;
+    flex-wrap: wrap;
     align-items: stretch;
     max-width: 100%;
     padding: 6px;
   }
 
-  .studio-workspace .studio-workspace-tools,
-  body .studio-workspace .studio-tabs {
-    grid-template-columns: none;
-    grid-auto-flow: column;
-    grid-template-rows: repeat(2, 44px);
-    width: auto;
-    padding: 0;
-    padding-inline-end: 8px;
-    border-bottom: 0;
-    border-inline-end: 1px solid var(--workspace-border);
+  .studio-workspace .studio-workspace-tree {
+    flex: 1 0 100%;
+    max-height: 38vh;
   }
 
   .studio-workspace :is(.studio-workspace-tool, .studio-tab) { width: 44px; height: 44px; }
@@ -649,7 +1089,8 @@ body .studio-workspace.studio-split .studio-preview-pane {
 
 /* Maximize deliberately hides both docks, including on narrow screens. */
 body .studio-workspace.studio-split.is-max .studio-main,
-body .studio-workspace.studio-split.is-max .studio-workspace-rail { display: none; }
+body .studio-workspace.studio-split.is-max .studio-workspace-rail,
+body .studio-workspace.studio-split.is-max .studio-sash { display: none; }
 
 body .studio-workspace.studio-split.is-max .studio-preview-pane {
   position: fixed;

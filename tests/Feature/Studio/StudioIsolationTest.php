@@ -6,8 +6,10 @@ use App\Models\Domain;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Models\WebsiteConfig;
+use App\Support\BlockStyles;
 use App\Support\ConfigWriter;
 use App\Support\StudioSchema;
+use App\Support\StudioStyles;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
@@ -49,7 +51,7 @@ class StudioIsolationTest extends TestCase
      * (the form always submits every field), then apply dotted-path overrides.
      *
      * @param  array<string,mixed>  $overrides
-     * @return array<string,mixed>  nested input
+     * @return array<string,mixed> nested input
      */
     private function payload(array $overrides = []): array
     {
@@ -108,7 +110,9 @@ class StudioIsolationTest extends TestCase
             'data-list-template',
             'studio-workspace',
             'data-workspace-tool="select"',
-            'data-workspace-insert="button"',
+            'data-studio-sash="rail"',
+            'data-studio-sash="inspector"',
+            'studio-tool-dock',
             'data-object-inspector',
             'data-object-metrics',
             'data-studio-preview-device="tablet"',
@@ -121,8 +125,12 @@ class StudioIsolationTest extends TestCase
         }
 
         // The old top toolbar and its live/interact toggles are gone: the
-        // preview is always on and interaction derives from the rail tools.
+        // preview is always on and interaction derives from the floating
+        // tool dock. The rail's old insert/action icon grids are gone too —
+        // their work happens in the Blocks group and the layer tree.
         $this->assertStringNotContainsString('studio-workspace-toolbar', $html);
+        $this->assertStringNotContainsString('data-workspace-insert', $html);
+        $this->assertStringNotContainsString('data-workspace-action', $html);
         $this->assertStringNotContainsString('data-studio-live', preg_replace('/data-studio-live-dot/', '', $html) ?? '');
         $this->assertStringNotContainsString('data-studio-interact', $html);
         // The preview pane renders visible (always-on), not hidden.
@@ -133,6 +141,46 @@ class StudioIsolationTest extends TestCase
             'public[landing][services][items][0][title]',
             $html
         );
+    }
+
+    /**
+     * Layout contract (feedback pass): the layer tree owns the left rail —
+     * draft + layers, nothing else; the canvas tools moved to the floating
+     * dock; the schema groups live in the right column as a collapsible
+     * accordion (the icon tab strip is gone). Both panels stay inside the
+     * form, so the groups still submit and the tree still selects canvas
+     * elements.
+     */
+    public function test_layer_tree_owns_the_rail_and_groups_accordion_into_design(): void
+    {
+        [$tenant, $host] = $this->tenantWithDomain();
+        $user = $this->userFor($tenant, 'tenant_admin');
+
+        $html = $this->actingAs($user)->get("http://{$host}/studio")->assertOk()->getContent();
+
+        // Exactly one tree, and it is inside the left rail.
+        $this->assertSame(1, substr_count($html, 'data-page-layers'), 'the layer tree must render exactly once');
+        $this->assertMatchesRegularExpression(
+            '/<aside class="studio-workspace-rail"[^>]*>.*?data-page-layers.*?<\/aside>/s',
+            $html
+        );
+
+        // The rail carries neither schema tabs nor the tool groups; the tools
+        // live in the floating dock over the canvas.
+        preg_match('/<aside class="studio-workspace-rail".*?<\/aside>/s', $html, $rail);
+        $this->assertNotEmpty($rail, 'the workspace rail did not render');
+        $this->assertStringNotContainsString('data-studio-tab', $rail[0], 'schema tabs must leave the rail');
+        $this->assertStringNotContainsString('data-workspace-tool', $rail[0], 'tools must live in the dock, not the rail');
+        $this->assertStringNotContainsString('data-studio-tab=', $html, 'the icon tab strip is gone');
+
+        // The groups render inside the right column, after it opens.
+        $main = strpos($html, '<div class="studio-main"');
+        $group = strpos($html, 'data-studio-group=');
+        $this->assertNotFalse($main, 'the right column did not render');
+        $this->assertNotFalse($group, 'no schema group rendered at all');
+        $this->assertGreaterThan($main, $group, 'schema groups must render inside the right column');
+        $this->assertStringContainsString('studio-design-title', $html);
+        $this->assertStringContainsString('studio-tool-dock', $html);
     }
 
     /**
@@ -1130,12 +1178,12 @@ class StudioIsolationTest extends TestCase
 
     public function test_block_style_rendering_filters_unvalidated_file_owned_values(): void
     {
-        $this->assertSame('', \App\Support\BlockStyles::variables([
+        $this->assertSame('', BlockStyles::variables([
             'background' => '#123456;display:none', 'color' => ['red'],
             'padding' => true, 'radius' => -1, 'width' => 101, 'css' => 'display:none',
         ]));
         $this->assertSame('--block-padding:0px;--block-radius:128px;--block-width:100%',
-            \App\Support\BlockStyles::variables(['padding' => 0, 'radius' => '128', 'width' => 100]));
+            BlockStyles::variables(['padding' => 0, 'radius' => '128', 'width' => 100]));
         $defs = array_column(StudioSchema::field('public.landing.blocks.items')['item'], null, 'key');
         $this->assertSame('hidden', $defs['id']['control']);
     }
@@ -1157,7 +1205,7 @@ class StudioIsolationTest extends TestCase
         $this->actingAs($admin)->post("http://{$host}/studio", $payload)
             ->assertRedirect()->assertSessionHasNoErrors();
 
-        $css = \App\Support\StudioStyles::css(
+        $css = StudioStyles::css(
             data_get(WebsiteConfig::withoutGlobalScopes()->where('tenant_id', $tenant->id)->first()->layout_config, 'public.landing.overrides')
         );
         $this->assertSame(
@@ -1174,15 +1222,15 @@ class StudioIsolationTest extends TestCase
         // Only schema-published paths may be addressed. The page-level roots
         // name no element, so they are rejected along with unknown keys.
         foreach (['public.landing.hero.does_not_exist', 'public.landing', 'public.nav', 'public.footer', 'theme.colors.text'] as $path) {
-            $this->assertFalse(\App\Support\StudioStyles::validPath($path), $path);
+            $this->assertFalse(StudioStyles::validPath($path), $path);
         }
         // Leaf fields, list rows and the containers a template emits.
         foreach (['public.landing.hero.title_line1', 'public.landing.hero.buttons.0', 'public.nav.cta.label', 'public.landing.hero.buttons', 'public.nav.cta', 'public.landing.hero'] as $path) {
-            $this->assertTrue(\App\Support\StudioStyles::validPath($path), $path);
+            $this->assertTrue(StudioStyles::validPath($path), $path);
         }
 
         // A file-owned or tampered row cannot smuggle CSS regardless of shape.
-        $this->assertSame('', \App\Support\StudioStyles::css([
+        $this->assertSame('', StudioStyles::css([
             ['path' => 'public.landing.hero.title_line1', 'background' => 'red;}html{display:none'],
             ['path' => 'public.landing.hero.title_line1', 'color' => '#GGGGGG'],
             ['path' => 'public.landing.hero.title_line1', 'radius' => '8px'],
@@ -1201,13 +1249,13 @@ class StudioIsolationTest extends TestCase
         // still coerced to a bounded integer plus a fixed unit.
         $this->assertSame(
             '[data-studio-path="public.landing.hero.subtitle"]{border-radius:8px;font-size:150%;}',
-            \App\Support\StudioStyles::css([['path' => 'public.landing.hero.subtitle', 'radius' => '8', 'font_scale' => '150']])
+            StudioStyles::css([['path' => 'public.landing.hero.subtitle', 'radius' => '8', 'font_scale' => '150']])
         );
 
         // Bounds are inclusive, and the last row wins for the same path.
         $this->assertSame(
             '[data-studio-path="public.landing.hero.subtitle"]{padding:128px;inline-size:10%;}',
-            \App\Support\StudioStyles::css([
+            StudioStyles::css([
                 ['path' => 'public.landing.hero.subtitle', 'padding' => 4, 'width' => 100],
                 ['path' => 'public.landing.hero.subtitle', 'padding' => 128, 'width' => 10],
             ])
@@ -1216,16 +1264,16 @@ class StudioIsolationTest extends TestCase
         // Choice keys accept exactly their word list and emit verbatim.
         $this->assertSame(
             '[data-studio-path="public.landing.hero.subtitle"]{text-align:center;}',
-            \App\Support\StudioStyles::css([['path' => 'public.landing.hero.subtitle', 'align' => 'center']])
+            StudioStyles::css([['path' => 'public.landing.hero.subtitle', 'align' => 'center']])
         );
-        $this->assertSame('', \App\Support\StudioStyles::css([
+        $this->assertSame('', StudioStyles::css([
             ['path' => 'public.landing.hero.subtitle', 'align' => 'justify-all'],
             ['path' => 'public.landing.hero.subtitle', 'align' => 'center;color:red'],
         ]));
 
         // An addressable row with no usable style emits nothing rather than an
         // empty rule.
-        $this->assertSame('', \App\Support\StudioStyles::css([['path' => 'public.landing.hero.subtitle']]));
+        $this->assertSame('', StudioStyles::css([['path' => 'public.landing.hero.subtitle']]));
     }
 
     public function test_override_list_refreshes_the_preview_by_reload(): void
@@ -1234,5 +1282,83 @@ class StudioIsolationTest extends TestCase
         // so the live preview must classify the list as a full re-render and
         // must never mistake it for a swappable CSS token.
         $this->assertSame('reload', StudioSchema::liveMode('public.landing.overrides'));
+    }
+
+    /**
+     * Hide is layout-aware removal, never simulated concealment. A hidden
+     * section leaves the flow entirely — its marker and its studio paths are
+     * gone from the served HTML, so siblings close the gap and the page cannot
+     * be left with an invisible placeholder occupying space.
+     *
+     * This is the public-site invariant later phases must preserve when they
+     * add sub-element hide (which emits `display:none`, also out of flow)
+     * rather than reaching for `opacity:0` / `visibility:hidden`.
+     */
+    public function test_hidden_sections_leave_the_flow_instead_of_being_concealed(): void
+    {
+        [, $host] = $this->tenantWithDomain();
+
+        site_override(['public' => ['landing' => ['sections' => ['hero', 'cta', 'faq']]]]);
+
+        $visible = $this->get("http://{$host}/")->assertOk()->getContent();
+        $this->assertStringContainsString('data-studio-section-marker="cta"', $visible);
+        $this->assertStringContainsString('data-studio-path="public.landing.cta.heading"', $visible);
+
+        // Drop cta from the running order. `hero` is locked and re-inserted,
+        // the rest render exactly as ordered.
+        site_override(['public' => ['landing' => ['sections' => ['hero', 'faq']]]]);
+
+        $hidden = $this->get("http://{$host}/")->assertOk()->getContent();
+
+        // Removed, not concealed: no marker, no element, and nothing that
+        // merely hides it while keeping it in the box model.
+        $this->assertStringNotContainsString('data-studio-section-marker="cta"', $hidden);
+        $this->assertStringNotContainsString('data-studio-path="public.landing.cta', $hidden);
+        $this->assertDoesNotMatchRegularExpression('/opacity:0[^0-9]/', $hidden);
+
+        // The sections that remain are still present.
+        $this->assertStringContainsString('data-studio-section-marker="hero"', $hidden);
+        $this->assertStringContainsString('data-studio-section-marker="faq"', $hidden);
+    }
+
+    /**
+     * The page switcher offers only routes the studio session can actually
+     * open inside the frame: landing for everyone, the consultant dashboard
+     * behind its feature flag, the teacher panel only for a teacher. Login
+     * (guest-gated) and the student portal (own auth guard) would promise a
+     * canvas that can never render, so they are not listed — those id
+     * namespaces stay covered by DashboardIdsTest for whenever their
+     * layouts do render.
+     */
+    public function test_page_switcher_lists_only_pages_the_session_can_open(): void
+    {
+        [$tenant, $host] = $this->tenantWithDomain();
+        $admin = $this->userFor($tenant, 'tenant_admin');
+
+        $html = $this->actingAs($admin)->get("http://{$host}/studio")->assertOk()->getContent();
+
+        preg_match_all('/data-studio-page="([^"]+)"/', $html, $matches);
+        $this->assertSame([
+            "http://{$host}",
+            "http://{$host}/consultant/dashboard",
+        ], $matches[1]);
+
+        // Landing is the boot page; the new-tab link tracks the switcher.
+        $this->assertMatchesRegularExpression(
+            '/data-studio-page="'.preg_quote("http://{$host}", '/').'"[^>]*aria-pressed="true"/',
+            $html,
+        );
+        $this->assertStringContainsString('data-studio-preview-open', $html);
+
+        // A teacher gets the third entry; nothing else changes.
+        $teacher = $this->userFor($tenant, 'teacher');
+        $teacherHtml = $this->actingAs($teacher)->get("http://{$host}/studio")->assertOk()->getContent();
+
+        preg_match_all('/data-studio-page="([^"]+)"/', $teacherHtml, $teacherMatches);
+        $this->assertSame([
+            "http://{$host}",
+            "http://{$host}/consultant/dashboard",
+            "http://{$host}/teacher/dashboard",
+        ], $teacherMatches[1]);
     }
 }

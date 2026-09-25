@@ -2,6 +2,8 @@
 
 namespace App\Support;
 
+use Illuminate\Foundation\Application;
+
 final class ThemeFonts
 {
     private const FORMATS = ['woff2' => 'woff2', 'woff' => 'woff', 'ttf' => 'truetype', 'otf' => 'opentype'];
@@ -34,11 +36,11 @@ final class ThemeFonts
         $catalog = self::catalog($typography);
         foreach (['family', 'heading', 'accent', 'button', 'mono'] as $role) {
             $directory = $typography['font_'.$role] ?? null;
-            if (!is_string($directory) || !isset($catalog[$directory])) {
+            if (! is_string($directory) || ! isset($catalog[$directory])) {
                 continue;
             }
             foreach ($catalog[$directory]['faces'] as $face) {
-                if (!in_array($face, $faces, true)) {
+                if (! in_array($face, $faces, true)) {
                     $faces[] = $face;
                 }
             }
@@ -50,12 +52,12 @@ final class ThemeFonts
     /** Runtime choices, plus an explicit reset and an unchanged legacy value. */
     public static function choices(array $typography, mixed $current = null): array
     {
-        $choices = ['' => 'پیش‌فرض تم (بازنشانی)'];
+        $choices = ['' => 'Theme default (reset)'];
         foreach (self::catalog($typography) as $directory => $font) {
             $choices[$directory] = $directory;
         }
-        if (is_string($current) && $current !== '' && !array_key_exists($current, $choices)) {
-            $choices[$current] = 'حفظ مقدار فعلی: '.$current;
+        if (is_string($current) && $current !== '' && ! array_key_exists($current, $choices)) {
+            $choices[$current] = 'Keep current value: '.$current;
         }
 
         return $choices;
@@ -67,7 +69,7 @@ final class ThemeFonts
      */
     private static function catalog(array $typography): array
     {
-        $public = app() instanceof \Illuminate\Foundation\Application
+        $public = app() instanceof Application
             ? public_path()
             : dirname(__DIR__, 2).DIRECTORY_SEPARATOR.'public';
         $root = $public.DIRECTORY_SEPARATOR.'fonts';
@@ -78,7 +80,7 @@ final class ThemeFonts
                 continue;
             }
             $folder = $root.DIRECTORY_SEPARATOR.$directory;
-            if (!is_dir($folder) || is_link($folder)) {
+            if (! is_dir($folder) || is_link($folder)) {
                 continue;
             }
             $family = 'StudioFont-'.$directory;
@@ -87,7 +89,7 @@ final class ThemeFonts
             // ranges and nonstandard filenames. Preserve its original family too.
             foreach ($configured as $face) {
                 $url = rawurldecode($face['src']);
-                if (!str_starts_with($url, '/fonts/'.$directory.'/')) {
+                if (! str_starts_with($url, '/fonts/'.$directory.'/')) {
                     continue;
                 }
                 $file = $public.DIRECTORY_SEPARATOR.str_replace('/', DIRECTORY_SEPARATOR, ltrim($url, '/'));
@@ -98,7 +100,7 @@ final class ThemeFonts
             foreach (scandir($folder) ?: [] as $filename) {
                 $file = $folder.DIRECTORY_SEPARATOR.$filename;
                 $source = self::source('/fonts/'.$directory.'/'.$filename);
-                if ($source === null || !self::localFile($file, $folder) || in_array($source['src'], array_column($faces, 'src'), true)) {
+                if ($source === null || ! self::localFile($file, $folder) || in_array($source['src'], array_column($faces, 'src'), true)) {
                     continue;
                 }
                 $descriptors = self::filenameDescriptors(pathinfo($filename, PATHINFO_FILENAME));
@@ -121,7 +123,7 @@ final class ThemeFonts
         $base = realpath($folder);
 
         return $real !== false && $base !== false && is_file($file) && is_readable($file)
-            && !is_link($file) && str_starts_with($real, $base.DIRECTORY_SEPARATOR);
+            && ! is_link($file) && str_starts_with($real, $base.DIRECTORY_SEPARATOR);
     }
 
     private static function filenameDescriptors(string $stem): ?array
@@ -145,12 +147,12 @@ final class ThemeFonts
     {
         $faces = [];
         $definitions = $typography['faces'] ?? [];
-        if (!is_array($definitions)) {
+        if (! is_array($definitions)) {
             return [];
         }
 
         foreach ($definitions as $face) {
-            if (!is_array($face) || !self::validName($face['family'] ?? null)) {
+            if (! is_array($face) || ! self::validName($face['family'] ?? null)) {
                 continue;
             }
             $source = self::source($face['src'] ?? null);
@@ -158,8 +160,8 @@ final class ThemeFonts
             $style = $face['style'] ?? 'normal';
             $display = $face['display'] ?? 'swap';
             if ($source === null || $weight === null
-                || !in_array($style, ['normal', 'italic', 'oblique'], true)
-                || !in_array($display, ['auto', 'block', 'swap', 'fallback', 'optional'], true)
+                || ! in_array($style, ['normal', 'italic', 'oblique'], true)
+                || ! in_array($display, ['auto', 'block', 'swap', 'fallback', 'optional'], true)
                 || (isset($face['format']) && $face['format'] !== $source['format'])) {
                 continue;
             }
@@ -171,7 +173,7 @@ final class ThemeFonts
                 'style' => $style,
                 'display' => $display,
             ];
-            if (!in_array($normalized, $faces, true)) {
+            if (! in_array($normalized, $faces, true)) {
                 $faces[] = $normalized;
             }
         }
@@ -186,7 +188,7 @@ final class ThemeFonts
 
     private static function stack(mixed $value, string $fallback): string
     {
-        if (!is_string($value) || trim($value) === '') {
+        if (! is_string($value) || trim($value) === '') {
             return $fallback;
         }
         $names = [];
@@ -196,7 +198,7 @@ final class ThemeFonts
             if (strlen($name) >= 2 && in_array($name[0], ['"', "'"], true) && substr($name, -1) === $name[0]) {
                 $name = substr($name, 1, -1);
             }
-            if (!self::validName($name)) {
+            if (! self::validName($name)) {
                 return $fallback;
             }
             $name = trim($name);
@@ -204,7 +206,7 @@ final class ThemeFonts
             $names[] = $generic ? strtolower($name) : '"'.$name.'"';
             $hasGeneric = $hasGeneric || $generic;
         }
-        if (!$hasGeneric) {
+        if (! $hasGeneric) {
             $names[] = 'sans-serif';
         }
 
@@ -215,7 +217,7 @@ final class ThemeFonts
     {
         // Root-relative URLs intentionally bypass asset()/ASSET_URL: fonts stay
         // on this origin even when the rest of the assets use a CDN.
-        if (!is_string($path) || !str_starts_with($path, '/fonts/')) {
+        if (! is_string($path) || ! str_starts_with($path, '/fonts/')) {
             return null;
         }
         $segments = explode('/', substr($path, 7));
@@ -225,7 +227,7 @@ final class ThemeFonts
             }
         }
         $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
-        if (!isset(self::FORMATS[$extension])) {
+        if (! isset(self::FORMATS[$extension])) {
             return null;
         }
 
@@ -234,7 +236,7 @@ final class ThemeFonts
 
     private static function weight(mixed $weight): ?string
     {
-        if (!is_string($weight) && !is_int($weight)) {
+        if (! is_string($weight) && ! is_int($weight)) {
             return null;
         }
         $weight = (string) $weight;

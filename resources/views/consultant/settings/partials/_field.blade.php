@@ -14,7 +14,7 @@
 
     // Controls that render several inputs (or none) can't be the target of a
     // single `for`; their group carries an aria-label instead.
-    $idless = in_array($control, ['select', 'archetype', 'font', 'iconset', 'sections', 'list'], true);
+    $idless = in_array($control, ['select', 'archetype', 'font', 'iconset', 'sections', 'list', 'canvas'], true);
 @endphp
 
 <div class="studio-field studio-field--{{ $control }} @if($isOverridden) is-overridden @endif"
@@ -23,12 +23,12 @@
         <span class="studio-field-titlerow">
             <label class="studio-field-label" @if(!$idless) for="studio-{{ md5($path) }}" @endif>
                 {{ $field['label'] }}
-                @if($isOverridden)<span class="studio-badge" title="این مورد تغییر کرده است">●</span>@endif
+                @if($isOverridden)<span class="studio-badge" title="This item has been changed">●</span>@endif
             </label>
 
             @if(!empty($field['hint']))
                 {{-- Hover on desktop (CSS), tap on touch (theme-studio.js). --}}
-                <button type="button" class="studio-hint" data-studio-hint aria-label="راهنمای این گزینه">
+                <button type="button" class="studio-hint" data-studio-hint aria-label="Help for this option">
                     <i class="fas fa-circle-info" aria-hidden="true"></i>
                     <span class="studio-hint-bubble" role="tooltip">{{ $field['hint'] }}</span>
                 </button>
@@ -36,7 +36,7 @@
         </span>
 
         @if($isOverridden && ($canPublishEveryone ?? false))
-            <button type="button" class="studio-reset" data-reset-path="{{ $path }}" title="بازنشانی به پیش‌فرض">
+            <button type="button" class="studio-reset" data-reset-path="{{ $path }}" title="Reset to default">
                 <i class="fas fa-undo" aria-hidden="true"></i>
             </button>
         @endif
@@ -128,7 +128,7 @@
             <label class="studio-toggle">
                 <input type="hidden" name="{{ $name }}" value="0">
                 <input type="checkbox" id="studio-{{ md5($path) }}" name="{{ $name }}" value="1" @checked((bool) $value)>
-                <span>{{ $value ? 'روشن' : 'خاموش' }}</span>
+                <span>{{ $value ? 'On' : 'Off' }}</span>
             </label>
             @break
 
@@ -179,6 +179,16 @@
             </div>
             @break
 
+        @case('canvas')
+            {{-- The canvas document: one opaque JSON map, keyed by element id.
+                 Rendered as a transport blob the canvas JS reads and rewrites;
+                 it is never edited by hand, so it shows nothing and carries no
+                 control. Blade's HTML-escaping round-trips inside a <textarea>
+                 so the stored JSON survives the trip unchanged. --}}
+            @php $canvasJson = $value ? json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : ''; @endphp
+            <textarea name="{{ $name }}" data-studio-canvas-nodes hidden>{{ $canvasJson }}</textarea>
+            @break
+
         @case('image')
             <div class="studio-image">
                 @if($value)
@@ -187,8 +197,8 @@
                 @include('consultant.partials.upload-tile', [
                     'id' => 'studio-'.md5($path),
                     'name' => $name,
-                    'text' => 'برای انتخاب تصویر کلیک کنید',
-                    'hint' => 'برای تغییر، فایلی انتخاب کنید؛ خالی بگذارید تا تغییر نکند.',
+                    'text' => 'Click to choose an image',
+                    'hint' => 'Pick a file to change it; leave empty to keep the current file.',
                 ])
             </div>
             @break
@@ -215,10 +225,10 @@
                  mechanics are untouched — the checked boxes still submit in
                  DOM order. --}}
             <div class="filter-select studio-select studio-sections-select" data-filter-select
-                 data-select-multi data-select-auto-width data-count-unit="بخش">
+                 data-select-multi data-select-auto-width data-count-unit="sections">
                 <button type="button" class="filter-select-trigger" data-filter-select-trigger
                         aria-haspopup="true" aria-expanded="false" aria-label="{{ $field['label'] }}">
-                    <span class="filter-select-value" data-filter-select-display>{{ persian_digits(count($current)) }} بخش</span>
+                    <span class="filter-select-value" data-filter-select-display>{{ count($current) }} sections</span>
                     <i class="fas fa-chevron-down filter-select-caret" aria-hidden="true"></i>
                 </button>
                 <div class="filter-select-list" data-filter-select-list>
@@ -228,10 +238,10 @@
                             <label class="studio-section @if($isLocked || in_array($sec, $current, true)) is-on @endif @if($isLocked) is-locked @endif" data-section-row>
                         <span class="studio-section-move">
                             @if($isLocked)
-                                <i class="fas fa-lock" title="این بخش همیشه نمایش داده می‌شود و جابه‌جا نمی‌شود"></i>
+                                <i class="fas fa-lock" title="This section always shows and cannot be moved"></i>
                             @else
-                                <button type="button" class="sec-move sec-move-up" aria-label="بالا"><i class="fas fa-chevron-up"></i></button>
-                                <button type="button" class="sec-move sec-move-down" aria-label="پایین"><i class="fas fa-chevron-down"></i></button>
+                                <button type="button" class="sec-move sec-move-up" aria-label="Up"><i class="fas fa-chevron-up"></i></button>
+                                <button type="button" class="sec-move sec-move-down" aria-label="Down"><i class="fas fa-chevron-down"></i></button>
                             @endif
                         </span>
                         @if($isLocked)
@@ -267,19 +277,19 @@
                  collide with the stored indices). --}}
             <div class="studio-list" data-studio-list data-max="{{ $max }}" @if($path === 'public.landing.blocks.items') data-block-editor @endif>
                 @if($path === 'public.landing.blocks.items')
-                    <div class="studio-block-tools" aria-label="افزودن بلوک">
+                    <div class="studio-block-tools" aria-label="Insert block">
                         @foreach(collect($defs)->firstWhere('key', 'type')['options'] as $type => $label)
                             <button type="button" class="secondary-button" data-block-insert="{{ $type }}">+ {{ $label }}</button>
                         @endforeach
                     </div>
                     <div class="studio-block-actions">
-                        <button type="button" class="secondary-button" data-block-undo disabled>واگرد</button>
-                        <button type="button" class="secondary-button" data-block-redo disabled>از نو</button>
-                        <button type="button" class="secondary-button" data-block-duplicate disabled>تکثیر</button>
-                        <button type="button" class="secondary-button" data-block-reset-style disabled>بازنشانی سبک</button>
+                        <button type="button" class="secondary-button" data-block-undo disabled>Undo</button>
+                        <button type="button" class="secondary-button" data-block-redo disabled>Redo</button>
+                        <button type="button" class="secondary-button" data-block-duplicate disabled>Duplicate</button>
+                        <button type="button" class="secondary-button" data-block-reset-style disabled>Reset style</button>
                     </div>
-                    <p class="settings-card-text">بلوک را از لایه‌ها یا پیش‌نمایش انتخاب کنید. برای جابه‌جایی، لایه را بکشید یا از دکمه‌های بالا و پایین استفاده کنید. خالی گذاشتن سبک، ظاهر پیش‌فرض را برمی‌گرداند.</p>
-                    <div class="studio-block-layers" data-block-layers aria-label="لایه‌های صفحه"></div>
+                    <p class="settings-card-text">Select a block from the layers or the preview. To reorder, drag its layer or use the up/down buttons above. Clearing a style restores the default look.</p>
+                    <div class="studio-block-layers" data-block-layers aria-label="Page layers"></div>
                     <p data-block-status role="status" aria-live="polite"></p>
                 @endif
                 <div class="studio-list-rows" data-list-rows>
@@ -295,7 +305,7 @@
                     ])
                 </template>
                 <button type="button" class="secondary-button studio-list-add" data-list-add @if(count($rows) >= $max) hidden @endif>
-                    <i class="fas fa-plus" aria-hidden="true"></i> افزودن مورد
+                    <i class="fas fa-plus" aria-hidden="true"></i> Add item
                 </button>
                 {{-- Row failures arrive as "path.<key>.<field>"; a JS-added row's
                      key is gone after a failed round-trip, so surface the first

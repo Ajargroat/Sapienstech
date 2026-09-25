@@ -111,13 +111,13 @@ class StudioController extends Controller
         if ($scope === 'me') {
             ConfigWriter::saveForUser($request->user(), [$path => null]);
 
-            return back()->with('success', 'این مورد برای نمای شما بازنشانی شد.');
+            return back()->with('success', 'This item was reset for your view.');
         }
 
         abort_unless($this->canPublishEveryone($request->user()), 403);
         ConfigWriter::publishForTenant(tenant(), [$path => null]);
 
-        return back()->with('success', 'این مورد برای همه بازدیدکنندگان بازنشانی شد.');
+        return back()->with('success', 'This item was reset for every visitor.');
     }
 
     /**
@@ -135,14 +135,14 @@ class StudioController extends Controller
             null,
         ));
 
-        return back()->with('success', 'همهٔ تنظیمات ظاهری به حالت پیش‌فرض برگشت.');
+        return back()->with('success', 'All appearance settings were reset to default.');
     }
 
     public function exitPreview(Request $request): RedirectResponse
     {
         $request->session()->forget(ApplyPersonalTheme::previewSessionKey());
 
-        return back()->with('success', 'حالت پیش‌نمایش بسته شد.');
+        return back()->with('success', 'Preview mode closed.');
     }
 
     /**
@@ -193,8 +193,8 @@ class StudioController extends Controller
         return redirect()
             ->route('studio.index')
             ->with('success', $diff === []
-                ? 'تغییری برای اعمال وجود نداشت.'
-                : 'تغییرات برای همهٔ بازدیدکنندگان اعمال شد.');
+                ? 'Nothing to apply.'
+                : 'Changes applied for every visitor.');
     }
 
     protected function saveForMe(StudioSaveRequest $request, array $diff): RedirectResponse
@@ -205,8 +205,8 @@ class StudioController extends Controller
         return redirect()
             ->route('studio.index')
             ->with('success', $diff === []
-                ? 'تغییری برای اعمال وجود نداشت.'
-                : 'تغییرات فقط برای نمای شما ذخیره شد.');
+                ? 'Nothing to apply.'
+                : 'Changes saved for your view only.');
     }
 
     protected function savePreview(array $diff): RedirectResponse
@@ -215,7 +215,7 @@ class StudioController extends Controller
 
         return redirect()
             ->route('studio.index')
-            ->with('success', 'حالت پیش‌نمایش فعال شد؛ با «خروج از پیش‌نمایش» به حالت ذخیره‌شده برمی‌گردید.');
+            ->with('success', 'Preview mode is on — use "Exit preview" to go back to the saved state.');
     }
 
     /**

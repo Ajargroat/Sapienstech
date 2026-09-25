@@ -37,10 +37,10 @@
 @if($previewing)
     <div class="settings-flash studio-preview-banner" role="status">
         <i class="fas fa-eye" aria-hidden="true"></i>
-        <span>حالت پیش‌نمایش فعال است — تغییرات ذخیره‌نشده را در سراسر سایت می‌بینید.</span>
+        <span>Preview mode is on — unsaved changes show across the whole site.</span>
         <form method="POST" action="{{ route('studio.preview.exit') }}" data-router="off">
             @csrf
-            <button type="submit" class="secondary-button">خروج از پیش‌نمایش</button>
+            <button type="submit" class="secondary-button">Exit preview</button>
         </form>
     </div>
 @endif
@@ -75,116 +75,119 @@
     $initialGroup = $errorGroup ?? (array_key_first($studioGroups) ?? null);
 
     // Canvas-only groups (the per-element override store) are rendered so their
-    // inputs submit, but they get no rail tab: the inspector writes their rows,
-    // so exposing them as a settings panel would be a second, worse way in.
-    $railGroups = array_filter($studioGroups, fn ($g) => ! ($g['canvas_only'] ?? false));
+    // inputs submit, but they are not a settings surface: the inspector writes
+    // their rows, so exposing them as a panel would be a second, worse way in.
+
+    // Page switcher: only routes this session can actually OPEN inside the
+    // frame. The login page sits behind `guest` (an authed session is
+    // redirected away), the student portal behind its own auth guard, and the
+    // teacher panel behind isTeacher() — listing them would promise a canvas
+    // that can never render. The id namespaces for those pages still exist
+    // for whenever their layouts do render (Phase 1b / DashboardIdsTest).
+    $studioPages = [
+        ['key' => 'landing', 'label' => 'Home', 'url' => route('home')],
+    ];
+    if (site('features.dashboard')) {
+        $studioPages[] = ['key' => 'dashboard', 'label' => 'Dashboard', 'url' => route('consultant.dashboard')];
+    }
+    if (site('features.teacher_panel') && auth()->user()?->isTeacher()) {
+        $studioPages[] = ['key' => 'teacher', 'label' => 'Teacher panel', 'url' => route('teacher.dashboard')];
+    }
 @endphp
 
 <div class="studio-split studio-workspace" id="studio-split">
-    <aside class="studio-workspace-rail" aria-label="ابزارهای استودیو">
-        <div class="studio-workspace-tools" role="group" aria-label="حالت ابزار">
-            <button type="button" class="studio-workspace-tool" data-workspace-tool="select"
-                    title="انتخاب عنصر" aria-label="انتخاب عنصر" aria-pressed="true">
-                <i class="fas fa-arrow-pointer" aria-hidden="true"></i>
-            </button>
-            <button type="button" class="studio-workspace-tool" data-workspace-tool="interact"
-                    title="تعامل با صفحه" aria-label="تعامل با صفحه" aria-pressed="false">
-                <i class="fas fa-hand" aria-hidden="true"></i>
-            </button>
-        </div>
+    {{-- Panel sashes: drag a border to resize a panel, drag past the
+         collapse threshold (or double-click) to fold it away. Absolutely
+         positioned over the column boundaries, so they take no grid cell. --}}
+    <div class="studio-sash" data-studio-sash="rail" role="separator"
+         aria-orientation="vertical" aria-label="Resize left panel" tabindex="0"></div>
+    <div class="studio-sash" data-studio-sash="inspector" role="separator"
+         aria-orientation="vertical" aria-label="Resize right panel" tabindex="0"></div>
 
-        <nav class="studio-tabs" aria-label="بخش‌های تنظیمات ظاهر">
-            @foreach($railGroups as $groupKey => $group)
-                <button type="button" class="studio-tab" data-studio-tab="{{ $groupKey }}"
-                        aria-controls="studio-group-{{ $groupKey }}" aria-current="{{ $initialGroup === $groupKey ? 'true' : 'false' }}"
-                        title="{{ $group['label'] }}" aria-label="{{ $group['label'] }}">
-                    <i class="fas {{ $group['icon'] ?? 'fa-sliders-h' }}" aria-hidden="true"></i>
-                    @if($groupChanged[$groupKey] ?? false)
-                        <span class="studio-badge" title="{{ $groupChanged[$groupKey] }} مورد تغییر کرده است" aria-hidden="true">●</span>
-                    @endif
-                </button>
-            @endforeach
-        </nav>
+    <aside class="studio-workspace-rail" aria-label="Studio tools">
+        {{-- Draft: the single named checkpoint, at the top of the left panel
+             (Prompts §6). It snapshots the FORM (which lives in the main
+             column), so the URLs ride here as data — studio-draft.js owns
+             the body. Restore re-submits the payload as scope=preview: the
+             working layer only, never the published config. --}}
+        <details class="studio-workspace-draft" data-draft-panel aria-label="Draft"
+                 data-draft-show="{{ route('studio.draft.show') }}"
+                 data-draft-store="{{ route('studio.draft.store') }}"
+                 data-draft-update="{{ route('studio.draft.update') }}"
+                 data-draft-destroy="{{ route('studio.draft.destroy') }}">
+            <summary class="studio-workspace-tree-title">
+                <i class="fas fa-file-lines" aria-hidden="true"></i>
+                <span>Draft</span>
+            </summary>
+            <div class="studio-workspace-draft-body" data-draft-body></div>
+        </details>
 
-        @if(array_key_exists('blocks', $studioGroups))
-            <div class="studio-workspace-tools" role="group" aria-label="افزودن بلوک">
-                @foreach([
-                    'heading' => ['fa-heading', 'افزودن عنوان'],
-                    'text' => ['fa-align-right', 'افزودن متن'],
-                    'button' => ['fa-square-plus', 'افزودن دکمه'],
-                    'card' => ['fa-id-card', 'افزودن کارت'],
-                    'image' => ['fa-image', 'افزودن تصویر'],
-                    'spacer' => ['fa-arrows-up-down', 'افزودن فاصله'],
-                ] as $insertType => [$insertIcon, $insertLabel])
-                    <button type="button" class="studio-workspace-tool" data-workspace-insert="{{ $insertType }}"
-                            title="{{ $insertLabel }}" aria-label="{{ $insertLabel }}">
-                        <i class="fas {{ $insertIcon }}" aria-hidden="true"></i>
-                    </button>
-                @endforeach
-            </div>
-            <div class="studio-workspace-tools" role="group" aria-label="عملیات بلوک‌ها">
-                @foreach([
-                    'undo' => ['fa-rotate-left', 'واگرد تغییر بلوک‌ها'],
-                    'redo' => ['fa-rotate-right', 'انجام دوبارهٔ تغییر بلوک‌ها'],
-                    'duplicate' => ['fa-clone', 'تکثیر بلوک انتخاب‌شده'],
-                    'reset-style' => ['fa-eraser', 'بازنشانی سبک بلوک انتخاب‌شده'],
-                ] as $workspaceAction => [$actionIcon, $actionLabel])
-                    <button type="button" class="studio-workspace-tool" data-workspace-action="{{ $workspaceAction }}"
-                            title="{{ $actionLabel }}" aria-label="{{ $actionLabel }}">
-                        <i class="fas {{ $actionIcon }}" aria-hidden="true"></i>
-                    </button>
-                @endforeach
-            </div>
-        @endif
+        {{-- The layer tree names the whole document, so it owns the rail; the
+             schema groups live in the right column's Design area as one
+             collapsible accordion (below the object inspector). --}}
+        <section class="studio-workspace-tree" aria-label="Page layers">
+            <h2 class="studio-workspace-tree-title">
+                <i class="fas fa-layer-group" aria-hidden="true"></i>
+                <span>Layers</span>
+            </h2>
+            <ul data-page-layers aria-label="Page layers"></ul>
+        </section>
     </aside>
 
     <div class="studio-main">
         <form method="POST" action="{{ route('studio.save') }}"
               enctype="multipart/form-data" class="studio-form" data-router="off" id="studio-form"
               data-live-url="{{ route('studio.live') }}"
-              data-home-url="{{ route('home') }}">
+              data-home-url="{{ route('home') }}"
+              data-studio-tokens='{!! json_encode(\App\Support\ThemeTokens::VARS, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) !!}'>
             @csrf
 
             {{-- Contextual properties: the real schema controls for the element
                  selected in the canvas are relocated here (still inside the
                  form, so they keep submitting). One field node is ever in one
                  place, so no duplicate input names can reach the server. --}}
-            <section class="studio-context" data-context-panel hidden aria-label="ویژگی‌های عنصر انتخاب‌شده">
+            <section class="studio-context" data-context-panel hidden aria-label="Selected element properties">
                 <header class="studio-context-head">
-                    <span class="studio-context-eyebrow">ویژگی‌ها</span>
+                    <span class="studio-context-eyebrow">Properties</span>
                     <strong class="studio-context-title" data-context-title></strong>
-                    <button type="button" class="studio-context-close" data-context-clear aria-label="بستن ویژگی‌ها">
+                    <button type="button" class="studio-context-close" data-context-clear aria-label="Close properties">
                         <i class="fas fa-xmark" aria-hidden="true"></i>
                     </button>
                 </header>
                 <p class="studio-context-note" data-context-note></p>
+                <nav class="studio-context-crumb" data-context-crumb hidden aria-label="Selected element path"></nav>
                 <div class="studio-context-fields" data-context-fields></div>
             </section>
 
             {{-- Object inspector: title always visible, diagnostics (metrics,
                  shortcuts, layers) collapsible so the editable fields above
                  stay the first thing on screen. --}}
-            <section class="studio-object-inspector" data-object-inspector aria-label="ویژگی‌های عنصر انتخاب‌شده">
+            <section class="studio-object-inspector" data-object-inspector aria-label="Selected element properties">
                 <header class="studio-object-head">
-                    <span class="studio-object-eyebrow">بازرس عنصر</span>
-                    <h2 data-object-title aria-live="polite">عنصری انتخاب نشده است</h2>
+                    <span class="studio-object-eyebrow">Element inspector</span>
+                    <h2 data-object-title aria-live="polite">No element selected</h2>
                     <button type="button" class="studio-object-collapse" data-object-collapse
-                            aria-expanded="false" aria-label="نمایش یا بستن جزئیات عنصر">
+                            aria-expanded="false" aria-label="Toggle element details">
                         <i class="fas fa-chevron-down" aria-hidden="true"></i>
                     </button>
                     <button type="button" class="studio-object-collapse" data-inspector-toggle
-                            aria-expanded="true" title="بستن پنل بازرس" aria-label="بستن یا باز کردن پنل بازرس">
+                            aria-expanded="true" title="Close inspector panel" aria-label="Close or open inspector panel">
                         <i class="fas fa-xmark" aria-hidden="true"></i>
                     </button>
                 </header>
-                <p data-object-scope>برای مشاهدهٔ ویژگی‌ها، عنصری را در پیش‌نمایش انتخاب کنید.</p>
-                <dl class="studio-object-metrics" data-object-metrics aria-label="ابعاد و موقعیت عنصر"></dl>
-                <div class="studio-object-controls" data-object-controls role="group" aria-label="میان‌برهای عنصر"></div>
-                <details class="studio-page-layers">
-                    <summary><i class="fas fa-layer-group" aria-hidden="true"></i> بخش‌های صفحه</summary>
-                    <ul data-page-layers aria-label="لایه‌های صفحه"></ul>
-                </details>
+                <p data-object-scope>Select an element in the preview to see its properties.</p>
+                <dl class="studio-object-metrics" data-object-metrics aria-label="Element size and position"></dl>
+                <div class="studio-object-controls" data-object-controls role="group" aria-label="Element shortcuts"></div>
             </section>
+
+            {{-- Design: the global schema groups. These tabs used to live on the
+                 left rail, which the layer tree now owns; the right column is
+                 where a selected node's properties are edited, so the global
+                 version of the same controls belongs beside them. --}}
+            <h2 class="studio-design-title">
+                <i class="fas fa-palette" aria-hidden="true"></i>
+                <span>Design</span>
+            </h2>
 
             <div class="settings-cards">
                 @foreach($studioGroups as $groupKey => $group)
@@ -200,15 +203,15 @@
                             <i class="fas {{ $group['icon'] ?? 'fa-sliders-h' }} studio-group-icon" aria-hidden="true"></i>
                             <h3 class="settings-card-title">{{ $group['label'] }}</h3>
                             @if(!empty($group['hint']))
-                                <button type="button" class="studio-hint" data-studio-hint aria-label="راهنمای این بخش">
+                                <button type="button" class="studio-hint" data-studio-hint aria-label="Section help">
                                     <i class="fas fa-circle-info" aria-hidden="true"></i>
                                     <span class="studio-hint-bubble" role="tooltip">{{ $group['hint'] }}</span>
                                 </button>
                             @endif
                             @if($changedCount)
-                                <span class="studio-group-count" title="{{ $changedCount }} مورد تغییر کرده است">
+                                <span class="studio-group-count" title="{{ $changedCount }} changed">
                                     <span class="studio-badge" aria-hidden="true">●</span>
-                                    {{ persian_digits($changedCount) }}
+                                    {{ $changedCount }}
                                 </span>
                             @endif
                             <i class="fas fa-chevron-down studio-group-caret" aria-hidden="true"></i>
@@ -240,10 +243,10 @@
         @if($overrides !== [] && $canPublishEveryone)
             <div class="studio-reset-all">
                 <form method="POST" action="{{ route('studio.reset.all') }}" data-router="off"
-                      onsubmit="return confirm('همهٔ تغییرات ظاهری سراسری حذف شوند؟');">
+                      onsubmit="return confirm('Delete all site-wide appearance changes?');">
                     @csrf
                     <button type="submit" class="link-danger">
-                        <i class="fas fa-recycle" aria-hidden="true"></i> بازنشانی همهٔ تغییرات سراسری ({{ persian_digits(count($overrides)) }} مورد)
+                        <i class="fas fa-recycle" aria-hidden="true"></i> Reset all site-wide changes ({{ count($overrides) }})
                     </button>
                 </form>
             </div>
@@ -257,12 +260,24 @@
     <aside class="studio-preview-pane" id="studio-preview-pane">
         <div class="studio-preview-head">
             <span class="studio-live-dot" data-studio-live-dot data-state="idle" aria-hidden="true"></span>
-            <span>پیش‌نمایش زنده</span>
+            <span>Live preview</span>
         </div>
         {{-- The iframe is sized to the emulated device's CSS width and
              scaled to fit this stage (theme-studio.js). --}}
         <div class="studio-preview-stage" data-studio-preview-stage>
-            <iframe class="studio-preview-frame" data-studio-preview-frame title="پیش‌نمایش سایت" src="about:blank"></iframe>
+            <iframe class="studio-preview-frame" data-studio-preview-frame title="Site preview" src="about:blank"></iframe>
+        </div>
+        {{-- Floating tool bar, overlaid bottom-center of the canvas like
+             Figma's — a pill, not a pane, so the canvas keeps its space. --}}
+        <div class="studio-tool-dock" role="group" aria-label="Canvas tools">
+            <button type="button" class="studio-workspace-tool" data-workspace-tool="select"
+                    title="Select" aria-label="Select" aria-pressed="true">
+                <i class="fas fa-arrow-pointer" aria-hidden="true"></i>
+            </button>
+            <button type="button" class="studio-workspace-tool" data-workspace-tool="interact"
+                    title="Interact with page" aria-label="Interact with page" aria-pressed="false">
+                <i class="fas fa-hand" aria-hidden="true"></i>
+            </button>
         </div>
     </aside>
 </div>
@@ -270,34 +285,48 @@
 {{-- Bottom status bar: preview chrome (devices, zoom, frame actions) on one
      side, save + dirty + error indicator on the other — the classic thin
      application status bar that replaced the old top toolbar. --}}
-<footer class="studio-statusbar studio-workspace" aria-label="نوار وضعیت استودیو">
-    <div class="studio-preview-devices" role="group" aria-label="اندازهٔ نمایش">
-        <button type="button" class="studio-preview-device" data-studio-preview-device="desktop" title="نمایش دسکتاپ" aria-label="نمایش دسکتاپ" aria-pressed="true">
+<footer class="studio-statusbar studio-workspace" aria-label="Studio status bar">
+    <div class="studio-preview-devices" role="group" aria-label="Viewport size">
+        <button type="button" class="studio-preview-device" data-studio-preview-device="desktop" title="Desktop view" aria-label="Desktop view" aria-pressed="true">
             <i class="fas fa-display" aria-hidden="true"></i>
         </button>
-        <button type="button" class="studio-preview-device" data-studio-preview-device="tablet" title="نمایش تبلت" aria-label="نمایش تبلت" aria-pressed="false">
+        <button type="button" class="studio-preview-device" data-studio-preview-device="tablet" title="Tablet view" aria-label="Tablet view" aria-pressed="false">
             <i class="fas fa-tablet-screen-button" aria-hidden="true"></i>
         </button>
-        <button type="button" class="studio-preview-device" data-studio-preview-device="mobile" title="نمایش موبایل" aria-label="نمایش موبایل" aria-pressed="false">
+        <button type="button" class="studio-preview-device" data-studio-preview-device="mobile" title="Mobile view" aria-label="Mobile view" aria-pressed="false">
             <i class="fas fa-mobile-screen-button" aria-hidden="true"></i>
         </button>
     </div>
 
-    <div class="studio-workspace-zoom" role="group" aria-label="بزرگ‌نمایی پیش‌نمایش">
-        <button type="button" class="studio-statusbar-btn" data-studio-zoom-fit title="بزرگ‌نمایی متناسب" aria-label="بزرگ‌نمایی متناسب" aria-pressed="true">
-            <i class="fas fa-expand" aria-hidden="true"></i>
-        </button>
-        <input type="range" id="studio-zoom" class="studio-zoom-bar" data-studio-zoom min="0.25" max="1.25" step="0.05" value="1" aria-label="بزرگ‌نمایی پیش‌نمایش">
-        <output class="studio-zoom-value" data-studio-zoom-value for="studio-zoom">متناسب</output>
+    {{-- Page switcher: which route the canvas frame shows. theme-studio.js
+         swaps the frame to the chosen URL; studio-workspace then rebuilds the
+         tree against that frame's own data-studio-path ids. --}}
+    <div class="studio-preview-pages" role="group" aria-label="Preview page">
+        @foreach ($studioPages as $page)
+            <button type="button" class="studio-statusbar-btn studio-preview-page"
+                    data-studio-page="{{ $page['url'] }}"
+                    title="{{ $page['label'] }}" aria-label="{{ $page['label'] }}"
+                    aria-pressed="{{ $page['key'] === 'landing' ? 'true' : 'false' }}">
+                {{ $page['label'] }}
+            </button>
+        @endforeach
     </div>
 
-    <button type="button" class="studio-preview-action studio-statusbar-btn" data-studio-preview-reload title="بارگذاری دوباره" aria-label="بارگذاری دوبارهٔ پیش‌نمایش">
+    <div class="studio-workspace-zoom" role="group" aria-label="Preview zoom">
+        <button type="button" class="studio-statusbar-btn" data-studio-zoom-fit title="Fit to screen" aria-label="Fit to screen" aria-pressed="true">
+            <i class="fas fa-expand" aria-hidden="true"></i>
+        </button>
+        <input type="range" id="studio-zoom" class="studio-zoom-bar" data-studio-zoom min="0.25" max="1.25" step="0.05" value="1" aria-label="Preview zoom">
+        <output class="studio-zoom-value" data-studio-zoom-value for="studio-zoom">Fit</output>
+    </div>
+
+    <button type="button" class="studio-preview-action studio-statusbar-btn" data-studio-preview-reload title="Reload" aria-label="Reload preview">
         <i class="fas fa-rotate" aria-hidden="true"></i>
     </button>
-    <a class="studio-preview-action studio-statusbar-btn" href="{{ route('home') }}" target="_blank" rel="noopener" title="باز کردن در تب جدید" aria-label="باز کردن پیش‌نمایش در تب جدید">
+    <a class="studio-preview-action studio-statusbar-btn" href="{{ route('home') }}" data-studio-preview-open target="_blank" rel="noopener" title="Open in new tab" aria-label="Open preview in a new tab">
         <i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i>
     </a>
-    <button type="button" class="studio-preview-action studio-statusbar-btn" data-studio-preview-max title="تمام‌صفحه" aria-label="تغییر حالت تمام‌صفحهٔ پیش‌نمایش">
+    <button type="button" class="studio-preview-action studio-statusbar-btn" data-studio-preview-max title="Maximize" aria-label="Toggle preview fullscreen">
         <i class="fas fa-expand" aria-hidden="true"></i>
     </button>
 
@@ -306,7 +335,7 @@
     {{-- Error/validation indicator: seeded from the server-rendered error
          list and fed by live-preview 422s; click opens the message popover. --}}
     <button type="button" class="studio-statusbar-btn studio-errors-toggle" data-studio-errors-toggle hidden
-            title="خطاهای اعتبارسنجی" aria-label="خطاهای اعتبارسنجی" aria-expanded="false">
+            title="Validation errors" aria-label="Validation errors" aria-expanded="false">
         <i class="fas fa-circle-exclamation" aria-hidden="true"></i>
         <span class="studio-errors-count" data-studio-errors-count>0</span>
     </button>
@@ -315,29 +344,37 @@
          only, so an edit is "pending" until one of the save buttons is used. --}}
     <span class="studio-dirty" data-studio-dirty hidden role="status" aria-live="polite">
         <span class="studio-dirty-dot" aria-hidden="true"></span>
-        <span data-studio-dirty-text>ذخیره‌نشده</span>
+        <span data-studio-dirty-text>Unsaved</span>
     </span>
 
-    {{-- Save: the button opens a scope dropup whose buttons submit the
-         studio form through the `form` attribute. --}}
+    {{-- Save: one action only — publish for everyone (or the personal
+         fallback when the user holds no site-wide grant). The button opens
+         a confirmation dialog instead of a scope menu; the dialog's submit
+         button carries the scope through the `form` attribute. --}}
     <div class="studio-save-wrap">
         <button type="button" class="studio-statusbar-save" data-studio-save-jump hidden>
             <i class="fas fa-save" aria-hidden="true"></i>
-            ذخیرهٔ تغییرات
+            Save changes
         </button>
-        <div class="studio-save-menu" data-studio-save-menu>
-            <button type="submit" form="studio-form" name="scope" value="preview">
-                <i class="fas fa-eye" aria-hidden="true"></i> پیش‌نمایش
-            </button>
-            <button type="submit" form="studio-form" name="scope" value="me">
-                <i class="fas fa-user" aria-hidden="true"></i> فقط برای من
-            </button>
-            @if($canPublishEveryone)
-                <button type="submit" form="studio-form" name="scope" value="everyone" class="is-primary">
-                    <i class="fas fa-globe" aria-hidden="true"></i> برای همه
+        <dialog class="studio-confirm" data-save-confirm aria-labelledby="studio-save-confirm-title">
+            <h3 id="studio-save-confirm-title" data-save-confirm-title>
+                {{ $canPublishEveryone ? 'Publish these changes?' : 'Save these changes?' }}
+            </h3>
+            <p data-save-confirm-text>
+                @if($canPublishEveryone)
+                    Saving applies your edits to the live site for every visitor immediately. Unsaved changes in other areas of this page will be published together.
+                @else
+                    Saving applies your edits to your personal view only. Other visitors keep the published theme.
+                @endif
+            </p>
+            <div class="studio-confirm-actions">
+                <button type="button" class="studio-confirm-cancel" data-save-confirm-cancel>Cancel</button>
+                <button type="submit" form="studio-form" name="scope" value="{{ $canPublishEveryone ? 'everyone' : 'me' }}"
+                        class="studio-confirm-go">
+                    {{ $canPublishEveryone ? 'Publish for everyone' : 'Save for me' }}
                 </button>
-            @endif
-        </div>
+            </div>
+        </dialog>
     </div>
 </footer>
 

@@ -22,10 +22,10 @@
     <div class="studio-list-row-head">
         <span class="studio-list-num" data-list-num>{{ $num ?: '' }}</span>
         <span class="studio-list-move">
-            <button type="button" class="sec-move list-move-up" aria-label="بالا"><i class="fas fa-chevron-up"></i></button>
-            <button type="button" class="sec-move list-move-down" aria-label="پایین"><i class="fas fa-chevron-down"></i></button>
+            <button type="button" class="sec-move list-move-up" aria-label="Up"><i class="fas fa-chevron-up"></i></button>
+            <button type="button" class="sec-move list-move-down" aria-label="Down"><i class="fas fa-chevron-down"></i></button>
         </span>
-        <button type="button" class="sec-move list-del" data-list-del aria-label="حذف این مورد" title="حذف">
+        <button type="button" class="sec-move list-del" data-list-del aria-label="Delete this item" title="Delete">
             <i class="fas fa-trash" aria-hidden="true"></i>
         </button>
     </div>
@@ -53,7 +53,7 @@
                             <input type="color" value="{{ preg_match('/^#[0-9a-fA-F]{6}$/', (string) $val) ? $val : '#000000' }}"
                                    data-block-color-picker aria-label="{{ $def['label'] ?? $key }}">
                             <input type="text" name="{{ $in }}" value="{{ $val }}" class="settings-input" data-block-color-value
-                                   placeholder="پیش‌فرض" aria-label="{{ $def['label'] ?? $key }} (HEX)">
+                                   placeholder="Default" aria-label="{{ $def['label'] ?? $key }} (HEX)">
                         </div>
                         @break
 
@@ -106,7 +106,7 @@
                         <label class="studio-toggle">
                             <input type="hidden" name="{{ $in }}" value="0">
                             <input type="checkbox" name="{{ $in }}" value="1" @checked((bool) $val)>
-                            <span>{{ $val ? 'روشن' : 'خاموش' }}</span>
+                            <span>{{ $val ? 'On' : 'Off' }}</span>
                         </label>
                         @break
 

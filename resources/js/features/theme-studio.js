@@ -18,6 +18,7 @@
 import initBlockEditor from './studio-block-editor.js';
 import initLists from './studio-lists.js';
 import initWorkspace from './studio-workspace.js';
+import initDraft from './studio-draft.js';
 import '../../css/features/studio-workspace.css';
 
 export default function init(options = {}) {
@@ -35,6 +36,7 @@ export default function init(options = {}) {
     initGroups();
     initHints();
     initWorkspace(form);
+    initDraft(form);
     initLive(form);
 }
 
@@ -53,7 +55,7 @@ function initColors(form) {
 function initToggles(form) {
     form.querySelectorAll('.studio-toggle input[type="checkbox"]').forEach((cb) => {
         const label = cb.parentElement.querySelector('span');
-        cb.addEventListener('change', () => { if (label) label.textContent = cb.checked ? 'روشن' : 'خاموش'; });
+        cb.addEventListener('change', () => { if (label) label.textContent = cb.checked ? 'On' : 'Off'; });
     });
 }
 
@@ -134,73 +136,44 @@ function initRanges(form) {
     });
 }
 
-// Inspector rail: the tab buttons switch panels — exactly one group is
-// visible at a time (the rest carry [hidden]), so the bar never turns into
-// one long accordion scroll. The active tab survives reloads; a failed save
-// arrives with the error group flagged data-studio-error, which outranks the
-// remembered tab. The rail hides its scrollbar, so wheel, arrow keys and
-// scroll-into-view on activation keep every tab reachable.
+// Design groups: a stack of <details> accordions — exactly one open at a
+// time, so the column never turns into one long scroll. The choice survives
+// reloads; a failed save arrives with the error group flagged
+// data-studio-error, which outranks the remembered one. The groups' own
+// summaries are the navigation (the old icon tab strip is gone), and other
+// modules jump to a group by dispatching `studio:open-group`.
 function initGroups() {
     const groups = Array.from(document.querySelectorAll('[data-studio-group]'));
     if (!groups.length) return;
 
-    const tabs = Array.from(document.querySelectorAll('[data-studio-tab]'));
-    const rail = tabs[0] ? tabs[0].parentElement : null;
     const main = groups[0].closest('.studio-main');
-    const rtl = rail ? getComputedStyle(rail).direction === 'rtl' : true;
 
+    // Accordion: one group open at a time, opened through its own summary —
+    // the old icon tab strip is gone (anything collapsible collapses, and a
+    // row of icons spent the space without saying what it was for).
     const activate = (key) => {
         groups.forEach((g) => {
-            const on = g.dataset.studioGroup === key;
-            g.hidden = !on;
-            g.open = on;
-        });
-        tabs.forEach((t) => {
-            const on = t.dataset.studioTab === key;
-            t.classList.toggle('is-active', on);
-            t.setAttribute('aria-current', on ? 'true' : 'false');
-            // Keep the chosen tab inside the rail's visible slice.
-            if (on) t.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+            g.open = g.dataset.studioGroup === key;
         });
         try { localStorage.setItem('studio.tab', key); } catch { /* private mode */ }
     };
 
-    tabs.forEach((t) => t.addEventListener('click', () => {
-        activate(t.dataset.studioTab);
-        main?.scrollTo({ top: 0, behavior: 'smooth' });
-    }));
+    groups.forEach((g) => {
+        g.addEventListener('toggle', () => {
+            // Closing is always allowed (the group the user just folded stays
+            // folded); opening one closes the rest, accordion-style.
+            if (!g.open) return;
+            activate(g.dataset.studioGroup);
+            main?.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    });
 
-    // Wheel over the rail: on narrow screens the rail is a horizontal strip
-    // (vertical wheel scrolls it sideways); on wide screens the wheel
-    // scrolls the rail's own overflow directly, which also guarantees the
-    // event reaches the rail even when it lands on a button's hover area.
-    if (rail) rail.addEventListener('wheel', (e) => {
-        if (Math.abs(e.deltaY) < Math.abs(e.deltaX)) return;
-        if (rail.scrollHeight > rail.clientHeight) {
-            rail.scrollTop += e.deltaY;
-        } else if (rail.scrollWidth > rail.clientWidth) {
-            e.preventDefault();
-            rail.scrollBy({ left: (rtl ? -1 : 1) * e.deltaY, top: 0 });
-        }
-    }, { passive: false });
-
-    const focusTab = (t) => {
-        activate(t.dataset.studioTab);
-        t.focus();
-    };
-
-    tabs.forEach((t, i) => t.addEventListener('keydown', (e) => {
-        // Visual direction: in RTL the tab flow runs right-to-left, so the
-        // left arrow advances through the sections.
-        const next = rtl ? 'ArrowLeft' : 'ArrowRight';
-        const prev = rtl ? 'ArrowRight' : 'ArrowLeft';
-        if (e.key === next || e.key === 'ArrowDown') focusTab(tabs[(i + 1) % tabs.length]);
-        else if (e.key === prev || e.key === 'ArrowUp') focusTab(tabs[(i - 1 + tabs.length) % tabs.length]);
-        else if (e.key === 'Home') focusTab(tabs[0]);
-        else if (e.key === 'End') focusTab(tabs[tabs.length - 1]);
-        else return;
-        e.preventDefault();
-    }));
+    // Programmatic jumps (inspector shortcuts, the block editor) ask for a
+    // group by key instead of clicking a tab that no longer exists.
+    document.addEventListener('studio:open-group', (event) => {
+        const key = event.detail?.key;
+        if (key && groups.some((g) => g.dataset.studioGroup === key)) activate(key);
+    });
 
     let saved = null;
     try { saved = localStorage.getItem('studio.tab'); } catch { /* private mode */ }
@@ -320,17 +293,17 @@ function initPreviewChrome(pane, frame) {
         if (saved in DEVICES) device = saved;
     } catch { /* private mode */ }
 
-    // Zoom: null means the auto "fit" path (the slider is inert); dragging
-    // the slider takes over with a manual value until the fit button resets.
+    // Zoom: null means the auto "fit" path; dragging the slider takes over
+    // with a manual value until the fit button resets. The slider stays
+    // enabled in fit mode — otherwise it could never take over — and mirrors
+    // the computed fit scale so the thumb sits where the canvas actually is.
     let manualZoom = null;
-    const persianDigits = (text) => String(text).replace(/\d/g, (d) => '۰۱۲۳۴۵۶۷۸۹'[d]);
     const paintZoom = () => {
         if (zoomFit) zoomFit.setAttribute('aria-pressed', String(manualZoom === null));
-        if (zoom) zoom.disabled = manualZoom === null;
         if (zoomValue) {
             zoomValue.textContent = manualZoom === null
-                ? 'متناسب'
-                : persianDigits(Math.round(manualZoom * 100)) + '٪';
+                ? 'Fit'
+                : Math.round(manualZoom * 100) + '%';
         }
     };
 
@@ -345,6 +318,9 @@ function initPreviewChrome(pane, frame) {
         // hero's proportions honest, exactly like browser device mode.
         const requested = manualZoom;
         const scale = requested > 0 ? Math.min(1.25, Math.max(0.25, requested)) : Math.min(1, w / dev.w, h / dev.h);
+        // In fit mode the slider mirrors the computed scale, so the thumb
+        // shows what the canvas is actually at (and dragging starts from it).
+        if (manualZoom === null && zoom) zoom.value = String(scale);
         // Size every frame in the stage, not just the visible one: the
         // hot-swap twin must already be laid out when it trades places
         // (theme-studio.js initLive).
@@ -388,7 +364,7 @@ function initPreviewChrome(pane, frame) {
         split.classList.remove('is-max');
         maxBtn?.classList.remove('is-active');
         if (maxBtn) {
-            maxBtn.title = 'تمام‌صفحه';
+            maxBtn.title = 'Maximize';
             maxBtn.querySelector('i')?.classList.toggle('fa-compress', false);
             maxBtn.querySelector('i')?.classList.toggle('fa-expand', true);
         }
@@ -397,7 +373,7 @@ function initPreviewChrome(pane, frame) {
     maxBtn?.addEventListener('click', () => {
         const on = !!split?.classList.toggle('is-max');
         maxBtn.classList.toggle('is-active', on);
-        maxBtn.title = on ? 'خروج از تمام‌صفحه' : 'تمام‌صفحه';
+        maxBtn.title = on ? 'Exit fullscreen' : 'Maximize';
         maxBtn.querySelector('i')?.classList.toggle('fa-compress', on);
         maxBtn.querySelector('i')?.classList.toggle('fa-expand', !on);
     });
@@ -450,6 +426,12 @@ function initLive(form) {
     const liveUrl = form.dataset.liveUrl;
     const homeUrl = form.dataset.homeUrl;
     if (!liveUrl || !homeUrl) return;
+
+    // The canvas can point at several pages of the same site (the page
+    // switcher in the status bar). Structural swaps, the reload button and
+    // the open-in-new-tab link all follow wherever it currently points;
+    // frame-ready then rebuilds the tree against that frame's own ids.
+    let pageUrl = homeUrl;
 
     // dotted path => 'token' | 'reload', straight from the rendered schema.
     const modes = {};
@@ -514,7 +496,7 @@ function initLive(form) {
             if (swapQueued) { swapQueued = false; swapFrame(); }
         };
         incoming.addEventListener('load', onLoaded);
-        incoming.src = homeUrl;
+        incoming.src = pageUrl;
     };
 
     const sync = () => {
@@ -588,9 +570,34 @@ function initLive(form) {
     // The preview is always on: it is the studio's main canvas, not an
     // opt-in panel. Load the frame once and sync immediately on boot.
     if (!frame.dataset.loaded) {
-        frame.src = homeUrl;
+        frame.src = pageUrl;
         frame.dataset.loaded = '1';
     }
     reloadBtn?.addEventListener('click', swapFrame);
+
+    // Page switcher: same swap path as a structural edit (the outgoing frame
+    // stays visible while the twin loads the new route), so the tree, the
+    // inspector and the selection all re-derive from the page that actually
+    // opened. aria-pressed mirrors the current page; the new-tab link points
+    // at it too.
+    const pageButtons = [...document.querySelectorAll('[data-studio-page]')];
+    const openLink = document.querySelector('[data-studio-preview-open]');
+    const paintPages = () => {
+        pageButtons.forEach((button) => {
+            const on = button.dataset.studioPage === pageUrl;
+            button.setAttribute('aria-pressed', String(on));
+            button.classList.toggle('is-active', on);
+        });
+        if (openLink) openLink.href = pageUrl;
+    };
+    pageButtons.forEach((button) => button.addEventListener('click', () => {
+        const url = button.dataset.studioPage;
+        if (!url || url === pageUrl) return;
+        pageUrl = url;
+        paintPages();
+        swapFrame();
+    }));
+    paintPages();
+
     sync();
 }

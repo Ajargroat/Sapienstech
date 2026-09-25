@@ -6,6 +6,7 @@ use App\Support\StudioSchema;
 use App\Support\ThemeFonts;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\ViewErrorBag;
 use Tests\TestCase;
 
 class ThemeFontsTest extends TestCase
@@ -27,7 +28,7 @@ class ThemeFontsTest extends TestCase
     public function test_directory_choices_track_disk_changes_and_reject_unusable_directories(): void
     {
         $this->withFontDirectory(function ($root) {
-            $this->assertSame(['' => 'پیش‌فرض تم (بازنشانی)'], ThemeFonts::choices([]));
+            $this->assertSame(['' => 'Theme default (reset)'], ThemeFonts::choices([]));
             foreach (['installed', 'empty', 'unknown', 'bad.name'] as $directory) {
                 mkdir($root.'/'.$directory);
             }
@@ -126,7 +127,7 @@ class ThemeFontsTest extends TestCase
                     $resolved = ['theme' => ['typography' => ['font_'.$role => $current, 'faces' => []]]];
                     $html = view('consultant.settings.partials._field', [
                         'field' => StudioSchema::field($path), 'resolved' => $resolved, 'overrides' => [],
-                        'errors' => new \Illuminate\Support\ViewErrorBag,
+                        'errors' => new ViewErrorBag,
                     ])->render();
                     $this->assertStringNotContainsString('type="text"', $html);
                     $this->assertStringContainsString('type="radio"', $html);

@@ -9,7 +9,11 @@
 @extends('layouts.teacher')
 
 @section('content')
-<div class="student-welcome">
+{{-- Studio ids: top-level regions of the teacher dashboard, addressable from
+     the canvas under the template-owned `public.teacher.*` root (see
+     StudioStyles::TEMPLATE_ROOTS). --}}
+<template data-studio-section-marker="welcome"></template>
+<div class="student-welcome" data-studio-path="public.teacher.welcome">
     <section class="student-profile-head">
         <span class="student-avatar-lg">{{ mb_substr($teacher->name, 0, 1) }}</span>
         <div>
@@ -27,7 +31,8 @@
     </div>
 </div>
 
-<div class="student-stats" data-stagger>
+<template data-studio-section-marker="stats"></template>
+<div class="student-stats" data-stagger data-studio-path="public.teacher.stats">
     <div class="student-stat">
         <span class="student-stat-icon student-stat-icon--primary"><i class="fas fa-user-group"></i></span>
         <div class="student-stat-text">

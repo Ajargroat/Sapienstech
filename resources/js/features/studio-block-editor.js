@@ -117,7 +117,7 @@ export default function initBlockEditor(form, wrap) {
         });
         if (selected && !selected.isConnected) selected = all()[0] || null;
         select(selected);
-        status.textContent = all().length ? `${all().length} / ${max} بلوک` : 'برای شروع یک بلوک اضافه کنید.';
+        status.textContent = all().length ? `${all().length} / ${max} blocks` : 'Add a block to get started.';
     };
     // Freeze every legacy identity before changing order; old preview documents
     // still map through legacyId until the next server-rendered frame arrives.
@@ -172,9 +172,9 @@ export default function initBlockEditor(form, wrap) {
             radio.dispatchEvent(new Event('change', { bubbles: true }));
         }
         field(row, 'id').value = uid();
-        const titles = { heading: 'عنوان جدید', button: 'دکمه جدید', card: 'کارت جدید' };
+        const titles = { heading: 'New heading', button: 'New button', card: 'New card' };
         if (titles[blockType]) field(row, 'title').value = titles[blockType];
-        if (blockType === 'text') field(row, 'text').value = 'متن خود را اینجا بنویسید';
+        if (blockType === 'text') field(row, 'text').value = 'Write your text here';
         if (blockType === 'button') field(row, 'href').value = '#';
         row.querySelector('input[type="checkbox"][name$="[visible]"]').checked = true;
         selected = row;
@@ -182,7 +182,7 @@ export default function initBlockEditor(form, wrap) {
         restoring = false;
         list.refresh(true);
         if (blockType === 'image') {
-            status.textContent = 'نشانی تصویر را وارد کنید تا پیش‌نمایش نمایش داده شود.';
+            status.textContent = 'Enter an image URL to show a preview.';
             field(row, 'src').focus();
         }
     };
@@ -262,7 +262,12 @@ export default function initBlockEditor(form, wrap) {
                 event.stopImmediatePropagation();
                 const row = all().find((item) => id(item) === element.dataset.studioBlock || item.dataset.legacyId === element.dataset.studioBlock);
                 if (row) {
-                    document.querySelector('[data-studio-tab="blocks"]')?.click();
+                    // Open the Blocks group: a real tab where one exists (the
+                    // test fixtures), the accordion's open-group event on the
+                    // production page (its icon tab strip is gone).
+                    const tab = document.querySelector('[data-studio-tab="blocks"]');
+                    if (tab) tab.click();
+                    else document.dispatchEvent(new CustomEvent('studio:open-group', { detail: { key: 'blocks' } }));
                     select(row);
                 }
             }, true);

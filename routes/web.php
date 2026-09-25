@@ -13,6 +13,7 @@ use App\Http\Controllers\Consultant\Bulk\BulkScheduleController;
 use App\Http\Controllers\Consultant\BlogController as ConsultantBlogController;
 use App\Http\Controllers\Consultant\Settings\ProfileController as ConsultantProfileController;
 use App\Http\Controllers\Studio\StudioController;
+use App\Http\Controllers\Studio\StudioDraftController;
 use App\Http\Controllers\Consultant\StudentExamController;
 use App\Http\Controllers\Consultant\StudentFeatureController;
 use App\Http\Controllers\Consultant\StudentReportCardController;
@@ -288,6 +289,13 @@ Route::middleware(['auth', 'consultant.feature:theme_studio', 'studio.access'])
         Route::post('reset-all', [StudioController::class, 'resetAll'])->name('reset.all');
         Route::post('preview/exit', [StudioController::class, 'exitPreview'])->name('preview.exit');
         Route::post('live', [StudioController::class, 'live'])->name('live');
+
+        // The single named draft (one per tenant+user) — JSON carriers only;
+        // a restore re-submits the payload to studio.save as scope=preview.
+        Route::get('draft', [StudioDraftController::class, 'show'])->name('draft.show');
+        Route::post('draft', [StudioDraftController::class, 'store'])->name('draft.store');
+        Route::put('draft', [StudioDraftController::class, 'update'])->name('draft.update');
+        Route::delete('draft', [StudioDraftController::class, 'destroy'])->name('draft.destroy');
     });
 
 /*

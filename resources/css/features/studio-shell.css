@@ -5,8 +5,9 @@
     no tenant theme partials: no theme-vars, no theme-attrs, no color-scheme.
     That means the CSS custom properties every studio component reads
     (--c-primary, --c-surface, --radius-card, …) would otherwise be undefined
-    here — so this file pins them to the PLATFORM baseline (the values in
-    config/theme.php, mirrored by ThemeTokens' fallbacks), never to site().
+    here — so this file pins them to the studio's own dark chrome palette
+    (Figma-style), never to site(). Shape/spacing still mirror the platform
+    ThemeTokens fallbacks.
 
     Loaded by resources/js/features/studio-standalone.js; the workspace
     components keep their own private palette (studio-workspace.css), which is
@@ -16,33 +17,73 @@
     pages that import app.css.
 */
 
+/* IRANSans for the studio chrome only — local files under public/fonts
+   (constraint: fonts come from local directories only; the family covers
+   Persian glyphs and Latin, and the shell is English/LTR). The preview
+   iframe keeps the tenant's own fonts: it is a separate document. */
+@font-face {
+    font-family: "IRANSans";
+    src: url("/fonts/IranSANS/IRANSans_UltraLight.ttf") format("truetype");
+    font-weight: 100;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: "IRANSans";
+    src: url("/fonts/IranSANS/IRANSans_Light.ttf") format("truetype");
+    font-weight: 300;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: "IRANSans";
+    src: url("/fonts/IranSANS/IRANSans.ttf") format("truetype");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: "IRANSans";
+    src: url("/fonts/IranSANS/IRANSans_Medium.ttf") format("truetype");
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: "IRANSans";
+    src: url("/fonts/IranSANS/IRANSans_Bold.ttf") format("truetype");
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
 body.studio-shell {
-    /* Platform baseline colors (config/theme.php → theme.colors). */
-    --c-primary: #06B6D4;
-    --c-secondary: #A855F7;
-    --c-background: #000000;
-    --c-surface: #111111;
-    --c-surface-alt: #1A1A1A;
+    /* Studio chrome palette: the Figma dark editor theme (still NOT tenant
+       tokens — same isolation contract, different baseline). */
+    --c-primary: #0D99FF;
+    --c-secondary: #9747FF;
+    --c-background: #1E1E1E;
+    --c-surface: #252525;
+    --c-surface-alt: #2E2E2E;
     --c-text: #FFFFFF;
     --c-success: #34D399;
     --c-info: #60A5FA;
     --c-warning: #FBBF24;
     --c-danger: #F87171;
 
-    /* Derived tokens, using the same color-mix formulas as
-       ThemeTokens::derivedColors() with the baseline palette. */
-    --c-primary-hover: color-mix(in oklab, #06B6D4 85%, black);
-    --c-secondary-hover: color-mix(in oklab, #A855F7 85%, black);
-    --c-primary-soft: color-mix(in oklab, #06B6D4 12%, transparent);
-    --c-secondary-soft: color-mix(in oklab, #A855F7 12%, transparent);
+    /* Derived tokens, same color-mix formulas, Figma palette inputs. */
+    --c-primary-hover: color-mix(in oklab, #0D99FF 85%, black);
+    --c-secondary-hover: color-mix(in oklab, #9747FF 85%, black);
+    --c-primary-soft: color-mix(in oklab, #0D99FF 12%, transparent);
+    --c-secondary-soft: color-mix(in oklab, #9747FF 12%, transparent);
     --c-border: color-mix(in oklab, #FFFFFF 8%, transparent);
     --c-border-strong: color-mix(in oklab, #FFFFFF 18%, transparent);
-    --c-muted: color-mix(in oklab, #FFFFFF 62%, #000000);
-    --c-subtle: color-mix(in oklab, #FFFFFF 42%, #000000);
-    --c-surface-elevated: color-mix(in oklab, #1A1A1A 88%, #FFFFFF);
+    --c-muted: color-mix(in oklab, #FFFFFF 62%, #1E1E1E);
+    --c-subtle: color-mix(in oklab, #FFFFFF 42%, #1E1E1E);
+    --c-surface-elevated: color-mix(in oklab, #2E2E2E 88%, #FFFFFF);
     --c-heading: #FFFFFF;
-    --c-link: #06B6D4;
-    --c-on-primary: #003544;
+    --c-link: #0D99FF;
+    --c-on-primary: #00243B;
     --c-on-surface: #FFFFFF;
 
     /* Neutral shape/spacing defaults (ThemeTokens fallbacks). */
@@ -64,7 +105,7 @@ body.studio-shell {
     min-height: 100dvh;
     background: var(--c-background);
     color: var(--c-text);
-    font-family: inherit;
+    font-family: "IRANSans", "Vazirmatn", ui-sans-serif, system-ui, sans-serif;
 }
 
 /* The page is a full-viewport application column: the workspace fills it

@@ -313,7 +313,10 @@ const syncSelectCount = (wrap) => {
         setSelectDisplay(wrap, wrap.dataset.allLabel ?? 'همه', true);
         return;
     }
-    setSelectDisplay(wrap, `${faDigits(count)} ${wrap.dataset.countUnit ?? 'مورد'}`);
+    // Latin digits + default unit in LTR documents (the studio shell);
+    // Persian pages keep the faDigits rendering they always had.
+    const ltrDoc = document.documentElement.dir === 'ltr';
+    setSelectDisplay(wrap, `${ltrDoc ? count : faDigits(count)} ${wrap.dataset.countUnit ?? (ltrDoc ? 'items' : 'مورد')}`);
 };
 
 document.addEventListener('click', (event) => {

@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use Illuminate\Support\Arr;
+use Illuminate\Validation\Rule;
 
 /**
  * Reads config/studio.php and exposes it as the studio's whitelist + form
@@ -68,14 +69,16 @@ class StudioSchema
             // rule is generated from the actual bundles.
             if (($field['control'] ?? '') === 'archetype') {
                 $rules[$path] = ['required', 'in:'.implode(',', self::archetypes())];
+
                 continue;
             }
 
             if (($field['control'] ?? '') === 'font') {
                 // Exact current values remain valid for legacy full-form saves.
-                $rules[$path] = ['nullable', 'string', \Illuminate\Validation\Rule::in(array_keys(
+                $rules[$path] = ['nullable', 'string', Rule::in(array_keys(
                     ThemeFonts::choices((array) site('theme.typography', []), site($path)),
                 ))];
+
                 continue;
             }
 
@@ -203,6 +206,15 @@ class StudioSchema
             foreach ((array) $node as $key => $value) {
                 $path = $prefix === '' ? (string) $key : $prefix.'.'.$key;
 
+                // A canvas map is one opaque value: its keys are element ids
+                // that contain dots, so descending would split an id into
+                // bogus segments (and reset would then forget the wrong path).
+                if ((self::field($path)['control'] ?? '') === 'canvas') {
+                    $flat[$path] = $value;
+
+                    continue;
+                }
+
                 if (is_array($value) && $value !== [] && ! array_is_list($value)) {
                     $walk($value, $path);
                 } else {
@@ -279,6 +291,11 @@ class StudioSchema
                 // whitelisted item defs only, so an unknown key can never
                 // reach the stored layer.
                 'list' => self::normalizeList($value, $field),
+                // The canvas document model is one opaque map; it is validated
+                // wholesale at the security boundary (StudioStyles::cleanNodes)
+                // because node ids contain dots and so cannot ride dotted
+                // paths. An all-empty map normalizes to null (forget).
+                'canvas' => StudioStyles::cleanNodes($value) ?: null,
                 // An emptied optional field means "stop overriding": '' becomes
                 // null so the writer forgets the key and the lower layers
                 // (tenant file / archetype / baseline) show through again.
@@ -341,9 +358,9 @@ class StudioSchema
         }
 
         $defs = (array) ($field['item'] ?? []);
-        $max  = (int) ($field['max'] ?? 20);
+        $max = (int) ($field['max'] ?? 20);
         $disc = self::discriminantKey($field);
-        $out  = [];
+        $out = [];
 
         foreach (array_slice(array_values($value), 0, $max) as $row) {
             if (! is_array($row)) {
@@ -372,7 +389,7 @@ class StudioSchema
                     // so anything that is not an explicit on-value is off.
                     'toggle' => ! in_array((string) ($raw ?? '0'), ['0', ''], true),
                     'number' => is_numeric($raw) ? (int) $raw : null,
-                    default  => is_string($raw) ? trim($raw) : $raw,
+                    default => is_string($raw) ? trim($raw) : $raw,
                 };
 
                 if ($clean[$key] === '' || $clean[$key] === null) {
@@ -420,8 +437,8 @@ class StudioSchema
      * Diff normalized values against the resolved baseline, returning only the
      * keys that actually differ (the sparse override to persist).
      *
-     * @param  array<string, mixed>  $values     dotted path => new value
-     * @param  array  $resolved                  current resolved tree
+     * @param  array<string, mixed>  $values  dotted path => new value
+     * @param  array  $resolved  current resolved tree
      * @return array<string, mixed> dotted path => value (changed only)
      */
     public static function diff(array $values, array $resolved): array

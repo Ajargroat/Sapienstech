@@ -15,12 +15,12 @@
     keep working unchanged. (A future central studio domain would need a
     token-auth + postMessage bridge and is explicitly out of scope.)
 --}}
-<html lang="{{ config('theme.tenant.locale', 'fa') }}" dir="{{ config('theme.tenant.direction', 'rtl') }}">
+<html lang="en" dir="ltr">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     {{-- Platform name only: the shell must not inherit the tenant brand. --}}
-    <title>استودیوی ظاهر | {{ config('theme.tenant.name', 'Sapienstech') }}</title>
+    <title>Theme Studio | {{ config('theme.tenant.name', 'Sapienstech') }}</title>
 
     {{-- Platform-baseline fonts from config/theme.php defaults (never site()).
          The studio chrome keeps a fixed type ramp no matter what the tenant

@@ -11,7 +11,7 @@ function setup() {
         <input name="items[__KEY__][href]"><input name="items[__KEY__][src]">
         ${['background', 'color', 'padding', 'radius', 'width'].map((key) => `<input name="items[__KEY__][${key}]"><span></span>`).join('')}
         <input type="checkbox" name="items[__KEY__][visible]" value="1" checked></div></div>`;
-    const dom = new JSDOM(`<button data-studio-tab="blocks"></button><input type="checkbox" data-studio-interact>
+    const dom = new JSDOM(`<button data-studio-tab="blocks"></button>
         <form><div data-sections><input type="checkbox" value="blocks"></div><div data-block-editor data-max="24">
         <button type="button" data-block-insert="button">Button</button>
         ${['undo', 'redo', 'duplicate', 'reset-style'].map((key) => `<button type="button" data-block-${key}></button>`).join('')}
@@ -56,7 +56,7 @@ test('insert and duplicate use distinct stable IDs and are single undo steps', (
     wrap.querySelector('[data-block-insert]').click();
     assert.equal(form.querySelector('[data-sections] input').checked, true);
     assert.equal(rows().length, 3);
-    assert.equal(input(rows()[2], 'title').value, 'دکمه جدید');
+    assert.equal(input(rows()[2], 'title').value, 'New button');
     assert.equal(new Set(rows().map((row) => input(row, 'id').value)).size, 3);
     wrap.querySelector('[data-block-undo]').click();
     assert.equal(rows().length, 2);
@@ -131,8 +131,9 @@ test('preview selection suppresses navigation only in editing mode', () => {
     assert.equal(event.defaultPrevented, true);
     assert.equal(rows()[1].hidden, false);
     assert.equal(wrap.querySelectorAll('[aria-pressed="true"]').length, 1);
-    const toggle = document.querySelector('[data-studio-interact]');
-    toggle.checked = true;
-    toggle.dispatchEvent(new Event('change'));
+    form.dispatchEvent(new CustomEvent('studio:tool', { detail: { tool: 'interact' } }));
     assert.equal(canvas.window.document.documentElement.classList.contains('studio-canvas-editing'), false);
+    const passthrough = new canvas.window.MouseEvent('click', { bubbles: true, cancelable: true });
+    canvas.window.document.querySelector('a').dispatchEvent(passthrough);
+    assert.equal(passthrough.defaultPrevented, false);
 });

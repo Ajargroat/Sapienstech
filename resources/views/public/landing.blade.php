@@ -43,9 +43,12 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @include('partials.theme-vars')
     {{-- Per-element overrides: one stylesheet for the whole page, emitted only
-         when the tenant has stored any. Keyed by data-studio-path, so it needs
-         no cooperation from the section partials. --}}
-    @php($lpOverrides = \App\Support\StudioStyles::css($L['overrides'] ?? []))
+         when the tenant has stored any. The canvas document (local rules,
+         pseudo-class states, breakpoints, hidden nodes) is emitted after the
+         legacy list, so a node override wins for the same element. Both are
+         keyed by data-studio-path, so neither needs cooperation from the
+         section partials. --}}
+    @php($lpOverrides = \App\Support\StudioStyles::css($L['overrides'] ?? []).\App\Support\StudioStyles::nodesCss($public['canvas']['nodes'] ?? null))
     @if ($lpOverrides !== '')
         <style id="lp-element-overrides">{!! $lpOverrides !!}</style>
     @endif

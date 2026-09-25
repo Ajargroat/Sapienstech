@@ -17,7 +17,7 @@ final class ThemeIcons
      */
     public static function choices(): array
     {
-        return ['font-awesome' => 'پیش‌فرض (فونت‌اوسوم)'] + self::sets();
+        return ['font-awesome' => 'Default (Font Awesome)'] + self::sets();
     }
 
     public static function selected(mixed $set): string
