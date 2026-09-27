@@ -1,10 +1,18 @@
 /vendor
 /node_modules
 /public/build
+/public/hot
+/public/storage
 /.env
+/.env.backup
+/.env.*.local
 /.phpunit.result.cache
+
+# Storage
 /storage/*.key
 /storage/pail
+/storage/app/public/*
+!/storage/app/public/.gitkeep
 /storage/framework/cache/data
 /storage/framework/cache/*.php
 /storage/framework/sessions/*
@@ -12,8 +20,22 @@
 /storage/logs/*
 !/storage/logs/.gitkeep
 *.log
+
+# Databases & Dumps
+/database/*.sqlite
 /database/*.sqlite-journal
+/database/*.sqlite-shm
+/database/*.sqlite-wal
+*.sql
+/database dump
+
+# Agent & Worktree state
 /.kilo
-/AGENTS.md
 /.agent
-/Tasks.md
+/tasks
+
+# Editor & OS files
+.DS_Store
+Thumbs.db
+.idea
+.vscode
