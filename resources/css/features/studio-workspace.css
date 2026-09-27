@@ -161,6 +161,89 @@
 }
 .studio-confirm-actions button:hover { border-color: var(--workspace-accent); }
 
+/* Brand dialog: same chrome language as the save confirmation, but tall
+   enough to hold a real form — a wide sheet, its own scroll, sticky head. */
+.studio-brand-modal {
+  display: flex;
+  flex-direction: column;
+  width: min(720px, calc(100vw - 40px));
+  max-height: min(80vh, 760px);
+  padding: 0;
+  border: 1px solid var(--workspace-border);
+  border-radius: 12px;
+  background: var(--workspace-panel);
+  color: var(--workspace-text);
+  font-family: inherit;
+  box-shadow: 0 24px 64px rgb(0 0 0 / 55%);
+}
+.studio-brand-modal::backdrop { background: rgb(0 0 0 / 60%); }
+/* Fallback for engines that never got showModal: the dialog still needs to be
+   off the page while closed, and the [open] attribute is what states that. */
+.studio-brand-modal:not([open]) { display: none !important; }
+
+.studio-brand-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--workspace-border);
+  background: var(--workspace-raised);
+  border-radius: 12px 12px 0 0;
+}
+.studio-brand-icon { color: var(--workspace-accent); font-size: 13px; }
+.studio-brand-head h3 { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: .02em; }
+.studio-brand-hint {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--workspace-muted);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.studio-brand-close {
+  flex: 0 0 auto;
+  margin-inline-start: auto;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--workspace-muted);
+  font: inherit;
+  cursor: pointer;
+}
+.studio-brand-close:hover { border-color: var(--workspace-border); color: var(--workspace-text); }
+
+.studio-brand-note {
+  margin: 0;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--workspace-border);
+  background: color-mix(in srgb, var(--workspace-accent) 8%, transparent);
+  color: var(--workspace-muted);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.studio-brand-modal .studio-group-body { overflow-y: auto; padding: 16px; }
+.studio-brand-foot {
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px 16px;
+  border-top: 1px solid var(--workspace-border);
+}
+.studio-brand-done {
+  padding: 7px 16px;
+  border: 1px solid var(--workspace-accent);
+  border-radius: 6px;
+  background: var(--workspace-accent);
+  color: #101010;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 /* Validation indicator: icon + count; hidden while there is nothing to
    report. Its popover lists the messages and each row jumps to the field. */
 .studio-errors-toggle { color: var(--c-danger); }
@@ -445,7 +528,9 @@ body .studio-workspace.studio-split .studio-main::-webkit-scrollbar {
 .studio-workspace .studio-layer.is-locked .studio-layer-name { opacity: .6; }
 .studio-workspace .studio-layer.is-hidden .studio-layer-name { opacity: .4; text-decoration: line-through; }
 
-/* Design area heading: the global schema groups moved here from the rail. */
+/* Design area heading: the global schema groups moved here from the rail.
+   The panel toggle rides at the end of this row (the old inspector header
+   that used to own it is gone). */
 .studio-workspace .studio-design-title {
   display: flex;
   align-items: center;
@@ -455,6 +540,7 @@ body .studio-workspace.studio-split .studio-main::-webkit-scrollbar {
   font-size: 11.5px;
   font-weight: 800;
 }
+.studio-workspace .studio-design-title .studio-object-collapse { margin-inline-start: auto; }
 
 /* Floating tool bar: an overlaid pill at the bottom-center of the canvas
    (Figma's tool shelf) — the pointer and hand live here now, not in the
@@ -475,6 +561,14 @@ body .studio-workspace.studio-split .studio-main::-webkit-scrollbar {
   backdrop-filter: blur(8px);
 }
 .studio-tool-dock .studio-workspace-tool { width: 34px; height: 34px; }
+.studio-tool-dock-sep {
+  align-self: center;
+  flex: 0 0 auto;
+  width: 1px;
+  height: 18px;
+  margin: 0 2px;
+  background: var(--workspace-border);
+}
 
 .studio-workspace .studio-workspace-tool,
 .studio-workspace .studio-tab,
@@ -865,10 +959,8 @@ body .studio-workspace.studio-split .studio-main::-webkit-scrollbar {
 .studio-workspace .studio-context-crumb-item:hover { border-color: var(--workspace-accent); color: var(--workspace-accent); }
 .studio-workspace .studio-context-crumb-sep { color: var(--workspace-border); }
 
-.studio-workspace .studio-object-inspector { padding: 14px 16px; border-bottom: 1px solid var(--workspace-border); }
-.studio-workspace .studio-object-head { display: flex; align-items: center; gap: 8px; }
-.studio-workspace .studio-object-eyebrow { color: var(--workspace-muted); font-size: 10px; }
-.studio-workspace [data-object-title] { flex: 1; min-width: 0; margin: 0; font-size: 13px; font-weight: 700; overflow-wrap: anywhere; }
+/* The compact icon button in the Design title row (panel toggle; fixtures
+   also use it inside the retired inspector header). */
 .studio-workspace .studio-object-collapse {
   flex: none;
   width: 26px;
@@ -882,45 +974,6 @@ body .studio-workspace.studio-split .studio-main::-webkit-scrollbar {
 .studio-workspace .studio-object-collapse i { font-size: 11px; transition: transform var(--animation-duration, .2s) ease; }
 .studio-workspace .studio-object-collapse[aria-expanded="true"] i { transform: rotate(180deg); }
 .studio-workspace .studio-object-collapse:hover { border-color: var(--workspace-accent); color: var(--workspace-accent); }
-/* Collapsed: only the title row stays; the diagnostics fold away. */
-.studio-workspace .studio-object-inspector.is-collapsed :is([data-object-scope], [data-object-metrics], [data-object-controls], .studio-page-layers) { display: none; }
-.studio-workspace [data-object-scope] { margin: 4px 0 0; color: var(--workspace-muted); font-size: 11px; line-height: 1.7; overflow-wrap: anywhere; }
-
-.studio-workspace [data-object-metrics] {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 5px;
-  margin: 12px 0;
-  font-size: 10.5px;
-  font-variant-numeric: tabular-nums;
-}
-
-.studio-workspace [data-object-metrics] > div {
-  min-width: 0;
-  padding: 8px 10px;
-  border: 1px solid var(--workspace-border);
-  border-radius: 4px;
-  background: var(--workspace-bg);
-}
-
-.studio-workspace [data-object-metrics] dt { color: var(--workspace-muted); font-size: 10px; }
-.studio-workspace [data-object-metrics] dd { margin: 3px 0 0; overflow-wrap: anywhere; }
-.studio-workspace [data-object-controls] { display: flex; flex-wrap: wrap; gap: 5px; margin-block: 10px; }
-.studio-workspace :is([data-object-controls], [data-object-metrics]):empty { display: none; }
-
-.studio-workspace [data-object-controls] button {
-  min-height: 32px;
-  padding: 5px 9px;
-  border: 1px solid var(--workspace-border);
-  border-radius: 4px;
-  background: var(--workspace-raised);
-  color: var(--workspace-text);
-  font: inherit;
-  font-size: 11px;
-  text-align: start;
-  overflow-wrap: anywhere;
-  cursor: pointer;
-}
 
 .studio-workspace .settings-cards { gap: 0; }
 .studio-workspace .settings-card {

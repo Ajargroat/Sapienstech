@@ -2,13 +2,19 @@
 // back to the server. Shared tokens and block-instance overrides stay distinct.
 export default function initWorkspace(form) {
     const root = document.getElementById('studio-split');
-    const inspector = root?.querySelector('[data-object-inspector]');
-    if (!inspector || root.dataset.workspaceReady) return;
+    if (!root || root.dataset.workspaceReady) return;
     root.dataset.workspaceReady = '1';
-    const title = inspector.querySelector('[data-object-title]');
-    const scope = inspector.querySelector('[data-object-scope]');
-    const metrics = inspector.querySelector('[data-object-metrics]');
-    const shortcuts = inspector.querySelector('[data-object-controls]');
+    // The element-inspector header (title/scope/metrics/shortcuts) left the
+    // page — its data lives in the Properties panel and the Design groups.
+    // Fixture documents may still carry the nodes; when absent, the writes
+    // below land in inert stubs so selection bookkeeping stays unconditional.
+    const inspector = root.querySelector('[data-object-inspector]');
+    const textNode = (sel, fallback = '') => inspector?.querySelector(sel) ?? { textContent: fallback };
+    const collection = (sel) => inspector?.querySelector(sel) ?? { replaceChildren() {}, append() {} };
+    const title = textNode('[data-object-title]');
+    const scope = textNode('[data-object-scope]');
+    const metrics = collection('[data-object-metrics]');
+    const shortcuts = collection('[data-object-controls]');
     // The layer tree moved out of the inspector into the left rail (it names
     // the whole document, not just the selected object), so it resolves from
     // the split rather than from the inspector.
@@ -1169,6 +1175,11 @@ export default function initWorkspace(form) {
         if (contextPanel) contextPanel.hidden = true;
     };
     const openContext = (path, label, fallback) => {
+        // Whether the panel was already up decides if it may scroll at all:
+        // a refresh re-selects the same element (the swap re-runs this) and
+        // must not move the column, while a brand-new selection may. `nearest`
+        // then makes it a no-op whenever the panel is already in view.
+        const wasHidden = contextPanel?.hidden !== false;
         closeContext();
         if (!contextPanel || !contextFields || !path) return false;
         const { fields: matched, row } = resolve(path);
@@ -1200,11 +1211,12 @@ export default function initWorkspace(form) {
                 : 'Edit this node’s properties here; changes apply to the canvas live.';
         contextPanel.hidden = false;
         openInspector();
-        // The panel sits at the top of the scrolling dock; `nearest` only
-        // scrolls when it is out of sight, so selecting in the canvas never
-        // yanks the page around, but a deep scroll down the form still brings
-        // the fields back into view.
-        contextPanel.scrollIntoView?.({ block: 'nearest' });
+        // The panel sits under the rail's draft card; `nearest` only scrolls
+        // when it is out of sight. Revealing a panel that was closed is worth
+        // a scroll (the user just asked for it); re-selecting after a preview
+        // refresh is not, and that is the case that used to throw the column
+        // back to its top on every edit.
+        if (wasHidden) contextPanel.scrollIntoView?.({ block: 'nearest' });
         return Boolean(caps) || matched.length > 0;
     };
     const measure = () => {
@@ -1934,6 +1946,9 @@ export default function initWorkspace(form) {
         shortcuts.replaceChildren();
         closeContext();
         syncHash();
+        // The tree mirrors the selection, so clearing it clears the row too —
+        // otherwise the last row keeps claiming to be the current one.
+        paintLayers();
         title.textContent = 'No element selected';
         scope.textContent = 'Select an element on the canvas to see its properties.';
         paintHandles();
@@ -2210,11 +2225,11 @@ export default function initWorkspace(form) {
     syncActions();
 
     // --- Inspector collapse --------------------------------------------------
-    // The metrics/shortcuts/layers block is read-mostly metadata; collapsed by
-    // default it stops crowding out the editable fields above it. The choice
-    // persists so the panel comes back exactly as the user left it.
-    const collapseButton = inspector.querySelector('[data-object-collapse]');
-    if (collapseButton) {
+    // Fixtures may still carry the metrics/shortcuts block; when present it
+    // starts collapsed and remembers the choice. Production no longer renders
+    // it, so the whole block is skipped without the node.
+    const collapseButton = inspector?.querySelector('[data-object-collapse]');
+    if (inspector && collapseButton) {
         let open;
         try { open = localStorage.getItem('studio.inspector') === '1'; } catch { open = false; }
         const paintCollapse = () => {
@@ -2274,16 +2289,19 @@ export default function initWorkspace(form) {
         if (typeof saveConfirm.showModal === 'function') saveConfirm.showModal();
         else saveConfirm.setAttribute('open', '');
     };
+    // Both routes out of the dialog go through here: the attribute fallback
+    // exists for engines without showModal/close, and clearing it is also the
+    // only thing that reliably closes the dialog when the button below
+    // submits through `form` (submit fires before the navigation).
+    const closeSaveConfirm = () => {
+        saveConfirm?.close?.();
+        saveConfirm?.removeAttribute?.('open');
+    };
     saveJump?.addEventListener('click', openSaveConfirm);
-    saveConfirm?.querySelector('[data-save-confirm-cancel]')?.addEventListener('click', () => {
-        saveConfirm.close?.();
-        saveConfirm.removeAttribute?.('open');
-    });
-    // The scope-carrying submit button lives inside the dialog; submitting
-    // through it closes the dialog (submit fires before the navigation).
-    saveConfirm?.querySelector('button[type="submit"]')?.addEventListener('click', () => {
-        saveConfirm.close?.();
-    });
+    saveConfirm?.querySelector('[data-save-confirm-cancel]')?.addEventListener('click', closeSaveConfirm);
+    // The scope-carrying submit button lives inside the dialog, and the form
+    // it belongs to is outside it — so it is a real submit either way.
+    saveConfirm?.querySelector('button[type="submit"]')?.addEventListener('click', closeSaveConfirm);
     paintDirty();
 
     // --- Status-bar error indicator ----------------------------------------

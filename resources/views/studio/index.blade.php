@@ -72,7 +72,19 @@
             if ($hasError) { $errorGroup = $gKey; break 2; }
         }
     }
+    // Brand renders in a dialog opened from the canvas tool dock, not in the
+    // Design accordion: it is a whole identity (name, logo, archetype) rather
+    // than a token. Everything else stays an accordion group, so the default
+    // opening group is the first one that actually sits in the column — and
+    // a save error inside Brand reopens the dialog instead of the column.
+    $modalGroup = isset($studioGroups['brand']) ? 'brand' : null;
     $initialGroup = $errorGroup ?? (array_key_first($studioGroups) ?? null);
+    if ($modalGroup !== null && $initialGroup === $modalGroup) {
+        $initialGroup = null;
+        foreach ($studioGroups as $gKey => $g) {
+            if ($gKey !== $modalGroup) { $initialGroup = $gKey; break; }
+        }
+    }
 
     // Canvas-only groups (the per-element override store) are rendered so their
     // inputs submit, but they are not a settings surface: the inspector writes
@@ -159,45 +171,34 @@
                 <div class="studio-context-fields" data-context-fields></div>
             </section>
 
-            {{-- Object inspector: title always visible, diagnostics (metrics,
-                 shortcuts, layers) collapsible so the editable fields above
-                 stay the first thing on screen. --}}
-            <section class="studio-object-inspector" data-object-inspector aria-label="Selected element properties">
-                <header class="studio-object-head">
-                    <span class="studio-object-eyebrow">Element inspector</span>
-                    <h2 data-object-title aria-live="polite">No element selected</h2>
-                    <button type="button" class="studio-object-collapse" data-object-collapse
-                            aria-expanded="false" aria-label="Toggle element details">
-                        <i class="fas fa-chevron-down" aria-hidden="true"></i>
-                    </button>
-                    <button type="button" class="studio-object-collapse" data-inspector-toggle
-                            aria-expanded="true" title="Close inspector panel" aria-label="Close or open inspector panel">
-                        <i class="fas fa-xmark" aria-hidden="true"></i>
-                    </button>
-                </header>
-                <p data-object-scope>Select an element in the preview to see its properties.</p>
-                <dl class="studio-object-metrics" data-object-metrics aria-label="Element size and position"></dl>
-                <div class="studio-object-controls" data-object-controls role="group" aria-label="Element shortcuts"></div>
-            </section>
-
             {{-- Design: the global schema groups. These tabs used to live on the
                  left rail, which the layer tree now owns; the right column is
                  where a selected node's properties are edited, so the global
-                 version of the same controls belongs beside them. --}}
+                 version of the same controls belongs beside them. The panel
+                 toggle rides in this row — it stays reachable whether or not
+                 a selection has pushed the Properties panel above it. --}}
             <h2 class="studio-design-title">
                 <i class="fas fa-palette" aria-hidden="true"></i>
                 <span>Design</span>
+                <button type="button" class="studio-object-collapse" data-inspector-toggle
+                        aria-expanded="true" title="Close inspector panel" aria-label="Close or open inspector panel">
+                    <i class="fas fa-xmark" aria-hidden="true"></i>
+                </button>
             </h2>
 
             <div class="settings-cards">
                 @foreach($studioGroups as $groupKey => $group)
+                    @continue($groupKey === $modalGroup)
+
                     @php $changedCount = $groupChanged[$groupKey] ?? 0; @endphp
 
-                    {{-- Tab panel: every group but the active one is hidden
-                         outright, so the bar shows one section at a time. --}}
+                    {{-- Accordion: the group the user opened is the open one;
+                         the rest are folded by their own <details> state — no
+                         `hidden` attribute, which `.studio-workspace [hidden]`
+                         would pin shut forever. --}}
                     <details class="settings-card studio-group" id="studio-group-{{ $groupKey }}"
                              data-studio-group="{{ $groupKey }}"
-                             @if($initialGroup === $groupKey) open @else hidden @endif
+                             @if($initialGroup === $groupKey) open @endif
                              @if($errorGroup === $groupKey) data-studio-error @endif>
                         <summary class="studio-group-head">
                             <i class="fas {{ $group['icon'] ?? 'fa-sliders-h' }} studio-group-icon" aria-hidden="true"></i>
@@ -231,6 +232,56 @@
                     </details>
                 @endforeach
             </div>
+
+            @if(isset($studioGroups[$modalGroup]))
+                {{-- Brand is a whole identity, not a color knob: it lives in a
+                     dialog opened from the canvas tool dock, so the Design
+                     column stays a short stack of token groups. The fields
+                     stay inside #studio-form, so they submit and live-preview
+                     exactly like any other group. --}}
+                @php
+                    $brandGroup = $studioGroups[$modalGroup];
+                    $brandChanged = $groupChanged[$modalGroup] ?? 0;
+                @endphp
+                <dialog class="studio-brand-modal" id="studio-group-{{ $modalGroup }}"
+                        data-brand-modal data-studio-group="{{ $modalGroup }}"
+                        aria-labelledby="studio-brand-modal-title"
+                        @if($errorGroup === $modalGroup) data-studio-error @endif>
+                    <header class="studio-brand-head">
+                        <i class="fas {{ $brandGroup['icon'] ?? 'fa-fingerprint' }} studio-brand-icon" aria-hidden="true"></i>
+                        <h3 id="studio-brand-modal-title">{{ $brandGroup['label'] }}</h3>
+                        @if($brandChanged)
+                            <span class="studio-group-count" title="{{ $brandChanged }} changed">
+                                <span class="studio-badge" aria-hidden="true">●</span>
+                                {{ $brandChanged }}
+                            </span>
+                        @endif
+                        @if(!empty($brandGroup['hint']))
+                            <span class="studio-brand-hint">{{ $brandGroup['hint'] }}</span>
+                        @endif
+                        <button type="button" class="studio-brand-close" data-brand-close
+                                aria-label="Close {{ $brandGroup['label'] }}" title="Close">
+                            <i class="fas fa-xmark" aria-hidden="true"></i>
+                        </button>
+                    </header>
+                    <p class="studio-brand-note">Every change here applies site-wide and is visible to all visitors as soon as you save.</p>
+                    <div class="studio-group-body">
+                        <div class="studio-grid">
+                            @foreach($brandGroup['fields'] as $field)
+                                @include('consultant.settings.partials._field', [
+                                    'field' => $field,
+                                    'resolved' => $resolved,
+                                    'overrides' => $overrides,
+                                    'canPublishEveryone' => $canPublishEveryone,
+                                ])
+                            @endforeach
+                        </div>
+                    </div>
+                    <footer class="studio-brand-foot">
+                        <button type="button" class="studio-brand-done" data-brand-close>Done</button>
+                    </footer>
+                </dialog>
+            @endif
         </form>
 
         {{-- Reset (per key) posts here; JS fills path + scope then submits. --}}
@@ -278,6 +329,15 @@
                     title="Interact with page" aria-label="Interact with page" aria-pressed="false">
                 <i class="fas fa-hand" aria-hidden="true"></i>
             </button>
+            @if(isset($studioGroups[$modalGroup]))
+                <span class="studio-tool-dock-sep" aria-hidden="true"></span>
+                <button type="button" class="studio-workspace-tool" data-studio-open-brand
+                        title="{{ $studioGroups[$modalGroup]['label'] }}"
+                        aria-label="Open {{ $studioGroups[$modalGroup]['label'] }} settings"
+                        aria-haspopup="dialog">
+                    <i class="fas {{ $studioGroups[$modalGroup]['icon'] ?? 'fa-fingerprint' }}" aria-hidden="true"></i>
+                </button>
+            @endif
         </div>
     </aside>
 </div>

@@ -113,12 +113,13 @@ class StudioIsolationTest extends TestCase
             'data-studio-sash="rail"',
             'data-studio-sash="inspector"',
             'studio-tool-dock',
-            'data-object-inspector',
-            'data-object-metrics',
+            'data-studio-open-brand',
+            'data-brand-modal',
             'data-studio-preview-device="tablet"',
             'data-studio-zoom',
             'studio-statusbar',
             'data-studio-save-jump',
+            'data-save-confirm',
             'data-inspector-toggle',
         ] as $marker) {
             $this->assertStringContainsString($marker, $html);
@@ -127,10 +128,16 @@ class StudioIsolationTest extends TestCase
         // The old top toolbar and its live/interact toggles are gone: the
         // preview is always on and interaction derives from the floating
         // tool dock. The rail's old insert/action icon grids are gone too —
-        // their work happens in the Blocks group and the layer tree.
+        // their work happens in the Blocks group and the layer tree. The
+        // element-inspector header sat above the Design column and repeated
+        // what the properties panel and the groups already said, so it went
+        // with them; saving is a single confirmed action, not a scope menu.
         $this->assertStringNotContainsString('studio-workspace-toolbar', $html);
         $this->assertStringNotContainsString('data-workspace-insert', $html);
         $this->assertStringNotContainsString('data-workspace-action', $html);
+        $this->assertStringNotContainsString('data-object-inspector', $html);
+        $this->assertStringNotContainsString('data-object-metrics', $html);
+        $this->assertStringNotContainsString('data-studio-save-menu', $html);
         $this->assertStringNotContainsString('data-studio-live', preg_replace('/data-studio-live-dot/', '', $html) ?? '');
         $this->assertStringNotContainsString('data-studio-interact', $html);
         // The preview pane renders visible (always-on), not hidden.
@@ -181,6 +188,37 @@ class StudioIsolationTest extends TestCase
         $this->assertGreaterThan($main, $group, 'schema groups must render inside the right column');
         $this->assertStringContainsString('studio-design-title', $html);
         $this->assertStringContainsString('studio-tool-dock', $html);
+
+        // Brand is a dock-opened dialog, not an accordion row: it is a whole
+        // identity (name, logo, archetype), so it is the one group that does
+        // not compete for the column's vertical space.
+        $this->assertStringContainsString('data-studio-open-brand', $html);
+        $this->assertStringContainsString('data-brand-modal', $html);
+        $this->assertMatchesRegularExpression(
+            '/<dialog[^>]*data-brand-modal[^>]*data-studio-group="brand".*?<\/dialog>/s',
+            $html,
+            'the brand group must live inside its dialog'
+        );
+        // ...and its fields must not also render as an accordion row, or the
+        // same input name would reach the server twice.
+        $this->assertStringNotContainsString('id="studio-group-brand"', substr($html, 0, strpos($html, '<dialog')));
+        $this->assertSame(1, substr_count($html, 'data-studio-group="brand"'));
+
+        // No group may render `hidden`: the workspace stylesheet pins any
+        // `[hidden]` element shut with `display: none !important`, so a
+        // server-rendered `hidden` on a group outlives the tab strip it was
+        // written for and hides the whole column. Membership is the `open`
+        // attribute, exactly one group at a time.
+        preg_match_all('/<details[^>]*data-studio-group="([^"]+)"[^>]*>/s', $html, $groups, PREG_SET_ORDER);
+        $this->assertNotEmpty($groups, 'no accordion group rendered');
+        foreach ($groups as [$tag, $key]) {
+            $this->assertStringNotContainsString('hidden', $tag, "group {$key} rendered a hidden attribute");
+        }
+        $this->assertSame(
+            1,
+            count(array_filter($groups, static fn (array $g): bool => str_contains($g[0], ' open'))),
+            'exactly one accordion group starts open'
+        );
     }
 
     /**

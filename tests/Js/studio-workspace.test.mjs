@@ -9,7 +9,7 @@ function setup() {
         <button data-studio-tab="hero" aria-label="Hero"></button><button data-studio-tab="colors"></button><button data-studio-tab="blocks"></button>
         <button data-workspace-tool="select"></button><button data-workspace-tool="interact"></button>
         <button data-workspace-insert="button"></button><button data-workspace-action="undo"></button>
-        <section data-object-inspector><h2 data-object-title></h2><p data-object-scope></p><dl data-object-metrics></dl><div data-object-controls></div><ul data-page-layers></ul></section>
+        <ul data-page-layers></ul>
         <form><div data-studio-group="hero"><div data-studio-field="public.landing.hero.title_line1"><label class="studio-field-label">Title</label><input name="hero" value="Initial"></div></div>
         <div data-block-editor><button type="button" data-block-insert="button"></button><button type="button" data-block-undo disabled></button></div></form></div>`, { url: 'http://tenant.test' });
     for (const key of ['document', 'Event', 'CustomEvent', 'location', 'history']) globalThis[key] = dom.window[key];
@@ -23,22 +23,20 @@ function setup() {
     return { dom, form, editor, frame };
 }
 
-test('canvas selection shows computed metrics and opens only existing schema controls', () => {
+test('a canvas click marks the element and keeps the layer tree in step', () => {
     const { form, frame } = setup();
-    let opened = 0;
-    document.querySelector('[data-studio-tab="hero"]').addEventListener('click', () => opened++);
     const canvas = frame();
     const click = new canvas.window.MouseEvent('click', { bubbles: true, cancelable: true });
     canvas.window.document.querySelector('h1').dispatchEvent(click);
     assert.equal(click.defaultPrevented, true);
-    assert.equal(document.querySelector('[data-object-title]').textContent, 'Hero title');
-    assert.match(document.querySelector('[data-object-metrics]').textContent, /32px/);
-    assert.match(document.querySelector('[data-object-metrics]').textContent, /rgb\(10, 20, 30\)/);
-    assert.equal(opened, 1);
-    document.querySelector('[data-object-controls] button').click();
-    assert.equal(form.querySelector('[data-studio-field]').classList.contains('is-object-field'), true);
-    assert.equal(form.querySelector('input').value, 'Initial');
+    // The element-inspector header that used to announce the selection is gone
+    // from the page: the canvas outline is what marks it now.
+    assert.equal(canvas.window.document.querySelector('h1').classList.contains('studio-inspected-object'), true);
+    // One addressable row per addressable element — the row itself is a single
+    // real button (the tree contract). Which row reads as current is covered
+    // by the lock tests, whose canvas carries schema paths.
     assert.equal(document.querySelectorAll('[data-page-layers] button').length, 1);
+    assert.equal(form.querySelector('input').value, 'Initial');
 });
 
 test('interaction tool releases navigation and selection survives frame replacement', () => {
@@ -77,9 +75,12 @@ test('hidden preview twins and cross-origin frames cannot replace the active ins
     const { form, frame } = setup();
     const canvas = frame();
     canvas.window.document.querySelector('h1').click();
+    const selected = document.querySelector('.studio-inspected-object')
+        ?? canvas.window.document.querySelector('.studio-inspected-object');
+    assert.ok(selected);
     form.dispatchEvent(new CustomEvent('studio:frame-ready', { detail: { frame: { hasAttribute: () => true } } }));
     form.dispatchEvent(new CustomEvent('studio:frame-ready', { detail: { frame: { get contentDocument() { throw new Error('cross origin'); } } } }));
-    assert.equal(document.querySelector('[data-object-title]').textContent, 'Hero title');
+    assert.equal(canvas.window.document.querySelector('h1').classList.contains('studio-inspected-object'), true);
 });
 
 // A second fixture whose canvas carries schema paths, plus a context panel and
@@ -88,7 +89,7 @@ function setupPaths(hash = '') {
     const dom = new JSDOM(`<div id="studio-split">
         <button data-studio-tab="hero" aria-label="Hero"></button><button data-studio-tab="blocks"></button>
         <button data-workspace-tool="select"></button><button data-workspace-tool="interact"></button>
-        <section data-object-inspector><h2 data-object-title></h2><p data-object-scope></p><dl data-object-metrics></dl><div data-object-controls></div><ul data-page-layers></ul></section>
+        <ul data-page-layers></ul>
         <form>
         <section data-context-panel hidden><strong data-context-title></strong><p data-context-note></p><div data-context-fields></div><button type="button" data-context-clear></button></section>
         <div data-studio-group="hero"><div data-studio-field="public.landing.hero.title_line1"><label class="studio-field-label">Title</label><input name="hero" value="Initial"></div>
@@ -149,7 +150,9 @@ test('path selection is restored after the preview frame is replaced', () => {
     frame().window.document.querySelector('h1').click();
     const next = frame();
     assert.equal(next.window.document.querySelector('h1').classList.contains('studio-inspected-object'), true);
-    assert.equal(document.querySelector('[data-object-title]').textContent, 'Hero title');
+    // The selection header is gone from the page; the properties panel is the
+    // one surface that names the selected element now.
+    assert.equal(document.querySelector('[data-context-title]').textContent, 'Hero title');
 });
 
 // The list API the panel drives comes from the real initLists factory, so this
@@ -159,7 +162,7 @@ function setupListOps() {
     const dom = new JSDOM(`<div id="studio-split">
         <button data-studio-tab="hero"></button><button data-studio-tab="blocks"></button>
         <button data-workspace-tool="select"></button><button data-workspace-tool="interact"></button>
-        <section data-object-inspector><h2 data-object-title></h2><p data-object-scope></p><dl data-object-metrics></dl><div data-object-controls></div><ul data-page-layers></ul></section>
+        <ul data-page-layers></ul>
         <form>
         <section data-context-panel hidden><strong data-context-title></strong><p data-context-note></p><div data-context-fields></div><button type="button" data-context-clear></button></section>
         <div data-studio-group="hero"><div data-studio-field="public.landing.hero.buttons" data-live="reload">
@@ -183,7 +186,7 @@ test('unsaved edits raise the pending indicator and saving clears it', () => {
         <button data-studio-tab="hero"></button><button data-workspace-tool="select"></button><button data-workspace-tool="interact"></button>
         <span data-studio-dirty hidden><span data-studio-dirty-text></span></span>
         <button type="button" data-studio-save-jump hidden></button>
-        <section data-object-inspector><h2 data-object-title></h2><p data-object-scope></p><dl data-object-metrics></dl><div data-object-controls></div><ul data-page-layers></ul></section>
+        <ul data-page-layers></ul>
         <form><section class="studio-save-card"><button type="submit"></button></section>
         <div data-studio-field="public.landing.hero.title_line1"><input name="hero" value="Initial"></div></form></div>`, { url: 'http://tenant.test' });
     for (const key of ['document', 'Event', 'CustomEvent']) globalThis[key] = dom.window[key];
@@ -218,7 +221,7 @@ test('selection mirrors into the URL hash and a deep link restores it', () => {
     const reopened = frame(canvas());
     const heading = reopened.window.document.querySelector('h1');
     assert.equal(heading.classList.contains('studio-inspected-object'), true);
-    assert.equal(document.querySelector('[data-object-title]').textContent, 'Hero title');
+    assert.equal(document.querySelector('[data-context-title]').textContent, 'Hero title');
 });
 
 test('in-canvas row actions add, duplicate, move and remove list rows', () => {
@@ -255,7 +258,7 @@ function setupNodeProps() {
     const dom = new JSDOM(`<div id="studio-split">
         <button data-studio-tab="hero"></button><button data-studio-tab="blocks"></button>
         <button data-workspace-tool="select"></button><button data-workspace-tool="interact"></button>
-        <section data-object-inspector><h2 data-object-title></h2><p data-object-scope></p><dl data-object-metrics></dl><div data-object-controls></div><ul data-page-layers></ul></section>
+        <ul data-page-layers></ul>
         <span data-studio-dirty hidden><span data-studio-dirty-text></span></span>
         <form>
         <section data-context-panel hidden><strong data-context-title></strong><p data-context-note></p><nav data-context-crumb hidden></nav><div data-context-fields></div><button type="button" data-context-clear></button></section>
@@ -331,7 +334,7 @@ test('the breadcrumb walks the path chain and a display change reveals flex cont
     const dom = new JSDOM(`<div id="studio-split">
         <button data-studio-tab="hero"></button>
         <button data-workspace-tool="select"></button>
-        <section data-object-inspector><h2 data-object-title></h2><p data-object-scope></p><dl data-object-metrics></dl><div data-object-controls></div><ul data-page-layers></ul></section>
+        <ul data-page-layers></ul>
         <form>
         <section data-context-panel hidden><strong data-context-title></strong><p data-context-note></p><nav data-context-crumb hidden></nav><div data-context-fields></div><button type="button" data-context-clear></button></section>
         <textarea name="public[canvas][nodes]" data-studio-canvas-nodes></textarea>
@@ -387,7 +390,7 @@ function setupDirect(options = {}) {
         <button data-studio-tab="hero"></button>
         <button data-workspace-tool="select"></button>
         <button data-workspace-tool="interact"></button>
-        <section data-object-inspector><h2 data-object-title></h2><p data-object-scope></p><dl data-object-metrics></dl><div data-object-controls></div><ul data-page-layers></ul></section>
+        <ul data-page-layers></ul>
         <span data-studio-dirty hidden><span data-studio-dirty-text></span></span>
         <form>
         <section data-context-panel hidden><strong data-context-title></strong><p data-context-note></p><nav data-context-crumb hidden></nav><div data-context-fields></div><button type="button" data-context-clear></button></section>
@@ -524,7 +527,7 @@ function setupTokens() {
     const dom = new JSDOM(`<div id="studio-split">
         <button data-studio-tab="hero"></button>
         <button data-workspace-tool="select"></button>
-        <section data-object-inspector><h2 data-object-title></h2><p data-object-scope></p><dl data-object-metrics></dl><div data-object-controls></div><ul data-page-layers></ul></section>
+        <ul data-page-layers></ul>
         <form data-studio-tokens='{"colors.primary":"c-primary","colors.background":"c-background","colors.text":"c-text","shape.radius_md":"radius-md"}'>
         <section data-context-panel hidden><strong data-context-title></strong><p data-context-note></p><nav data-context-crumb hidden></nav><div data-context-fields></div><button type="button" data-context-clear></button></section>
         <textarea name="public[canvas][nodes]" data-studio-canvas-nodes></textarea>
@@ -616,7 +619,7 @@ function setupLayers() {
     const dom = new JSDOM(`<div id="studio-split">
         <button data-studio-tab="hero"></button>
         <button data-workspace-tool="select"></button>
-        <section data-object-inspector><h2 data-object-title></h2><p data-object-scope></p><dl data-object-metrics></dl><div data-object-controls></div><ul data-page-layers></ul></section>
+        <ul data-page-layers></ul>
         <form data-studio-tokens='{"colors.primary":"c-primary","shape.radius_md":"radius-md"}'>
         <section data-context-panel hidden><strong data-context-title></strong><p data-context-note></p><nav data-context-crumb hidden></nav><div data-context-fields></div><button type="button" data-context-clear></button></section>
         <textarea name="public[canvas][nodes]" data-studio-canvas-nodes></textarea>
@@ -776,7 +779,7 @@ function setupNested() {
     const dom = new JSDOM(`<div id="studio-split">
         <button data-studio-tab="hero" aria-label="Hero"></button>
         <button data-workspace-tool="select"></button>
-        <section data-object-inspector><h2 data-object-title></h2><p data-object-scope></p><dl data-object-metrics></dl><div data-object-controls></div><ul data-page-layers></ul></section>
+        <ul data-page-layers></ul>
         <form></form></div>`, { url: 'http://tenant.test' });
     for (const key of ['document', 'Event', 'CustomEvent', 'location', 'history']) globalThis[key] = dom.window[key];
     const form = document.querySelector('form');
@@ -856,7 +859,7 @@ function setupLocks() {
     const dom = new JSDOM(`<div id="studio-split">
         <button data-studio-tab="hero" aria-label="Hero"></button>
         <button data-workspace-tool="select"></button>
-        <section data-object-inspector><h2 data-object-title></h2><p data-object-scope></p><dl data-object-metrics></dl><div data-object-controls></div><ul data-page-layers></ul></section>
+        <ul data-page-layers></ul>
         <form><textarea data-studio-canvas-nodes>{
 "public.landing.hero":{"props":{},"states":{},"breakpoints":{},"flags":{}},
 "public.landing.hero.buttons":{"props":{},"states":{},"breakpoints":{},"flags":{}}
@@ -945,7 +948,8 @@ test('a canvas click stops at a locked subtree instead of selecting inside it', 
     flagOf('public.landing.hero', 'locked').click();
     click(link);
     assert.equal(inspected().length, 0);
-    assert.equal(document.querySelector('[data-object-title]').textContent, 'No element selected');
+    // Nothing is selected, so no row may still claim to be the current one.
+    assert.equal(leaf('public.landing.hero').getAttribute('aria-current'), 'false');
 
     // Unlocking the ancestor restores normal selection for unlocked nodes.
     flagOf('public.landing.hero', 'locked').click();
@@ -954,46 +958,43 @@ test('a canvas click stops at a locked subtree instead of selecting inside it', 
     assert.equal(inspected().length, 1);
 });
 
-test('the inspector diagnostics collapse and the choice persists', () => {
+test('the design column closes and reopens from the toggle beside its title', () => {
     const dom = new JSDOM(`<div id="studio-split">
         <button data-studio-tab="hero"></button>
-        <section data-object-inspector><header class="studio-object-head"><h2 data-object-title></h2><button type="button" data-object-collapse aria-expanded="false"></button></header><p data-object-scope></p><dl data-object-metrics></dl><div data-object-controls></div><ul data-page-layers></ul></section>
+        <button type="button" data-inspector-toggle aria-expanded="true"></button>
+        <ul data-page-layers></ul>
         <form><div data-studio-field="public.landing.hero.title_line1"><input name="hero" value="Initial"></div></form>
     </div>`, { url: 'http://tenant.test' });
     for (const key of ['document', 'Event', 'CustomEvent']) globalThis[key] = dom.window[key];
     globalThis.localStorage = dom.window.localStorage;
     try {
-        const inspector = document.querySelector('[data-object-inspector]');
-        const button = document.querySelector('[data-object-collapse]');
+        const root = document.getElementById('studio-split');
+        const button = document.querySelector('[data-inspector-toggle]');
         initWorkspace(document.querySelector('form'));
-        // Collapsed by default: read-mostly diagnostics must not crowd out
-        // the editable fields above them.
-        assert.equal(inspector.classList.contains('is-collapsed'), true);
+        assert.equal(root.classList.contains('is-inspector-closed'), false);
+        button.click();
+        assert.equal(root.classList.contains('is-inspector-closed'), true);
         assert.equal(button.getAttribute('aria-expanded'), 'false');
-        button.click();
-        assert.equal(inspector.classList.contains('is-collapsed'), false);
-        assert.equal(button.getAttribute('aria-expanded'), 'true');
-        assert.equal(localStorage.getItem('studio.inspector'), '1');
-        button.click();
-        assert.equal(inspector.classList.contains('is-collapsed'), true);
-        assert.equal(localStorage.getItem('studio.inspector'), '0');
+        assert.equal(localStorage.getItem('studio.inspector.open'), '0');
     } finally {
         delete globalThis.localStorage;
     }
 });
 
-// The save card and the top toolbar are gone; the status-bar save button
-// opens a scope menu whose buttons submit the studio form via `form`.
+// Saving is one action, and it is confirmed first: the status-bar button
+// opens a dialog whose submitting button carries the scope. jsdom has no
+// showModal/close, so the module falls back to the `open` attribute — which
+// is also exactly how a fixture can observe the dialog opening.
 function setupSaveMenu() {
     const dom = new JSDOM(`<div id="studio-split">
         <button data-studio-tab="hero"></button>
         <span data-studio-dirty hidden><span data-studio-dirty-text></span></span>
         <button type="button" data-studio-save-jump hidden></button>
-        <div data-studio-save-menu>
-            <button type="submit" form="studio-form" name="scope" value="preview">preview</button>
-            <button type="submit" form="studio-form" name="scope" value="everyone">everyone</button>
-        </div>
-        <section data-object-inspector><h2 data-object-title></h2><p data-object-scope></p><dl data-object-metrics></dl><div data-object-controls></div><ul data-page-layers></ul></section>
+        <dialog data-save-confirm>
+            <button type="button" data-save-confirm-cancel></button>
+            <button type="submit" form="studio-form" name="scope" value="everyone">Publish for everyone</button>
+        </dialog>
+        <ul data-page-layers></ul>
         <form id="studio-form"><div data-studio-field="public.landing.hero.title_line1"><input name="hero" value="Initial"></div></form>
         <div id="outside">x</div>
     </div>`, { url: 'http://tenant.test' });
@@ -1002,20 +1003,22 @@ function setupSaveMenu() {
     initWorkspace(form);
     return {
         form,
-        menu: () => document.querySelector('[data-studio-save-menu]'),
+        confirm: () => document.querySelector('[data-save-confirm]'),
         jump: () => document.querySelector('[data-studio-save-jump]'),
     };
 }
 
-test('the status-bar save button opens a scope menu that submits the studio form', () => {
-    const { form, menu, jump } = setupSaveMenu();
-    assert.equal(menu().classList.contains('is-open'), false);
+test('the status-bar save button asks for confirmation before publishing', () => {
+    const { form, confirm, jump } = setupSaveMenu();
+    assert.equal(confirm().hasAttribute('open'), false);
     jump().click();
-    assert.equal(menu().classList.contains('is-open'), true);
+    assert.equal(confirm().hasAttribute('open'), true);
 
-    // A click anywhere outside closes it without submitting anything.
-    document.getElementById('outside').dispatchEvent(new Event('click', { bubbles: true }));
-    assert.equal(menu().classList.contains('is-open'), false);
+    // Cancel closes it and posts nothing.
+    confirm().querySelector('[data-save-confirm-cancel]').click();
+    assert.equal(confirm().hasAttribute('open'), false);
+    let submitted = 0;
+    form.addEventListener('submit', (event) => { event.preventDefault(); submitted++; });
 
     jump().click();
     const submissions = [];
@@ -1023,11 +1026,12 @@ test('the status-bar save button opens a scope menu that submits the studio form
         event.preventDefault(); // jsdom would otherwise try to navigate
         submissions.push(event.submitter?.value);
     });
-    const everyone = menu().querySelector('button[value="everyone"]');
+    const everyone = confirm().querySelector('button[value="everyone"]');
     assert.equal(everyone.form, form);
     everyone.click();
     assert.deepEqual(submissions, ['everyone']);
-    assert.equal(menu().classList.contains('is-open'), false);
+    assert.equal(submitted, 1);
+    assert.equal(confirm().hasAttribute('open'), false);
 });
 
 test('the workspace tool buttons drive interaction mode without a checkbox', () => {
@@ -1053,7 +1057,8 @@ test('the workspace tool buttons drive interaction mode without a checkbox', () 
 test('the inspector column collapses, persists, and reopens on selection', () => {
     const dom = new JSDOM(`<div id="studio-split">
         <button data-studio-tab="hero" aria-label="Hero"></button>
-        <section data-object-inspector><header class="studio-object-head"><h2 data-object-title></h2><button type="button" data-inspector-toggle aria-expanded="true"></button></header><p data-object-scope></p><dl data-object-metrics></dl><div data-object-controls></div><ul data-page-layers></ul></section>
+        <button type="button" data-inspector-toggle aria-expanded="true"></button>
+        <ul data-page-layers></ul>
         <form><div data-studio-group="hero"><div data-studio-field="public.landing.hero.title_line1"><input name="hero" value="Initial"></div></div></form>
     </div>`, { url: 'http://tenant.test' });
     for (const key of ['document', 'Event', 'CustomEvent', 'location', 'history']) globalThis[key] = dom.window[key];
@@ -1086,7 +1091,7 @@ test('the status-bar error indicator merges the server seed with live 422s', () 
         <footer class="studio-statusbar">
             <span><button type="button" data-studio-errors-toggle hidden><span data-studio-errors-count>0</span></button></span>
         </footer>
-        <section data-object-inspector><h2 data-object-title></h2><p data-object-scope></p><dl data-object-metrics></dl><div data-object-controls></div><ul data-page-layers></ul></section>
+        <ul data-page-layers></ul>
         <form><div data-studio-group="hero"><div data-studio-field="public.landing.hero.title_line1"><input name="hero" value="Initial"></div></div></form>
     </div>`, { url: 'http://tenant.test' });
     for (const key of ['document', 'Event', 'CustomEvent']) globalThis[key] = dom.window[key];
@@ -1121,7 +1126,8 @@ test('the panel sashes resize by drag, collapse under the snap and reopen', () =
         <div class="studio-sash" data-studio-sash="rail"></div>
         <div class="studio-sash" data-studio-sash="inspector"></div>
         <button data-studio-tab="hero"></button>
-        <section data-object-inspector><header><button type="button" data-inspector-toggle aria-expanded="true"></button></header><h2 data-object-title></h2><p data-object-scope></p><dl data-object-metrics></dl><div data-object-controls></div><ul data-page-layers></ul></section>
+        <button type="button" data-inspector-toggle aria-expanded="true"></button>
+        <ul data-page-layers></ul>
         <form><div data-studio-group="hero"><div data-studio-field="public.landing.hero.title_line1"><input name="hero" value="Initial"></div></div></form>
     </div>`, { url: 'http://tenant.test' });
     for (const key of ['document', 'Event', 'CustomEvent', 'location', 'history']) globalThis[key] = dom.window[key];

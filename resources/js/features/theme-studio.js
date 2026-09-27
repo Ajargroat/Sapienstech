@@ -143,16 +143,56 @@ function initRanges(form) {
 // summaries are the navigation (the old icon tab strip is gone), and other
 // modules jump to a group by dispatching `studio:open-group`.
 function initGroups() {
-    const groups = Array.from(document.querySelectorAll('[data-studio-group]'));
-    if (!groups.length) return;
+    // Brand's group lives in a <dialog> opened from the canvas dock; it obeys
+    // the same data-studio-group name (shortcuts and error jumps still target
+    // it by key) but it is not part of the accordion — only the groups inside
+    // the Design column fold against each other.
+    const all = Array.from(document.querySelectorAll('[data-studio-group]'));
+    const modal = all.find((g) => g.hasAttribute('data-brand-modal')) ?? null;
+    const groups = all.filter((g) => g !== modal);
+    if (!groups.length && !modal) return;
 
-    const main = groups[0].closest('.studio-main');
+    const main = (groups[0] ?? modal)?.closest('.studio-main');
+
+    // The dialog is static markup inside #studio-form (its fields submit and
+    // live-preview like any other group), so opening it is only a visibility
+    // change. jsdom has no showModal; the attribute fallback keeps the
+    // fixtures working and CSS styles both the same way.
+    const openModal = () => {
+        // Reached from the dock button, and from `studio:open-group` key
+        // "brand" — which is how shortcuts and the failed-save jump ask for
+        // any group, the dialog's key included (see the listener below).
+
+        if (!modal) return;
+        if (typeof modal.showModal === 'function') modal.showModal();
+        else modal.setAttribute('open', '');
+    };
+    const closeModal = () => {
+        if (!modal) return;
+        if (typeof modal.close === 'function') modal.close();
+        modal.removeAttribute('open');
+    };
+
+    document.querySelector('[data-studio-open-brand]')?.addEventListener('click', openModal);
+    modal?.querySelectorAll('[data-brand-close]').forEach((button) => {
+        button.addEventListener('click', closeModal);
+    });
+    // Clicking the backdrop (the dialog element itself, outside its content)
+    // closes it, like every other dialog in the browser.
+    modal?.addEventListener('click', (event) => {
+        if (event.target === modal) closeModal();
+    });
 
     // Accordion: one group open at a time, opened through its own summary —
     // the old icon tab strip is gone (anything collapsible collapses, and a
     // row of icons spent the space without saying what it was for).
     const activate = (key) => {
         groups.forEach((g) => {
+            // The blade used to mark every non-active group `hidden`; that
+            // attribute outlived the tab strip and, matched by
+            // `.studio-workspace [hidden] { display: none !important }`, it
+            // pinned the whole column shut. Membership is `open` now.
+            g.hidden = false;
             g.open = g.dataset.studioGroup === key;
         });
         try { localStorage.setItem('studio.tab', key); } catch { /* private mode */ }
@@ -164,7 +204,18 @@ function initGroups() {
             // folded); opening one closes the rest, accordion-style.
             if (!g.open) return;
             activate(g.dataset.studioGroup);
-            main?.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        // Scrolling the column back to its top is a courtesy for a deliberate
+        // switch, so it hangs off the summary click — the only way a person
+        // opens a group. It cannot hang off `toggle`, because `toggle` also
+        // fires when the studio reopens a group by itself (an inspector
+        // shortcut, or the re-select after a preview refresh); scrolling there
+        // is what threw the panel back to the top on every edit.
+        g.querySelector('summary')?.addEventListener('click', () => {
+            requestAnimationFrame(() => {
+                if (g.open) main?.scrollTo({ top: 0, behavior: 'smooth' });
+            });
         });
     });
 
@@ -172,16 +223,25 @@ function initGroups() {
     // group by key instead of clicking a tab that no longer exists.
     document.addEventListener('studio:open-group', (event) => {
         const key = event.detail?.key;
-        if (key && groups.some((g) => g.dataset.studioGroup === key)) activate(key);
+        if (key && key === modal?.dataset.studioGroup) openModal();
+        else if (key && groups.some((g) => g.dataset.studioGroup === key)) activate(key);
     });
 
     let saved = null;
     try { saved = localStorage.getItem('studio.tab'); } catch { /* private mode */ }
-    const initial = groups.find((g) => g.hasAttribute('data-studio-error'))
-        ?? groups.find((g) => g.dataset.studioGroup === saved)
-        ?? groups.find((g) => g.open)
-        ?? groups[0];
-    activate(initial.dataset.studioGroup);
+    const errored = all.find((g) => g.hasAttribute('data-studio-error'));
+    if (modal && (errored === modal || (saved && saved === modal.dataset.studioGroup))) {
+        // The failed field is in Brand (the dialog is where the message
+        // shows), or Brand was the surface the user last had open.
+        openModal();
+        if (errored !== modal && groups.length) activate(groups[0].dataset.studioGroup);
+    } else {
+        const initial = errored
+            ?? groups.find((g) => g.dataset.studioGroup === saved)
+            ?? groups.find((g) => g.open)
+            ?? groups[0];
+        if (initial) activate(initial.dataset.studioGroup);
+    }
 }
 
 // ⓘ hint bubbles: CSS shows them on hover/focus; on touch there is no hover,
@@ -249,6 +309,7 @@ const tameFrameScrolling = (frame) => {
 
         doc.addEventListener('wheel', (e) => {
             if (e.ctrlKey || !(e.deltaY || e.deltaX)) return; // leave pinch-zoom alone
+            if (!isTameScroll(e.target)) return; // the fallback below still covers the rest
             e.preventDefault();
             const px = (d, mode) => d * (mode === 1 ? 16 : mode === 2 ? win.innerHeight : 1);
             const dy = px(e.deltaY, e.deltaMode);
@@ -266,6 +327,20 @@ const tameFrameScrolling = (frame) => {
             win.scrollBy(dx, dy);
         }, { passive: false });
     } catch { /* cross-origin */ }
+};
+
+// A wheel that the preview cannot consume belongs to the studio chrome: the
+// design column scrolls behind the same cursor position, so swallowing the
+// event would freeze it. The test is geometric, not a node list — an element
+// consumes the wheel when it, or any ancestor up to <html>, has overflow to
+// travel through. That reads the same in either direction (no LTR/RTL
+// assumption) and it goes false on its own when the previewed page is short,
+// which is exactly when the studio should take the wheel back.
+const isTameScroll = (node) => {
+    for (let n = node?.nodeType === 1 ? node : null; n; n = n.parentElement) {
+        if (n.scrollHeight - n.clientHeight > 0 || n.scrollWidth - n.clientWidth > 0) return true;
+    }
+    return false;
 };
 
 // Preview chrome: a desktop/mobile device switch plus a maximize button.
@@ -417,11 +492,36 @@ function initLive(form) {
     if (!split || !pane || !frame) return;
 
     const chrome = initPreviewChrome(pane, frame);
-    frame.addEventListener('load', (event) => {
-        if (!event.currentTarget.hasAttribute('aria-hidden')) {
-            form.dispatchEvent(new CustomEvent('studio:frame-ready', { detail: { frame: event.currentTarget } }));
+    // Bound to the pane rather than to the element: the two documents trade
+    // places on every structural edit, so a listener on one frame would go
+    // deaf after a single swap. Capture phase, so an in-canvas click that
+    // decided to navigate is seen before the frame starts loading.
+    let swapping = false;
+    pane.addEventListener('click', (event) => {
+        if (event.target !== frame || swapping) return;
+        // The frame is about to navigate somewhere the studio did not choose.
+        // Give it a moment to say where, then re-load that address through the
+        // swap so the page pointer, the tree and the selection all follow the
+        // user instead of pinning them to the page the studio started on.
+        setTimeout(() => {
+            try {
+                const href = frame.contentWindow.location.href;
+                if (href && href !== 'about:blank' && href !== pageUrl && !swapping) {
+                    swapFrame({ follow: true, url: href, x: 0, y: 0 });
+                }
+            } catch { /* cross-origin */ }
+        }, 700);
+    }, true);
+    pane.addEventListener('load', (event) => {
+        const el = event.target;
+        if (el !== frame || el.hasAttribute('aria-hidden')) return;
+        if (el.dataset.loaded === '1') {
+            if (swapping) return;
+            swapFrame({ follow: true, x: 0, y: 0 });
+            return;
         }
-    });
+        form.dispatchEvent(new CustomEvent('studio:frame-ready', { detail: { frame: el } }));
+    }, true);
 
     const liveUrl = form.dataset.liveUrl;
     const homeUrl = form.dataset.homeUrl;
@@ -447,7 +547,6 @@ function initLive(form) {
     // roles on every structural change. lastTokens remembers the newest
     // derived map so a freshly loaded twin never flashes unstyled vars.
     let twin = null;
-    let swapping = false;
     let swapQueued = false;
     let lastTokens = null;
     let previousStructural = false;
@@ -463,7 +562,64 @@ function initLive(form) {
     // twin loads the same URL while the current frame stays on screen, and
     // on load the two trade places with the scroll position carried over.
     // It is still a real navigation, so the page's own scripts run fresh.
-    const swapFrame = () => {
+    // Scroll offsets live per frame, not per studio: the two documents trade
+    // places, so the one arriving has to be told where the one leaving was.
+    // Kept in a WeakMap because a frame's scroll must survive to the *next*
+    // time it comes back — a swap swaps twice, and the second swap would
+    // otherwise reset the user to the top of a page they never left.
+    const frameScrolls = new WeakMap();
+
+    const currentFrame = () => frame;
+
+    // The user's own wheel/touch wins over the restore: as soon as they move
+    // inside the frame, a correction would be them fighting us. Any wheel,
+    // key or touch inside the document cancels the pending attempts.
+    const cancelOnUserScroll = (el) => {
+        const doc = el.contentDocument;
+        if (!doc) return;
+        const off = () => {
+            ['wheel', 'touchstart', 'keydown'].forEach((t) => doc.removeEventListener(t, off, true));
+            el.dataset.userScrolled = '1';
+        };
+        ['wheel', 'touchstart', 'keydown'].forEach((t) => doc.addEventListener(t, off, true));
+    };
+
+    // Restore the offset across the handful of frames the incoming document
+    // needs to finish its own layout — a single scrollTo at `load` clamps at
+    // the height the page had before fonts, images and reveals settled, which
+    // is why the canvas appeared to jump near the top on a structural edit.
+    const restoreScroll = (el, y, x) => {
+        el.dataset.userScrolled = '';
+        cancelOnUserScroll(el);
+        let tries = 0;
+        const one = () => {
+            if (el.dataset.userScrolled === '1' || el !== currentFrame()) return;
+            try {
+                // `behavior: 'instant'` so a tenant page that sets
+                // `scroll-behavior: smooth` does not turn the restore into a
+                // one-second glide from the top — the offset is a correction,
+                // not a scroll the visitor asked for.
+                const win = el.contentWindow;
+                if (typeof win.scrollTo === 'function') {
+                    win.scrollTo({ top: y, left: x, behavior: 'instant' });
+                }
+                // Settled: either we are where we asked, or the page is simply
+                // not that tall yet — keep retrying while it grows.
+                if (Math.abs(el.contentWindow.scrollY - y) < 2 || y === 0) return;
+            } catch { return; /* cross-origin */ }
+            if (++tries > 30) return; // ~0.5s — past this, the page is not growing
+            requestAnimationFrame(one);
+        };
+        requestAnimationFrame(one);
+    };
+
+    // Swap the preview instead of navigating it. Setting `frame.src` blanks
+    // the iframe to white for the whole request — the blink. Here a hidden
+    // twin loads the same URL while the current frame stays on screen, and
+    // on load the two trade places: the outgoing offset is carried across and
+    // the reveal waits for a painted frame, so a structural edit (an archetype
+    // or a variant) reads as the same page redrawing, not as a reload.
+    const swapFrame = (options = {}) => {
         if (swapping) { swapQueued = true; return; }
         const current = frame;
         if (!twin) {
@@ -480,23 +636,72 @@ function initLive(form) {
             incoming.removeEventListener('load', onLoaded);
             tameFrameScrolling(incoming);
             if (lastTokens) paintVars(incoming.contentDocument, lastTokens.vars, lastTokens.schemes);
-            let y = 0;
-            try { y = current.contentWindow.scrollY; } catch { /* cross-origin */ }
-            try { incoming.contentWindow.scrollTo(0, y); } catch { /* cross-origin */ }
-            current.style.visibility = 'hidden';
-            current.setAttribute('aria-hidden', 'true');
-            delete current.dataset.loaded;
-            incoming.style.visibility = '';
-            incoming.removeAttribute('aria-hidden');
-            incoming.dataset.loaded = '1';
-            twin = current;   // the outgoing frame becomes the next buffer
-            frame = incoming;
-            form.dispatchEvent(new CustomEvent('studio:frame-ready', { detail: { frame } }));
-            swapping = false;
-            if (swapQueued) { swapQueued = false; swapFrame(); }
+
+            // The offset travels with the frame, not the studio: the twin
+            // comes back later as the buffer, so it must be told where it was
+            // last time the user looked at it. An explicit x/y (a navigation
+            // the user made) wins; otherwise ask the outgoing document where
+            // it actually is — the WeakMap only remembers offsets an earlier
+            // swap carried, so a page scrolled by hand would otherwise fall
+            // back to 0 and snap the canvas to the top on every structural
+            // edit. `current` is still the visible frame here, so its offset
+            // is live.
+            const remembered = frameScrolls.get(current) ?? { x: 0, y: 0 };
+            let x = remembered.x;
+            let y = remembered.y;
+            if (options.x !== undefined || options.y !== undefined) {
+                x = options.x ?? 0;
+                y = options.y ?? 0;
+            } else {
+                try {
+                    x = current.contentWindow.scrollX;
+                    y = current.contentWindow.scrollY;
+                } catch { /* cross-origin: keep the remembered offset */ }
+            }
+            frameScrolls.set(current, { x, y });
+
+            // Standing still: the outgoing frame keeps the screen until the
+            // arriving one has painted. A frame that is shown before its first
+            // paint is a white flash, which is the blink the swap exists to
+            // avoid; one rAF is not enough (the document has just loaded, the
+            // browser has not laid it out), so the reveal waits for two.
+            const reveal = () => {
+                current.style.visibility = 'hidden';
+                current.setAttribute('aria-hidden', 'true');
+                delete current.dataset.loaded;
+                incoming.style.visibility = '';
+                incoming.removeAttribute('aria-hidden');
+                incoming.dataset.loaded = '1';
+                twin = current;   // the outgoing frame becomes the next buffer
+                frame = incoming;
+                restoreScroll(incoming, y, x);
+                form.dispatchEvent(new CustomEvent('studio:frame-ready', { detail: { frame } }));
+                swapping = false;
+                if (swapQueued) { swapQueued = false; swapFrame(); }
+            };
+            if (options.instant) reveal();
+            else requestAnimationFrame(() => requestAnimationFrame(reveal));
         };
         incoming.addEventListener('load', onLoaded);
-        incoming.src = pageUrl;
+        // A navigation the user made inside the canvas (a link, a form-less
+        // button that pushes a route) is not a theme change — it is where they
+        // are now. Following it keeps the studio's page pointer true, so the
+        // next structural edit refreshes the page they are actually looking
+        // at instead of yanking them back to the home page.
+        let target = options.url;
+        if (!target && options.follow) {
+            // The outgoing frame already carries the address the user went to.
+            try { target = current.contentWindow.location.href; } catch { /* cross-origin */ }
+        }
+        if (options.follow) {
+            incoming.addEventListener('load', () => {
+                try {
+                    const href = incoming.contentWindow.location.href;
+                    if (href && href !== 'about:blank') pageUrl = href;
+                } catch { /* cross-origin — keep the pointer where it was */ }
+            });
+        }
+        incoming.src = target || pageUrl;
     };
 
     const sync = () => {
@@ -560,6 +765,22 @@ function initLive(form) {
         });
     };
 
+    // A load in the visible frame that nobody asked for is an in-frame
+    // navigation. The twin is always aria-hidden, so the guard also keeps the
+    // swap's own loads out. The click listener runs first and starts a
+    // 700ms-attempt swap, which covers the "already navigated by the time the
+    // load lands" case; a load with no swap in flight is caught here.
+    // Bound to the pane, not to `frame`: the two documents trade places, so a
+    // listener on one element would go deaf after a single swap.
+    pane.addEventListener('load', (event) => {
+        const el = event.target;
+        if (el !== frame || el.hasAttribute('aria-hidden')) return;
+        if (el.dataset.loaded === '1' && !swapping) {
+            swapFrame({ follow: true, x: 0, y: 0 });
+        }
+    }, true);
+    // One debounced sync per burst of edits: a typing run or a slider drag
+    // would otherwise POST on every input event.
     const queue = () => {
         clearTimeout(syncTimer);
         syncTimer = setTimeout(sync, 300);
