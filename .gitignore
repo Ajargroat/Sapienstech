@@ -33,9 +33,11 @@
 /.kilo
 /.agent
 /tasks
+/AGENTS.md
 
 # Editor & OS files
 .DS_Store
 Thumbs.db
 .idea
 .vscode
+.claude
