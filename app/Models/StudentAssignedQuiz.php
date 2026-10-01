@@ -17,7 +17,7 @@ class StudentAssignedQuiz extends Model
 
     protected $fillable = [
         'tenant_id', 'test_id', 'student_id', 'assigned_by_user_id',
-        'assigned_at', 'scheduled_at', 'status', 'is_completed', 'bulk_action_id',
+        'assigned_at', 'scheduled_at', 'ends_at', 'status', 'is_completed', 'bulk_action_id',
     ];
 
     protected function casts(): array
@@ -25,8 +25,36 @@ class StudentAssignedQuiz extends Model
         return [
             'assigned_at' => 'datetime',
             'scheduled_at' => 'datetime',
+            'ends_at' => 'datetime',
             'is_completed' => 'boolean',
         ];
+    }
+
+    /**
+     * Is now inside the exam's window? Needs a scheduled start; a NULL end
+     * means "open once started" (bulk/legacy rows), so it never closes.
+     */
+    public function windowOpen(): bool
+    {
+        if (! $this->scheduled_at?->isPast()) {
+            return false;
+        }
+
+        return $this->ends_at === null || $this->ends_at->isFuture();
+    }
+
+    /**
+     * Display state derived from the clock, never stored: the window opening
+     * does not write to `status`, so the stored vocabulary and its filters and
+     * counts keep working unchanged.
+     */
+    public function effectiveStatus(): string
+    {
+        if ($this->status === 'scheduled' && $this->windowOpen()) {
+            return 'in_progress';
+        }
+
+        return $this->status ?? 'scheduled';
     }
 
     public function test(): BelongsTo

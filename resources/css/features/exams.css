@@ -1,0 +1,187 @@
+/* ==========================================================================
+   EXAMS — feature-split styles for the exam workflow
+   --------------------------------------------------------------------------
+   Loaded from app.css. Only the pieces this feature added live here: the
+   one-row question body, the optional cover on exam cards, the preview dialog
+   and the review/result verdict states. Everything the exam pages already
+   owned stays in app.css under its own section.
+
+   Colors come from the theme tokens only (var(--c-*), color-mix) — no
+   hardcoded palette values, per the project's theming rules.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   One-row question body — picture left, text right (TASK §5 / AC6)
+
+   The card is RTL, so `row-reverse` puts the figure at the inline start
+   (visually left) and the text beside it. Without an image there is nothing
+   to pair the text with, so the text keeps the full width.
+   -------------------------------------------------------------------------- */
+.quiz-body {
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: flex-start;
+  gap: 18px;
+}
+
+.quiz-body .quiz-figure {
+  flex: 0 0 auto;
+  max-width: 46%;
+}
+
+.quiz-body .quiz-figure img,
+.quiz-body .quiz-figure svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.quiz-body-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.quiz-body--text-only .quiz-body-text {
+  flex: 1 1 100%;
+}
+
+@media (max-width: 720px) {
+  .quiz-body { flex-direction: column; }
+  .quiz-body .quiz-figure { max-width: 100%; }
+}
+
+/* --------------------------------------------------------------------------
+   Optional consultant-uploaded cover (TASK §2)
+   Replaces the glyph plate on an exam card when the test carries an image.
+   -------------------------------------------------------------------------- */
+.exam-card-icon.has-cover {
+  padding: 0;
+  min-height: 148px;
+  background: var(--c-surface-alt);
+}
+
+.exam-card-icon.has-cover img.exam-card-cover {
+  width: 100%;
+  height: 100%;
+  min-height: 148px;
+  max-height: 220px;
+  object-fit: cover;
+  display: block;
+  border-radius: calc(var(--radius-card) - 1px) calc(var(--radius-card) - 1px) 0 0;
+}
+
+/* --------------------------------------------------------------------------
+   Start button on a card whose window has not opened yet.
+
+   It is rendered hidden and revealed live by student-dashboard.js; an author
+   rule (.exam-run-btn in app.css) outranks the UA [hidden] style, so hiding
+   needs its own selector here.
+   -------------------------------------------------------------------------- */
+.exam-run-btn[hidden] { display: none; }
+
+/* --------------------------------------------------------------------------
+   Preview dialog (the only place question order changes — TASK AC2)
+   -------------------------------------------------------------------------- */
+.exam-modal--preview { width: min(880px, calc(100% - 32px)); }
+
+.preview-body { max-height: 68vh; overflow-y: auto; }
+
+.preview-list { display: flex; flex-direction: column; gap: 14px; }
+
+.preview-list .quiz-card {
+  opacity: 1;
+  transform: none;
+  padding: 16px;
+}
+
+.preview-moves {
+  margin-inline-start: auto;
+  display: inline-flex;
+  gap: 4px;
+}
+
+.preview-moves button {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  border: 1px solid var(--c-border);
+  background: var(--c-surface-alt);
+  color: var(--c-text);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color var(--animation-duration) ease, color var(--animation-duration) ease;
+}
+
+.preview-moves button:hover:not(:disabled) { border-color: var(--c-primary); color: var(--c-primary); }
+.preview-moves button:disabled { opacity: .3; cursor: default; }
+
+/* --------------------------------------------------------------------------
+   Review + result verdicts (four states — TASK §7)
+   -------------------------------------------------------------------------- */
+.result-lessons {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-card);
+  padding: 20px 22px;
+}
+
+.result-lessons h3 { margin: 0 0 12px; font-size: 15px; }
+
+.result-lessons ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.result-lessons li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 14px;
+  align-items: baseline;
+  padding: 9px 12px;
+  border-radius: 12px;
+  background: var(--c-surface-alt);
+  font-size: 13px;
+}
+
+.result-lessons .lesson-name { font-weight: 700; color: var(--c-text); }
+.result-lessons .lesson-percent { font-weight: 800; color: var(--c-primary); font-variant-numeric: tabular-nums; }
+.result-lessons .lesson-breakdown { grid-column: 1 / -1; color: var(--c-muted); font-size: 12px; }
+
+/* An ungraded question is neither right nor wrong: it gets a neutral card and
+   no correct option is highlighted (there is no correct answer to show). */
+.quiz-card.is-ungraded { border-color: var(--c-border); }
+.is-ungraded .result-verdict { color: var(--c-muted); }
+
+.result-stats .is-ungraded { color: var(--c-muted); }
+
+/* The student's own pick when the question carries no answer key. */
+.opt--chosen {
+  border-color: color-mix(in srgb, var(--c-muted) 45%, var(--c-border));
+  background: color-mix(in srgb, var(--c-muted) 8%, transparent);
+}
+
+/* The consultant review header badge (read-only page). */
+.review-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--c-primary);
+  background: color-mix(in srgb, var(--c-primary) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c-primary) 30%, transparent);
+}
+
+/* Percent-first hero: the ٪ sits with the number, not as a second line. */
+.result-score strong small {
+  font-size: 18px;
+  font-weight: 700;
+  margin-inline-start: 2px;
+}

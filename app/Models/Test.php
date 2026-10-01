@@ -16,6 +16,7 @@ class Test extends Model
     protected $fillable = [
         'tenant_id', 'test_title', 'lesson', 'exam_type',
         'time_limit_minutes', 'total_marks', 'created_by_user_id',
+        'cover_image_path',
     ];
 
     protected function casts(): array
@@ -38,6 +39,20 @@ class Test extends Model
         return $this->belongsToMany(Question::class, 'test_questions')
             ->withPivot(['id', 'position', 'points'])
             ->orderByPivot('position');
+    }
+
+    /**
+     * Pivot rows only, in no particular order.
+     *
+     * `withCount('questions')` resolves through questions(), whose
+     * orderByPivot('position') lands inside the count's subquery — MySQL
+     * forbids ORDER BY there, the aggregate is dropped, and cards fell back to
+     * the stale question_count column (the "always ۲ questions" bug). Counting
+     * this plain relation has no ORDER BY to lose.
+     */
+    public function questionRows(): HasMany
+    {
+        return $this->hasMany(TestQuestion::class);
     }
 
     public function assignments(): HasMany

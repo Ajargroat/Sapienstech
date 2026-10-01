@@ -11,6 +11,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @include('partials.theme-vars')
     @include('partials.studio-node-styles')
+    @include('partials.mathjax')
 </head>
 <body class="consultant-shell" @include('partials.theme-attrs')>
     @include('partials.color-scheme', ['schemeKey' => 'consultant-color-scheme'])

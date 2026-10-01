@@ -3,6 +3,7 @@
 @import "./features/chat.css";
 @import "./profile-chat.css";
 @import "./features/studio-block-editor.css";
+@import "./features/exams.css";
 
 /* =========================================
    0. Theme color tokens
@@ -2238,7 +2239,7 @@ a {
    and a separate question-bank picker dialog.
    ========================================================================== */
 .exam-modal--builder { width: min(860px, calc(100% - 32px)); }
-.exam-modal--picker { width: min(760px, calc(100% - 32px)); }
+.exam-modal--picker { width: min(960px, calc(100% - 32px)); }
 
 .exam-field label small { font-weight: 400; color: var(--c-muted); }
 
@@ -2387,12 +2388,37 @@ a {
   .cpop-hand-g { transition: none; }
 }
 
-.picker-pane { grid-template-columns: 1fr; gap: 14px; max-height: 60vh; overflow-y: auto; }
-/* Sticky filter block: search + lesson/difficulty/corp chip rows. */
-.picker-toolbar {
-  display: flex; flex-direction: column; gap: 8px; position: sticky; top: 0;
-  background: var(--c-surface); padding-bottom: 10px; margin-bottom: 4px;
-  border-bottom: 1px dashed var(--c-border); z-index: 1;
+/* Three regions: a full-width top bar (search + selected count), an
+   in-dialog filter sidebar (dashboard's tab rail + panels), and the main
+   list + tray. Each region scrolls its own — no sticky toolbar. */
+.picker-pane {
+  grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+  grid-template-areas: "top top" "side main";
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 10px 16px;
+  max-height: 60vh;
+  overflow: hidden;
+}
+.picker-topbar {
+  grid-area: top;
+  display: flex; align-items: center; gap: 10px;
+  padding-bottom: 10px; border-bottom: 1px dashed var(--c-border);
+}
+.picker-topbar .picker-search { flex: 1 1 auto; }
+.picker-count { font-size: 12.5px; font-weight: 800; color: var(--c-primary); white-space: nowrap; }
+.picker-side {
+  grid-area: side;
+  display: flex; min-width: 0; min-height: 0; overflow: hidden;
+  border-inline-end: 1px solid var(--c-border);
+}
+.picker-side-panels {
+  flex: 1 1 auto; min-width: 0; min-height: 0;
+  padding: 12px 10px; overflow-y: auto; scrollbar-width: thin;
+}
+.picker-main {
+  grid-area: main;
+  display: flex; flex-direction: column; gap: 14px;
+  min-width: 0; min-height: 0; overflow-y: auto;
 }
 .picker-search {
   background: var(--c-surface-alt); border: 1px solid var(--c-border);
@@ -2401,7 +2427,20 @@ a {
 .pf-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; }
 .pf-label { font-size: 12px; font-weight: 800; color: var(--c-muted); white-space: nowrap; }
 .pf-label small { font-weight: 400; }
-.picker-toolbar .chip { padding: 6px 13px; font-size: 12.5px; }
+.picker-side .chip { padding: 6px 13px; font-size: 12.5px; }
+@media (max-width: 720px) {
+  .picker-pane {
+    grid-template-columns: 1fr;
+    grid-template-areas: "top" "side" "main";
+    overflow-y: auto;
+  }
+  .picker-side {
+    flex-direction: column;
+    border-inline-end: 0;
+    border-bottom: 1px dashed var(--c-border);
+    overflow-y: auto;
+  }
+}
 .corp-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--corp-color, var(--c-border-strong)); flex: 0 0 auto; }
 .picker-root { transition: opacity 160ms ease; }
 .picker-root.is-loading { opacity: .45; pointer-events: none; }

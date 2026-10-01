@@ -233,13 +233,16 @@ Route::middleware('auth')->prefix('consultant')->name('consultant.')->group(func
             ->middleware('consultant.feature:student_exams')
             ->name('exams.questions');
 
+        // Order is owned by the preview: the chosen questions, as arranged.
+        Route::get('/exams/preview', [StudentExamController::class, 'preview'])
+            ->middleware('consultant.feature:student_exams')
+            ->name('exams.preview');
+
+        // Read-only review of the exam — the consultant does not sit it, so
+        // there is no consultant attempt or submit route.
         Route::get('/exams/{assignment}/run', [StudentExamController::class, 'run'])
             ->middleware('consultant.feature:student_exams')
             ->name('exams.run');
-
-        Route::post('/exams/{assignment}/attempt', [StudentExamController::class, 'storeAttempt'])
-            ->middleware('consultant.feature:student_exams')
-            ->name('exams.attempt');
 
         Route::get('/exams/{assignment}/result', [StudentExamController::class, 'result'])
             ->middleware('consultant.feature:student_exams')
@@ -412,8 +415,19 @@ Route::middleware('auth:student')->prefix('student')->name('student.')->group(fu
         ->middleware('student.feature:student_timetable')
         ->name('timetable');
 
-    // Read-only review of the student's own finished attempts (the portal has
-    // no exam-taking UI; sessions are run by the consultant).
+    /*
+    | Exams the student sits themselves. The card on the dashboard opens the
+    | runner once the exam is inside its window; the countdown and the grading
+    | are both the server's, and the finished attempt is reviewed read-only.
+    | Ungated like the result route below (no exam exists to sit when the
+    | tenant's student_exams flag is off).
+    */
+    Route::get('exams/{assignment}', [StudentExamPortalController::class, 'show'])
+        ->name('exams.show');
+
+    Route::post('exams/{assignment}/attempt', [StudentExamPortalController::class, 'storeAttempt'])
+        ->name('exams.attempt');
+
     Route::get('exams/{assignment}/result', [StudentExamPortalController::class, 'result'])
         ->name('exams.result');
 

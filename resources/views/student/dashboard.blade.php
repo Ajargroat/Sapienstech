@@ -201,11 +201,21 @@
                         $test = $exam->test;
                         $type = in_array($test->exam_type, $quizTypes, true) ? 'quiz' : 'comprehensive';
                     @endphp
-                    <article class="exam-card">
-                        <div class="exam-card-icon exam-card-icon--{{ $type }}">
-                            <span class="exam-status exam-status--{{ $exam->status }}">{{ $statuses[$exam->status] ?? $exam->status }}</span>
-                            {!! $typeSvg[$type] !!}
-                            <span class="exam-card-icon-label">{{ $typeLabels[$type] }}</span>
+                    @php
+                        $cover = $test->cover_image_path ? tenant_asset($test->cover_image_path) : null;
+                        $live = $exam->windowOpen();
+                    @endphp
+                    <article class="exam-card" data-exam-card
+                             data-status-open="{{ $statuses['in_progress'] ?? 'in_progress' }}">
+                        <div class="exam-card-icon exam-card-icon--{{ $type }} @if($cover) has-cover @endif">
+                            <span class="exam-status exam-status--{{ $exam->effectiveStatus() }}"
+                                  data-exam-status>{{ $statuses[$exam->effectiveStatus()] ?? $exam->effectiveStatus() }}</span>
+                            @if($cover)
+                                <img src="{{ $cover }}" class="exam-card-cover" alt="" loading="lazy">
+                            @else
+                                {!! $typeSvg[$type] !!}
+                                <span class="exam-card-icon-label">{{ $typeLabels[$type] }}</span>
+                            @endif
                         </div>
                         <div class="exam-card-body">
                             <h3 class="exam-card-title">{{ $test->test_title }}</h3>
@@ -220,7 +230,23 @@
                                     <time class="fa-date" datetime="{{ $exam->scheduled_at->format('Y-m-d\TH:i') }}Z">{{ persian_digits($exam->scheduled_at->format('Y/m/d')) }}</time>
                                     — {{ persian_digits($exam->scheduled_at->format('H:i')) }}
                                 </li>
+                                @if($exam->ends_at)
+                                    <li>
+                                        <i class="fas fa-calendar-check"></i>
+                                        پایان:
+                                        <time class="fa-date" datetime="{{ $exam->ends_at->format('Y-m-d\TH:i') }}Z">{{ persian_digits($exam->ends_at->format('Y/m/d')) }}</time>
+                                        — {{ persian_digits($exam->ends_at->format('H:i')) }}
+                                    </li>
+                                @endif
                             </ul>
+                            {{-- Always rendered, hidden until its start instant:
+                                 student-dashboard.js flips it live so the card
+                                 needs no reload when the window opens. --}}
+                            <a href="{{ route('student.exams.show', $exam) }}" class="exam-run-btn"
+                               data-start-at="{{ $exam->scheduled_at->format('Y-m-d\TH:i') }}Z"
+                               @unless($live) hidden @endunless>
+                                <i class="fas fa-play"></i> شروع آزمون
+                            </a>
                         </div>
                     </article>
                 @endforeach

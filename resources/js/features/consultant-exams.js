@@ -41,9 +41,45 @@ function openPopup(el, host) {
     document.addEventListener('pointerdown', outsidePopup, true);
 }
 
-export default function init() {
+/* Typesets math once MathJax has finished loading from the CDN — same retry
+   loop as the reference system (E:\ocr-quest\ui\app.js). The loader script in
+   partials/mathjax.blade.php is async, so a fetch that lands before the
+   library still gets typeset a beat later. */
+function typesetMath(el) {
+    let tries = 0;
+    const run = () => {
+        if (window.MathJax && MathJax.typesetPromise) {
+            MathJax.typesetPromise(el ? [el] : undefined).catch(() => {});
+        } else if (tries++ < 25) {
+            setTimeout(run, 200);
+        }
+    };
+    run();
+}
+
+export default function init(region = document) {
     const app = document.getElementById('exams-app');
     if (!app) return;
+
+    // The toolbar, the create dialog, the picker dialog and the payload div
+    // all live OUTSIDE [data-router-region="results"], so a query-only
+    // navigation (search, status filter, picker pager) re-runs init() while
+    // those nodes survive. Every handler registered below goes through on()
+    // and is released by the teardown this returns — the cleanup contract
+    // page-router.js already implements (bindPage/stopPage) — otherwise each
+    // swap stacks a second copy of every listener on the same nodes.
+    const offs = [];
+
+    const on = (el, type, fn, opts) => {
+        if (!el) return;
+        el.addEventListener(type, fn, opts);
+        offs.push(() => el.removeEventListener(type, fn, opts));
+    };
+
+    const later = (ms, fn) => {
+        const t = setTimeout(fn, ms);
+        offs.push(() => clearTimeout(t));
+    };
 
     const DAY_MS = 86400000;
     const pad = (n) => String(n).padStart(2, '0');
@@ -111,10 +147,10 @@ export default function init() {
     if (toast) {
         const dismiss = () => {
             toast.classList.add('is-leaving');
-            setTimeout(() => toast.remove(), 300);
+            later(300, () => toast.remove());
         };
-        toast.querySelector('.exam-toast-close')?.addEventListener('click', dismiss);
-        setTimeout(dismiss, 5000);
+        on(toast.querySelector('.exam-toast-close'), 'click', dismiss);
+        later(5000, dismiss);
     }
 
     // --- Jalali calendar popup (pure DOM, Intl-backed) -------------------
@@ -132,6 +168,11 @@ export default function init() {
         const host = input?.closest('.popup-field');
         if (!host || host.querySelector('.jpop')) return;
         const btn = host.querySelector('[data-popup="jalali"]');
+
+        // Popup nodes are created once inside the create dialog (which never
+        // swaps), and the early return above keeps their button/input
+        // listeners single-bound across re-inits — so, unlike the listeners
+        // registered through on(), they are deliberately not torn down.
 
         const el = document.createElement('div');
         el.className = 'jpop';
@@ -444,15 +485,18 @@ export default function init() {
     // --- Create dialog: date/time state and submit conversion ------------
     const dateField = document.getElementById('exam-date');
     const timeField = document.getElementById('exam-time');
+    const endDateField = document.getElementById('exam-end-date');
     const endField = document.getElementById('exam-end-time');
     const hiddenDate = document.getElementById('exam-date-g');
-    const hiddenDuration = document.getElementById('exam-duration-g');
+    const hiddenEnd = document.getElementById('exam-end-g');
     const dateError = document.getElementById('exam-date-error');
+    const endDateError = document.getElementById('exam-end-date-error');
     const timeError = document.getElementById('exam-time-error');
     const form = document.getElementById('create-exam-form');
 
     attachCalendar(dateField);
     attachClock(timeField);
+    attachCalendar(endDateField);
     attachClock(endField);
 
     const showDateError = (message) => {
@@ -461,39 +505,68 @@ export default function init() {
         dateError.hidden = false;
     };
 
+    const showEndDateError = (message) => {
+        if (!endDateError) return;
+        endDateError.textContent = message;
+        endDateError.hidden = false;
+    };
+
     const showTimeError = (message) => {
         if (!timeError) return;
         timeError.textContent = message;
         timeError.hidden = false;
     };
 
-    // The form only ever ships the hidden ISO `date` ("Y-m-d H:i") plus the
-    // computed duration; the visible Jalali/clock fields are input surfaces.
-    form?.addEventListener('submit', (event) => {
+    // A Jalali text field → "Y-m-d". Falls back to the hidden value when the
+    // field is empty because a previous submit bounced back with errors.
+    const jalaliToDateStr = (field, hidden, fallback) => {
+        const digits = toAscii(field?.value ?? '').trim();
+
+        if (!digits) {
+            return hidden?.value ? hidden.value.slice(0, 10) : fallback;
+        }
+
+        const d = digits.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
+        if (!d) return null;
+
+        const gregorian = jalaliToUtc(Number(d[1]), Number(d[2]), Number(d[3]));
+        if (!gregorian) return null;
+
+        return `${gregorian.getUTCFullYear()}-${pad(gregorian.getUTCMonth() + 1)}-${pad(gregorian.getUTCDate())}`;
+    };
+
+    // The form only ever ships the hidden ISO `date` and `end` ("Y-m-d H:i");
+    // the visible Jalali/clock fields are input surfaces. The window is
+    // explicit, so the end is a date AND a clock — a 2-day window cannot be
+    // expressed by clocks alone.
+    on(form, 'submit', (event) => {
         if (!dateField || !hiddenDate) return;
 
-        const digits = toAscii(dateField.value).trim();
-        let dateStr = '';
-
-        // Nothing typed but a valid hidden value survived a failed submit: keep it.
-        if (!digits && /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(hiddenDate.value)) {
-            dateStr = hiddenDate.value.slice(0, 10);
-        } else {
-            const d = digits.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
-            if (!d) {
-                showDateError('تاریخ را از تقویم انتخاب کنید.');
-                event.preventDefault();
-                return;
-            }
-            const gregorian = jalaliToUtc(Number(d[1]), Number(d[2]), Number(d[3]));
-            if (!gregorian) {
-                showDateError('این تاریخ معتبر نیست.');
-                event.preventDefault();
-                return;
-            }
-            dateStr = `${gregorian.getUTCFullYear()}-${pad(gregorian.getUTCMonth() + 1)}-${pad(gregorian.getUTCDate())}`;
+        const dateStr = jalaliToDateStr(dateField, hiddenDate, '');
+        if (dateStr === null) {
+            showDateError('این تاریخ معتبر نیست.');
+            event.preventDefault();
+            return;
+        }
+        if (!dateStr) {
+            showDateError('تاریخ را از تقویم انتخاب کنید.');
+            event.preventDefault();
+            return;
         }
         if (dateError) dateError.hidden = true;
+
+        const endDateStr = jalaliToDateStr(endDateField, hiddenEnd, '');
+        if (endDateStr === null) {
+            showEndDateError('این تاریخ معتبر نیست.');
+            event.preventDefault();
+            return;
+        }
+        if (!endDateStr) {
+            showEndDateError('تاریخ پایان را از تقویم انتخاب کنید.');
+            event.preventDefault();
+            return;
+        }
+        if (endDateError) endDateError.hidden = true;
 
         const start = parseClock(timeField?.value);
         if (start === null) {
@@ -509,15 +582,19 @@ export default function init() {
             return;
         }
 
-        if (end <= start) {
-            showTimeError('ساعت پایان باید بعد از ساعت شروع باشد.');
+        // ISO-like strings compare lexicographically, so this spans days.
+        const startAt = `${dateStr} ${pad(Math.floor(start / 60))}:${pad(start % 60)}`;
+        const endAt = `${endDateStr} ${pad(Math.floor(end / 60))}:${pad(end % 60)}`;
+
+        if (endAt <= startAt) {
+            showTimeError('زمان پایان باید بعد از زمان شروع آزمون باشد.');
             event.preventDefault();
             return;
         }
         if (timeError) timeError.hidden = true;
 
-        hiddenDate.value = `${dateStr} ${pad(Math.floor(start / 60))}:${pad(start % 60)}`;
-        if (hiddenDuration) hiddenDuration.value = String(end - start);
+        hiddenDate.value = startAt;
+        if (hiddenEnd) hiddenEnd.value = endAt;
     });
 
     // --- View mode: one button whose two icons trade places ---
@@ -535,7 +612,7 @@ export default function init() {
         localStorage.setItem('exams-view-mode', mode);
     };
 
-    viewToggle?.addEventListener('click', () =>
+    on(viewToggle, 'click', () =>
         setView(viewToggle.dataset.view === 'list' ? 'grid' : 'list')
     );
 
@@ -549,11 +626,11 @@ export default function init() {
     const open = (id) => document.getElementById(id)?.showModal();
     const close = (id) => document.getElementById(id)?.close();
 
-    document.getElementById('open-create-exam')?.addEventListener('click', () => open('create-exam-modal'));
-    app.querySelector('.exam-modal-cancel')?.addEventListener('click', () => close('create-exam-modal'));
+    on(document.getElementById('open-create-exam'), 'click', () => open('create-exam-modal'));
+    on(app.querySelector('.exam-modal-cancel'), 'click', () => close('create-exam-modal'));
 
     [createModal, pickerModal].forEach((dialog) => {
-        dialog?.addEventListener('click', (e) => {
+        on(dialog, 'click', (e) => {
             if (e.target === dialog) dialog.close();
         });
     });
@@ -574,7 +651,9 @@ export default function init() {
         const tray = document.getElementById('picker-tray');
         const payload = document.getElementById('exam-questions-inputs');
         const badge = document.getElementById('picked-count');
+        const pickerCount = document.getElementById('picker-count');
         const lessonChips = [...pickerModal.querySelectorAll('#lesson-chips input')];
+        const chapterChips = [...pickerModal.querySelectorAll('#chapter-chips input')];
         const difficultyChips = [...pickerModal.querySelectorAll('#difficulty-chips input')];
         const corpChips = [...pickerModal.querySelectorAll('#corp-chips input')];
 
@@ -602,12 +681,22 @@ export default function init() {
             payload.innerHTML = selected
                 .map((id) => `<input type="hidden" name="questions[]" value="${id}">`)
                 .join('');
-            badge.textContent = selected.length ? `${toFa(selected.length)} سوال انتخاب شد` : '';
+            // The payload div outlives every partial swap, so it is the single
+            // source of truth: writing the seed back keeps the next init()'s
+            // re-seed (line ~619) in step with `selected` instead of wiping
+            // the pick list back to whatever the server rendered last time.
+            payload.dataset.selected = JSON.stringify(selected);
+            const count = selected.length ? `${toFa(selected.length)} سوال انتخاب شد` : '';
+            badge.textContent = count;
+            if (pickerCount) pickerCount.textContent = count;
             renderTray();
             updateSummary();
             markSelected();
+            typesetMath(tray);
         };
 
+        // The tray is a read-only echo of `selected`; reordering owns the
+        // preview dialog (see below), so there are no arrows here.
         const renderTray = () => {
             tray.innerHTML = selected.length
                 ? selected.map((id, i) => `
@@ -615,8 +704,6 @@ export default function init() {
                         <span class="tray-num">${toFa(i + 1)}</span>
                         <span class="tray-id">${snippets[id] ? escapeHtml(snippets[id]) : `سوال ${toFa(id)}`}</span>
                         <span class="tray-actions">
-                            <button type="button" data-move="up" ${i === 0 ? 'disabled' : ''} aria-label="بالا">↑</button>
-                            <button type="button" data-move="down" ${i === selected.length - 1 ? 'disabled' : ''} aria-label="پایین">↓</button>
                             <button type="button" data-remove aria-label="حذف">×</button>
                         </span>
                     </li>`).join('')
@@ -628,9 +715,11 @@ export default function init() {
             const search = document.getElementById('picker-search')?.value.trim();
             const diff = difficultyChips.find((c) => c.checked)?.value;
             const corp = corpChips.find((c) => c.checked)?.value;
+            const chapter = chapterChips.find((c) => c.checked)?.value;
             if (search) url.searchParams.set('search', search);
             if (diff) url.searchParams.set('difficulty', diff);
             if (corp) url.searchParams.set('corp', corp);
+            if (chapter) url.searchParams.set('chapter', chapter);
             chosenLessons().forEach((l) => url.searchParams.append('lessons[]', l));
             url.searchParams.set('page', page);
 
@@ -641,6 +730,7 @@ export default function init() {
                     pickerRoot.innerHTML = html;
                     pickerRoot.dataset.page = page;
                     markSelected();
+                    typesetMath(pickerRoot);
                 })
                 .finally(() => pickerRoot.classList.remove('is-loading'));
         };
@@ -668,7 +758,7 @@ export default function init() {
         };
 
         // The whole card is the click target; no checkbox anywhere.
-        pickerRoot.addEventListener('click', (e) => {
+        on(pickerRoot, 'click', (e) => {
             const pageBtn = e.target.closest('.picker-page');
             if (pageBtn && !pageBtn.disabled) {
                 loadPicker(+pageBtn.dataset.page);
@@ -678,7 +768,7 @@ export default function init() {
             if (item) toggleItem(item);
         });
 
-        pickerRoot.addEventListener('keydown', (e) => {
+        on(pickerRoot, 'keydown', (e) => {
             const item = e.target.closest('.picker-item');
             if (item && (e.key === 'Enter' || e.key === ' ')) {
                 e.preventDefault();
@@ -687,46 +777,110 @@ export default function init() {
         });
 
         let searchTimer;
-        document.getElementById('picker-search')?.addEventListener('input', () => {
+        offs.push(() => clearTimeout(searchTimer));
+        on(document.getElementById('picker-search'), 'input', () => {
             clearTimeout(searchTimer);
             searchTimer = setTimeout(() => loadPicker(1), 350);
         });
-        [...difficultyChips, ...corpChips].forEach((chip) => chip.addEventListener('change', () => {
+        [...chapterChips, ...difficultyChips, ...corpChips].forEach((chip) => on(chip, 'change', () => {
             if (pickerModal.open) loadPicker(1);
         }));
-        lessonChips.forEach((chip) => chip.addEventListener('change', () => {
+        lessonChips.forEach((chip) => on(chip, 'change', () => {
             updateSummary();
             if (pickerModal.open) loadPicker(1);
         }));
 
-        tray?.addEventListener('click', (e) => {
+        // Sidebar tab rail — picker-scoped wiring (data-picker-tab), never the
+        // dashboard's data-filter-modal boot in app.js: that expects GET forms
+        // and an apply button this dialog does not have.
+        const sideTabs = [...pickerModal.querySelectorAll('[data-picker-tab]')];
+        const sidePanels = [...pickerModal.querySelectorAll('[data-picker-panel]')];
+        sideTabs.forEach((tab) => on(tab, 'click', () => {
+            sideTabs.forEach((t) => {
+                const active = t === tab;
+                t.classList.toggle('is-active', active);
+                t.setAttribute('aria-selected', String(active));
+            });
+            sidePanels.forEach((p) => {
+                const active = p.dataset.pickerPanel === tab.dataset.pickerTab;
+                p.classList.toggle('is-active', active);
+                p.setAttribute('aria-hidden', String(!active));
+            });
+        }));
+
+        on(tray, 'click', (e) => {
             const li = e.target.closest('.tray-item');
             if (!li) return;
-            const id = +li.dataset.id;
-            const i = selected.indexOf(id);
-            if (e.target.closest('[data-remove]')) selected.splice(i, 1);
-            if (e.target.closest('[data-move="up"]') && i > 0) [selected[i - 1], selected[i]] = [selected[i], selected[i - 1]];
-            if (e.target.closest('[data-move="down"]') && i < selected.length - 1) [selected[i + 1], selected[i]] = [selected[i], selected[i + 1]];
+            if (e.target.closest('[data-remove]')) {
+                // Remove exactly this row: splice(indexOf(...)) with -1 would
+                // silently drop a different question.
+                const i = selected.indexOf(+li.dataset.id);
+                if (i > -1) selected.splice(i, 1);
+            }
             sync();
         });
 
+        // --- Preview dialog: the ONLY place question order is changed -----
+        // The tray shows position, the preview owns it; whatever order the
+        // preview is left in is what sync() writes into the hidden inputs.
+        const previewModal = document.getElementById('preview-exam-modal');
+        const previewBody = previewModal?.querySelector('.preview-body');
+
+        const loadPreview = () => {
+            if (!previewBody) return;
+
+            const url = new URL(pickerRoot.dataset.previewUrl);
+            selected.forEach((id) => url.searchParams.append('questions[]', id));
+
+            previewBody.innerHTML = '<p class="picker-empty">در حال بارگذاری…</p>';
+            fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then((r) => r.text())
+                .then((html) => { previewBody.innerHTML = html; typesetMath(previewBody); });
+        };
+
+        // Move buttons live on the preview cards; reordering re-renders the
+        // container from `selected` so the DOM never becomes the source of truth.
+        on(previewBody, 'click', (e) => {
+            const btn = e.target.closest('[data-move-preview]');
+            if (!btn) return;
+            const id = +btn.closest('[data-preview-id]').dataset.previewId;
+            const i = selected.indexOf(id);
+            const up = btn.dataset.movePreview === 'up';
+            if (up && i > 0) [selected[i - 1], selected[i]] = [selected[i], selected[i - 1]];
+            if (!up && i > -1 && i < selected.length - 1) [selected[i + 1], selected[i]] = [selected[i], selected[i + 1]];
+            sync();
+            loadPreview();
+        });
+
+        on(document.getElementById('picker-preview'), 'click', () => {
+            if (previewModal) {
+                previewModal.showModal();
+                loadPreview();
+            }
+        });
+
+        on(document.getElementById('preview-close'), 'click', () => previewModal?.close());
+
         // Every open re-fetches so the chips always describe the list.
-        document.getElementById('open-question-picker')?.addEventListener('click', () => {
+        on(document.getElementById('open-question-picker'), 'click', () => {
             pickerModal.showModal();
             loadPicker(1);
         });
 
-        document.getElementById('picker-done')?.addEventListener('click', () => pickerModal.close());
-        document.getElementById('picker-cancel')?.addEventListener('click', () => pickerModal.close());
+        on(document.getElementById('picker-done'), 'click', () => pickerModal.close());
+        on(document.getElementById('picker-cancel'), 'click', () => pickerModal.close());
 
         sync();
     }
 
+    // Router contract: release every handler this pass registered so the next
+    // render rebinds to fresh nodes instead of stacking a second copy.
+    return () => offs.forEach((off) => off());
 }
 // The router calls init() on every render of this page; this fallback only
 // boots the page when app.js never made it (so a JS error can't leave a
 // dead exam list).
 if (!window.sapienstechRouter) {
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => init());
     else init();
 }

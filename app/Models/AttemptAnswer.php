@@ -15,12 +15,12 @@ class AttemptAnswer extends Model
     public $timestamps = false;
     protected $fillable = [
         'tenant_id', 'attempt_id', 'student_id', 'question_id',
-        'chosen_answer_id', 'is_correct', 'answered_at',
+        'chosen_answer_id', 'is_correct', 'is_graded', 'answered_at',
     ];
 
     protected function casts(): array
     {
-        return ['is_correct' => 'boolean', 'answered_at' => 'datetime'];
+        return ['is_correct' => 'boolean', 'is_graded' => 'boolean', 'answered_at' => 'datetime'];
     }
 
     public function attempt(): BelongsTo

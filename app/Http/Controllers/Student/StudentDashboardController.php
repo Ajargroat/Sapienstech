@@ -52,20 +52,33 @@ class StudentDashboardController extends Controller
 
         $assignments = StudentAssignedQuiz::query()
             ->where('student_id', $student->id)
-            ->with(['test' => fn ($query) => $query->withCount('questions'), 'latestAttempt'])
+            // Counted off the pivot relation: withCount('questions') loses its
+            // aggregate to orderByPivot inside a MySQL subquery and the card
+            // falls back to a stale question_count.
+            ->with(['test' => fn ($query) => $query->withCount(['questionRows as questions_count']), 'latestAttempt'])
             ->orderByRaw('COALESCE(student_assigned_quizzes.scheduled_at, student_assigned_quizzes.assigned_at) DESC')
             ->get();
 
         // Upcoming exams are windowed to the next month (from today) so the
         // dashboard never drifts into a far-future backlog; nearest first.
+        // An exam whose start already passed still lists while its window is
+        // open — that is the one the student is meant to be sitting.
         $monthEnd = $today->copy()->addMonth()->endOfDay();
+        $todayStart = $today->copy()->startOfDay();
 
+        // Reachability is the window, not the stored status: opening the
+        // runner writes status=in_progress (it records that an attempt was
+        // opened), and a NULL end never closes the window — neither may hide
+        // a card the student is still meant to sit. Completed/missed rows stay
+        // out through the whitelist (completed has its own results section).
+        // The badge keeps deriving its state from windowOpen()/effectiveStatus().
         $upcomingExams = $assignments
             ->filter(
-                fn (StudentAssignedQuiz $a) => $a->status === 'scheduled'
-                    && $a->test
+                fn (StudentAssignedQuiz $a) => $a->test
                     && $a->scheduled_at
-                    && $a->scheduled_at->between($today->copy()->startOfDay(), $monthEnd)
+                    && in_array($a->status, ['scheduled', 'in_progress'], true)
+                    && $a->scheduled_at->lte($monthEnd)
+                    && ($a->scheduled_at->gte($todayStart) || $a->windowOpen())
             )
             ->sortBy(fn (StudentAssignedQuiz $a) => $a->scheduled_at->timestamp)
             ->values();
@@ -105,7 +118,9 @@ class StudentDashboardController extends Controller
             'stats' => [
                 'week_sessions' => $weekItems->count(),
                 'week_done' => $weekItems->where('is_completed', true)->count(),
-                'upcoming_exams' => $assignments->where('status', 'scheduled')->count(),
+                // Exactly the cards shown above — the stat used to count every
+                // stored 'scheduled' row regardless of the listing rule.
+                'upcoming_exams' => $upcomingExams->count(),
                 'completed_exams' => $assignments->where('status', 'completed')->count(),
                 'average_percent' => $averagePercent === null ? null : (int) round((float) $averagePercent),
             ],

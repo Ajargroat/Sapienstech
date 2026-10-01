@@ -22,6 +22,54 @@ export default function init(region = document) {
     });
 
     initScheduleDialog();
+
+    return revealStartButtons(region);
+}
+
+/**
+ * Cards ship their «شروع آزمون» anchor from the server, hidden until the
+ * window opens; this reveals it at exactly the start instant — no polling,
+ * no reload — and flips the badge with it so the card keeps reading
+ * consistently. The datetime is parsed in the same pinned-UTC frame the
+ * fa-date rewrites above use, and the timers are released by the teardown
+ * this returns (page-router.js bindPage/stopPage) so a re-render cannot
+ * leave a stale flip behind.
+ */
+function revealStartButtons(region) {
+    const pending = [];
+    const MAX_DELAY = 2147483647; // setTimeout overflows past ~24.8 days
+
+    (region || document).querySelectorAll('.exam-run-btn[data-start-at]').forEach((btn) => {
+        const start = Date.parse(btn.dataset.startAt);
+        if (Number.isNaN(start)) return;
+
+        const card = btn.closest('[data-exam-card]');
+
+        const reveal = () => {
+            btn.hidden = false;
+            const badge = card?.querySelector('[data-exam-status]');
+            if (badge?.classList.contains('exam-status--scheduled')) {
+                badge.classList.replace('exam-status--scheduled', 'exam-status--in_progress');
+                badge.textContent = card?.dataset.statusOpen || badge.textContent;
+            }
+        };
+
+        // Re-armed instead of one long timeout: a window can start weeks out,
+        // past the 32-bit delay limit, where a single setTimeout fires at once.
+        const arm = () => {
+            const wait = start - Date.now();
+            if (wait <= 0) {
+                reveal();
+                return;
+            }
+            const t = setTimeout(arm, Math.min(wait, MAX_DELAY));
+            pending.push(() => clearTimeout(t));
+        };
+
+        arm();
+    });
+
+    return () => pending.forEach((off) => off());
 }
 
 // Boxes are <button data-sched-item="#template-id">; details live in hidden

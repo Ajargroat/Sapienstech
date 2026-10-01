@@ -13,7 +13,7 @@
              role="checkbox" aria-checked="false" tabindex="0">
             <span class="picker-pos" aria-hidden="true"></span>
             <div class="picker-item-main">
-                @if($q->question_image_path)
+                @if($q->has_croppable_image)
                     <div class="picker-figure">
                         <x-cropped-image
                             :path="$q->question_image_path"

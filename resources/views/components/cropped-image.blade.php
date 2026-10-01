@@ -1,5 +1,8 @@
 @props(['path', 'bbox' => null, 'maxWidth' => 420])
 
+{{-- The cropped region only. A question without a valid bbox renders nothing —
+     a source page is not a picture of the question, so the whole page is never
+     shown as one (see Question::has_croppable_image for the same predicate). --}}
 @if ($path)
     @php
         $url = asset('storage/'.$path);
@@ -13,8 +16,5 @@
             <img src="{{ $url }}" alt="" loading="lazy"
                  style="position:absolute;max-width:none;width:{{ round($bbox['pw'] / $bbox['w'] * 100, 2) }}%;left:{{ round(-$bbox['x'] / $bbox['w'] * 100, 2) }}%;top:{{ round(-$bbox['y'] / $bbox['h'] * 100, 2) }}%">
         </div>
-    @else
-        <img {{ $attributes->merge(['class' => 'rounded-lg border border-gray-200']) }}
-             src="{{ $url }}" alt="" loading="lazy" style="max-width:{{ $maxWidth }}px">
     @endif
 @endif

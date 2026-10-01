@@ -32,7 +32,7 @@
 # Agent & Worktree state
 /.kilo
 /.agent
-/tasks
+/prompts
 /AGENTS.md
 
 # Editor & OS files

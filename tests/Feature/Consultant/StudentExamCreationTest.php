@@ -8,14 +8,17 @@ use App\Models\Question;
 use App\Models\Student;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Support\QuestionBankMeta;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 /**
  * Covers the rebuilt create-exam dialog (consultant/students/exams.blade.php):
- * the five fixed lesson chips, the removal of question_count/total_marks from
- * the form, and store() deriving both server-side.
+ * the bank-derived lesson chips, the removal of question_count/total_marks from
+ * the form, store() deriving both server-side, and the explicit start+end
+ * window with its optional cover image (TASK AC1/AC8).
  *
  * Same strategy as StudentScheduleTest: RefreshDatabase against the
  * provisioned schema (no RefreshDatabase — the base tables predate migrations).
@@ -35,7 +38,7 @@ class StudentExamCreationTest extends TestCase
         return [$tenant, $user, $student];
     }
 
-    private function makeQuestion(int $tenantId, string $text, array $meta = []): Question
+    private function makeQuestion(?int $tenantId, string $text, array $meta = []): Question
     {
         $question = Question::create([
             'tenant_id' => $tenantId,
@@ -54,9 +57,24 @@ class StudentExamCreationTest extends TestCase
         return $question;
     }
 
+    /**
+     * A minimal but genuinely valid PNG. UploadedFile::fake()->image() needs the
+     * GD extension, which this environment may not have; the `image` rule only
+     * inspects the content, so a real 1x1 PNG passes and keeps the test portable.
+     */
+    private function pngUpload(string $name = 'cover.png'): UploadedFile
+    {
+        return UploadedFile::fake()->createWithContent($name, base64_decode(
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='
+        ));
+    }
+
     public function test_create_dialog_offers_the_five_lesson_chips_and_drops_the_legacy_fields(): void
     {
-        [, $consultant, $student] = $this->tenantContext();
+        [$tenant, $consultant, $student] = $this->tenantContext();
+        foreach (['زیست‌شناسی', 'شیمی', 'فیزیک', 'ریاضی', 'زمین‌شناسی'] as $lesson) {
+            $this->makeQuestion($tenant->id, "سوال {$lesson}", ['subject' => $lesson]);
+        }
 
         $response = $this->actingAs($consultant)
             ->get("http://tenant-a.test/consultant/students/{$student->id}/exams");
@@ -67,19 +85,39 @@ class StudentExamCreationTest extends TestCase
             $response->assertSee($lesson);
         }
 
-        // New UI contract: picker popup trigger, end-time field, single submit.
+        // New UI contract: picker popup trigger, start + end window, single submit.
         $response->assertSee('ثبت آزمون');
         $response->assertSee('انتخاب سوالات');
+        $response->assertSee('تاریخ پایان');
         $response->assertSee('ساعت پایان');
         $response->assertSee('name="lesson[]"', false);
         $response->assertSee('id="pick-questions-modal"', false);
 
-        // Lesson/difficulty/corp filters live inside the picker popup, and the
-        // lesson chips submit with the create form despite that.
+        // Lesson/difficulty/corp/chapter filters live inside the picker popup, and
+        // the lesson chips submit with the create form despite that.
         $response->assertSee('id="lesson-chips"', false);
         $response->assertSee('id="difficulty-chips"', false);
         $response->assertSee('id="corp-chips"', false);
+        $response->assertSee('id="chapter-chips"', false);
         $response->assertSee('form="create-exam-form"', false);
+
+        // The preview dialog is where question order is owned now.
+        $response->assertSee('id="picker-preview"', false);
+        $response->assertSee('id="preview-exam-modal"', false);
+
+        // Rework run 3: the filters live in an in-dialog sidebar (dashboard
+        // tab rail), the top bar keeps search + the selected count.
+        $response->assertSee('class="picker-side"', false);
+        $response->assertSee('id="picker-count"', false);
+        $response->assertSee('data-picker-tab="0"', false);
+
+        // MathJax 3 config + loader ride on the consultant layout head.
+        $response->assertSee('cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js', false);
+        $response->assertSee('window.MathJax', false);
+
+        // The optional cover is a real file input on a multipart form.
+        $response->assertSee('enctype="multipart/form-data"', false);
+        $response->assertSee('name="cover"', false);
 
         // Gone: two-step builder, raw-score and typed-count fields, other lessons.
         $response->assertDontSee('builder-steps');
@@ -90,9 +128,8 @@ class StudentExamCreationTest extends TestCase
         $response->assertDontSee('ادبیات فارسی');
         $response->assertDontSee('مرحله بعد');
 
-        // Gone: duration read-out, the date/time input placeholders that
-        // collided with the field icons, and the old dropdown difficulty filter.
-        $response->assertDontSee('مدت آزمون');
+        // Gone: duration read-out, the old dropdown difficulty filter and the
+        // date/time placeholders that collided with the field icons.
         $response->assertDontSee('duration-preview', false);
         $response->assertDontSee('id="picker-difficulty"', false);
         $response->assertDontSee('placeholder="۱۴۰۵/۰۶/۲۰"', false);
@@ -116,14 +153,15 @@ class StudentExamCreationTest extends TestCase
     public function test_consultant_can_create_an_exam_with_multiple_lessons(): void
     {
         [$tenant, $consultant, $student] = $this->tenantContext();
-        $q1 = $this->makeQuestion($tenant->id, 'سوال شیمی ۱');
-        $q2 = $this->makeQuestion($tenant->id, 'سوال فیزیک ۲');
+        $q1 = $this->makeQuestion($tenant->id, 'سوال شیمی ۱', ['subject' => 'شیمی']);
+        $q2 = $this->makeQuestion($tenant->id, 'سوال فیزیک ۲', ['subject' => 'فیزیک']);
 
         $payload = [
             'title' => 'آزمون جامع شیمی و فیزیک',
             'exam_type' => 'comprehensive',
             'lesson' => ['شیمی', 'فیزیک'],
             'date' => '2030-05-20 08:30',
+            'end' => '2030-05-20 10:00',
             'date_jalali' => '۱۴۰۹/۰۲/۳۰',
             'time_limit_minutes' => 90,
             'questions' => [$q1->id, $q2->id],
@@ -151,14 +189,60 @@ class StudentExamCreationTest extends TestCase
         $this->assertNotNull($assignment);
         $this->assertSame('scheduled', $assignment->status);
         $this->assertSame('2030-05-20 08:30:00', $assignment->scheduled_at);
+        $this->assertSame('2030-05-20 10:00:00', $assignment->ends_at);
 
         $attached = DB::table('test_questions')->where('test_id', $test->id)->orderBy('position')->pluck('question_id')->all();
         $this->assertSame([$q1->id, $q2->id], array_map('intval', $attached));
     }
 
-    public function test_lesson_must_be_one_of_the_five_allowed_chips(): void
+    public function test_an_uploaded_cover_is_stored_on_the_test(): void
     {
-        [, $consultant, $student] = $this->tenantContext();
+        [$tenant, $consultant, $student] = $this->tenantContext();
+        $q1 = $this->makeQuestion($tenant->id, 'سوال شیمی ۱', ['subject' => 'شیمی']);
+
+        $this->actingAs($consultant)
+            ->post("http://tenant-a.test/consultant/students/{$student->id}/exams", [
+                'title' => 'آزمون با جلد',
+                'exam_type' => 'quiz',
+                'lesson' => ['شیمی'],
+                'date' => '2030-05-20 08:30',
+                'end' => '2030-05-20 09:30',
+                'questions' => [$q1->id],
+                'cover' => $this->pngUpload(),
+            ])
+            ->assertRedirect();
+
+        $test = DB::table('tests')->where('test_title', 'آزمون با جلد')->first();
+        $this->assertNotNull($test);
+        $this->assertNotNull($test->cover_image_path);
+        $this->assertStringContainsString('exam-covers/', $test->cover_image_path);
+    }
+
+    public function test_the_end_of_the_window_must_come_after_its_start(): void
+    {
+        [$tenant, $consultant, $student] = $this->tenantContext();
+        $q1 = $this->makeQuestion($tenant->id, 'سوال شیمی ۱', ['subject' => 'شیمی']);
+
+        $this->actingAs($consultant)
+            ->post("http://tenant-a.test/consultant/students/{$student->id}/exams", [
+                'title' => 'آزمون با بازهٔ نامعتبر',
+                'exam_type' => 'quiz',
+                'lesson' => ['شیمی'],
+                'date' => '2030-05-20 10:00',
+                'end' => '2030-05-20 08:30',
+                'questions' => [$q1->id],
+            ])
+            ->assertSessionHasErrors('end');
+
+        $this->assertSame(0, DB::table('tests')->where('test_title', 'آزمون با بازهٔ نامعتبر')->count());
+    }
+
+    public function test_lesson_must_be_one_of_the_banks_subjects(): void
+    {
+        [$tenant, $consultant, $student] = $this->tenantContext();
+        // The bank only knows شیمی, so an off-bank lesson is rejected below
+        // even though the old fixed list accepted it.
+        $this->makeQuestion($tenant->id, 'سوال شیمی', ['subject' => 'شیمی']);
 
         $this->actingAs($consultant)
             ->post("http://tenant-a.test/consultant/students/{$student->id}/exams", [
@@ -166,6 +250,7 @@ class StudentExamCreationTest extends TestCase
                 'exam_type' => 'quiz',
                 'lesson' => ['ادبیات فارسی'],
                 'date' => '2030-05-20 08:30',
+                'end' => '2030-05-20 09:30',
             ])
             ->assertSessionHasErrors('lesson.0');
 
@@ -182,6 +267,7 @@ class StudentExamCreationTest extends TestCase
                 'exam_type' => 'quiz',
                 'lesson' => [],
                 'date' => '2030-05-20 08:30',
+                'end' => '2030-05-20 09:30',
             ])
             ->assertSessionHasErrors('lesson');
     }
@@ -225,25 +311,35 @@ class StudentExamCreationTest extends TestCase
             ->assertOk()
             ->assertSee('سوال نمونه بانک')
             ->assertSee('سوال درس دیگر');
+
+        // Chapter filter (bank-derived, TASK AC7) narrows to the matching row.
+        // The card renders the label through persian_digits, so the raw ASCII
+        // form is what the query takes and the Persian one is what comes back.
+        $this->actingAs($consultant)
+            ->get("{$url}?chapter=".urlencode('فصل 2 · دهم').'&page=1')
+            ->assertOk()
+            ->assertSee('سوال نمونه بانک')
+            ->assertSee('فصل ۲ · دهم')
+            ->assertDontSee('سوال درس دیگر');
     }
 
     public function test_bank_metadata_normalizes_lessons_companies_and_chapters(): void
     {
-        $this->assertSame('زیست‌شناسی', \App\Support\QuestionBankMeta::subject('zist'));
-        $this->assertNull(\App\Support\QuestionBankMeta::subject('adabiyat'));
+        $this->assertSame('زیست‌شناسی', QuestionBankMeta::subject('zist'));
+        $this->assertNull(QuestionBankMeta::subject('adabiyat'));
 
         // ZWNJ/placement variants and OCR misspellings collapse to one canon.
         foreach (['قلمچی', 'قلم‌چی'] as $variant) {
-            $this->assertSame('قلم‌چی', \App\Support\QuestionBankMeta::corp($variant));
+            $this->assertSame('قلم‌چی', QuestionBankMeta::corp($variant));
         }
         foreach (['ماراثون', 'ماراتیون', 'مارآتون', 'ماراتون'] as $variant) {
-            $this->assertSame('ماراتون', \App\Support\QuestionBankMeta::corp($variant));
+            $this->assertSame('ماراتون', QuestionBankMeta::corp($variant));
         }
-        $this->assertSame('دیاز', \App\Support\QuestionBankMeta::corp('دیاژ'));
-        $this->assertNull(\App\Support\QuestionBankMeta::corp('   '));
+        $this->assertSame('دیاز', QuestionBankMeta::corp('دیاژ'));
+        $this->assertNull(QuestionBankMeta::corp('   '));
 
-        $this->assertSame('فصل 4 · دهم', \App\Support\QuestionBankMeta::chapterLabel('chapter4', '10'));
-        $this->assertSame('فصل 1', \App\Support\QuestionBankMeta::chapterLabel('chapter1', null));
-        $this->assertNull(\App\Support\QuestionBankMeta::chapterLabel('final-test', '10'));
+        $this->assertSame('فصل 4 · دهم', QuestionBankMeta::chapterLabel('chapter4', '10'));
+        $this->assertSame('فصل 1', QuestionBankMeta::chapterLabel('chapter1', null));
+        $this->assertNull(QuestionBankMeta::chapterLabel('final-test', '10'));
     }
 }

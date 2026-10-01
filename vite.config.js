@@ -27,7 +27,7 @@ export default defineConfig({
                 'resources/js/features/consultant-blog-modal.js',
                 'resources/js/features/blog-editor.js',
                 'resources/js/features/consultant-report-cards.js',
-                'resources/js/features/consultant-exam-runner.js',
+                'resources/js/features/student-exam-runner.js',
                 'resources/js/features/bulk-actions.js',
                 'resources/js/features/direct-chat.js',
                 'resources/js/features/theme-studio.js',

@@ -94,7 +94,7 @@ class StudentReportCardController extends Controller
         return StudentAssignedQuiz::query()
             ->where('student_assigned_quizzes.student_id', $student->id)
             ->whereIn('student_assigned_quizzes.status', self::FINISHED_STATUSES)
-            ->with(['test' => fn ($query) => $query->withCount('questions'), 'latestAttempt'])
+            ->with(['test' => fn ($query) => $query->withCount(['questionRows as questions_count']), 'latestAttempt'])
             ->when($search !== '', fn (Builder $q) => $q->whereHas(
                 'test',
                 fn ($test) => $test->where('test_title', 'like', "%{$search}%")
