@@ -14,14 +14,14 @@ return [
     |
     */
     'tenant' => [
-        'name'       => 'Sapienstech',
+        'name' => 'Sapienstech',
         'short_name' => 'Sapienstech',
         'role_label' => 'پنل مدیریت',
         'page_title' => 'داشبورد مشاور',
-        'logo'       => null,
-        'favicon'    => null,
-        'locale'     => 'fa',
-        'direction'  => 'rtl',
+        'logo' => null,
+        'favicon' => null,
+        'locale' => 'fa',
+        'direction' => 'rtl',
     ],
 
     /*
@@ -77,10 +77,10 @@ return [
         | dashboard's Actions menu)
         |------------------------------------------------------------------------
         */
-        'student_profile'    => true,
-        'report_cards'       => true,
-        'student_exams'      => true,
-        'student_schedule'   => true,
+        'student_profile' => true,
+        'report_cards' => true,
+        'student_exams' => true,
+        'student_schedule' => true,
 
         /*
         |------------------------------------------------------------------------
@@ -88,7 +88,7 @@ return [
         | student's continue/withdraw decision + payment receipt submission.
         |------------------------------------------------------------------------
         */
-        'deals'              => true,
+        'deals' => true,
 
         /*
         |------------------------------------------------------------------------
@@ -98,14 +98,14 @@ return [
         | flag so an academy can scope what its teachers get.
         |------------------------------------------------------------------------
         */
-        'teacher_panel'        => true,
-        'teacher_materials'    => true,
-        'teacher_assignments'  => true,
-        'teacher_schedule'     => true,
+        'teacher_panel' => true,
+        'teacher_materials' => true,
+        'teacher_assignments' => true,
+        'teacher_schedule' => true,
 
-        'student_materials'    => true,
-        'student_assignments'  => true,
-        'student_timetable'    => true,
+        'student_materials' => true,
+        'student_assignments' => true,
+        'student_timetable' => true,
 
         /*
         |--------------------------------------------------------------------------
@@ -113,10 +113,10 @@ return [
         | kept for backward compatibility only)
         |--------------------------------------------------------------------------
         */
-        'quiz_management'     => true,
+        'quiz_management' => true,
         'question_management' => true,
-        'book_access'         => true,
-        'create_post_action'  => true,
+        'book_access' => true,
+        'create_post_action' => true,
 
     ],
 
@@ -231,53 +231,53 @@ return [
 
         'colors' => [
             // ---- primitives: an archetype is expected to set these --------
-            'primary'              => '#06B6D4',
-            'secondary'            => '#A855F7',
-            'background'           => '#000000',
-            'surface'              => '#111111',
-            'surface_alt'          => '#1A1A1A',
-            'text'                 => '#FFFFFF',
+            'primary' => '#06B6D4',
+            'secondary' => '#A855F7',
+            'background' => '#000000',
+            'surface' => '#111111',
+            'surface_alt' => '#1A1A1A',
+            'text' => '#FFFFFF',
 
             // ---- semantic: rarely archetype-specific, override per tenant --
-            'success'              => '#34D399',
-            'info'                 => '#60A5FA',
-            'warning'              => '#FBBF24',
-            'danger'               => '#F87171',
+            'success' => '#34D399',
+            'info' => '#60A5FA',
+            'warning' => '#FBBF24',
+            'danger' => '#F87171',
 
             // ---- accent palette used by items[].accent / from / to --------
             // Any name here is addressable from content config: an item with
             // 'accent' => 'accent-violet' resolves to var(--c-accent-violet).
-            'accent_blue'          => '#60A5FA',
-            'accent_emerald'       => '#34D399',
-            'accent_orange'        => '#FB923C',
-            'accent_teal'          => '#2DD4BF',
-            'accent_red'           => '#F87171',
-            'accent_violet'        => '#A78BFA',
-            'accent_pink'          => '#F472B6',
-            'accent_lime'          => '#A3E635',
-            'accent_cyan'          => '#22D3EE',
-            'accent_amber'         => '#F59E0B',
-            'accent_rose'          => '#FB7185',
+            'accent_blue' => '#60A5FA',
+            'accent_emerald' => '#34D399',
+            'accent_orange' => '#FB923C',
+            'accent_teal' => '#2DD4BF',
+            'accent_red' => '#F87171',
+            'accent_violet' => '#A78BFA',
+            'accent_pink' => '#F472B6',
+            'accent_lime' => '#A3E635',
+            'accent_cyan' => '#22D3EE',
+            'accent_amber' => '#F59E0B',
+            'accent_rose' => '#FB7185',
 
             // ---- derived: null means "compute from the primitives" --------
-            'heading'              => null,
-            'link'                 => null,
-            'primary_hover'        => null,
-            'secondary_hover'      => null,
-            'primary_soft'         => null,
-            'secondary_soft'       => null,
-            'text_muted'           => null,
-            'text_subtle'          => null,
-            'surface_elevated'     => null,
-            'border'               => null,
-            'border_strong'        => null,
-            'glass'                => null,
-            'glass_hover'          => null,
-            'glass_border'         => null,
-            'on_primary'           => null,
-            'on_surface'           => null,
+            'heading' => null,
+            'link' => null,
+            'primary_hover' => null,
+            'secondary_hover' => null,
+            'primary_soft' => null,
+            'secondary_soft' => null,
+            'text_muted' => null,
+            'text_subtle' => null,
+            'surface_elevated' => null,
+            'border' => null,
+            'border_strong' => null,
+            'glass' => null,
+            'glass_hover' => null,
+            'glass_border' => null,
+            'on_primary' => null,
+            'on_surface' => null,
             'selection_background' => null,
-            'selection_text'       => null,
+            'selection_text' => null,
         ],
 
         // How a surface is *made*, not what colour it is. Drives the blur,
@@ -285,17 +285,18 @@ return [
         // material: glass | acrylic | matte | paper | flat
         'surface' => [
             'material' => null,
-            'blur'     => null,
-            'opacity'  => null,
-            'noise'    => null,
+            'blur' => null,
+            'opacity' => null,
+            'noise' => null,
             'specular' => null,
+            'inner_border' => null,
         ],
 
         // Elevation model. elevation: flat | ambient | soft | medium | heavy |
         // neon | brutal. shadow_tint mixes the brand background into shadows
         // instead of using generic black.
         'depth' => [
-            'elevation'   => 'soft',
+            'elevation' => 'soft',
             'shadow_tint' => true,
         ],
 
@@ -303,9 +304,9 @@ return [
         // density: compact | normal | spacious   container_width: narrow |
         // content | wide | full
         'scale' => [
-            'density'         => 'normal',
+            'density' => 'normal',
             'container_width' => 'content',
-            'section_rhythm'  => '6rem',
+            'section_rhythm' => '6rem',
         ],
 
         // Motion identity.
@@ -316,31 +317,51 @@ return [
         // | shift | icon-spin | invert | underline | none
         // text_effect (hero accent line): none | gradient-shift | glow-pulse
         'motion' => [
-            'reveal'         => 'fade-up',
-            'stagger'        => 'sequential',
-            'easing'         => null,
+            'reveal' => 'fade-up',
+            'stagger' => 'sequential',
+            'easing' => null,
             'duration_scale' => '1',
-            'parallax'       => 'none',
-            'tilt'           => false,
-            'magnetic'       => false,
-            'hover'          => 'lift',
-            'text_effect'    => 'none',
-            'scroll_progress'=> false,
-            'marquee_pause'  => false,
+            'parallax' => 'none',
+            'tilt' => false,
+            'magnetic' => false,
+            'hover' => 'lift',
+            'text_effect' => 'none',
+            'scroll_progress' => false,
+            'marquee_pause' => false,
         ],
 
         // Page and section ground. mode: glow | flat | gradient | mesh | grid
         // | dots | noise | beams | aurora | stripes
         // section_alternation: none | tint | surface-alt | rule
         'background' => [
-            'mode'                => 'glow',
-            'gradient_angle'      => '180deg',
+            'mode' => 'glow',
+            'gradient_angle' => '180deg',
             'section_alternation' => 'none',
-            'noise'               => '0',
-            'grid_size'           => '48px',
+            'noise' => '0',
+            'grid_size' => '48px',
             // Replaces the blobs hero/advisor/ecosystem/cta used to hand-place.
             // Each: ['at' => 'top-start', 'color' => 'primary', 'size' => '24rem', 'opacity' => '.10']
-            'glow_blobs'          => [],
+            'glow_blobs' => [],
+            // A radial vignette behind the first section's content.
+            // none | soft | strong
+            'spotlight' => 'none',
+            // The glow blobs' breathing cycle. none | breathe | drift
+            'glow_animation' => 'none',
+            // How long one breath of the background glow takes.
+            'glow_duration' => '12s',
+        ],
+
+        // The dashboard shells' ground glow. The consultant/student/teacher
+        // layouts used to render two `.page-glow` divs sized by CSS literals
+        // (resources/css/app.css:93-115), so no tenant could retune the portal's
+        // ground. These reproduce those literals exactly; a tenant raises them
+        // in config/tenants/{slug}.php.
+        'portal' => [
+            'glow_size' => '420px',
+            'glow_blur' => '120px',
+            'glow_opacity' => '.07',
+            // Paint the aurora/mesh ground behind the shell as well.
+            'ground' => false,
         ],
 
         // Ornament.
@@ -355,12 +376,12 @@ return [
         // card_edge: none | top-accent | left-accent | corner-cut | glow-border
         'decoration' => [
             'section_divider' => 'none',
-            'heading_rule'    => 'none',
-            'heading_align'   => 'center',
-            'accent_shapes'   => 'none',
-            'quote_mark'      => 'none',
-            'icon_backdrop'   => 'soft-square',
-            'card_edge'       => 'none',
+            'heading_rule' => 'none',
+            'heading_align' => 'center',
+            'accent_shapes' => 'none',
+            'quote_mark' => 'none',
+            'icon_backdrop' => 'soft-square',
+            'card_edge' => 'none',
         ],
 
         // Button anatomy, shared by every CTA on the public site.
@@ -369,34 +390,34 @@ return [
         // | arrow-down
         // Individual buttons may override it with an `icon` key in their config.
         'buttons' => [
-            'variant'        => 'solid',
-            'size'           => 'md',
-            'weight'         => '600',
-            'transform'      => 'none',
+            'variant' => 'solid',
+            'size' => 'md',
+            'weight' => '600',
+            'transform' => 'none',
             'letter_spacing' => null,
-            'icon'           => 'none',
-            'hover'          => 'lift',
-            'shadow'         => false,
+            'icon' => 'none',
+            'hover' => 'lift',
+            'shadow' => false,
         ],
 
         // Logo lockup. variant: mark | wordmark | mark+word | stacked
         'brand' => [
-            'src'      => null,
-            'height'   => '2rem',
-            'variant'  => 'mark+word',
+            'src' => null,
+            'height' => '2rem',
+            'variant' => 'mark+word',
             'position' => 'start',
         ],
 
         // numerals: auto | fa | en    calendar: gregorian | jalali
         'i18n' => [
-            'numerals'    => 'auto',
-            'calendar'    => 'gregorian',
+            'numerals' => 'auto',
+            'calendar' => 'gregorian',
             'date_format' => 'Y-m-d',
         ],
 
         'accessibility' => [
-            'contrast'      => 'normal',   // normal | high
-            'focus_ring'    => 'outline',  // outline | glow | underline | none
+            'contrast' => 'normal',   // normal | high
+            'focus_ring' => 'outline',  // outline | glow | underline | none
             'reduce_motion' => 'respect',  // respect | force-off | force-on
         ],
 
@@ -411,24 +432,24 @@ return [
         // it here so booting on 'dark' cannot land on an undeclared palette.
         'schemes' => [
             'light' => [
-                'background'       => '#F6F7FB',
-                'surface'          => '#FFFFFF',
-                'surface_alt'      => '#F0F2F7',
+                'background' => '#F6F7FB',
+                'surface' => '#FFFFFF',
+                'surface_alt' => '#F0F2F7',
                 'surface_elevated' => '#FFFFFF',
-                'text'             => '#111827',
+                'text' => '#111827',
             ],
             // Declared so the toggle's 'dark' destination is always a real,
             // validated palette. Mirrors the baseline primitives (the platform
             // default IS dark), so a tenant that adds a light scheme without
             // declaring dark still boots and toggles onto the platform palette.
             'dark' => [
-                'background'       => '#000000',
-                'surface'          => '#111111',
-                'surface_alt'      => '#1A1A1A',
+                'background' => '#000000',
+                'surface' => '#111111',
+                'surface_alt' => '#1A1A1A',
                 'surface_elevated' => '#1A1A1A',
-                'text'             => '#FFFFFF',
-                'primary'          => '#06B6D4',
-                'secondary'        => '#A855F7',
+                'text' => '#FFFFFF',
+                'primary' => '#06B6D4',
+                'secondary' => '#A855F7',
             ],
         ],
 
@@ -448,11 +469,11 @@ return [
         'typography' => [
             // One font family for everything was the single biggest sameness
             // driver. An archetype sets font_family + font_heading together.
-            'font_family'      => 'Vazirmatn',
-            'font_heading'     => null,
-            'font_accent'      => null,
-            'font_mono'        => null,
-            'font_button'      => null,
+            'font_family' => 'Vazirmatn',
+            'font_heading' => null,
+            'font_accent' => null,
+            'font_mono' => null,
+            'font_button' => null,
             // Files are deployed manually beneath public/fonts (see README).
             // Tenant faces lists replace this list; include each required face.
             'faces' => [
@@ -464,20 +485,20 @@ return [
                     'display' => 'swap',
                 ],
             ],
-            'body_size'        => '15px',
-            'body_weight'      => '400',
-            'heading_weight'   => '800',
-            'heading_transform'=> null,
+            'body_size' => '15px',
+            'body_weight' => '400',
+            'heading_weight' => '800',
+            'heading_transform' => null,
             'heading_letter_spacing' => null,
-            'heading_line_height'    => null,
-            'heading_balance'  => null,
-            'letter_spacing'   => '0',
-            'line_height'      => '1.8',
-            'measure'          => null,
-            'h1_size'          => 'clamp(2.75rem, 6vw, 4.5rem)',
-            'h2_size'          => 'clamp(1.875rem, 4vw, 3rem)',
-            'h3_size'          => '1.25rem',
-            'stat_size'        => null,
+            'heading_line_height' => null,
+            'heading_balance' => null,
+            'letter_spacing' => '0',
+            'line_height' => '1.8',
+            'measure' => null,
+            'h1_size' => 'clamp(2.75rem, 6vw, 4.5rem)',
+            'h2_size' => 'clamp(1.875rem, 4vw, 3rem)',
+            'h3_size' => '1.25rem',
+            'stat_size' => null,
             'hero_line_height' => '1.2',
         ],
 
@@ -485,87 +506,90 @@ return [
         // whole group at once; ThemeTokens falls back to the values it used to
         // have when no scale is named.
         'shape' => [
-            'radius_scale'     => null,   // sharp | slight | soft | round | pill
-            'radius_sm'        => null,
-            'radius_md'        => null,
-            'radius_lg'        => null,
-            'radius_xl'        => null,
-            'radius_2xl'       => null,
-            'button_radius'    => null,
-            'input_radius'     => null,
-            'card_radius'      => null,
-            'sidebar_radius'   => null,
-            'border_width'     => '1px',
+            'radius_scale' => null,   // sharp | slight | soft | round | pill
+            'radius_sm' => null,
+            'radius_md' => null,
+            'radius_lg' => null,
+            'radius_xl' => null,
+            'radius_2xl' => null,
+            'button_radius' => null,
+            'input_radius' => null,
+            'card_radius' => null,
+            'sidebar_radius' => null,
+            'border_width' => '1px',
         ],
 
         'layout' => [
-            'sidebar_width'     => '240px',
+            'sidebar_width' => '240px',
             'content_max_width' => '1280px',
-            'content_padding'   => '32px',
-            'sidebar_top'       => '36px',
-            'sidebar_bottom'    => '48px',
-            'sidebar_offset'    => '36px',
-            'card_gap'          => '24px',
-            'topnav_height'     => '76px',
+            'content_padding' => '32px',
+            'sidebar_top' => '36px',
+            'sidebar_bottom' => '48px',
+            'sidebar_offset' => '36px',
+            'card_gap' => '24px',
+            'topnav_height' => '76px',
             // Split-hero column ratio: 50-50 | 60-40 | 40-60 | 70-30 | 30-70.
             // ThemeTokens derives the `--hero-cols` grid value from it.
-            'hero_ratio'        => '50-50',
+            'hero_ratio' => '50-50',
             // Where the panel's section tabs live: topnav | sidebar. The
             // tenant's choice (Appearance studio); both the consultant and
             // student shells follow it. Consumed as a data attribute by
             // partials/theme-attrs, not as a CSS token.
-            'shell_nav'         => 'topnav',
+            'shell_nav' => 'topnav',
         ],
 
         // Driven by `scale.density` / `scale.container_width` / section_rhythm.
         'spacing' => [
-            'section_gap'       => null,
-            'container_max'     => null,
+            'section_gap' => null,
+            'container_max' => null,
             'container_padding' => null,
-            'grid_gap'          => null,
-            'card_padding'      => null,
+            'grid_gap' => null,
+            'card_padding' => null,
         ],
 
         'landing' => [
-            'nav_height'       => '4.5rem',
-            'hero_min_height'  => '100svh',
-            'glow_size'        => '24rem',
-            'glow_blur'        => '120px',
-            'glow_opacity'     => '.10',
-            'reveal_offset'    => '40px',
-            'float_distance'   => '15px',
-            'float_duration'   => '6s',
+            'nav_height' => '4.5rem',
+            'hero_min_height' => '100svh',
+            'glow_size' => '24rem',
+            'glow_blur' => '120px',
+            'glow_opacity' => '.10',
+            'reveal_offset' => '40px',
+            'float_distance' => '15px',
+            'float_duration' => '6s',
             'counter_duration' => '2000',
             // Scaled by motion.duration_scale.
-            'reveal_duration'  => null,
-            'stagger_ms'       => null,
+            'reveal_duration' => null,
+            'stagger_ms' => null,
         ],
 
         // Shadows come from `depth`; blur/opacity from `surface`. Left null so
         // those two groups are the only place to change them.
         'effects' => [
-            'shadow'             => null,
-            'card_shadow'        => null,
-            'sidebar_shadow'     => null,
-            'backdrop_blur'      => null,
-            'glass_opacity'      => null,
-            'hover_lift'         => '3px',
+            'shadow' => null,
+            'card_shadow' => null,
+            'sidebar_shadow' => null,
+            // The dashboard panel's own shadow. null = use the elevation model
+            // (card_shadow) exactly as before this key existed.
+            'panel_shadow' => null,
+            'backdrop_blur' => null,
+            'glass_opacity' => null,
+            'hover_lift' => '3px',
             'animation_duration' => '180ms',
-            'enable_animations'  => true,
+            'enable_animations' => true,
         ],
 
         'gradients' => [
             // Was hardcoded to the old cyan/purple palette and quietly drifted
             // out of sync with `colors`. Now derived from primary + secondary.
-            'brand'       => null,
+            'brand' => null,
             'page_glow_1' => null,
             'page_glow_2' => null,
         ],
 
         // 20 local collections in resources/icons/catalog.json; legacy fallback is font-awesome.
-                'icons' => ['set' => 'font-awesome'],
+        'icons' => ['set' => 'font-awesome'],
 
-                'assets' => [
+        'assets' => [
 
             'icon_library_url' => 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
         ],
@@ -593,11 +617,11 @@ return [
     'academics' => [
         'grade_groups' => [
             'intermediate' => [
-                'label'  => 'متوسطه اول',
+                'label' => 'متوسطه اول',
                 'grades' => ['هفتم', 'هشتم', 'نهم'],
             ],
             'high_school' => [
-                'label'  => 'متوسطه دوم',
+                'label' => 'متوسطه دوم',
                 'grades' => ['دهم', 'یازدهم', 'دوازدهم'],
             ],
         ],
@@ -611,7 +635,7 @@ return [
         // Lesson-material uploads (TenantUploads folder + size/type limits).
         'materials' => [
             'max_kb' => 20480,
-            'types'  => ['pdf', 'jpg', 'jpeg', 'png', 'webp', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'zip'],
+            'types' => ['pdf', 'jpg', 'jpeg', 'png', 'webp', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'zip'],
             'folder' => 'materials',
         ],
 
@@ -621,7 +645,7 @@ return [
         // side is a phone photo of the finished work far more often than not.
         'assignments' => [
             'max_kb' => 20480,
-            'types'  => ['pdf', 'png', 'jpg', 'jpeg'],
+            'types' => ['pdf', 'png', 'jpg', 'jpeg'],
             'folder' => 'assignments',
         ],
     ],
@@ -633,46 +657,46 @@ return [
     */
     'labels' => [
         // Top navigation
-        'dashboard'       => 'داشبورد',
+        'dashboard' => 'داشبورد',
         'blog_management' => 'وبلاگ',
-        'direct_chat'     => 'گفتگوی مستقیم',
-        'bulk_actions'    => 'اقدامات گروهی',
+        'direct_chat' => 'گفتگوی مستقیم',
+        'bulk_actions' => 'اقدامات گروهی',
 
         // Teacher panel navigation
-        'teacher_dashboard'   => 'داشبورد معلم',
-        'teacher_students'    => 'دانش‌آموزان',
-        'teacher_materials'   => 'جزوه‌ها و منابع',
+        'teacher_dashboard' => 'داشبورد معلم',
+        'teacher_students' => 'دانش‌آموزان',
+        'teacher_materials' => 'جزوه‌ها و منابع',
         'teacher_assignments' => 'تکالیف',
-        'teacher_schedule'    => 'برنامه کلاسی',
+        'teacher_schedule' => 'برنامه کلاسی',
 
         // Chat workspace
-        'student_chat'            => 'گفتگو',
-        'chat_new_conversation'   => 'گفتگوی تازه',
-        'chat_new_group'          => 'ساخت گروه',
-        'chat_search_hint'        => 'جستجو در گفتگوها…',
-        'chat_empty_list'         => 'هنوز گفتگویی ندارید.',
-        'chat_pick_students'      => 'انتخاب دانش‌آموزان',
-        'chat_group_name'         => 'نام گروه',
-        'chat_closed'             => 'بسته شده',
-        'chat_open_thread'        => 'بازکردن گفتگو',
-        'chat_close_thread'       => 'بستن گفتگو',
-        'chat_typing'             => 'در حال نوشتن…',
-        'chat_delete_message'     => 'حذف پیام',
-        'chat_edit_message'       => 'ویرایش پیام',
-        'chat_saved'              => 'ویرایش شد',
-        'chat_deleted'            => 'پیام حذف شد',
-        'chat_attach'             => 'پیوست فایل',
-        'chat_send'               => 'ارسال',
+        'student_chat' => 'گفتگو',
+        'chat_new_conversation' => 'گفتگوی تازه',
+        'chat_new_group' => 'ساخت گروه',
+        'chat_search_hint' => 'جستجو در گفتگوها…',
+        'chat_empty_list' => 'هنوز گفتگویی ندارید.',
+        'chat_pick_students' => 'انتخاب دانش‌آموزان',
+        'chat_group_name' => 'نام گروه',
+        'chat_closed' => 'بسته شده',
+        'chat_open_thread' => 'بازکردن گفتگو',
+        'chat_close_thread' => 'بستن گفتگو',
+        'chat_typing' => 'در حال نوشتن…',
+        'chat_delete_message' => 'حذف پیام',
+        'chat_edit_message' => 'ویرایش پیام',
+        'chat_saved' => 'ویرایش شد',
+        'chat_deleted' => 'پیام حذف شد',
+        'chat_attach' => 'پیوست فایل',
+        'chat_send' => 'ارسال',
 
         // Settings hub (topnav user dropdown + tab bar)
-        'settings'             => 'تنظیمات',
-        'settings_profile'     => 'پروفایل',
-        'settings_appearance'  => 'ظاهر',
-        'settings_chat'        => 'گفتگو',
+        'settings' => 'تنظیمات',
+        'settings_profile' => 'پروفایل',
+        'settings_appearance' => 'ظاهر',
+        'settings_chat' => 'گفتگو',
 
         // Dashboard
         'dashboard_heading' => 'داشبورد مشاور',
-        'welcome_prefix'    => 'خوش آمدید،',
+        'welcome_prefix' => 'خوش آمدید،',
 
         // Student list
         'student_list' => 'لیست دانش‌آموزان شما',
@@ -694,63 +718,63 @@ return [
     'public' => [
 
         'nav' => [
-            'enabled'        => true,
-            'style'          => 'solid',   // solid | glass | transparent
-            'position'       => 'top',     // top (left-rail and floating-pill are future variants)
-            'sticky'         => true,
+            'enabled' => true,
+            'style' => 'solid',   // solid | glass | transparent
+            'position' => 'top',     // top (left-rail and floating-pill are future variants)
+            'sticky' => true,
             'show_logo_mark' => true,
             // Hover treatment for the link list: plain | underline | pill
-            'links_style'    => 'plain',
+            'links_style' => 'plain',
             // CTA chip anatomy: glass | solid | outline | gradient
-            'cta_style'      => 'glass',
-            'links'          => [
+            'cta_style' => 'glass',
+            'links' => [
                 ['label' => 'درباره ما',        'href' => '#about',        'visible' => true],
                 ['label' => 'خدمات',            'href' => '#services',     'visible' => true],
                 ['label' => 'دانش‌آموزان موفق', 'href' => '#testimonials', 'visible' => true],
                 ['label' => 'وبلاگ',            'href' => '#blog',         'visible' => true],
             ],
             'cta' => [
-                'label'   => 'ورود | ثبت‌نام',
-                'route'   => 'login',
+                'label' => 'ورود | ثبت‌نام',
+                'route' => 'login',
                 'visible' => true,
             ],
         ],
 
         'landing' => [
             'meta' => [
-                'title'       => 'پلتفرم آموزش هوشمند',
+                'title' => 'پلتفرم آموزش هوشمند',
                 'description' => 'سیستم مدیریت یادگیری و مشاوره تحصیلی مبتنی بر هوش مصنوعی',
                 // Shared social card (og:image / twitter:image). Relative to
                 // the tenant's asset tree, like every other image here.
-                'og_image'    => null,
+                'og_image' => null,
             ],
 
             // ORDER + VISIBILITY of every section. Reorder freely; remove to hide.
             'sections' => ['hero', 'advisor', 'ecosystem', 'services', 'stats', 'testimonials', 'blog', 'cta'],
 
             'animations' => [
-                'reveal'   => true,   // fade-in on scroll
-                'float'    => true,   // floating hero cards
+                'reveal' => true,   // fade-in on scroll
+                'float' => true,   // floating hero cards
                 'counters' => true,   // animated stat counters
             ],
 
             'hero' => [
                 // Placeholder copy. A tenant overrides these in
                 // config/tenants/{slug}.php — see tenant-one.php.
-                'title_line1'   => 'آینده یادگیری با',
-                'title_line2'   => 'نام برند شما',   // rendered with gradient text
+                'title_line1' => 'آینده یادگیری با',
+                'title_line2' => 'نام برند شما',   // rendered with gradient text
                 'gradient_text' => true,
-                'subtitle'      => 'یک پلتفرم یکپارچه آموزش هوشمند. مسیر تحصیلی خود را با برنامه‌ریزی اختصاصی و تحلیل‌های دقیق متحول کنید.',
-                'text_align'    => 'start',        // start | center | end (logical, RTL-safe)
-                'text_side'     => 'start',        // which side the text column sits on
-                'gradient_dir'  => 'to-l',         // headline gradient direction
-                'mockup'        => true,           // floating dashboard illustration
+                'subtitle' => 'یک پلتفرم یکپارچه آموزش هوشمند. مسیر تحصیلی خود را با برنامه‌ریزی اختصاصی و تحلیل‌های دقیق متحول کنید.',
+                'text_align' => 'start',        // start | center | end (logical, RTL-safe)
+                'text_side' => 'start',        // which side the text column sits on
+                'gradient_dir' => 'to-l',         // headline gradient direction
+                'mockup' => true,           // floating dashboard illustration
                 // Structure levers consumed by sections/_dispatch.blade.php.
-                'layout'        => 'default',      // default | centered-stack | oversized-type
-                'media'         => 'mockup',       // mockup | photo | none
-                'image'         => null,
-                'image_alt'     => null,
-                'eyebrow'       => null,
+                'layout' => 'default',      // default | centered-stack | oversized-type
+                'media' => 'mockup',       // mockup | photo | none
+                'image' => null,
+                'image_alt' => null,
+                'eyebrow' => null,
                 'buttons' => [
                     ['label' => 'شروع رایگان',    'href' => '#',         'style' => 'solid', 'icon' => null, 'visible' => true],
                     ['label' => 'مشاهده امکانات', 'href' => '#services', 'style' => 'ghost', 'icon' => null, 'visible' => true],
@@ -758,22 +782,22 @@ return [
             ],
 
             'advisor' => [
-                'variant'    => 'default',          // default | quote-first
+                'variant' => 'default',          // default | quote-first
                 // The whole block is person-specific; a tenant supplies its own
                 // advisor rather than restating these keys one by one.
-                'id'         => 'about',
-                'image'      => 'images/advisor.jpg',
-                'image_alt'  => 'تصویر مشاور',
+                'id' => 'about',
+                'image' => 'images/advisor.jpg',
+                'image_alt' => 'تصویر مشاور',
                 'image_side' => 'start',           // flip to 'end' to mirror the section
                 'image_size' => '18rem',
                 'spin_rings' => true,
-                'grayscale'  => true,
-                'badge'      => ['label' => 'مشاوره فعال', 'visible' => true],
-                'eyebrow'    => ['icon' => 'fa-solid fa-certificate', 'label' => 'مدیریت و مشاوره ارشد'],
-                'name'       => 'نام مشاور',
-                'tagline'    => 'طراح مسیر موفقیت تحصیلی شما',
+                'grayscale' => true,
+                'badge' => ['label' => 'مشاوره فعال', 'visible' => true],
+                'eyebrow' => ['icon' => 'fa-solid fa-certificate', 'label' => 'مدیریت و مشاوره ارشد'],
+                'name' => 'نام مشاور',
+                'tagline' => 'طراح مسیر موفقیت تحصیلی شما',
                 'tagline_color' => 'secondary',    // primary | secondary | any --c-* token
-                'bio'        => 'سال‌ها تجربه در زمینه مشاوره تحصیلی همراه با تحلیل هوش مصنوعی، به ما امکان می‌دهد برای هر دانش‌آموز یک نقشه راه اختصاصی طراحی کنیم.',
+                'bio' => 'سال‌ها تجربه در زمینه مشاوره تحصیلی همراه با تحلیل هوش مصنوعی، به ما امکان می‌دهد برای هر دانش‌آموز یک نقشه راه اختصاصی طراحی کنیم.',
                 'stats' => [
                     ['value' => '+۰',   'label' => 'سال تجربه'],
                     ['value' => '+۰',   'label' => 'دانش‌آموز موفق'],
@@ -786,12 +810,12 @@ return [
             ],
 
             'ecosystem' => [
-                'variant'   => 'default',
-                'id'        => 'ecosystem',
-                'heading'   => 'اکوسیستم هوشمند آموزش',
-                'text'      => 'با ترکیب الگوریتم‌های هوش مصنوعی و متدهای نوین یادگیری، محیطی ساخته‌ایم که هر دانش‌آموز مسیر شخصی‌سازی‌شده خودش را طی می‌کند.',
+                'variant' => 'default',
+                'id' => 'ecosystem',
+                'heading' => 'اکوسیستم هوشمند آموزش',
+                'text' => 'با ترکیب الگوریتم‌های هوش مصنوعی و متدهای نوین یادگیری، محیطی ساخته‌ایم که هر دانش‌آموز مسیر شخصی‌سازی‌شده خودش را طی می‌کند.',
                 'text_side' => 'end',              // 'end' keeps the original layout
-                'visual'    => true,               // decorative orbiting-rings panel
+                'visual' => true,               // decorative orbiting-rings panel
                 'items' => [
                     ['icon' => '✦', 'accent' => 'primary',   'label' => 'مشاوره تحصیلی مبتنی بر داده', 'visible' => true],
                     ['icon' => '✦', 'accent' => 'secondary', 'label' => 'محیط یادگیری شخصی‌سازی شده', 'visible' => true],
@@ -800,11 +824,11 @@ return [
             ],
 
             'services' => [
-                'variant'    => 'default',           // default | numbered-list
-                'id'         => 'services',
-                'heading'    => 'خدمات ممتاز',
+                'variant' => 'default',           // default | numbered-list
+                'id' => 'services',
+                'heading' => 'خدمات ممتاز',
                 'subheading' => 'ابزارهای حرفه‌ای و یکپارچه برای رسیدن به بالاترین سطح عملکرد تحصیلی.',
-                'columns'    => 3,
+                'columns' => 3,
                 // One placeholder card; tenants supply their own list.
                 'items' => [
                     ['icon' => 'fa-solid fa-bolt', 'accent' => 'primary', 'title' => 'عنوان خدمت', 'text' => 'توضیح کوتاه درباره این خدمت و مزیت آن برای دانش‌آموز.', 'visible' => true],
@@ -813,49 +837,49 @@ return [
 
             'stats' => [
                 'variant' => 'default',              // default | inline-divider | band
-                'id'      => 'stats',
+                'id' => 'stats',
                 'columns' => 4,
                 // manual = the `value` below; roster = the tenant's own live
                 // count for `key` (see App\Support\TenantRoster). A row whose
                 // metric resolves to zero is dropped, so a metric a tenant's
                 // data does not support never renders an empty "۰".
-                'source'  => 'manual',               // manual | roster
+                'source' => 'manual',               // manual | roster
                 'items' => [
                     ['value' => 0, 'suffix' => '+', 'label' => 'دانش‌آموز فعال', 'gradient' => false, 'visible' => true],
                 ],
             ],
 
             'testimonials' => [
-                'variant'    => 'default',           // default | single-featured | marquee
-                'id'         => 'testimonials',
-                'heading'    => 'پیشگامان موفقیت',
+                'variant' => 'default',           // default | single-featured | marquee
+                'id' => 'testimonials',
+                'heading' => 'پیشگامان موفقیت',
                 'subheading' => 'داستان دانش‌آموزانی که با پلتفرم ما مرزهای پیشرفت را جابجا کردند.',
                 'items' => [
                     ['initials' => 'ن.م', 'name' => 'نام دانش‌آموز', 'result' => 'نتیجه کسب‌شده',
-                     'from' => 'primary', 'to' => 'secondary',
-                     'text' => '«نقل‌قول دانش‌آموز از تجربه‌اش در استفاده از پلتفرم.»', 'visible' => true],
+                        'from' => 'primary', 'to' => 'secondary',
+                        'text' => '«نقل‌قول دانش‌آموز از تجربه‌اش در استفاده از پلتفرم.»', 'visible' => true],
                 ],
             ],
 
             'blog' => [
-                'variant'    => 'default',           // default | list
+                'variant' => 'default',           // default | list
                 // The section is fed by the tenant's published BlogPosts
                 // (blog management, top nav); the composer in
                 // ViewServiceProvider injects `items` at render time and
                 // hides the section entirely when there are none.
-                'count'      => 3,
-                'id'         => 'blog',
-                'heading'    => 'آخرین مقالات',
+                'count' => 3,
+                'id' => 'blog',
+                'heading' => 'آخرین مقالات',
                 'subheading' => 'تازه‌ترین متدهای یادگیری و تکنولوژی آموزشی.',
-                'see_all'    => ['label' => 'مشاهده همه', 'href' => '#', 'visible' => true],
-                'columns'    => 3,
+                'see_all' => ['label' => 'مشاهده همه', 'href' => '#', 'visible' => true],
+                'columns' => 3,
             ],
 
             'cta' => [
                 'variant' => 'default',              // default | boxed-card | split
-                'id'      => 'cta',
+                'id' => 'cta',
                 'heading' => 'آماده‌ی شروع یک مسیر حرفه‌ای هستید؟',
-                'text'    => 'همین حالا ثبت‌نام کنید و یادگیری را به سطح جدیدی ارتقا دهید.',
+                'text' => 'همین حالا ثبت‌نام کنید و یادگیری را به سطح جدیدی ارتقا دهید.',
                 'buttons' => [
                     ['label' => 'ثبت‌نام در پلتفرم',   'route' => 'login', 'style' => 'solid', 'visible' => true],
                     ['label' => 'ورود به حساب کاربری', 'route' => 'login', 'style' => 'ghost', 'visible' => true],
@@ -875,10 +899,10 @@ return [
 
             // Trust bar: partner/school marks.
             'logos' => [
-                'id'      => 'logos',
+                'id' => 'logos',
                 'heading' => null,
                 'variant' => 'default',
-                'items'   => [],   // ['name' => '', 'image' => null, 'visible' => true]
+                'items' => [],   // ['name' => '', 'image' => null, 'visible' => true]
             ],
 
             // Faculty / staff roster. `source => roster` reads the tenant's own
@@ -887,63 +911,63 @@ return [
             // a copy of it; `items` is the manual fallback for a tenant whose
             // staff are not provisioned as users.
             'faculty' => [
-                'id'         => 'faculty',
-                'variant'    => 'default',
-                'source'     => 'roster',            // roster | items
-                'heading'    => 'کادر آموزشی',
+                'id' => 'faculty',
+                'variant' => 'default',
+                'source' => 'roster',            // roster | items
+                'heading' => 'کادر آموزشی',
                 'subheading' => null,
-                'columns'    => 3,
-                'limit'      => 12,
-                'show_bio'   => true,
-                'items'      => [],   // ['name' => '', 'subject' => '', 'bio' => '', 'visible' => true]
+                'columns' => 3,
+                'limit' => 12,
+                'show_bio' => true,
+                'items' => [],   // ['name' => '', 'subject' => '', 'bio' => '', 'visible' => true]
             ],
 
             // Classrooms by grade. `source => roster` reads the tenant's real
             // classrooms and their student counts; a consultancy has none, so
             // the section drops off its page entirely.
             'classrooms' => [
-                'id'         => 'classrooms',
-                'variant'    => 'default',
-                'source'     => 'roster',            // roster | items
-                'heading'    => 'کلاس‌ها',
+                'id' => 'classrooms',
+                'variant' => 'default',
+                'source' => 'roster',            // roster | items
+                'heading' => 'کلاس‌ها',
                 'subheading' => null,
-                'columns'    => 3,
-                'items'      => [],   // ['grade' => '', 'name' => '', 'students' => 0, 'visible' => true]
+                'columns' => 3,
+                'items' => [],   // ['grade' => '', 'name' => '', 'students' => 0, 'visible' => true]
             ],
 
             // Numbered how-it-works timeline.
             'process' => [
-                'id'         => 'process',
-                'heading'    => 'مسیر همکاری',
+                'id' => 'process',
+                'heading' => 'مسیر همکاری',
                 'subheading' => null,
-                'variant'    => 'default',
-                'items'      => [],   // ['title' => '', 'text' => '', 'visible' => true]
+                'variant' => 'default',
+                'items' => [],   // ['title' => '', 'text' => '', 'visible' => true]
             ],
 
             'faq' => [
-                'id'         => 'faq',
-                'heading'    => 'سوالات متداول',
+                'id' => 'faq',
+                'heading' => 'سوالات متداول',
                 'subheading' => null,
-                'variant'    => 'default',
-                'items'      => [],   // ['question' => '', 'answer' => '', 'visible' => true]
+                'variant' => 'default',
+                'items' => [],   // ['question' => '', 'answer' => '', 'visible' => true]
             ],
 
             'comparison' => [
-                'id'         => 'comparison',
-                'heading'    => 'مقایسه',
+                'id' => 'comparison',
+                'heading' => 'مقایسه',
                 'subheading' => null,
-                'variant'    => 'default',
-                'columns'    => ['', 'روش سنتی', 'پلتفرم ما'],
-                'items'      => [],   // ['label' => '', 'cells' => [true, false, 'متن'], 'visible' => true]
+                'variant' => 'default',
+                'columns' => ['', 'روش سنتی', 'پلتفرم ما'],
+                'items' => [],   // ['label' => '', 'cells' => [true, false, 'متن'], 'visible' => true]
             ],
 
             // Free-composition section: a vertical stack of tenant-authored
             // blocks. Each row's `type` decides which keys it carries; the
             // studio's list control renders the matching cells per row.
             'blocks' => [
-                'id'      => 'blocks',
+                'id' => 'blocks',
                 'variant' => 'default',
-                'items'   => [],   // ['type' => 'heading', 'title' => '', 'visible' => true]
+                'items' => [],   // ['type' => 'heading', 'title' => '', 'visible' => true]
             ],
 
             // Per-element style overrides for the fixed sections, addressed by
@@ -953,15 +977,15 @@ return [
         ],
 
         'footer' => [
-            'enabled'        => true,
+            'enabled' => true,
             'show_logo_mark' => true,
             // columns | centered | minimal — structure, not just styling.
-            'variant'        => 'columns',
+            'variant' => 'columns',
             // background | surface | gradient — what the footer sits on.
-            'background'     => 'background',
+            'background' => 'background',
             // Brand voice, links and social handles are tenant-owned; see
             // config/tenants/tenant-one.php for a worked example.
-            'blurb'          => 'آموزش هوشمند، حق همه است.',
+            'blurb' => 'آموزش هوشمند، حق همه است.',
             'social' => [
                 ['icon' => 'fa-brands fa-instagram', 'label' => 'Instagram', 'url' => '#', 'visible' => true],
                 ['icon' => 'fa-brands fa-telegram',  'label' => 'Telegram',  'url' => '#', 'visible' => true],
@@ -980,26 +1004,26 @@ return [
         ],
 
         'login' => [
-            'title'          => 'ورود',
-            'subtitle'       => 'وارد حساب خود شوید',
-            'email_label'    => 'ایمیل',
+            'title' => 'ورود',
+            'subtitle' => 'وارد حساب خود شوید',
+            'email_label' => 'ایمیل',
             'password_label' => 'رمز عبور',
             'remember_label' => 'مرا به خاطر بسپار',
-            'submit_label'   => 'ورود',
-            'tabs'           => ['consultant' => 'مشاور', 'student' => 'دانش‌آموز'],
-            'back_link'      => ['label' => 'بازگشت به سایت', 'route' => 'home', 'visible' => true],
-            'card'           => ['max_width' => '26rem', 'glass' => true],
+            'submit_label' => 'ورود',
+            'tabs' => ['consultant' => 'مشاور', 'student' => 'دانش‌آموز'],
+            'back_link' => ['label' => 'بازگشت به سایت', 'route' => 'home', 'visible' => true],
+            'card' => ['max_width' => '26rem', 'glass' => true],
         ],
 
         'student_login' => [
-            'title'          => 'ورود دانش‌آموز',
-            'subtitle'       => 'وارد پنل دانش‌آموز شوید',
-            'email_label'    => 'ایمیل',
+            'title' => 'ورود دانش‌آموز',
+            'subtitle' => 'وارد پنل دانش‌آموز شوید',
+            'email_label' => 'ایمیل',
             'password_label' => 'رمز عبور',
             'remember_label' => 'مرا به خاطر بسپار',
-            'submit_label'   => 'ورود',
-            'back_link'      => ['label' => 'بازگشت به سایت', 'route' => 'home', 'visible' => true],
-            'card'           => ['max_width' => '26rem', 'glass' => true],
+            'submit_label' => 'ورود',
+            'back_link' => ['label' => 'بازگشت به سایت', 'route' => 'home', 'visible' => true],
+            'card' => ['max_width' => '26rem', 'glass' => true],
         ],
     ],
 

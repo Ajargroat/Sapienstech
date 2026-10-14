@@ -1,0 +1,138 @@
+/* =========================================
+   public/demo/theme.css — GENERATED, do not hand-edit
+   ------------------------------------------
+   Verbatim output of App\Support\ThemeTokens::resolve() for the demo palette:
+   the config/theme.php baseline overridden with six primitives and
+   shape.radius_scale = "slight". Regenerate with the probe in
+   .agent/PROPOSE.md §1; tests/Unit/DemoThemeTest.php pins every line here
+   against the resolver, so this file cannot drift from the engine.
+
+   primitives: primary #2F5D62 · secondary #5C6B73 · background #F5F6F4
+               surface #FFFFFF · surface_alt #E9EBE7 · text #14181A
+   ========================================= */
+
+@font-face {
+  font-family: "Vazirmatn";
+  src: url("/fonts/vazirmatn/Vazirmatn%5Bwght%5D.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --c-primary: #2F5D62;
+  --c-primary-hover: color-mix(in oklab, #2F5D62 85%, black);
+  --c-secondary: #5C6B73;
+  --c-secondary-hover: color-mix(in oklab, #5C6B73 85%, black);
+  --c-background: #F5F6F4;
+  --c-surface: #FFFFFF;
+  --c-surface-alt: #E9EBE7;
+  --c-surface-elevated: color-mix(in oklab, #E9EBE7 88%, #14181A);
+  --c-text: #14181A;
+  --c-muted: color-mix(in oklab, #14181A 62%, #F5F6F4);
+  --c-subtle: color-mix(in oklab, #14181A 42%, #F5F6F4);
+  --c-border: color-mix(in oklab, #14181A 8%, transparent);
+  --c-border-strong: color-mix(in oklab, #14181A 18%, transparent);
+  --c-success: #34D399;
+  --c-info: #60A5FA;
+  --c-warning: #FBBF24;
+  --c-danger: #F87171;
+  --c-primary-soft: color-mix(in oklab, #2F5D62 12%, transparent);
+  --c-secondary-soft: color-mix(in oklab, #5C6B73 12%, transparent);
+  --c-accent-blue: #60A5FA;
+  --c-accent-emerald: #34D399;
+  --c-accent-orange: #FB923C;
+  --c-accent-teal: #2DD4BF;
+  --c-accent-red: #F87171;
+  --c-accent-violet: #A78BFA;
+  --c-accent-pink: #F472B6;
+  --c-accent-lime: #A3E635;
+  --c-accent-cyan: #22D3EE;
+  --c-accent-amber: #F59E0B;
+  --c-accent-rose: #FB7185;
+  --c-heading: #14181A;
+  --c-link: #2F5D62;
+  --c-glass: color-mix(in oklab, #14181A 5%, transparent);
+  --c-glass-hover: color-mix(in oklab, #14181A 10%, transparent);
+  --c-glass-border: color-mix(in oklab, #14181A 10%, transparent);
+  --c-on-primary: #FFFFFF;
+  --c-on-surface: #14181A;
+  --c-selection-bg: #2F5D62;
+  --c-selection-text: #FFFFFF;
+  --body-size: 15px;
+  --body-weight: 400;
+  --heading-weight: 800;
+  --heading-transform: none;
+  --heading-letter-spacing: -.02em;
+  --heading-line-height: inherit;
+  --heading-balance: auto;
+  --letter-spacing: 0;
+  --line-height: 1.8;
+  --measure: 46rem;
+  --h1-size: clamp(2.75rem, 6vw, 4.5rem);
+  --h2-size: clamp(1.875rem, 4vw, 3rem);
+  --h3-size: 1.25rem;
+  --stat-size: clamp(2.25rem, 5vw, 3.25rem);
+  --hero-line-height: 1.2;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 10px;
+  --radius-2xl: 12px;
+  --radius-button: 8px;
+  --radius-input: 6px;
+  --radius-card: 10px;
+  --radius-sidebar: 12px;
+  --surface-border-w: 1px;
+  --sidebar-width: 240px;
+  --content-max: 1280px;
+  --content-padding: 32px;
+  --sidebar-top: 36px;
+  --sidebar-bottom: 48px;
+  --sidebar-offset: 36px;
+  --card-gap: 24px;
+  --topnav-height: 76px;
+  --hero-cols: 1fr 1fr;
+  --section-gap: 6rem;
+  --container-max: 80rem;
+  --container-padding: 1.5rem;
+  --grid-gap: 2rem;
+  --card-padding: 2rem;
+  --nav-height: 4.5rem;
+  --hero-min-height: 100svh;
+  --glow-size: 24rem;
+  --glow-blur: 120px;
+  --glow-opacity: .10;
+  --reveal-duration: 700ms;
+  --reveal-offset: 40px;
+  --float-distance: 15px;
+  --float-duration: 6s;
+  --stagger-ms: 100;
+  --shadow: 0 25px 60px color-mix(in oklab, color-mix(in oklab, #F5F6F4 72%, black) 35%, transparent);
+  --card-shadow: 0 15px 40px color-mix(in oklab, color-mix(in oklab, #F5F6F4 72%, black) 18%, transparent);
+  --sidebar-shadow: 0 25px 60px color-mix(in oklab, color-mix(in oklab, #F5F6F4 72%, black) 45%, transparent);
+  --backdrop-blur: 20px;
+  --glass-opacity: .94;
+  --hover-lift: 3px;
+  --animation-duration: 180ms;
+  --brand-gradient: linear-gradient(135deg, #2F5D62 0%, #5C6B73 100%);
+  --page-glow-1: color-mix(in oklab, #2F5D62 6%, transparent);
+  --page-glow-2: color-mix(in oklab, #5C6B73 6%, transparent);
+  --surface-noise: 0;
+  --surface-specular: inset 0 1px 0 rgba(255,255,255,.06);
+  --surface-inner-border: 1px;
+  --ease: cubic-bezier(.22,1,.36,1);
+  --duration-scale: 1;
+  --marquee-duration: 38s;
+  --btn-weight: 600;
+  --btn-transform: none;
+  --btn-letter-spacing: 0;
+  --grid-size: 48px;
+  --gradient-angle: 180deg;
+  --section-rhythm: 6rem;
+  --font-body: "Vazirmatn", sans-serif;
+  --font-heading: "Vazirmatn", sans-serif;
+  --font-accent: "Vazirmatn", sans-serif;
+  --font-button: "Vazirmatn", sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", monospace;
+}

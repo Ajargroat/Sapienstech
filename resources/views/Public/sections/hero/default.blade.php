@@ -16,6 +16,10 @@
         {{-- Text column --}}
         <div class="flex flex-col gap-6 {{ $reveal ? 'reveal' : '' }}"
              style="text-align:{{ $h['text_align'] ?? 'start' }};{{ $textFirst ? '' : 'order:2' }}">
+            @if (!empty($h['eyebrow']))
+                <p class="lp-eyebrow" data-studio-path="public.landing.hero.eyebrow">{{ $h['eyebrow'] }}</p>
+            @endif
+
             <h1 data-studio-path="public.landing.hero.title_line1"
                 style="font-size:var(--h1-size);font-weight:var(--heading-weight);line-height:var(--hero-line-height);letter-spacing:var(--heading-letter-spacing)">
                 {{ $h['title_line1'] }} <br>

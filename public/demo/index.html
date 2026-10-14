@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<!--
+  public/demo/index.html — drkafimentoring.ir demo landing (static).
+
+  Self-contained: raw HTML + CSS, no Blade, no JS, no build. Opens straight from
+  the filesystem or from any document root. Every colour, radius, spacing and
+  font comes from theme.css (the verbatim ThemeTokens::resolve() output for the
+  demo palette) — there is not one literal colour in this file.
+
+  Section order (hero · advisor · process · services · cta) is deliberately not
+  any existing tenant's, and every surface that would need invented numbers
+  (stats, testimonials, blog, faq) is omitted.
+
+  Real facts only: the name علیرضا کافی and "۴ سال تجربه مشاوره". Every other
+  string is a marked placeholder (جایگزین شود) — replace it with real content.
+-->
+<html lang="fa" dir="rtl"
+      data-archetype="default" data-surface="paper" data-bg-mode="flat"
+      data-alternation="rule" data-reveal="fade-up" data-hover="lift"
+      data-btn="solid" data-focus-ring="outline" data-numerals="fa"
+      data-animations="off">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>علیرضا کافی | مشاوره تحصیلی</title>
+  <meta name="description" content="مشاوره تحصیلی با علیرضا کافی — متن نمونه، جایگزین شود.">
+  <link rel="stylesheet" href="theme.css">
+  <link rel="stylesheet" href="demo.css">
+</head>
+<body>
+  <!-- option block: nav links — placeholder labels, replace wholesale -->
+  <header class="dm-nav">
+    <div class="dm-nav__inner">
+      <a class="dm-brand" href="#">علیرضا کافی</a>
+      <nav class="dm-nav__links" aria-label="ناوبری اصلی">
+        <a href="#">درباره</a>
+        <a href="#">فرایند</a>
+        <a href="#">خدمات</a>
+      </nav>
+      <a class="dm-btn" href="sign-in.html">ورود</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="dm-section dm-hero" data-demo-section="hero">
+      <div class="dm-wrap dm-hero__grid">
+        <div>
+          <p class="dm-eyebrow">مشاوره تحصیلی فردی</p>
+          <h1 class="dm-hero__title">مسیر روشن، تصمیم آرام.</h1>
+          <p class="dm-hero__lead">
+            همراهی فردی برای انتخاب رشته و ساختن مسیر تحصیلی
+            <span class="dm-ph">(متن نمونه — جایگزین شود)</span>
+          </p>
+          <p class="dm-hero__fact">۴ سال تجربه مشاوره</p>
+          <div class="dm-hero__actions">
+            <a class="dm-btn" href="#">رزرو وقت مشاوره</a>
+            <a class="dm-btn dm-btn--ghost" href="#">درباره من</a>
+          </div>
+        </div>
+        <div class="dm-hero__aside dm-card" aria-hidden="true">
+          <p class="dm-ph">(بلوک تصویری — جایگزین شود)</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="dm-section dm-advisor" data-demo-section="advisor">
+      <div class="dm-wrap dm-advisor__grid">
+        <div class="dm-advisor__media" aria-hidden="true">
+          <span class="dm-ph">(تصویر مشاور — جایگزین شود)</span>
+        </div>
+        <div>
+          <p class="dm-eyebrow">درباره مشاور</p>
+          <h2>علیرضا کافی</h2>
+          <p class="dm-lead">
+            مشاور تحصیلی — متن معرفی نمونه
+            <span class="dm-ph">(جایگزین شود)</span>
+          </p>
+          <p class="dm-ph">۴ سال تجربه مشاوره</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="dm-section dm-process" data-demo-section="process">
+      <div class="dm-wrap">
+        <p class="dm-eyebrow">فرایند</p>
+        <h2>مسیر کار، گام به گام</h2>
+        <!-- option block: process steps — placeholder titles and copy -->
+        <ol class="dm-steps">
+          <li class="dm-step">
+            <span class="dm-step__n">۱</span>
+            <h3>جلسه شناخت</h3>
+            <p class="dm-ph">(شرح نمونه — جایگزین شود)</p>
+          </li>
+          <li class="dm-step">
+            <span class="dm-step__n">۲</span>
+            <h3>تحلیل وضعیت</h3>
+            <p class="dm-ph">(شرح نمونه — جایگزین شود)</p>
+          </li>
+          <li class="dm-step">
+            <span class="dm-step__n">۳</span>
+            <h3>طراحی مسیر</h3>
+            <p class="dm-ph">(شرح نمونه — جایگزین شود)</p>
+          </li>
+          <li class="dm-step">
+            <span class="dm-step__n">۴</span>
+            <h3>پیگیری</h3>
+            <p class="dm-ph">(شرح نمونه — جایگزین شود)</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="dm-section dm-services" data-demo-section="services">
+      <div class="dm-wrap">
+        <p class="dm-eyebrow">خدمات</p>
+        <h2>چه چیزی ارائه می‌شود</h2>
+        <!-- option block: service cards — placeholder titles and copy -->
+        <div class="dm-grid">
+          <article class="dm-card">
+            <h3>انتخاب رشته</h3>
+            <p class="dm-ph">(شرح نمونه — جایگزین شود)</p>
+          </article>
+          <article class="dm-card">
+            <h3>برنامه‌ریزی مطالعه</h3>
+            <p class="dm-ph">(شرح نمونه — جایگزین شود)</p>
+          </article>
+          <article class="dm-card">
+            <h3>همراهی آزمون</h3>
+            <p class="dm-ph">(شرح نمونه — جایگزین شود)</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="dm-section dm-cta-band" data-demo-section="cta">
+      <div class="dm-wrap dm-cta-band__inner">
+        <h2>برای شروع، یک گفت‌وگو کافی است.</h2>
+        <p class="dm-ph">(متن نمونه — جایگزین شود)</p>
+        <a class="dm-btn" href="#">رزرو وقت مشاوره</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="dm-footer">
+    <div class="dm-wrap dm-footer__inner">
+      <span>علیرضا کافی</span>
+      <span class="dm-ph">(تمامی حقوق محفوظ است — جایگزین شود)</span>
+    </div>
+  </footer>
+</body>
+</html>

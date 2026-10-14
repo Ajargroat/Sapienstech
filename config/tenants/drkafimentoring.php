@@ -1,0 +1,139 @@
+<?php
+
+/*
+|--------------------------------------------------------------------------
+| Tenant: drkafimentoring  (domain: drkafimentoring.ir)
+|--------------------------------------------------------------------------
+|
+| The tenant config for drkafimentoring.ir — a single consultant
+| (علیرضا کافی), non-hierarchical, structurally like tenant-one. The look is
+| the dark-luminous archetype (config/archetypes/dark_luminous.php): a deep
+| navy ground, aurora washes, glass cards and glowing accents. This file only
+| names that archetype and carries the tenant's real Persian copy — it does
+| NOT restate the design, so the tenant stays a selector rather than a second
+| copy of the theme. Only keys that differ from config/theme.php belong here.
+|
+| The copy below is real Persian prose written for this consultant; only the
+| name and "۴ سال تجربه مشاوره" are facts taken from the user.
+|
+*/
+
+return [
+    'tenant' => [
+        'name' => 'علیرضا کافی',
+        'short_name' => 'علیرضا کافی',
+        'role_label' => 'پنل مشاور',
+        'page_title' => 'داشبورد مشاور',
+    ],
+
+    'theme' => [
+        // The look lives in config/archetypes/dark_luminous.php. This file
+        // only names it: every value below is deliberately left to the
+        // archetype so the tenant inherits the rich identity and stays a
+        // selector, not a second copy of the design.
+        'archetype' => 'dark_luminous',
+    ],
+
+    'public' => [
+        'nav' => [
+            'links_style' => 'plain',
+            'cta_style' => 'solid',
+            'links' => [
+                ['label' => 'درباره', 'href' => '#about',    'visible' => true],
+                ['label' => 'فرایند', 'href' => '#process',  'visible' => true],
+                ['label' => 'خدمات',  'href' => '#services', 'visible' => true],
+            ],
+            'cta' => ['label' => 'ورود', 'route' => 'login', 'visible' => true],
+        ],
+
+        'landing' => [
+            'meta' => [
+                'title' => 'مشاوره تحصیلی',
+                'description' => 'مشاوره تحصیلی فردی با علیرضا کافی — انتخاب رشته، برنامه‌ریزی مطالعه و همراهی تا کنکور.',
+            ],
+
+            // The accepted demo order. Every surface that would need invented
+            // numbers (stats, testimonials, blog, faq, logos) is omitted.
+            'sections' => ['hero', 'advisor', 'process', 'services', 'cta'],
+
+            'hero' => [
+                'eyebrow' => 'مشاوره تحصیلی فردی',
+                'title_line1' => 'مسیر روشن،',
+                'title_line2' => 'تصمیم آرام.',
+                'subtitle' => 'همراهی فردی و پیوسته برای انتخاب رشته، ساختن برنامهٔ مطالعه و رسیدن آرام به هدف؛ از یک مشاور، نه یک مؤسسه.',
+                'buttons' => [
+                    ['label' => 'رزرو وقت مشاوره', 'href' => '#',      'style' => 'primary', 'visible' => true],
+                    ['label' => 'درباره من',       'href' => '#about', 'style' => 'ghost',   'visible' => true],
+                ],
+            ],
+
+            'advisor' => [
+                'id' => 'about',
+                'image' => 'images/advisor.svg',
+                'image_alt' => 'علیرضا کافی',
+                'image_side' => 'start',
+                'spin_rings' => false,
+                'grayscale' => false,
+                'badge' => ['label' => 'مشاوره فعال', 'visible' => false],
+                'eyebrow' => ['icon' => 'fa-solid fa-certificate', 'label' => 'درباره مشاور'],
+                'name' => 'علیرضا کافی',
+                'tagline' => 'مشاور تحصیلی',
+                'tagline_color' => 'secondary',
+                'bio' => 'چهار سال است با دانش‌آموزان متوسطهٔ دوم کار می‌کنم: از شناخت علاقه‌ها و انتخاب رشته تا ساختن برنامهٔ مطالعه و تحلیل آزمون‌ها. کار من فردی و پیوسته است؛ هر دانش‌آموز یک مسیر و یک برنامهٔ جداگانه دارد.',
+                // The one real fact the demo states. The baseline's three
+                // invented rows (config/theme.php:777-781) are not carried.
+                'stats' => [
+                    ['value' => '۴', 'label' => 'سال تجربه مشاوره'],
+                ],
+                // The demo's advisor has no call to action.
+                'buttons' => [],
+            ],
+
+            'process' => [
+                'id' => 'process',
+                'heading' => 'مسیر کار، گام به گام',
+                // The baseline ships this list empty (config/theme.php:920), so
+                // the section renders nothing without it.
+                'items' => [
+                    ['title' => 'جلسه شناخت',  'text' => 'در یک گفت‌وگوی صمیمی، وضعیت درسی، علاقه‌ها و هدف‌های دانش‌آموز را می‌شنویم و تصویر اولیه را می‌سازیم.', 'visible' => true],
+                    ['title' => 'تحلیل وضعیت', 'text' => 'نمره‌ها، نتایج آزمون‌های آزمایشی و عادت‌های مطالعه را با هم بررسی می‌کنیم تا نقطهٔ شروع روشن باشد.', 'visible' => true],
+                    ['title' => 'طراحی مسیر',  'text' => 'بر پایهٔ همان تصویر، یک برنامهٔ هفتگی و فهرست گام‌های بعدی نوشته می‌شود؛ روشن و قابل اجرا.', 'visible' => true],
+                    ['title' => 'پیگیری',      'text' => 'هر هفته برنامه بازبینی می‌شود و در جلسه‌های منظم، پیشرفت سنجیده و مسیر اصلاح می‌شود.', 'visible' => true],
+                ],
+            ],
+
+            'services' => [
+                'id' => 'services',
+                'heading' => 'چه چیزی ارائه می‌شود',
+                // Cleared so the baseline's copy does not leak through.
+                'subheading' => null,
+                'columns' => 3,
+                'items' => [
+                    ['title' => 'انتخاب رشته',        'text' => 'شناخت رشته‌ها و بازار کارشان، بررسی کارنامه و رتبه، و انتخاب نهایی بر پایهٔ علاقه و توان واقعی.', 'icon' => null, 'accent' => 'primary', 'visible' => true],
+                    ['title' => 'برنامه‌ریزی مطالعه', 'text' => 'برنامهٔ هفتگی متناسب با پایه و رشته، همراه با روش مطالعهٔ هر درس و مدیریت زمان.', 'icon' => null, 'accent' => 'primary', 'visible' => true],
+                    ['title' => 'همراهی آزمون',       'text' => 'تحلیل کارنامهٔ آزمون‌های آزمایشی، شناسایی درس‌های ضعیف و تعیین تمرین‌های جبرانی هفتهٔ بعد.', 'icon' => null, 'accent' => 'primary', 'visible' => true],
+                ],
+            ],
+
+            'cta' => [
+                'id' => 'cta',
+                'heading' => 'برای شروع، یک گفت‌وگو کافی است.',
+                'text' => 'اگر نمی‌دانید از کجا شروع کنید، یک جلسهٔ کوتاه کافی است تا مسیر و گام‌های بعدی روشن شود.',
+                'buttons' => [
+                    ['label' => 'رزرو وقت مشاوره', 'href' => '#', 'style' => 'primary', 'visible' => true],
+                ],
+            ],
+        ],
+
+        // The demo's footer is brand + copyright only: no blurb, no social,
+        // no link columns. `variant => minimal` is what skips the first two
+        // (resources/views/Public/sections/footer.blade.php:28, 41).
+        'footer' => [
+            'variant' => 'minimal',
+            'background' => 'background',
+            'show_logo_mark' => false,
+            'social' => [],
+            'columns' => [],
+        ],
+    ],
+];

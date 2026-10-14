@@ -90,12 +90,15 @@ a {
 /* =========================================
    2. Background Effects
    ========================================= */
+/* The dashboard's ground glow. Size, blur and opacity used to be literals
+   here, so no tenant could retune the portal's ground; they are now the
+   theme.portal.* tokens, whose defaults reproduce these exact numbers. */
 .page-glow {
   position: fixed;
-  width: 420px;
-  height: 420px;
+  width: var(--portal-glow-size, 420px);
+  height: var(--portal-glow-size, 420px);
   border-radius: 999px;
-  filter: blur(120px);
+  filter: blur(var(--portal-glow-blur, 120px));
   pointer-events: none;
   z-index: 0;
 }
@@ -104,14 +107,25 @@ a {
   top: -140px;
   left: 18%;
   background: var(--c-primary);
-  opacity: 0.07;
+  opacity: var(--portal-glow-opacity, 0.07);
 }
 
 .page-glow-secondary {
   bottom: -160px;
   right: 18%;
   background: var(--c-secondary);
-  opacity: 0.07;
+  opacity: var(--portal-glow-opacity, 0.07);
+}
+
+/* When a shell opts into the aurora ground (theme.portal.ground), the fixed
+   .lp-ground sits at z-index:-1 behind the shell body's opaque background, so
+   the body is made transparent for exactly those shells. `:has()` scopes this
+   to shells that actually render the div, leaving every other tenant's shell
+   untouched. */
+body.consultant-shell:has(> .lp-ground),
+body.student-shell:has(> .lp-ground),
+body.teacher-shell:has(> .lp-ground) {
+  background: transparent;
 }
 
 /* =========================================
@@ -349,7 +363,9 @@ a {
   background: var(--c-surface);
   border: 1px solid var(--c-border);
   border-radius: var(--radius-card);
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.18);
+  /* `panel-shadow` is null in the baseline, so every existing tenant keeps the
+     literal below; a tenant that wants the elevation model sets it. */
+  box-shadow: var(--panel-shadow, 0 15px 40px rgba(0, 0, 0, 0.18));
 }
 /* =========================================
    6. Search (hover-expand, RTL)

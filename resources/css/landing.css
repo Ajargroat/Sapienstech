@@ -147,6 +147,41 @@
 }
 [data-bg-mode="noise"] .lp-ground::after { opacity: max(var(--surface-noise, 0), .06); }
 
+/* Hero spotlight (background.spotlight): a radial vignette behind the first
+   section's content. `.lp-ground::before` was unused, so it is free to claim. */
+[data-spotlight="soft"] .lp-ground::before,
+[data-spotlight="strong"] .lp-ground::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(70rem 40rem at 50% 0%,
+    color-mix(in oklab, var(--c-primary) 16%, transparent), transparent 65%);
+}
+[data-spotlight="strong"] .lp-ground::before {
+  background: radial-gradient(80rem 46rem at 50% 0%,
+    color-mix(in oklab, var(--c-primary) 26%, transparent), transparent 65%);
+}
+
+/* Glow blobs breathe (background.glow_animation). The animation must NOT use
+   `transform`: _glow-blobs.blade.php writes an inline transform for the
+   `center` position, and landing.js writes `blob.style.translate` for parallax
+   (landing.js:165). `scale` + `opacity` are the two properties neither touches. */
+[data-glow-animation="breathe"] .lp-glow {
+  animation: lp-glow-breathe var(--glow-duration, 12s) var(--ease, ease-in-out) infinite;
+}
+[data-glow-animation="drift"] .lp-glow {
+  animation: lp-glow-drift var(--glow-duration, 12s) var(--ease, ease-in-out) infinite alternate;
+}
+
+@keyframes lp-glow-breathe {
+  0%, 100% { scale: 1;    opacity: .85; }
+  50%      { scale: 1.12; opacity: 1;   }
+}
+@keyframes lp-glow-drift {
+  from { scale: 1;    }
+  to   { scale: 1.18; }
+}
+
 /* ---------- cards -------------------------------------------------------- */
 .lp-card {
   background: var(--c-surface);
@@ -666,6 +701,7 @@ body.landing :focus-visible {
   [data-reduce-motion="respect"] .animate-float-delayed,
   [data-reduce-motion="respect"] .animate-float-fast,
   [data-reduce-motion="respect"] .lp-hero__accent,
+  [data-reduce-motion="respect"] .lp-glow,
   [data-reduce-motion="respect"] .lp-marquee__track { animation: none; }
 }
 
@@ -674,6 +710,7 @@ body.landing :focus-visible {
 [data-reduce-motion="force-off"] .animate-float,
 [data-reduce-motion="force-off"] .animate-float-delayed,
 [data-reduce-motion="force-off"] .animate-float-fast,
+[data-reduce-motion="force-off"] .lp-glow,
 [data-reduce-motion="force-off"] .lp-marquee__track,
 [data-reduce-motion="force-off"] .spin-10s,
 [data-reduce-motion="force-off"] .spin-15s,

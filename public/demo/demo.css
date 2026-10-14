@@ -1,0 +1,211 @@
+/* =========================================
+   public/demo/demo.css — the demo shell
+   ------------------------------------------
+   The demo's own layout primitives, on top of theme.css. Every value is a theme
+   token (var(--…)): there is not one literal colour, radius or length in this
+   file, so re-theming the demo means editing the six primitives in theme.css
+   (or, later, the tenant config file) and nothing here.
+
+   Deliberately separate from resources/css/landing.css — the demo must not
+   depend on the Vite bundle. The dm-* classes map 1:1 onto the real lp-*
+   primitives if the demo later becomes the tenant.
+   ========================================= */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  font-family: var(--font-body);
+  font-size: var(--body-size);
+  line-height: var(--line-height);
+  color: var(--c-text);
+  background: var(--c-background);
+}
+
+body { margin: 0; }
+
+h1, h2, h3 {
+  font-family: var(--font-heading);
+  font-weight: var(--heading-weight);
+  letter-spacing: var(--heading-letter-spacing);
+  line-height: var(--hero-line-height);
+  color: var(--c-heading);
+  margin: 0 0 .5em;
+}
+h1 { font-size: var(--h1-size); }
+h2 { font-size: var(--h2-size); }
+h3 { font-size: var(--h3-size); }
+
+p { margin: 0 0 1em; }
+
+a { color: var(--c-link); text-decoration: none; }
+
+.dm-wrap { max-width: var(--container-max); margin-inline: auto; }
+
+.dm-section {
+  padding-block: var(--section-gap);
+  padding-inline: var(--container-padding);
+}
+
+/* alternation: the one structural lever this demo changes vs. the baseline */
+[data-alternation="rule"] .dm-section + .dm-section {
+  border-block-start: var(--surface-border-w) solid var(--c-border);
+}
+
+.dm-eyebrow { color: var(--c-subtle); font-size: .875rem; margin: 0 0 .5em; }
+.dm-lead    { font-size: 1.125rem; color: var(--c-muted); }
+.dm-ph      { color: var(--c-subtle); font-size: .875em; }
+
+/* ---------- nav ---------- */
+.dm-nav {
+  border-block-end: var(--surface-border-w) solid var(--c-border);
+  background: var(--c-surface);
+}
+.dm-nav__inner {
+  max-width: var(--container-max);
+  margin-inline: auto;
+  min-height: var(--nav-height);
+  padding-inline: var(--container-padding);
+  display: flex;
+  align-items: center;
+  gap: var(--grid-gap);
+}
+.dm-brand { font-family: var(--font-heading); font-weight: var(--heading-weight); color: var(--c-text); }
+.dm-nav__links { display: flex; gap: var(--grid-gap); margin-inline-start: auto; }
+.dm-nav__links a { color: var(--c-muted); }
+
+/* ---------- buttons ---------- */
+.dm-btn {
+  display: inline-block;
+  background: var(--c-primary);
+  color: var(--c-on-primary);
+  border: none;
+  border-radius: var(--radius-button);
+  padding: .75rem 1.5rem;
+  font-family: var(--font-button);
+  font-weight: var(--btn-weight);
+  cursor: pointer;
+}
+.dm-btn:hover { background: var(--c-primary-hover); }
+.dm-btn--ghost {
+  background: transparent;
+  color: var(--c-text);
+  border: var(--surface-border-w) solid var(--c-border-strong);
+}
+.dm-btn--block { display: block; width: 100%; }
+
+/* ---------- cards ---------- */
+.dm-card {
+  background: var(--c-surface);
+  border: var(--surface-border-w) solid var(--c-border);
+  border-radius: var(--radius-card);
+  padding: var(--card-padding);
+  box-shadow: var(--card-shadow);
+}
+.dm-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: var(--grid-gap);
+  margin-block-start: var(--grid-gap);
+}
+
+/* ---------- hero ---------- */
+.dm-hero__grid {
+  display: grid;
+  grid-template-columns: var(--hero-cols);
+  gap: var(--grid-gap);
+  align-items: center;
+}
+.dm-hero__title { max-width: var(--measure); }
+.dm-hero__lead  { color: var(--c-muted); max-width: var(--measure); }
+.dm-hero__fact  { font-weight: var(--btn-weight); color: var(--c-text); }
+.dm-hero__actions { display: flex; flex-wrap: wrap; gap: var(--grid-gap); margin-block-start: var(--grid-gap); }
+.dm-hero__aside { min-height: 12rem; display: grid; place-items: center; }
+
+/* ---------- advisor ---------- */
+.dm-advisor__grid {
+  display: grid;
+  grid-template-columns: 18rem 1fr;
+  gap: var(--section-gap);
+  align-items: center;
+}
+.dm-advisor__media {
+  aspect-ratio: 3 / 4;
+  border-radius: var(--radius-card);
+  border: var(--surface-border-w) solid var(--c-border);
+  background: var(--c-surface-alt);
+  display: grid;
+  place-items: center;
+}
+
+/* ---------- process ---------- */
+.dm-steps {
+  list-style: none;
+  margin: var(--grid-gap) 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: var(--grid-gap);
+}
+.dm-step__n {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 2rem;
+  block-size: 2rem;
+  border-radius: var(--radius-button);
+  background: var(--c-primary-soft);
+  color: var(--c-primary);
+  font-weight: var(--btn-weight);
+}
+
+/* ---------- cta band ---------- */
+.dm-cta-band { background: var(--c-surface-alt); }
+.dm-cta-band__inner { text-align: center; }
+
+/* ---------- footer ---------- */
+.dm-footer {
+  border-block-start: var(--surface-border-w) solid var(--c-border);
+  padding-block: var(--grid-gap);
+  padding-inline: var(--container-padding);
+}
+.dm-footer__inner {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--grid-gap);
+  color: var(--c-subtle);
+  font-size: .875rem;
+}
+
+/* ---------- sign-in ---------- */
+.dm-auth {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: var(--container-padding);
+  background: var(--c-background);
+}
+.dm-auth__card { inline-size: 100%; }
+.dm-auth__brand { font-size: var(--h3-size); text-align: center; }
+.dm-auth__sub { text-align: center; color: var(--c-muted); }
+.dm-auth__form { display: grid; gap: .5rem; margin-block: var(--grid-gap); }
+.dm-auth__form label { font-size: .875rem; }
+.dm-auth__form input[type="email"],
+.dm-auth__form input[type="password"] {
+  border: var(--surface-border-w) solid var(--c-border-strong);
+  border-radius: var(--radius-input);
+  padding: .6rem .75rem;
+  background: var(--c-surface);
+  color: var(--c-text);
+  font-family: var(--font-body);
+}
+.dm-auth__remember { display: flex; align-items: center; gap: .5rem; color: var(--c-muted); }
+.dm-auth__back { display: block; text-align: center; margin-block-start: var(--grid-gap); color: var(--c-muted); }
+
+@media (max-width: 40rem) {
+  .dm-hero__grid,
+  .dm-advisor__grid { grid-template-columns: 1fr; }
+  .dm-nav__links { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}

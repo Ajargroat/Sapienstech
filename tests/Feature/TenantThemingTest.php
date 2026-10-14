@@ -45,8 +45,8 @@ class TenantThemingTest extends TestCase
 
         $host = Str::lower(Str::random(8)).'.sapienstech.test';
         Domain::create([
-            'tenant_id'  => $tenant->id,
-            'domain'     => $host,
+            'tenant_id' => $tenant->id,
+            'domain' => $host,
             'is_primary' => true,
         ]);
 
@@ -55,7 +55,7 @@ class TenantThemingTest extends TestCase
         if ($archetype !== null || $name !== null) {
             $this->writeTenantFile($slug, array_filter([
                 'tenant' => $name !== null ? ['name' => $name, 'short_name' => $name] : null,
-                'theme'  => $archetype !== null ? ['archetype' => $archetype] : null,
+                'theme' => $archetype !== null ? ['archetype' => $archetype] : null,
             ]));
         }
 
@@ -118,11 +118,11 @@ class TenantThemingTest extends TestCase
 
         site_override([
             'theme' => [
-                'motion'     => ['text_effect' => 'gradient-shift', 'scroll_progress' => true, 'marquee_pause' => true],
+                'motion' => ['text_effect' => 'gradient-shift', 'scroll_progress' => true, 'marquee_pause' => true],
                 'decoration' => ['card_edge' => 'top-accent'],
-                'buttons'    => ['shadow' => true, 'letter_spacing' => '.05em'],
-                'colors'     => ['link' => '#22D3EE'],
-                'layout'     => ['hero_ratio' => '60-40'],
+                'buttons' => ['shadow' => true, 'letter_spacing' => '.05em'],
+                'colors' => ['link' => '#22D3EE'],
+                'layout' => ['hero_ratio' => '60-40'],
             ],
         ]);
 
@@ -142,27 +142,53 @@ class TenantThemingTest extends TestCase
         }
     }
 
+    /** The new background levers select behaviour, so they arrive as data attributes. */
+    public function test_the_spotlight_and_glow_animation_reach_the_markup(): void
+    {
+        [, $host] = $this->tenantWithDomain('spotlight-test', 'dark_luminous');
+
+        site_override(['theme' => ['background' => ['spotlight' => 'soft', 'glow_animation' => 'breathe']]]);
+
+        $html = $this->get("http://{$host}/")->assertOk()->getContent();
+
+        $this->assertStringContainsString('data-spotlight="soft"', $html);
+        $this->assertStringContainsString('data-glow-animation="breathe"', $html);
+    }
+
+    /** The portal ground glow is token-driven, so a tenant can retune it. */
+    public function test_the_portal_ground_glow_follows_the_theme(): void
+    {
+        [, $host] = $this->tenantWithDomain('portal-glow-test', 'dark_luminous');
+
+        site_override(['theme' => ['portal' => ['glow_opacity' => '.2', 'glow_size' => '46rem']]]);
+
+        $html = $this->get("http://{$host}/")->assertOk()->getContent();
+
+        $this->assertStringContainsString('--portal-glow-opacity: .2', $html);
+        $this->assertStringContainsString('--portal-glow-size: 46rem', $html);
+    }
+
     /** Bento / boxed / masonry variants and the filled optional faq section. */
     public function test_the_new_section_variants_render(): void
     {
         [$tenant, $host] = $this->tenantWithDomain('new-variants', 'aurora_glass');
 
         $this->writeTenantFile('new-variants', [
-            'theme'  => ['archetype' => 'aurora_glass'],
+            'theme' => ['archetype' => 'aurora_glass'],
             'public' => ['landing' => [
-                'sections'     => ['hero', 'services', 'stats', 'testimonials', 'faq'],
-                'services'     => ['variant' => 'bento', 'items' => [
+                'sections' => ['hero', 'services', 'stats', 'testimonials', 'faq'],
+                'services' => ['variant' => 'bento', 'items' => [
                     ['icon' => 'fa-solid fa-bolt', 'accent' => 'accent-violet', 'title' => 'تست', 'text' => 'تست'],
                     ['icon' => 'fa-solid fa-robot', 'accent' => 'accent-lime', 'title' => 'تست دو', 'text' => 'تست دو'],
                 ]],
-                'stats'        => ['variant' => 'boxed', 'items' => [
+                'stats' => ['variant' => 'boxed', 'items' => [
                     ['value' => 5, 'suffix' => '+', 'label' => 'نمونه'],
                 ]],
                 'testimonials' => ['variant' => 'masonry', 'items' => [
                     ['initials' => 'ن.م', 'name' => 'نمونه', 'result' => 'نتیجه',
-                     'from' => 'primary', 'to' => 'accent-cyan', 'text' => 'متن نمونه'],
+                        'from' => 'primary', 'to' => 'accent-cyan', 'text' => 'متن نمونه'],
                 ]],
-                'faq'          => ['items' => [
+                'faq' => ['items' => [
                     ['question' => 'پرسش نمونه؟', 'answer' => 'پاسخ نمونه'],
                 ]],
             ]],
@@ -183,10 +209,10 @@ class TenantThemingTest extends TestCase
         [$tenant, $host] = $this->tenantWithDomain('button-icons', 'aurora_glass');
 
         $this->writeTenantFile('button-icons', [
-            'theme'  => ['archetype' => 'aurora_glass'],
+            'theme' => ['archetype' => 'aurora_glass'],
             'public' => ['landing' => [
                 'sections' => ['hero'],
-                'hero'     => ['buttons' => [
+                'hero' => ['buttons' => [
                     ['label' => 'الف', 'href' => '#', 'style' => 'solid', 'icon' => 'sparkle', 'visible' => true],
                     ['label' => 'ب',   'href' => '#', 'style' => 'ghost', 'icon' => 'arrow-down', 'visible' => true],
                 ]],
@@ -271,7 +297,7 @@ class TenantThemingTest extends TestCase
 
     public function test_a_configured_fallback_host_serves_the_primary_tenant(): void
     {
-        [$tenant, ] = $this->tenantWithDomain('fallback-test');
+        [$tenant] = $this->tenantWithDomain('fallback-test');
 
         config(['tenancy.fallback_domains' => ['localhost']]);
 
@@ -289,11 +315,11 @@ class TenantThemingTest extends TestCase
     public function test_domains_are_stored_in_canonical_form(): void
     {
         $tenant = Tenant::factory()->create();
-        $raw    = Str::upper(Str::random(8).'.sapienstech.test');
+        $raw = Str::upper(Str::random(8).'.sapienstech.test');
 
         $domain = Domain::create([
-            'tenant_id'  => $tenant->id,
-            'domain'     => $raw,
+            'tenant_id' => $tenant->id,
+            'domain' => $raw,
             'is_primary' => true,
         ]);
 
@@ -307,8 +333,8 @@ class TenantThemingTest extends TestCase
         Cache::put(Domain::cacheKey($host), 'stale', now()->addMinutes(10));
 
         $domain = Domain::create([
-            'tenant_id'  => Tenant::factory()->create()->id,
-            'domain'     => $host,
+            'tenant_id' => Tenant::factory()->create()->id,
+            'domain' => $host,
             'is_primary' => true,
         ]);
 
@@ -336,7 +362,7 @@ class TenantThemingTest extends TestCase
         [$tenant, $host] = $this->tenantWithDomain('db-test', 'aurora_glass');
 
         WebsiteConfig::create([
-            'tenant_id'     => $tenant->id,
+            'tenant_id' => $tenant->id,
             'layout_config' => ['theme' => ['colors' => ['primary' => '#ABCDEF']]],
         ]);
 
@@ -355,7 +381,7 @@ class TenantThemingTest extends TestCase
         [$tenant, $host] = $this->tenantWithDomain('trim-test', 'aurora_glass');
 
         $this->writeTenantFile('trim-test', [
-            'theme'  => ['archetype' => 'aurora_glass'],
+            'theme' => ['archetype' => 'aurora_glass'],
             'public' => ['landing' => ['sections' => ['hero', 'cta']]],
         ]);
 
@@ -370,7 +396,7 @@ class TenantThemingTest extends TestCase
         [$tenant, $host] = $this->tenantWithDomain('missing-section', 'aurora_glass');
 
         $this->writeTenantFile('missing-section', [
-            'theme'  => ['archetype' => 'aurora_glass'],
+            'theme' => ['archetype' => 'aurora_glass'],
             'public' => ['landing' => ['sections' => ['hero', 'definitely_not_a_section']]],
         ]);
 
@@ -383,7 +409,7 @@ class TenantThemingTest extends TestCase
         [$tenant, $host] = $this->tenantWithDomain('variant-fallback', 'aurora_glass');
 
         $this->writeTenantFile('variant-fallback', [
-            'theme'  => ['archetype' => 'aurora_glass'],
+            'theme' => ['archetype' => 'aurora_glass'],
             'public' => ['landing' => ['services' => ['variant' => 'not-built-yet']]],
         ]);
 

@@ -43,7 +43,7 @@
 @endforeach
 
 @if ($animOff)
-    :root { --reveal-duration: 0ms; --float-duration: 0ms; --animation-duration: 0ms; }
+    :root { --reveal-duration: 0ms; --float-duration: 0ms; --animation-duration: 0ms; --glow-duration: 0ms; }
 @endif
 
 @if (!empty($t['custom']['css']))

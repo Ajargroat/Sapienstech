@@ -12,12 +12,12 @@ class ThemeTokensTest extends TestCase
     {
         return ThemeTokens::resolve([
             'colors' => array_merge([
-                'primary'    => '#06B6D4',
-                'secondary'  => '#A855F7',
+                'primary' => '#06B6D4',
+                'secondary' => '#A855F7',
                 'background' => '#000000',
-                'surface'    => '#111111',
-                'surface_alt'=> '#1A1A1A',
-                'text'       => '#FFFFFF',
+                'surface' => '#111111',
+                'surface_alt' => '#1A1A1A',
+                'text' => '#FFFFFF',
             ], $overrides),
         ]);
     }
@@ -44,7 +44,7 @@ class ThemeTokensTest extends TestCase
 
     public function test_muted_text_is_derived_from_text_and_background_not_hardcoded(): void
     {
-        $dark  = $this->primitives();
+        $dark = $this->primitives();
         $light = $this->primitives(['background' => '#FFFFFF', 'text' => '#111827']);
 
         $this->assertStringContainsString('#FFFFFF', $dark['colors']['text_muted']);
@@ -92,7 +92,7 @@ class ThemeTokensTest extends TestCase
 
     public function test_density_scales_the_spacing_group(): void
     {
-        $compact  = ThemeTokens::resolve(['scale' => ['density' => 'compact']]);
+        $compact = ThemeTokens::resolve(['scale' => ['density' => 'compact']]);
         $spacious = ThemeTokens::resolve(['scale' => ['density' => 'spacious']]);
 
         // card_padding's baseline is 2rem.
@@ -169,7 +169,7 @@ class ThemeTokensTest extends TestCase
         $vars = $this->primitives()['vars'];
 
         foreach (['c-accent-violet', 'c-accent-pink', 'c-accent-lime',
-                  'c-accent-cyan', 'c-accent-amber', 'c-accent-rose'] as $name) {
+            'c-accent-cyan', 'c-accent-amber', 'c-accent-rose'] as $name) {
             $this->assertArrayHasKey($name, $vars, "--{$name} must reach the browser");
         }
     }
@@ -219,6 +219,46 @@ class ThemeTokensTest extends TestCase
         $this->assertFalse($theme['motion']['scroll_progress']);
         $this->assertFalse($theme['motion']['marquee_pause']);
         $this->assertSame('none', $theme['decoration']['card_edge']);
+    }
+
+    /**
+     * The four levers added for the dark-luminous work must be a verified no-op
+     * for every existing tenant: the behaviour levers select nothing, the
+     * portal defaults reproduce the old literals, and `panel_shadow` stays null
+     * so the CSS keeps its fallback.
+     */
+    public function test_the_new_background_and_portal_levers_default_to_a_no_op(): void
+    {
+        $theme = ThemeTokens::resolve(['colors' => ['primary' => '#000']]);
+
+        $this->assertSame('none', $theme['background']['spotlight']);
+        $this->assertSame('none', $theme['background']['glow_animation']);
+        $this->assertSame('12s', $theme['background']['glow_duration']);
+
+        $this->assertSame('420px', $theme['portal']['glow_size']);
+        $this->assertSame('120px', $theme['portal']['glow_blur']);
+        $this->assertSame('.07', $theme['portal']['glow_opacity']);
+        $this->assertFalse($theme['portal']['ground']);
+
+        // A null default emits nothing, so the CSS literal fallback survives.
+        $this->assertNull($theme['effects']['panel_shadow']);
+        $this->assertArrayNotHasKey('panel-shadow', $theme['vars']);
+
+        // Behaviour levers ride on data attributes, never custom properties.
+        $this->assertArrayNotHasKey('spotlight', $theme['vars']);
+        $this->assertArrayNotHasKey('glow-animation', $theme['vars']);
+    }
+
+    public function test_the_portal_glow_tokens_reach_css(): void
+    {
+        $theme = ThemeTokens::resolve([
+            'colors' => ['primary' => '#000'],
+            'portal' => ['glow_size' => '46rem', 'glow_opacity' => '.2'],
+        ]);
+
+        $this->assertSame('46rem', $theme['vars']['portal-glow-size']);
+        $this->assertSame('.2', $theme['vars']['portal-glow-opacity']);
+        $this->assertSame('120px', $theme['vars']['portal-glow-blur'], 'unset portal keys keep their default');
     }
 
     // =========================================================================

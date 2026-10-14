@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<!--
+  public/demo/sign-in.html — drkafimentoring.ir demo sign-in (static).
+
+  Static twin of the real sign-in page (resources/views/auth/login.blade.php):
+  one centred card on the same theme tokens, no JS. Single consultant → a single
+  login surface, so there is no consultant/student tab switch.
+
+  The form is deliberately inert (action="#", method="post"): the demo has no
+  Laravel route behind it, so posting must not 404. Point it at /login once the
+  tenant exists. All copy is a marked placeholder (جایگزین شود).
+-->
+<html lang="fa" dir="rtl"
+      data-archetype="default" data-surface="paper" data-bg-mode="flat"
+      data-alternation="rule" data-reveal="fade-up" data-hover="lift"
+      data-btn="solid" data-focus-ring="outline" data-numerals="fa"
+      data-animations="off">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ورود | علیرضا کافی</title>
+  <link rel="stylesheet" href="theme.css">
+  <link rel="stylesheet" href="demo.css">
+</head>
+<body class="dm-auth">
+  <main class="dm-auth__card"
+        style="max-width:26rem;background:var(--c-surface);border:var(--surface-border-w) solid var(--c-border);border-radius:var(--radius-card);padding:var(--card-padding);box-shadow:var(--card-shadow)">
+    <h1 class="dm-auth__brand">علیرضا کافی</h1>
+    <p class="dm-auth__sub">ورود به حساب کاربری <span class="dm-ph">(متن نمونه — جایگزین شود)</span></p>
+
+    <form class="dm-auth__form" action="#" method="post">
+      <label for="email">ایمیل</label>
+      <input id="email" type="email" dir="ltr" autocomplete="email">
+
+      <label for="password">رمز عبور</label>
+      <input id="password" type="password" dir="ltr" autocomplete="current-password">
+
+      <label class="dm-auth__remember"><input type="checkbox"> مرا به خاطر بسپار</label>
+
+      <button class="dm-btn dm-btn--block" type="submit">ورود</button>
+    </form>
+
+    <a class="dm-auth__back" href="index.html">بازگشت به سایت</a>
+  </main>
+</body>
+</html>

@@ -32,142 +32,149 @@ final class ThemeTokens
      */
     public const VARS = [
         // ---- colors -------------------------------------------------------
-        'colors.primary'              => 'c-primary',
-        'colors.primary_hover'        => 'c-primary-hover',
-        'colors.secondary'            => 'c-secondary',
-        'colors.secondary_hover'      => 'c-secondary-hover',
-        'colors.background'           => 'c-background',
-        'colors.surface'              => 'c-surface',
-        'colors.surface_alt'          => 'c-surface-alt',
-        'colors.surface_elevated'     => 'c-surface-elevated',
-        'colors.text'                 => 'c-text',
-        'colors.text_muted'           => 'c-muted',
-        'colors.text_subtle'          => 'c-subtle',
-        'colors.border'               => 'c-border',
-        'colors.border_strong'        => 'c-border-strong',
-        'colors.success'              => 'c-success',
-        'colors.info'                 => 'c-info',
-        'colors.warning'              => 'c-warning',
-        'colors.danger'               => 'c-danger',
-        'colors.primary_soft'         => 'c-primary-soft',
-        'colors.secondary_soft'       => 'c-secondary-soft',
-        'colors.accent_blue'          => 'c-accent-blue',
-        'colors.accent_emerald'       => 'c-accent-emerald',
-        'colors.accent_orange'        => 'c-accent-orange',
-        'colors.accent_teal'          => 'c-accent-teal',
-        'colors.accent_red'           => 'c-accent-red',
-        'colors.accent_violet'        => 'c-accent-violet',
-        'colors.accent_pink'          => 'c-accent-pink',
-        'colors.accent_lime'          => 'c-accent-lime',
-        'colors.accent_cyan'          => 'c-accent-cyan',
-        'colors.accent_amber'         => 'c-accent-amber',
-        'colors.accent_rose'          => 'c-accent-rose',
-        'colors.heading'              => 'c-heading',
-        'colors.link'                 => 'c-link',
-        'colors.glass'                => 'c-glass',
-        'colors.glass_hover'          => 'c-glass-hover',
-        'colors.glass_border'         => 'c-glass-border',
-        'colors.on_primary'           => 'c-on-primary',
-        'colors.on_surface'           => 'c-on-surface',
+        'colors.primary' => 'c-primary',
+        'colors.primary_hover' => 'c-primary-hover',
+        'colors.secondary' => 'c-secondary',
+        'colors.secondary_hover' => 'c-secondary-hover',
+        'colors.background' => 'c-background',
+        'colors.surface' => 'c-surface',
+        'colors.surface_alt' => 'c-surface-alt',
+        'colors.surface_elevated' => 'c-surface-elevated',
+        'colors.text' => 'c-text',
+        'colors.text_muted' => 'c-muted',
+        'colors.text_subtle' => 'c-subtle',
+        'colors.border' => 'c-border',
+        'colors.border_strong' => 'c-border-strong',
+        'colors.success' => 'c-success',
+        'colors.info' => 'c-info',
+        'colors.warning' => 'c-warning',
+        'colors.danger' => 'c-danger',
+        'colors.primary_soft' => 'c-primary-soft',
+        'colors.secondary_soft' => 'c-secondary-soft',
+        'colors.accent_blue' => 'c-accent-blue',
+        'colors.accent_emerald' => 'c-accent-emerald',
+        'colors.accent_orange' => 'c-accent-orange',
+        'colors.accent_teal' => 'c-accent-teal',
+        'colors.accent_red' => 'c-accent-red',
+        'colors.accent_violet' => 'c-accent-violet',
+        'colors.accent_pink' => 'c-accent-pink',
+        'colors.accent_lime' => 'c-accent-lime',
+        'colors.accent_cyan' => 'c-accent-cyan',
+        'colors.accent_amber' => 'c-accent-amber',
+        'colors.accent_rose' => 'c-accent-rose',
+        'colors.heading' => 'c-heading',
+        'colors.link' => 'c-link',
+        'colors.glass' => 'c-glass',
+        'colors.glass_hover' => 'c-glass-hover',
+        'colors.glass_border' => 'c-glass-border',
+        'colors.on_primary' => 'c-on-primary',
+        'colors.on_surface' => 'c-on-surface',
         'colors.selection_background' => 'c-selection-bg',
-        'colors.selection_text'       => 'c-selection-text',
+        'colors.selection_text' => 'c-selection-text',
 
         // ---- typography ---------------------------------------------------
-        'typography.font_family'            => 'font-body',
-        'typography.font_heading'           => 'font-heading',
-        'typography.font_accent'            => 'font-accent',
-        'typography.font_mono'              => 'font-mono',
-        'typography.font_button'            => 'font-button',
-        'typography.body_size'              => 'body-size',
-        'typography.body_weight'            => 'body-weight',
-        'typography.heading_weight'         => 'heading-weight',
-        'typography.heading_transform'      => 'heading-transform',
+        'typography.font_family' => 'font-body',
+        'typography.font_heading' => 'font-heading',
+        'typography.font_accent' => 'font-accent',
+        'typography.font_mono' => 'font-mono',
+        'typography.font_button' => 'font-button',
+        'typography.body_size' => 'body-size',
+        'typography.body_weight' => 'body-weight',
+        'typography.heading_weight' => 'heading-weight',
+        'typography.heading_transform' => 'heading-transform',
         'typography.heading_letter_spacing' => 'heading-letter-spacing',
-        'typography.heading_line_height'    => 'heading-line-height',
-        'typography.heading_balance'        => 'heading-balance',
-        'typography.letter_spacing'         => 'letter-spacing',
-        'typography.line_height'            => 'line-height',
-        'typography.measure'                => 'measure',
-        'typography.h1_size'                => 'h1-size',
-        'typography.h2_size'                => 'h2-size',
-        'typography.h3_size'                => 'h3-size',
-        'typography.stat_size'              => 'stat-size',
-        'typography.hero_line_height'       => 'hero-line-height',
+        'typography.heading_line_height' => 'heading-line-height',
+        'typography.heading_balance' => 'heading-balance',
+        'typography.letter_spacing' => 'letter-spacing',
+        'typography.line_height' => 'line-height',
+        'typography.measure' => 'measure',
+        'typography.h1_size' => 'h1-size',
+        'typography.h2_size' => 'h2-size',
+        'typography.h3_size' => 'h3-size',
+        'typography.stat_size' => 'stat-size',
+        'typography.hero_line_height' => 'hero-line-height',
 
         // ---- shape --------------------------------------------------------
-        'shape.radius_sm'      => 'radius-sm',
-        'shape.radius_md'      => 'radius-md',
-        'shape.radius_lg'      => 'radius-lg',
-        'shape.radius_xl'      => 'radius-xl',
-        'shape.radius_2xl'     => 'radius-2xl',
-        'shape.button_radius'  => 'radius-button',
-        'shape.input_radius'   => 'radius-input',
-        'shape.card_radius'    => 'radius-card',
+        'shape.radius_sm' => 'radius-sm',
+        'shape.radius_md' => 'radius-md',
+        'shape.radius_lg' => 'radius-lg',
+        'shape.radius_xl' => 'radius-xl',
+        'shape.radius_2xl' => 'radius-2xl',
+        'shape.button_radius' => 'radius-button',
+        'shape.input_radius' => 'radius-input',
+        'shape.card_radius' => 'radius-card',
         'shape.sidebar_radius' => 'radius-sidebar',
-        'shape.border_width'   => 'surface-border-w',
+        'shape.border_width' => 'surface-border-w',
 
         // ---- layout -------------------------------------------------------
-        'layout.sidebar_width'     => 'sidebar-width',
+        'layout.sidebar_width' => 'sidebar-width',
         'layout.content_max_width' => 'content-max',
-        'layout.content_padding'   => 'content-padding',
-        'layout.sidebar_top'       => 'sidebar-top',
-        'layout.sidebar_bottom'    => 'sidebar-bottom',
-        'layout.sidebar_offset'    => 'sidebar-offset',
-        'layout.card_gap'          => 'card-gap',
-        'layout.topnav_height'     => 'topnav-height',
-        'layout.hero_cols'         => 'hero-cols',
+        'layout.content_padding' => 'content-padding',
+        'layout.sidebar_top' => 'sidebar-top',
+        'layout.sidebar_bottom' => 'sidebar-bottom',
+        'layout.sidebar_offset' => 'sidebar-offset',
+        'layout.card_gap' => 'card-gap',
+        'layout.topnav_height' => 'topnav-height',
+        'layout.hero_cols' => 'hero-cols',
 
         // ---- spacing (density-scaled, see spacing()) ----------------------
-        'spacing.section_gap'       => 'section-gap',
-        'spacing.container_max'     => 'container-max',
+        'spacing.section_gap' => 'section-gap',
+        'spacing.container_max' => 'container-max',
         'spacing.container_padding' => 'container-padding',
-        'spacing.grid_gap'          => 'grid-gap',
-        'spacing.card_padding'      => 'card-padding',
+        'spacing.grid_gap' => 'grid-gap',
+        'spacing.card_padding' => 'card-padding',
 
         // ---- landing ------------------------------------------------------
-        'landing.nav_height'      => 'nav-height',
+        'landing.nav_height' => 'nav-height',
         'landing.hero_min_height' => 'hero-min-height',
-        'landing.glow_size'       => 'glow-size',
-        'landing.glow_blur'       => 'glow-blur',
-        'landing.glow_opacity'    => 'glow-opacity',
+        'landing.glow_size' => 'glow-size',
+        'landing.glow_blur' => 'glow-blur',
+        'landing.glow_opacity' => 'glow-opacity',
         'landing.reveal_duration' => 'reveal-duration',
-        'landing.reveal_offset'   => 'reveal-offset',
-        'landing.float_distance'  => 'float-distance',
-        'landing.float_duration'  => 'float-duration',
-        'landing.stagger_ms'      => 'stagger-ms',
+        'landing.reveal_offset' => 'reveal-offset',
+        'landing.float_distance' => 'float-distance',
+        'landing.float_duration' => 'float-duration',
+        'landing.stagger_ms' => 'stagger-ms',
 
         // ---- effects / depth ----------------------------------------------
-        'effects.shadow'             => 'shadow',
-        'effects.card_shadow'        => 'card-shadow',
-        'effects.sidebar_shadow'     => 'sidebar-shadow',
-        'effects.backdrop_blur'      => 'backdrop-blur',
-        'effects.glass_opacity'      => 'glass-opacity',
-        'effects.hover_lift'         => 'hover-lift',
+        'effects.shadow' => 'shadow',
+        'effects.card_shadow' => 'card-shadow',
+        'effects.sidebar_shadow' => 'sidebar-shadow',
+        'effects.panel_shadow' => 'panel-shadow',
+        'effects.backdrop_blur' => 'backdrop-blur',
+        'effects.glass_opacity' => 'glass-opacity',
+        'effects.hover_lift' => 'hover-lift',
         'effects.animation_duration' => 'animation-duration',
 
         // ---- gradients ----------------------------------------------------
-        'gradients.brand'       => 'brand-gradient',
+        'gradients.brand' => 'brand-gradient',
         'gradients.page_glow_1' => 'page-glow-1',
         'gradients.page_glow_2' => 'page-glow-2',
 
         // ---- surface material ---------------------------------------------
-        'surface.noise'        => 'surface-noise',
-        'surface.specular'     => 'surface-specular',
+        'surface.noise' => 'surface-noise',
+        'surface.specular' => 'surface-specular',
         'surface.inner_border' => 'surface-inner-border',
 
         // ---- motion -------------------------------------------------------
-        'motion.easing'        => 'ease',
-        'motion.duration_scale'=> 'duration-scale',
+        'motion.easing' => 'ease',
+        'motion.duration_scale' => 'duration-scale',
         'motion.marquee_speed' => 'marquee-duration',
 
         // ---- buttons --------------------------------------------------------
-        'buttons.weight'         => 'btn-weight',
-        'buttons.transform'      => 'btn-transform',
+        'buttons.weight' => 'btn-weight',
+        'buttons.transform' => 'btn-transform',
         'buttons.letter_spacing' => 'btn-letter-spacing',
 
         // ---- background -----------------------------------------------------
-        'background.grid_size'      => 'grid-size',
+        'background.grid_size' => 'grid-size',
         'background.gradient_angle' => 'gradient-angle',
+        'background.glow_duration' => 'glow-duration',
+
+        // ---- portal (dashboard shells) --------------------------------------
+        'portal.glow_size' => 'portal-glow-size',
+        'portal.glow_blur' => 'portal-glow-blur',
+        'portal.glow_opacity' => 'portal-glow-opacity',
 
         // ---- scale ----------------------------------------------------------
         'scale.section_rhythm' => 'section-rhythm',
@@ -181,22 +188,22 @@ final class ThemeTokens
      * color-mix() would render as a solid black slab instead of a soft falloff.
      */
     private const ELEVATION = [
-        'flat'    => ['none', 'none', 'none'],
+        'flat' => ['none', 'none', 'none'],
         'ambient' => ['0 2px 24px %shadow12%', '0 1px 12px %shadow12%', '0 2px 24px %shadow12%'],
-        'soft'    => ['0 25px 60px %shadow35%', '0 15px 40px %shadow18%', '0 25px 60px %shadow45%'],
-        'medium'  => ['0 28px 70px %shadow45%', '0 18px 46px %shadow25%', '0 28px 70px %shadow50%'],
-        'heavy'   => ['0 40px 110px %shadow55%', '0 26px 64px %shadow35%', '0 44px 120px %shadow65%'],
-        'neon'    => ['0 0 42px %primary40%', '0 0 26px %primary30%', '0 0 54px %primary40%'],
-        'brutal'  => ['6px 6px 0 %primary%', '4px 4px 0 %primary%', '6px 6px 0 %primary%'],
+        'soft' => ['0 25px 60px %shadow35%', '0 15px 40px %shadow18%', '0 25px 60px %shadow45%'],
+        'medium' => ['0 28px 70px %shadow45%', '0 18px 46px %shadow25%', '0 28px 70px %shadow50%'],
+        'heavy' => ['0 40px 110px %shadow55%', '0 26px 64px %shadow35%', '0 44px 120px %shadow65%'],
+        'neon' => ['0 0 42px %primary40%', '0 0 26px %primary30%', '0 0 54px %primary40%'],
+        'brutal' => ['6px 6px 0 %primary%', '4px 4px 0 %primary%', '6px 6px 0 %primary%'],
     ];
 
     /** radius_scale name => [sm, md, lg, xl, 2xl, button, input, card, sidebar]. */
     private const RADIUS_SCALES = [
-        'sharp'  => ['0px', '0px', '1px', '2px', '2px', '2px', '2px', '2px', '0px'],
+        'sharp' => ['0px', '0px', '1px', '2px', '2px', '2px', '2px', '2px', '0px'],
         'slight' => ['4px', '6px', '8px', '10px', '12px', '8px', '6px', '10px', '12px'],
-        'soft'   => ['10px', '14px', '20px', '24px', '32px', '14px', '14px', '24px', '24px'],
-        'round'  => ['16px', '22px', '30px', '38px', '48px', '999px', '22px', '38px', '38px'],
-        'pill'   => ['999px', '999px', '999px', '999px', '999px', '999px', '999px', '32px', '32px'],
+        'soft' => ['10px', '14px', '20px', '24px', '32px', '14px', '14px', '24px', '24px'],
+        'round' => ['16px', '22px', '30px', '38px', '48px', '999px', '22px', '38px', '38px'],
+        'pill' => ['999px', '999px', '999px', '999px', '999px', '999px', '999px', '32px', '32px'],
     ];
 
     /** density name => multiplier applied to the spacing group. */
@@ -223,7 +230,7 @@ final class ThemeTokens
 
     /**
      * @param  array  $t  the raw `theme` block
-     * @return array  the same tree with every token resolved, plus `vars`
+     * @return array the same tree with every token resolved, plus `vars`
      */
     public static function resolve(array $t): array
     {
@@ -238,6 +245,7 @@ final class ThemeTokens
         self::gradients($t);
         self::motion($t);
         self::background($t);
+        self::portal($t);
         self::decoration($t);
         self::buttons($t);
         self::brand($t);
@@ -287,7 +295,7 @@ final class ThemeTokens
      */
     public static function schemeVars(array $t): array
     {
-        $out  = [];
+        $out = [];
         $base = $t['colors'] ?? [];
 
         // Which derived values are auto-derived from the base primitives vs
@@ -353,31 +361,31 @@ final class ThemeTokens
      */
     private static function derivedColors(array $c): array
     {
-        $p   = $c['primary']     ?? '#06B6D4';
-        $s   = $c['secondary']   ?? '#A855F7';
-        $bg  = $c['background']  ?? '#000000';
-        $ink = $c['text']        ?? '#FFFFFF';
+        $p = $c['primary'] ?? '#06B6D4';
+        $s = $c['secondary'] ?? '#A855F7';
+        $bg = $c['background'] ?? '#000000';
+        $ink = $c['text'] ?? '#FFFFFF';
         $alt = $c['surface_alt'] ?? '#1A1A1A';
 
         return [
-            'heading'              => $ink,
-            'link'                 => $p,
-            'primary_hover'        => "color-mix(in oklab, {$p} 85%, black)",
-            'secondary_hover'      => "color-mix(in oklab, {$s} 85%, black)",
-            'primary_soft'         => "color-mix(in oklab, {$p} 12%, transparent)",
-            'secondary_soft'       => "color-mix(in oklab, {$s} 12%, transparent)",
-            'border'               => "color-mix(in oklab, {$ink} 8%, transparent)",
-            'border_strong'        => "color-mix(in oklab, {$ink} 18%, transparent)",
-            'glass'                => "color-mix(in oklab, {$ink} 5%, transparent)",
-            'glass_hover'          => "color-mix(in oklab, {$ink} 10%, transparent)",
-            'glass_border'         => "color-mix(in oklab, {$ink} 10%, transparent)",
-            'text_muted'           => "color-mix(in oklab, {$ink} 62%, {$bg})",
-            'text_subtle'          => "color-mix(in oklab, {$ink} 42%, {$bg})",
-            'surface_elevated'     => "color-mix(in oklab, {$alt} 88%, {$ink})",
-            'on_primary'           => self::readableOn($p),
-            'on_surface'           => $ink,
+            'heading' => $ink,
+            'link' => $p,
+            'primary_hover' => "color-mix(in oklab, {$p} 85%, black)",
+            'secondary_hover' => "color-mix(in oklab, {$s} 85%, black)",
+            'primary_soft' => "color-mix(in oklab, {$p} 12%, transparent)",
+            'secondary_soft' => "color-mix(in oklab, {$s} 12%, transparent)",
+            'border' => "color-mix(in oklab, {$ink} 8%, transparent)",
+            'border_strong' => "color-mix(in oklab, {$ink} 18%, transparent)",
+            'glass' => "color-mix(in oklab, {$ink} 5%, transparent)",
+            'glass_hover' => "color-mix(in oklab, {$ink} 10%, transparent)",
+            'glass_border' => "color-mix(in oklab, {$ink} 10%, transparent)",
+            'text_muted' => "color-mix(in oklab, {$ink} 62%, {$bg})",
+            'text_subtle' => "color-mix(in oklab, {$ink} 42%, {$bg})",
+            'surface_elevated' => "color-mix(in oklab, {$alt} 88%, {$ink})",
+            'on_primary' => self::readableOn($p),
+            'on_surface' => $ink,
             'selection_background' => $p,
-            'selection_text'       => self::readableOn($p),
+            'selection_text' => self::readableOn($p),
         ];
     }
 
@@ -402,17 +410,17 @@ final class ThemeTokens
         // able to name it. Defaults live here, not only in the baseline file,
         // for the same reason the primitives' defaults do.
         foreach ([
-            'accent_blue'    => '#60A5FA',
+            'accent_blue' => '#60A5FA',
             'accent_emerald' => '#34D399',
-            'accent_orange'  => '#FB923C',
-            'accent_teal'    => '#2DD4BF',
-            'accent_red'     => '#F87171',
-            'accent_violet'  => '#A78BFA',
-            'accent_pink'    => '#F472B6',
-            'accent_lime'    => '#A3E635',
-            'accent_cyan'    => '#22D3EE',
-            'accent_amber'   => '#F59E0B',
-            'accent_rose'    => '#FB7185',
+            'accent_orange' => '#FB923C',
+            'accent_teal' => '#2DD4BF',
+            'accent_red' => '#F87171',
+            'accent_violet' => '#A78BFA',
+            'accent_pink' => '#F472B6',
+            'accent_lime' => '#A3E635',
+            'accent_cyan' => '#22D3EE',
+            'accent_amber' => '#F59E0B',
+            'accent_rose' => '#FB7185',
         ] as $key => $value) {
             if (($c[$key] ?? null) === null) {
                 $c[$key] = $value;
@@ -435,7 +443,7 @@ final class ThemeTokens
 
     private static function typography(array &$t): void
     {
-        $f    = $t['typography'] ?? [];
+        $f = $t['typography'] ?? [];
         $body = $f['font_family'] ?? 'Vazirmatn';
 
         // A theme naming one font gets it everywhere; naming a heading face gets
@@ -447,25 +455,25 @@ final class ThemeTokens
         }
 
         $f = self::fill($f, [
-            'font_family'              => $body,
-            'font_mono'                => 'ui-monospace, SFMono-Regular, monospace',
-            'body_size'                => '15px',
-            'body_weight'              => '400',
-            'heading_weight'           => '800',
-            'heading_transform'        => 'none',
-            'heading_letter_spacing'   => '-.02em',
+            'font_family' => $body,
+            'font_mono' => 'ui-monospace, SFMono-Regular, monospace',
+            'body_size' => '15px',
+            'body_weight' => '400',
+            'heading_weight' => '800',
+            'heading_transform' => 'none',
+            'heading_letter_spacing' => '-.02em',
             // 'inherit' keeps the historic behaviour (headings rode the body
             // line-height); a theme that wants tighter headings names a number.
-            'heading_line_height'      => 'inherit',
-            'heading_balance'          => 'auto',
-            'letter_spacing'           => '0',
-            'line_height'              => '1.8',
-            'measure'                  => '46rem',
-            'h1_size'                  => 'clamp(2.75rem, 6vw, 4.5rem)',
-            'h2_size'                  => 'clamp(1.875rem, 4vw, 3rem)',
-            'h3_size'                  => '1.25rem',
-            'stat_size'                => 'clamp(2.25rem, 5vw, 3.25rem)',
-            'hero_line_height'         => '1.2',
+            'heading_line_height' => 'inherit',
+            'heading_balance' => 'auto',
+            'letter_spacing' => '0',
+            'line_height' => '1.8',
+            'measure' => '46rem',
+            'h1_size' => 'clamp(2.75rem, 6vw, 4.5rem)',
+            'h2_size' => 'clamp(1.875rem, 4vw, 3rem)',
+            'h3_size' => '1.25rem',
+            'stat_size' => 'clamp(2.25rem, 5vw, 3.25rem)',
+            'hero_line_height' => '1.2',
         ]);
 
         $t['typography'] = $f;
@@ -477,23 +485,23 @@ final class ThemeTokens
      */
     private static function scaleAndSpacing(array &$t): void
     {
-        $sc  = self::fill($t['scale'] ?? [], [
-            'density'         => 'normal',
+        $sc = self::fill($t['scale'] ?? [], [
+            'density' => 'normal',
             'container_width' => 'content',
-            'section_rhythm'  => '6rem',
+            'section_rhythm' => '6rem',
         ]);
 
         $mul = self::DENSITIES[$sc['density']] ?? 1.0;
 
         $sp = self::fill($t['spacing'] ?? [], [
-            'section_gap'       => $sc['section_rhythm'],
-            'container_max'     => self::CONTAINERS[$sc['container_width']] ?? '80rem',
+            'section_gap' => $sc['section_rhythm'],
+            'container_max' => self::CONTAINERS[$sc['container_width']] ?? '80rem',
             'container_padding' => self::scaleLength('1.5rem', $mul),
-            'grid_gap'          => self::scaleLength('2rem', $mul),
-            'card_padding'      => self::scaleLength('2rem', $mul),
+            'grid_gap' => self::scaleLength('2rem', $mul),
+            'card_padding' => self::scaleLength('2rem', $mul),
         ]);
 
-        $t['scale']   = $sc;
+        $t['scale'] = $sc;
         $t['spacing'] = $sp;
     }
 
@@ -509,7 +517,7 @@ final class ThemeTokens
         $ratio = $l['hero_ratio'] ?? '50-50';
 
         $l['hero_ratio'] = $ratio;
-        $l['hero_cols']  = self::HERO_RATIOS[$ratio] ?? self::HERO_RATIOS['50-50'];
+        $l['hero_cols'] = self::HERO_RATIOS[$ratio] ?? self::HERO_RATIOS['50-50'];
 
         $t['layout'] = $l;
     }
@@ -523,7 +531,7 @@ final class ThemeTokens
 
         $scaled = (float) $m[1] * $mul;
 
-        return rtrim(rtrim(number_format($scaled, 3, '.', ''), '0'), '.') . $m[2];
+        return rtrim(rtrim(number_format($scaled, 3, '.', ''), '0'), '.').$m[2];
     }
 
     /**
@@ -533,10 +541,10 @@ final class ThemeTokens
      */
     private static function shape(array &$t): void
     {
-        $s     = $t['shape'] ?? [];
+        $s = $t['shape'] ?? [];
         $scale = $s['radius_scale'] ?? null;
-        $keys  = ['radius_sm', 'radius_md', 'radius_lg', 'radius_xl', 'radius_2xl',
-                  'button_radius', 'input_radius', 'card_radius', 'sidebar_radius'];
+        $keys = ['radius_sm', 'radius_md', 'radius_lg', 'radius_xl', 'radius_2xl',
+            'button_radius', 'input_radius', 'card_radius', 'sidebar_radius'];
 
         if ($scale !== null && isset(self::RADIUS_SCALES[$scale])) {
             foreach (self::RADIUS_SCALES[$scale] as $i => $value) {
@@ -547,16 +555,16 @@ final class ThemeTokens
         }
 
         $s = self::fill($s, [
-            'radius_sm'      => '10px',
-            'radius_md'      => '14px',
-            'radius_lg'      => '20px',
-            'radius_xl'      => '24px',
-            'radius_2xl'     => '32px',
-            'button_radius'  => '999px',
-            'input_radius'   => '14px',
-            'card_radius'    => '24px',
+            'radius_sm' => '10px',
+            'radius_md' => '14px',
+            'radius_lg' => '20px',
+            'radius_xl' => '24px',
+            'radius_2xl' => '32px',
+            'button_radius' => '999px',
+            'input_radius' => '14px',
+            'card_radius' => '24px',
             'sidebar_radius' => '24px',
-            'border_width'   => '1px',
+            'border_width' => '1px',
         ]);
 
         $t['shape'] = $s;
@@ -568,9 +576,9 @@ final class ThemeTokens
      */
     private static function effects(array &$t): void
     {
-        $e   = $t['effects'] ?? [];
-        $d   = $t['depth'] ?? [];
-        $c   = $t['colors'] ?? [];
+        $e = $t['effects'] ?? [];
+        $d = $t['depth'] ?? [];
+        $c = $t['colors'] ?? [];
         $lvl = $d['elevation'] ?? 'soft';
         $row = self::ELEVATION[$lvl] ?? self::ELEVATION['soft'];
 
@@ -602,20 +610,21 @@ final class ThemeTokens
         };
 
         $e = self::fill($e, [
-            'shadow'             => $replace($row[0]),
-            'card_shadow'        => $replace($row[1]),
-            'sidebar_shadow'     => $replace($row[2]),
-            'backdrop_blur'      => '20px',
-            'glass_opacity'      => '.94',
-            'hover_lift'         => '3px',
+            'shadow' => $replace($row[0]),
+            'card_shadow' => $replace($row[1]),
+            'sidebar_shadow' => $replace($row[2]),
+            'panel_shadow' => null,   // null = keep the CSS literal (no-op)
+            'backdrop_blur' => '20px',
+            'glass_opacity' => '.94',
+            'hover_lift' => '3px',
             'animation_duration' => '180ms',
-            'enable_animations'  => true,
+            'enable_animations' => true,
         ]);
 
         $d = self::fill($d, ['elevation' => $lvl, 'shadow_tint' => $tinted]);
 
         $t['effects'] = $e;
-        $t['depth']   = $d;
+        $t['depth'] = $d;
     }
 
     /**
@@ -625,15 +634,15 @@ final class ThemeTokens
      */
     private static function surface(array &$t): void
     {
-        $s        = $t['surface'] ?? [];
+        $s = $t['surface'] ?? [];
         $material = $s['material'] ?? 'glass';
 
         $presets = [
-            'glass'   => ['blur' => '20px', 'opacity' => '.94', 'noise' => '0',    'specular' => 'inset 0 1px 0 rgba(255,255,255,.06)', 'inner_border' => '1px'],
+            'glass' => ['blur' => '20px', 'opacity' => '.94', 'noise' => '0',    'specular' => 'inset 0 1px 0 rgba(255,255,255,.06)', 'inner_border' => '1px'],
             'acrylic' => ['blur' => '34px', 'opacity' => '.82', 'noise' => '.025', 'specular' => 'inset 0 1px 0 rgba(255,255,255,.12)', 'inner_border' => '1px'],
-            'matte'   => ['blur' => '0px',  'opacity' => '1',   'noise' => '0',    'specular' => 'none', 'inner_border' => '0px'],
-            'paper'   => ['blur' => '0px',  'opacity' => '1',   'noise' => '.035', 'specular' => 'none', 'inner_border' => '0px'],
-            'flat'    => ['blur' => '0px',  'opacity' => '1',   'noise' => '0',    'specular' => 'none', 'inner_border' => '0px'],
+            'matte' => ['blur' => '0px',  'opacity' => '1',   'noise' => '0',    'specular' => 'none', 'inner_border' => '0px'],
+            'paper' => ['blur' => '0px',  'opacity' => '1',   'noise' => '.035', 'specular' => 'none', 'inner_border' => '0px'],
+            'flat' => ['blur' => '0px',  'opacity' => '1',   'noise' => '0',    'specular' => 'none', 'inner_border' => '0px'],
         ];
 
         foreach ($presets[$material] ?? $presets['glass'] as $key => $value) {
@@ -656,42 +665,42 @@ final class ThemeTokens
     private static function motion(array &$t): void
     {
         $m = self::fill($t['motion'] ?? [], [
-            'reveal'         => 'fade-up',
-            'stagger'        => 'sequential',
-            'easing'         => 'cubic-bezier(.22,1,.36,1)',
+            'reveal' => 'fade-up',
+            'stagger' => 'sequential',
+            'easing' => 'cubic-bezier(.22,1,.36,1)',
             'duration_scale' => '1',
-            'parallax'       => 'none',
-            'tilt'           => false,
-            'magnetic'       => false,
-            'marquee_speed'  => '38s',
-            'hover'          => 'lift',
-            'text_effect'    => 'none',
-            'scroll_progress'=> false,
-            'marquee_pause'  => false,
+            'parallax' => 'none',
+            'tilt' => false,
+            'magnetic' => false,
+            'marquee_speed' => '38s',
+            'hover' => 'lift',
+            'text_effect' => 'none',
+            'scroll_progress' => false,
+            'marquee_pause' => false,
         ]);
 
         $scale = max(0.0, (float) $m['duration_scale']);
 
         $ld = self::fill($t['landing'] ?? [], [
-            'nav_height'       => '4.5rem',
-            'hero_min_height'  => '100svh',
-            'glow_size'        => '24rem',
-            'glow_blur'        => '120px',
-            'glow_opacity'     => '.10',
-            'reveal_duration'  => '700ms',
-            'reveal_offset'    => '40px',
-            'float_distance'   => '15px',
-            'float_duration'   => '6s',
+            'nav_height' => '4.5rem',
+            'hero_min_height' => '100svh',
+            'glow_size' => '24rem',
+            'glow_blur' => '120px',
+            'glow_opacity' => '.10',
+            'reveal_duration' => '700ms',
+            'reveal_offset' => '40px',
+            'float_distance' => '15px',
+            'float_duration' => '6s',
             'counter_duration' => '2000',
-            'stagger_ms'       => '100',
+            'stagger_ms' => '100',
         ]);
 
         if ($scale !== 1.0) {
-            $ld['reveal_duration'] = round((float) rtrim($ld['reveal_duration'], 'ms') * $scale) . 'ms';
-            $ld['stagger_ms']      = (string) (int) round((float) $ld['stagger_ms'] * $scale);
+            $ld['reveal_duration'] = round((float) rtrim($ld['reveal_duration'], 'ms') * $scale).'ms';
+            $ld['stagger_ms'] = (string) (int) round((float) $ld['stagger_ms'] * $scale);
         }
 
-        $t['motion']  = $m;
+        $t['motion'] = $m;
         $t['landing'] = $ld;
     }
 
@@ -706,7 +715,7 @@ final class ThemeTokens
         $s = $c['secondary'];
 
         $t['gradients'] = self::fill($t['gradients'] ?? [], [
-            'brand'       => "linear-gradient(135deg, {$p} 0%, {$s} 100%)",
+            'brand' => "linear-gradient(135deg, {$p} 0%, {$s} 100%)",
             'page_glow_1' => "color-mix(in oklab, {$p} 6%, transparent)",
             'page_glow_2' => "color-mix(in oklab, {$s} 6%, transparent)",
         ]);
@@ -715,12 +724,34 @@ final class ThemeTokens
     private static function background(array &$t): void
     {
         $t['background'] = self::fill($t['background'] ?? [], [
-            'mode'                => 'glow',
-            'gradient_angle'      => '180deg',
-            'glow_blobs'          => [],
-            'grid_size'           => '48px',
-            'noise'               => '0',
+            'mode' => 'glow',
+            'gradient_angle' => '180deg',
+            'glow_blobs' => [],
+            'grid_size' => '48px',
+            'noise' => '0',
             'section_alternation' => 'none',
+            'spotlight' => 'none',   // none | soft | strong (data-attr)
+            'glow_animation' => 'none',   // none | breathe | drift (data-attr)
+            'glow_duration' => '12s',    // the breathe cycle
+        ]);
+    }
+
+    /**
+     * Portal-shell ground. The consultant/student/teacher layouts used to
+     * hardcode two `.page-glow` divs whose size, blur and opacity were CSS
+     * literals (resources/css/app.css:93-115), so no tenant could retune the
+     * dashboard's ground. These three tokens are what those literals become.
+     *
+     * The defaults reproduce the old literals exactly, so a tenant that never
+     * sets `theme.portal` renders its dashboard pixel-identically.
+     */
+    private static function portal(array &$t): void
+    {
+        $t['portal'] = self::fill($t['portal'] ?? [], [
+            'glow_size' => '420px',
+            'glow_blur' => '120px',
+            'glow_opacity' => '.07',
+            'ground' => false,
         ]);
     }
 
@@ -728,35 +759,35 @@ final class ThemeTokens
     {
         $t['decoration'] = self::fill($t['decoration'] ?? [], [
             'section_divider' => 'none',
-            'heading_rule'    => 'none',
-            'heading_align'   => 'center',
-            'accent_shapes'   => 'none',
-            'quote_mark'      => 'none',
-            'icon_backdrop'   => 'soft-square',
-            'card_edge'       => 'none',
+            'heading_rule' => 'none',
+            'heading_align' => 'center',
+            'accent_shapes' => 'none',
+            'quote_mark' => 'none',
+            'icon_backdrop' => 'soft-square',
+            'card_edge' => 'none',
         ]);
     }
 
     private static function buttons(array &$t): void
     {
         $t['buttons'] = self::fill($t['buttons'] ?? [], [
-            'variant'        => 'solid',
-            'size'           => 'md',
-            'weight'         => '600',
-            'transform'      => 'none',
+            'variant' => 'solid',
+            'size' => 'md',
+            'weight' => '600',
+            'transform' => 'none',
             'letter_spacing' => '0',
-            'icon'           => 'none',
-            'hover'          => 'lift',
-            'shadow'         => false,
+            'icon' => 'none',
+            'hover' => 'lift',
+            'shadow' => false,
         ]);
     }
 
     private static function brand(array &$t): void
     {
         $t['brand'] = self::fill($t['brand'] ?? [], [
-            'src'      => null,
-            'height'   => '2rem',
-            'variant'  => 'mark+word',
+            'src' => null,
+            'height' => '2rem',
+            'variant' => 'mark+word',
             'position' => 'start',
         ]);
     }
@@ -764,8 +795,8 @@ final class ThemeTokens
     private static function i18n(array &$t): void
     {
         $t['i18n'] = self::fill($t['i18n'] ?? [], [
-            'numerals'    => 'auto',
-            'calendar'    => 'gregorian',
+            'numerals' => 'auto',
+            'calendar' => 'gregorian',
             'date_format' => 'Y-m-d',
         ]);
     }
@@ -801,16 +832,16 @@ final class ThemeTokens
         // its unnamed base palette.
         $names = array_values(array_unique(array_merge([$default], array_keys($schemes))));
 
-        $t['schemes']        = $schemes;
+        $t['schemes'] = $schemes;
         $t['default_scheme'] = $default;
-        $t['scheme_names']   = $names;
+        $t['scheme_names'] = $names;
     }
 
     private static function accessibility(array &$t): void
     {
         $t['accessibility'] = self::fill($t['accessibility'] ?? [], [
-            'contrast'      => 'normal',
-            'focus_ring'    => 'outline',
+            'contrast' => 'normal',
+            'focus_ring' => 'outline',
             'reduce_motion' => 'respect',
         ]);
     }

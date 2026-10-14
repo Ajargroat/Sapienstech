@@ -17,6 +17,10 @@
     @include('partials.color-scheme', ['schemeKey' => 'consultant-color-scheme'])
     @include('partials.preview-banner')
 
+    @if (site('theme.portal.ground', false))
+        <div class="lp-ground" aria-hidden="true"></div>
+    @endif
+
     <div class="page-glow page-glow-primary" data-studio-path="public.consultant.glow_primary"></div>
     <div class="page-glow page-glow-secondary" data-studio-path="public.consultant.glow_secondary"></div>
 

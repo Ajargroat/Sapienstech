@@ -16,6 +16,10 @@
 <body class="student-shell" @include('partials.theme-attrs')>
     @include('partials.color-scheme', ['schemeKey' => 'student-color-scheme'])
 
+    @if (site('theme.portal.ground', false))
+        <div class="lp-ground" aria-hidden="true"></div>
+    @endif
+
     <div class="page-glow page-glow-primary" data-studio-path="public.student.glow_primary"></div>
     <div class="page-glow page-glow-secondary" data-studio-path="public.student.glow_secondary"></div>
 
