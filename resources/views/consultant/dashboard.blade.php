@@ -35,6 +35,15 @@
     </div>
 
     <div class="panel-heading-actions">
+        {{-- The direct-create entry point: only a tenant admin may write the
+             roster, so only an admin is offered the form. Same conditional
+             idiom as the studio button below. --}}
+        @if(auth()->user()?->isTenantAdmin())
+            <a href="{{ route('consultant.requests.create') }}" class="secondary-button">
+                <i class="fas fa-user-plus" aria-hidden="true"></i>
+                افزودن دانش‌آموز
+            </a>
+        @endif
         @if(site('features.theme_studio', false) && (!tenant()?->hierarchy_type || auth()->user()?->isTenantOwner()))
             {{-- The Theme Studio is a standalone page: open it in a new tab so
                  the tenant-themed hub never restyles the editor chrome. --}}

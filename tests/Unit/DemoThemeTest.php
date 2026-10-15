@@ -156,8 +156,11 @@ class DemoThemeTest extends TestCase
         $this->assertSame('dark_luminous', $theme['archetype']);
 
         // What the demo DID contribute — the five sections and the real copy —
-        // is still the tenant's.
-        $this->assertSame(['hero', 'advisor', 'process', 'services', 'cta'], $landing['sections']);
+        // is still the tenant's, in its relative order. `plans` and `join` are
+        // later, deliberate additions (the priced plans and the membership
+        // request form) and sit as a pair between `services` and `cta`, so the
+        // order stays a contract rather than a description.
+        $this->assertSame(['hero', 'advisor', 'process', 'services', 'plans', 'join', 'cta'], $landing['sections']);
         $this->assertSame('علیرضا کافی', $landing['advisor']['name']);
         $this->assertCount(1, $landing['advisor']['stats'], 'only the one real fact may be stated');
         $this->assertSame('۴', $landing['advisor']['stats'][0]['value']);

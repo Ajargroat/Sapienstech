@@ -355,7 +355,9 @@ class StudentFilter
 
     /**
      * Distinct values that exist among the current tenant's students, for
-     * filter chips (shared by the dashboard and the bulk picker).
+     * filter chips and the bulk pickers — shared by the dashboard, the bulk
+     * exam picker and the bulk schedule picker (not the hand-entry create
+     * form, whose choices are fixed lists).
      */
     public static function distinctOptions(string $column): Collection
     {

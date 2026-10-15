@@ -22,7 +22,18 @@
     $tone = ['solid' => 'inverted', 'ghost' => 'glass', 'primary' => 'primary'][$tone] ?? $tone;
 
     $icon = $icon ?? ($b['icon'] ?? 'none');
-    $url  = !empty($route) ? route($route) : ($href ?? '#');
+
+    // `route` normally names a Laravel route, but the config vocabulary also
+    // allows an in-page anchor there (config/studio.php's $siteRoutes lists
+    // `#plans` and `#join` beside the page routes). Passing a '#'-prefixed
+    // value to route() would throw, so it is used verbatim — the same string
+    // a hero button already puts in `href`.
+    $url = $href ?? '#';
+    if (! empty($route)) {
+        $url = is_string($route) && str_starts_with($route, '#')
+            ? $route
+            : route($route);
+    }
     $cls  = trim('lp-btn lp-btn--'.$tone
         .(!empty($block) ? ' lp-btn--block' : '')
         .(!empty($b['size']) ? ' lp-btn--'.$b['size'] : '')

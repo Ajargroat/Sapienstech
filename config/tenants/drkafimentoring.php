@@ -42,6 +42,11 @@ return [
                 ['label' => 'درباره', 'href' => '#about',    'visible' => true],
                 ['label' => 'فرایند', 'href' => '#process',  'visible' => true],
                 ['label' => 'خدمات',  'href' => '#services', 'visible' => true],
+                // The way in for a visitor who has no account: the priced plans
+                // are the first stop of the join flow. Without it the only nav
+                // destination was the login page, which a new student cannot
+                // use.
+                ['label' => 'طرح‌ها', 'href' => '#plans',    'visible' => true],
             ],
             'cta' => ['label' => 'ورود', 'route' => 'login', 'visible' => true],
         ],
@@ -54,7 +59,20 @@ return [
 
             // The accepted demo order. Every surface that would need invented
             // numbers (stats, testimonials, blog, faq, logos) is omitted.
-            'sections' => ['hero', 'advisor', 'process', 'services', 'cta'],
+            //
+            // `join` is the opt-in for the membership request form: the visitor
+            // imports their own details and declares the payment, the record
+            // waits in the consultant's «درخواست‌ها» queue, and approving it
+            // creates the student. It sits after `services` (where a visitor
+            // decides) and before `cta` (the closing band). Copy comes from the
+            // baseline `public.landing.join`; this tenant sets no override.
+            //
+            // `plans` sits immediately before it: it is where a price is
+            // *determined*, so the join form can ask which plan the visitor
+            // paid for instead of showing no price at all. The two are a pair —
+            // plans without join has nothing to buy, join without plans cannot
+            // state a price.
+            'sections' => ['hero', 'advisor', 'process', 'services', 'plans', 'join', 'cta'],
 
             'hero' => [
                 'eyebrow' => 'مشاوره تحصیلی فردی',
@@ -62,7 +80,10 @@ return [
                 'title_line2' => 'تصمیم آرام.',
                 'subtitle' => 'همراهی فردی و پیوسته برای انتخاب رشته، ساختن برنامهٔ مطالعه و رسیدن آرام به هدف؛ از یک مشاور، نه یک مؤسسه.',
                 'buttons' => [
-                    ['label' => 'رزرو وقت مشاوره', 'href' => '#',      'style' => 'primary', 'visible' => true],
+                    // Was '#', which went nowhere. The plans grid is the first
+                    // step of the join flow, so the primary action now lands
+                    // there; the visitor picks a plan, then declares payment.
+                    ['label' => 'رزرو وقت مشاوره', 'href' => '#plans', 'style' => 'primary', 'visible' => true],
                     ['label' => 'درباره من',       'href' => '#about', 'style' => 'ghost',   'visible' => true],
                 ],
             ],
@@ -115,12 +136,76 @@ return [
                 ],
             ],
 
+            /*
+            | Paying plans («طرح‌ها»). This is where a price is determined; the
+            | join form below only lets the visitor name one of these slugs, and
+            | the amount on the request is read from here server-side.
+            |
+            | The three-month plan at ۳ میلیون تومان is the confirmed figure —
+            | it is the one the consultant actually charges, and the other two
+            | are its single-month and full-year equivalents priced in the same
+            | proportion. Only the first two are shown by default; the annual one
+            | is visible because a full year is the cheapest per month.
+            |
+            | `features` is newline-separated: the studio's list control cannot
+            | nest a list inside a row, so a nested shape would be uneditable.
+            */
+            'plans' => [
+                'id' => 'plans',
+                'heading' => 'طرح‌های مشاوره',
+                'subheading' => 'طرح مناسب خود را انتخاب کنید؛ پس از پرداخت، فرم عضویت را پر کنید تا حساب شما ساخته شود.',
+                'cta_label' => 'انتخاب این طرح',
+                'cta_href' => '#join',
+                'columns' => 3,
+                'items' => [
+                    [
+                        'slug' => 'monthly',
+                        'name' => 'ماهانه',
+                        'price' => 1200000,
+                        'period' => 'یک ماه',
+                        'features' => "جلسهٔ مشاورهٔ اختصاصی در ماه\nبرنامهٔ مطالعهٔ هفتگی\nپاسخ به پرسش‌های درسی در طول ماه",
+                        'cta_label' => null,
+                        'badge' => null,
+                        'featured' => false,
+                        'visible' => true,
+                    ],
+                    [
+                        'slug' => 'quarterly',
+                        'name' => 'سه‌ماهه',
+                        'price' => 3000000,
+                        'period' => 'سه ماه',
+                        'features' => "چهار جلسهٔ مشاورهٔ اختصاصی در ماه\nبرنامهٔ مطالعهٔ هفتگی و بازبینی آن\nتحلیل کارنامهٔ آزمون‌های آزمایشی\nپاسخ به پرسش‌های درسی در طول دوره",
+                        'cta_label' => null,
+                        'badge' => 'پیشنهاد ما',
+                        'featured' => true,
+                        'visible' => true,
+                    ],
+                    [
+                        'slug' => 'annual',
+                        'name' => 'سالانه',
+                        'price' => 10800000,
+                        'period' => 'یک سال',
+                        'features' => "همهٔ امکانات طرح سه‌ماهه\nهمراهی کامل تا کنکور\nاولویت در زمان‌بندی جلسه‌ها\nبازبینی برنامه در فصل‌های حساس",
+                        'cta_label' => null,
+                        'badge' => null,
+                        'featured' => false,
+                        'visible' => true,
+                    ],
+                ],
+            ],
+
             'cta' => [
                 'id' => 'cta',
                 'heading' => 'برای شروع، یک گفت‌وگو کافی است.',
                 'text' => 'اگر نمی‌دانید از کجا شروع کنید، یک جلسهٔ کوتاه کافی است تا مسیر و گام‌های بعدی روشن شود.',
                 'buttons' => [
-                    ['label' => 'رزرو وقت مشاوره', 'href' => '#', 'style' => 'primary', 'visible' => true],
+                    // The closing band is the last thing a visitor sees, so it
+                    // points at the plans grid (the start of the join flow)
+                    // rather than '#'. The CTA schema addresses this as a
+                    // destination rather than a URL, hence the `route` key with
+                    // an anchor — _button.blade.php uses a '#'-prefixed value
+                    // verbatim instead of passing it to route().
+                    ['label' => 'رزرو وقت مشاوره', 'route' => '#plans', 'style' => 'primary', 'visible' => true],
                 ],
             ],
         ],

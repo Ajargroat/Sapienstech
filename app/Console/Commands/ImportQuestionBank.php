@@ -45,6 +45,8 @@ class ImportQuestionBank extends Command
 
     private string $bucket;
 
+    private bool $verify = true;
+
     /** source_id => ['path' => ?string, 'size' => ?array] */
     private array $pages = [];
 
@@ -53,6 +55,7 @@ class ImportQuestionBank extends Command
         $this->api = rtrim((string) config('services.supabase.url'), '/');
         $this->key = (string) config('services.supabase.service_role_key');
         $this->bucket = (string) config('services.supabase.bucket', 'konkour-pages');
+        $this->verify = (bool) config('services.supabase.verify', true);
 
         if ($this->api === '' || $this->key === '') {
             $this->error('Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env first.');
@@ -274,7 +277,7 @@ class ImportQuestionBank extends Command
     private function download(string $ref): ?string
     {
         if (str_starts_with($ref, 'http')) {
-            $res = Http::timeout(120)->get($ref);
+            $res = $this->http()->timeout(120)->get($ref);
 
             if ($res->successful()) {
                 return $res->body();
@@ -291,7 +294,7 @@ class ImportQuestionBank extends Command
         }
 
         // plain bucket path on a private bucket -> exchange for a 1h signed URL
-        $sign = Http::withHeaders($this->authHeaders())
+        $sign = $this->http()
             ->timeout(30)
             ->post("{$this->api}/storage/v1/object/sign/{$this->bucket}/".ltrim($ref, '/'), [
                 'expiresIn' => 3600,
@@ -301,7 +304,7 @@ class ImportQuestionBank extends Command
             return null;
         }
 
-        $res = Http::timeout(120)->get(str_starts_with($url, 'http') ? $url : $this->api.$url);
+        $res = $this->http()->timeout(120)->get(str_starts_with($url, 'http') ? $url : $this->api.$url);
 
         return $res->successful() ? $res->body() : null;
     }
@@ -365,11 +368,21 @@ class ImportQuestionBank extends Command
 
     private function request(string $path, array $params): ?array
     {
-        $res = Http::withHeaders($this->authHeaders())
-            ->timeout(30)
-            ->get($this->api.$path, $params);
+        $res = $this->http()->timeout(30)->get($this->api.$path, $params);
 
         return $res->successful() ? $res->json() : null;
+    }
+
+    /**
+     * One HTTP client for every Supabase call: auth headers plus the
+     * deployment's TLS-verify choice (config services.supabase.verify), so a
+     * host with no CA bundle can opt out of the "cURL error 60" failure that
+     * silently emptied the imported bank of page images.
+     */
+    private function http(): \Illuminate\Http\Client\PendingRequest
+    {
+        return Http::withHeaders($this->authHeaders())
+            ->withOptions(['verify' => $this->verify]);
     }
 
     private function authHeaders(): array

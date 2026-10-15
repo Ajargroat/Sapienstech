@@ -14,6 +14,30 @@
     $tabStyle = fn ($on) => $on
         ? 'background:var(--c-glass-hover);color:var(--c-text)'
         : 'color:var(--c-muted)';
+
+    // The way out for a visitor who has no account yet. It is offered only
+    // when this tenant's home page really carries the membership form: the
+    // `join` section has to be in the landing's section list *and* the
+    // feature has to be on, because the public POST route 404s without it.
+    // A tenant that has not opted into the flow renders no link at all, so
+    // its login page is byte-for-byte what it was before.
+    $signup = (array) ($c['signup_link'] ?? []);
+    $landingSections = (array) site('public.landing.sections', []);
+    $signupHref = null;
+
+    if (trim((string) ($signup['label'] ?? '')) !== ''
+        && ($signup['visible'] ?? false)
+        && in_array('join', $landingSections, true)
+        && (bool) site('features.student_join_requests', false)) {
+        // `fragment` names a section *key*; the anchor is that section's
+        // configured id, which a tenant is free to have renamed.
+        $fragment = trim((string) ($signup['fragment'] ?? ''));
+        $anchor = $fragment !== '' && in_array($fragment, $landingSections, true)
+            ? (string) site("public.landing.{$fragment}.id", $fragment)
+            : null;
+
+        $signupHref = route('home').($anchor !== null && $anchor !== '' ? '#'.$anchor : '');
+    }
 @endphp
 <!DOCTYPE html>
 <html lang="{{ $tenant['locale'] }}" dir="{{ $tenant['direction'] }}">
@@ -114,6 +138,14 @@
         @if ($c['back_link']['visible'] ?? true)
             <a href="{{ route($c['back_link']['route']) }}" class="block text-center text-sm mt-6 hover:underline"
                style="color:var(--c-muted)">→ {{ $c['back_link']['label'] }}</a>
+        @endif
+
+        {{-- A visitor without an account is the normal case on this page, so
+             it must not be a dead end. Rendered only when the membership
+             form actually exists on the home page (see $signupHref above). --}}
+        @if ($signupHref !== null)
+            <a href="{{ $signupHref }}" class="block text-center text-sm mt-3 hover:underline"
+               style="color:var(--c-primary)">{{ $signup['label'] }}</a>
         @endif
     </div>
 

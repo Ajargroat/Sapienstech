@@ -91,7 +91,8 @@ class StudentScheduleController extends Controller
         $item->color = $request->input('color') ?: '#3b82f6';
         $item->item_type = 'consultant_event';
         $item->created_by_type = 'user';
-$item->created_by_user_id = null;        $item->save();
+        $item->created_by_user_id = null;
+        $item->save();
 
         return response()->json(['success' => true, 'event' => $this->toEventArray($item)], 201);
     }
@@ -146,6 +147,9 @@ $item->created_by_user_id = null;        $item->save();
             'username' => $c->commenterName(),
             'comment_text' => $c->comment_text,
             'created_at' => optional($c->created_at)->format('Y-m-d H:i'),
+            // Additive: the existing keys keep their meaning, and the modal can
+            // now render a student comment differently from a staff reply.
+            'author' => $c->commenter_type === 'student' ? 'student' : 'consultant',
         ])->values();
 
         return response()->json($comments);

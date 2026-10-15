@@ -46,7 +46,9 @@ class DealPayment extends Model
 
     public function student(): BelongsTo
     {
-        return $this->belongsTo(Student::class);
+        // History relation — see StudentDeal::student(). A receipt must stay
+        // readable after the student leaves the roster.
+        return $this->belongsTo(Student::class)->withoutGlobalScope('roster');
     }
 
     public function reviewer(): BelongsTo

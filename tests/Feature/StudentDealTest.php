@@ -84,6 +84,8 @@ class StudentDealTest extends TestCase
                     foreach (['grade', 'gender', 'major'] as $column) {
                         $table->string($column)->nullable();
                     }
+                    // Soft roster marker (Student's `roster` global scope).
+                    $table->timestamp('removed_at')->nullable();
                 }
                 $table->timestamps();
             });

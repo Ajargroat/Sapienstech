@@ -19,6 +19,7 @@ class ChatMessage extends Model
     use BelongsToTenant, HasFactory;
 
     public const TYPE_TEXT = 'text';
+
     public const TYPE_SYSTEM = 'system';
 
     protected $fillable = [
@@ -54,7 +55,9 @@ class ChatMessage extends Model
 
     public function senderStudent(): BelongsTo
     {
-        return $this->belongsTo(Student::class, 'sender_student_id');
+        // History relation: an old message keeps its author's name even after
+        // that student has been taken off the roster.
+        return $this->belongsTo(Student::class, 'sender_student_id')->withoutGlobalScope('roster');
     }
 
     public function isSystem(): bool

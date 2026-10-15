@@ -22,11 +22,13 @@ export default defineConfig({
             input: [
                 'resources/css/app.css',
                 'resources/js/features/consultant-schedule.js',
+                'resources/js/features/consultant-schedule-assistant.js',
                 'resources/js/features/consultant-exams.js',
                 'resources/js/features/consultant-blog-sort.js',
                 'resources/js/features/consultant-blog-modal.js',
                 'resources/js/features/blog-editor.js',
                 'resources/js/features/consultant-report-cards.js',
+                'resources/js/features/consultant-password-reveal.js',
                 'resources/js/features/student-exam-runner.js',
                 'resources/js/features/bulk-actions.js',
                 'resources/js/features/direct-chat.js',

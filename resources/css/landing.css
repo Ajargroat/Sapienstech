@@ -812,3 +812,55 @@ body.landing :focus-visible {
 
 @media (max-width: 1023px) { .lp-classes { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 639px)  { .lp-classes { grid-template-columns: 1fr; } }
+
+/* ---------- paying plans (plans/default) ------------------------------------ */
+.lp-plan { display: flex; flex-direction: column; position: relative; }
+
+/* The recommended card announces itself with the brand colour and a badge,
+   never with a hardcoded accent. */
+.lp-plan--featured { border-color: var(--c-primary); }
+
+.lp-plan__badge {
+  position: absolute;
+  inset-block-start: calc(var(--card-padding) * -0.5);
+  inset-inline-start: var(--card-padding);
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--c-primary);
+  color: var(--c-on-primary);
+  white-space: nowrap;
+}
+
+.lp-plan__name { margin: 0 0 0.5rem; font-weight: var(--heading-weight); }
+
+.lp-plan__period { margin: 0 0 1rem; font-size: 0.875rem; }
+
+.lp-plan__price {
+  display: flex;
+  align-items: baseline;
+  gap: 0.375rem;
+  margin: 0 0 1.5rem;
+  padding-block-end: 1.25rem;
+  border-block-end: var(--surface-border-w) solid var(--c-border);
+}
+
+.lp-plan__amount { font-size: 2rem; font-weight: 700; line-height: 1.1; }
+
+.lp-plan__unit { font-size: 0.875rem; color: var(--c-muted); }
+
+/* Pushes the button to the card's foot so buttons line up across a row of
+   cards whose feature lists differ in length. */
+.lp-plan__features { list-style: none; margin: 0 0 1.5rem; padding: 0; flex: 1; }
+
+.lp-plan__features li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  padding-block: 0.375rem;
+  font-size: 0.875rem;
+  line-height: 1.7;
+}
+
+.lp-plan__check { color: var(--c-primary); margin-block-start: 0.375rem; flex-shrink: 0; }

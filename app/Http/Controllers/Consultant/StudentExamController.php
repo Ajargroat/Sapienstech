@@ -127,7 +127,12 @@ class StudentExamController extends Controller
         }
 
         // Keep only ids that exist in the shared bank, in the submitted order.
-        $submitted = collect($data['questions'] ?? [])->map('intval')->filter()->unique()->values();
+        // NOTE: the cast MUST be a closure. `->map('intval')` hands the array
+        // KEY to intval() as its second (base) argument — intval('502', 1)
+        // returns 0 — so every id after the first was silently zeroed: the exam
+        // saved ~1 question ("only 2 questions") and the rest failed the
+        // bank check ("some selected questions are invalid").
+        $submitted = collect($data['questions'] ?? [])->map(fn ($id) => (int) $id)->filter()->unique()->values();
         $allowed = Question::whereIn('id', $submitted)->pluck('id')->all();
         $ordered = $submitted->intersect($allowed)->values();
 
@@ -252,7 +257,9 @@ class StudentExamController extends Controller
             'questions.*' => ['integer'],
         ]);
 
-        $ids = collect($data['questions'] ?? [])->map('intval')->filter()->unique()->values();
+        // Cast via a closure, never `->map('intval')` — see store() for why
+        // that silently zeroed every id but the first.
+        $ids = collect($data['questions'] ?? [])->map(fn ($id) => (int) $id)->filter()->unique()->values();
 
         $questions = Question::query()
             ->with('answers')

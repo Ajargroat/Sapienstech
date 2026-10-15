@@ -25,8 +25,12 @@
 }
 
 .quiz-body .quiz-figure {
+  /* Definite width is required: the crop inside is absolutely positioned, so a
+     content-sized figure (the old `flex: 0 0 auto`) had nothing to measure and
+     collapsed to 0px — the picture never showed in the runner/review/preview.
+     `min()` keeps a percentage on the card while capping very large pages. */
   flex: 0 0 auto;
-  max-width: 46%;
+  width: min(46%, 640px);
 }
 
 .quiz-body .quiz-figure img,
@@ -46,7 +50,7 @@
 
 @media (max-width: 720px) {
   .quiz-body { flex-direction: column; }
-  .quiz-body .quiz-figure { max-width: 100%; }
+  .quiz-body .quiz-figure { width: 100%; }
 }
 
 /* --------------------------------------------------------------------------
@@ -81,16 +85,60 @@
 /* --------------------------------------------------------------------------
    Preview dialog (the only place question order changes — TASK AC2)
    -------------------------------------------------------------------------- */
-.exam-modal--preview { width: min(880px, calc(100% - 32px)); }
+.exam-modal--preview { width: min(1040px, calc(100% - 32px)); }
 
-.preview-body { max-height: 68vh; overflow-y: auto; }
+/* `.preview-body` also carries `.exam-modal-body`, whose 2-column grid would
+   squeeze the single `.preview-list` into HALF the dialog (the other column
+   empty) — a real cause of the cramped preview. Force one full-width column.
+   Scoped to the dialog for specificity: exams.css is imported BEFORE app.css,
+   so a bare `.preview-body` would lose to the later `.exam-modal-body`. */
+.exam-modal--preview .preview-body {
+  grid-template-columns: minmax(0, 1fr);
+  max-height: min(82vh, 900px);
+  overflow-y: auto;
+}
 
-.preview-list { display: flex; flex-direction: column; gap: 14px; }
+.preview-list { display: flex; flex-direction: column; gap: 18px; }
 
 .preview-list .quiz-card {
   opacity: 1;
   transform: none;
-  padding: 16px;
+  padding: 20px;
+}
+
+/* --------------------------------------------------------------------------
+   MathJax containment
+
+   MathJax swaps inline `$…$` for an <svg>-bearing <mjx-container>. Without a
+   rule it inherits the RTL flow and pushes the surrounding Persian text
+   around, which is the "math jumps in and squeezes the line" the dialogs
+   showed. `direction:ltr` + `unicode-bidi:isolate` keeps a formula on its own
+   axis without disturbing the RTL sentence — byte-for-byte the rule the
+   reference dashboard ships (E:\OCR-quest\ui\styles.css, `.qtext mjx-container`).
+   -------------------------------------------------------------------------- */
+.quiz-text mjx-container,
+.opt-text mjx-container,
+.picker-q-text mjx-container,
+.picker-options mjx-container {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+/* MathJax SVG nodes can overflow a narrow column; let them scale down rather
+   than forcing the dialog wider.
+
+   `display: inline` is load-bearing. Tailwind's preflight resets every <svg>
+   to `display: block`, and a block box inside the inline <mjx-container>
+   splits the paragraph: each formula drops onto its own centered line
+   (measured against the real build: a 3-line question was 255px tall instead
+   of ~90px). The reference dashboard has no such reset, which is why the same
+   mjx-container rule alone did not fix it here. */
+.quiz-text mjx-container svg,
+.opt-text mjx-container svg,
+.picker-q-text mjx-container svg,
+.picker-options mjx-container svg {
+  display: inline;
+  max-width: 100%;
 }
 
 .preview-moves {

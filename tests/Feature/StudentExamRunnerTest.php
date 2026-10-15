@@ -170,6 +170,59 @@ class StudentExamRunnerTest extends TestCase
         $this->assertSame(30 * 60, (int) round($assignment->fresh()->windowOpen() ? 1800 : 0));
     }
 
+    public function test_the_app_clock_is_iran_wall_clock_time(): void
+    {
+        // Exam windows are wall clocks the consultant typed in the dashboard
+        // (Iran local time). With the clock on UTC, `now()` ran 3.5 hours
+        // behind, so a 22:29 exam only opened around 02:00. Pinning the app to
+        // Asia/Tehran is what makes windowOpen() flip at the right minute.
+        $this->assertSame('Asia/Tehran', config('app.timezone'));
+        $this->assertSame('Asia/Tehran', date_default_timezone_get());
+    }
+
+    public function test_a_wall_clock_window_opens_at_its_own_local_minute(): void
+    {
+        [$tenant, $consultant, $student] = $this->tenantContext();
+        $q = $this->question($tenant, 'سوال');
+
+        // A window that opens 30 minutes from NOW, expressed as a wall clock.
+        // If the app clock were UTC this same stored string would be judged
+        // 'in the future' for another 3.5 hours and never open on time.
+        $start = now()->addMinutes(30);
+        $assignment = $this->assignExam($tenant, $consultant, $student, [$q], [
+            'scheduled_at' => $start,
+            'ends_at' => $start->copy()->addHours(2),
+        ]);
+
+        $this->assertFalse($assignment->fresh()->windowOpen());
+
+        $this->travel(31)->minutes();
+        $this->assertTrue($assignment->fresh()->windowOpen());
+        $this->assertSame('in_progress', $assignment->fresh()->effectiveStatus());
+    }
+
+    public function test_the_start_button_carries_a_real_instant_not_a_fake_utc_suffix(): void
+    {
+        [$tenant, $consultant, $student] = $this->tenantContext();
+        $q = $this->question($tenant, 'سوال');
+
+        $this->assignExam($tenant, $consultant, $student, [$q], [
+            'scheduled_at' => now()->addDays(2),
+            'ends_at' => now()->addDays(3),
+        ]);
+
+        $html = $this->actingAs($student, 'student')
+            ->get('http://runner.test/student/dashboard')
+            ->assertOk()
+            ->getContent();
+
+        // The browser compares this against the real clock, so it must be a
+        // true instant with an offset — never a wall-clock string + 'Z', which
+        // the JS would read 3.5 hours early.
+        $this->assertMatchesRegularExpression('/data-start-at="\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}"/', $html);
+        $this->assertDoesNotMatchRegularExpression('/data-start-at="[^"]+Z"/', $html);
+    }
+
     public function test_a_closed_window_is_not_sit(): void
     {
         [$tenant, $consultant, $student] = $this->tenantContext();

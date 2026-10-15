@@ -49,6 +49,10 @@ class ScheduleDraftTest extends TestCase
                 if ($tableName !== 'tenants') {
                     $table->foreignId('tenant_id')->constrained('tenants');
                 }
+                if ($tableName === 'students') {
+                    // Soft roster marker (Student's `roster` global scope).
+                    $table->timestamp('removed_at')->nullable();
+                }
             });
         }
 

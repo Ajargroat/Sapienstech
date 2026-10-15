@@ -20,18 +20,34 @@ class StudentLoginController extends Controller
     public function login(Request $request): RedirectResponse
     {
         $credentials = $request->validate([
-            'email'    => ['required', 'string', 'email'],
+            'email' => ['required', 'string', 'email'],
             'password' => ['required', 'string'],
         ]);
 
         $tenant = tenant() ?? abort(404);
 
-        // Tenant isolation: only look for students belonging to the current domain's tenant
-        $student = Student::where('email', $credentials['email'])
+        // Tenant isolation: only look for students belonging to the current domain's tenant.
+        //
+        // The query opts out of the `roster` global scope on purpose, so a removed
+        // student gets the *same generic failure* as a wrong password rather than
+        // a distinguishable "you were removed" error. Removal is presented to the
+        // consultant as final, and confirming it to whoever holds the credentials
+        // would turn the login page into an account-status oracle.
+        $student = Student::withoutGlobalScope('roster')
+            ->where('email', $credentials['email'])
             ->where('tenant_id', $tenant->id)
             ->first();
 
         if (! $student || ! Hash::check($credentials['password'], $student->password)) {
+            throw ValidationException::withMessages([
+                'email' => trans('auth.failed'),
+            ]);
+        }
+
+        // Removed from the roster: the row and its history survive, the login
+        // does not. Checked after the hash comparison so the timing and the
+        // error message stay identical to a bad password.
+        if ($student->isRemoved()) {
             throw ValidationException::withMessages([
                 'email' => trans('auth.failed'),
             ]);

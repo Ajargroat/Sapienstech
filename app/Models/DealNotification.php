@@ -41,7 +41,9 @@ class DealNotification extends Model
 
     public function student(): BelongsTo
     {
-        return $this->belongsTo(Student::class);
+        // History relation — see StudentDeal::student(). The reminder log renders
+        // these names after the student may have left the roster.
+        return $this->belongsTo(Student::class)->withoutGlobalScope('roster');
     }
 
     public function isUnread(): bool

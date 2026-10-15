@@ -17,6 +17,7 @@ class ChatParticipant extends Model
     use BelongsToTenant, HasFactory;
 
     public const ROLE_OWNER = 'owner';
+
     public const ROLE_MEMBER = 'member';
 
     protected $fillable = [
@@ -50,7 +51,11 @@ class ChatParticipant extends Model
 
     public function student(): BelongsTo
     {
-        return $this->belongsTo(Student::class, 'student_id');
+        // History relation: a participant row is how a thread keeps its
+        // membership and the name it displays, and both outlive a roster
+        // removal. ChatService::relationsAllow() is what decides whether the
+        // thread stays usable, not this lookup.
+        return $this->belongsTo(Student::class, 'student_id')->withoutGlobalScope('roster');
     }
 
     /**

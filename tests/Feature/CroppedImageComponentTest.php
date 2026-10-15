@@ -24,6 +24,12 @@ class CroppedImageComponentTest extends TestCase
 
         $this->assertStringContainsString('storage/pages/q.jpg', $html);
         $this->assertStringContainsString('<img', $html);
+
+        // The wrapper must carry a real width: its only child is absolutely
+        // positioned, so without `width:100%` it collapsed to 0px inside the
+        // row-flex question bodies (runner/preview/review) and the picture
+        // never appeared.
+        $this->assertStringContainsString('width:100%', $html);
     }
 
     public function test_no_bbox_renders_no_image(): void

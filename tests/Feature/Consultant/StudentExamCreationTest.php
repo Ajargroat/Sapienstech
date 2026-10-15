@@ -195,6 +195,61 @@ class StudentExamCreationTest extends TestCase
         $this->assertSame([$q1->id, $q2->id], array_map('intval', $attached));
     }
 
+    public function test_every_selected_question_survives_as_a_string_id(): void
+    {
+        [$tenant, $consultant, $student] = $this->tenantContext();
+
+        // The browser posts questions[] as strings; the old `->map('intval')`
+        // passed the array key as intval()'s base, zeroing every id after the
+        // first. Six questions must stay six, in the posted order.
+        $ids = [];
+        for ($i = 0; $i < 6; $i++) {
+            $ids[] = (string) $this->makeQuestion($tenant->id, "سوال {$i}", ['subject' => 'شیمی'])->id;
+        }
+
+        $this->actingAs($consultant)
+            ->post("http://tenant-a.test/consultant/students/{$student->id}/exams", [
+                'title' => 'آزمون شش‌سوالی',
+                'exam_type' => 'quiz',
+                'lesson' => ['شیمی'],
+                'date' => '2030-05-20 08:30',
+                'end' => '2030-05-20 10:00',
+                'questions' => $ids,
+            ])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $test = DB::table('tests')->where('test_title', 'آزمون شش‌سوالی')->first();
+        $this->assertNotNull($test);
+        $this->assertSame(6, (int) $test->question_count);
+
+        $attached = DB::table('test_questions')
+            ->where('test_id', $test->id)
+            ->orderBy('position')
+            ->pluck('question_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+        $this->assertSame(array_map('intval', $ids), $attached);
+    }
+
+    public function test_the_preview_renders_every_posted_question(): void
+    {
+        [$tenant, $consultant, $student] = $this->tenantContext();
+
+        $ids = [];
+        for ($i = 0; $i < 5; $i++) {
+            $ids[] = (string) $this->makeQuestion($tenant->id, "پیش‌نمایش {$i}", ['subject' => 'شیمی'])->id;
+        }
+
+        // Same cast bug lived in preview(): it rendered only the first id.
+        $query = http_build_query(['questions' => $ids]);
+        $response = $this->actingAs($consultant)
+            ->get("http://tenant-a.test/consultant/students/{$student->id}/exams/preview?{$query}");
+
+        $response->assertOk();
+        $this->assertSame(5, substr_count($response->getContent(), 'data-preview-id'));
+    }
+
     public function test_an_uploaded_cover_is_stored_on_the_test(): void
     {
         [$tenant, $consultant, $student] = $this->tenantContext();

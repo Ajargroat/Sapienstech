@@ -25,9 +25,11 @@ class ChatConversation extends Model
     use BelongsToTenant, HasFactory;
 
     public const TYPE_DIRECT = 'direct';
+
     public const TYPE_GROUP = 'group';
 
     public const STATUS_OPEN = 'open';
+
     public const STATUS_CLOSED = 'closed';
 
     protected $fillable = [
@@ -56,7 +58,9 @@ class ChatConversation extends Model
 
     public function student(): BelongsTo
     {
-        return $this->belongsTo(Student::class, 'student_id');
+        // History relation: a thread's title and its student name must survive a
+        // roster removal, otherwise the conversation list renders blank names.
+        return $this->belongsTo(Student::class, 'student_id')->withoutGlobalScope('roster');
     }
 
     public function creator(): BelongsTo

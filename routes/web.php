@@ -2,23 +2,25 @@
 
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\StudentLoginController;
+use App\Http\Controllers\Consultant\BlogController as ConsultantBlogController;
+use App\Http\Controllers\Consultant\Bulk\BulkExamController;
+use App\Http\Controllers\Consultant\Bulk\BulkHistoryController;
+use App\Http\Controllers\Consultant\Bulk\BulkScheduleController;
 use App\Http\Controllers\Consultant\ChatController as ConsultantChatController;
 use App\Http\Controllers\Consultant\ConsultantDashboardController;
 use App\Http\Controllers\Consultant\ConsultantFeatureController;
 use App\Http\Controllers\Consultant\DealController as ConsultantDealController;
+use App\Http\Controllers\Consultant\JoinRequestController as ConsultantJoinRequestController;
 use App\Http\Controllers\Consultant\Settings\ChatSettingsController as ConsultantChatSettingsController;
-use App\Http\Controllers\Consultant\Bulk\BulkExamController;
-use App\Http\Controllers\Consultant\Bulk\BulkHistoryController;
-use App\Http\Controllers\Consultant\Bulk\BulkScheduleController;
-use App\Http\Controllers\Consultant\BlogController as ConsultantBlogController;
 use App\Http\Controllers\Consultant\Settings\ProfileController as ConsultantProfileController;
-use App\Http\Controllers\Studio\StudioController;
-use App\Http\Controllers\Studio\StudioDraftController;
 use App\Http\Controllers\Consultant\StudentExamController;
+use App\Http\Controllers\Consultant\ScheduleAssistantController;
 use App\Http\Controllers\Consultant\StudentFeatureController;
 use App\Http\Controllers\Consultant\StudentReportCardController;
 use App\Http\Controllers\Consultant\StudentScheduleController;
+use App\Http\Controllers\Consultant\StudentScheduleNoteController;
 use App\Http\Controllers\Public\BlogController as PublicBlogController;
+use App\Http\Controllers\Public\JoinRequestController;
 use App\Http\Controllers\Public\PageController;
 use App\Http\Controllers\Student\ChatController as StudentChatController;
 use App\Http\Controllers\Student\DealController as StudentDealController;
@@ -28,13 +30,15 @@ use App\Http\Controllers\Student\StudentDashboardController;
 use App\Http\Controllers\Student\StudentExamController as StudentExamPortalController;
 use App\Http\Controllers\Student\StudentMaterialController;
 use App\Http\Controllers\Student\StudentReportCardController as StudentReportCardPortalController;
+use App\Http\Controllers\Student\StudentSchedulePortalController;
 use App\Http\Controllers\Student\StudentTimetableController;
+use App\Http\Controllers\Studio\StudioController;
+use App\Http\Controllers\Studio\StudioDraftController;
 use App\Http\Controllers\Teacher\TeacherAssignmentController;
 use App\Http\Controllers\Teacher\TeacherDashboardController;
 use App\Http\Controllers\Teacher\TeacherMaterialController;
 use App\Http\Controllers\Teacher\TeacherScheduleController;
 use App\Http\Controllers\Teacher\TeacherStudentController;
-use App\Support\SettingsTabs;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -45,6 +49,16 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [PageController::class, 'home'])->name('home');
 Route::get('/about', [PageController::class, 'about'])->name('about');
 Route::get('/contact', [PageController::class, 'contact'])->name('contact');
+
+/*
+| Join request («درخواست عضویت») — the landing page's join section posts here.
+| Public by necessity (the visitor has no account yet), so it is throttled and
+| the tenant is taken from the host, never from the form. The row it creates is
+| a *pending* request, not a student: see App\Support\StudentEnrollment.
+*/
+Route::post('/join', [JoinRequestController::class, 'store'])
+    ->middleware('throttle:join-request')
+    ->name('join.store');
 
 /*
 |--------------------------------------------------------------------------
@@ -207,6 +221,27 @@ Route::middleware('auth')->prefix('consultant')->name('consultant.')->group(func
         ->middleware('consultant.feature:deals')
         ->name('notifications');
 
+    /*
+    | Join requests («درخواست عضویت») — the queue of visitors who imported their
+    | data on the public site and declared a payment. Approving one creates the
+    | student. The admin can also add a student by hand here, for a person
+    | assigned outside the request flow (no visitor, no declared payment);
+    | both write through the same service. Gated by the tenant
+    | `student_join_requests` flag, which is the roster-management switch.
+    */
+    Route::prefix('requests')->name('requests.')->middleware('consultant.feature:student_join_requests')->group(function () {
+        Route::get('/', [ConsultantJoinRequestController::class, 'index'])->name('index');
+
+        // The literal `create` path must precede `{joinRequest}`, or the model
+        // binding would swallow it as a request id.
+        Route::get('create', [ConsultantJoinRequestController::class, 'create'])->name('create');
+        Route::post('create', [ConsultantJoinRequestController::class, 'store'])->name('store');
+
+        Route::get('{joinRequest}', [ConsultantJoinRequestController::class, 'show'])->name('show');
+        Route::post('{joinRequest}/approve', [ConsultantJoinRequestController::class, 'approve'])->name('approve');
+        Route::post('{joinRequest}/reject', [ConsultantJoinRequestController::class, 'reject'])->name('reject');
+    });
+
     Route::get('/permissions', [ConsultantFeatureController::class, 'show'])->defaults('feature', 'permissions')->middleware('consultant.feature:book_access')->name('permissions');
     Route::get('/questions', [ConsultantFeatureController::class, 'show'])->defaults('feature', 'questions')->middleware('consultant.feature:question_management')->name('questions');
     Route::get('/quizzes', [ConsultantFeatureController::class, 'show'])->defaults('feature', 'quizzes')->middleware('consultant.feature:quiz_management')->name('quizzes');
@@ -216,6 +251,15 @@ Route::middleware('auth')->prefix('consultant')->name('consultant.')->group(func
         Route::get('/', [StudentFeatureController::class, 'profile'])
             ->middleware('consultant.feature:student_profile')
             ->name('profile');
+
+        /*
+        | Remove the student from the roster, from their own profile page.
+        | Soft: the row and its history survive; the person leaves every list
+        | and can no longer log in. Owner-only, enforced in the controller.
+        */
+        Route::delete('/', [ConsultantJoinRequestController::class, 'removeStudent'])
+            ->middleware('consultant.feature:student_join_requests')
+            ->name('remove');
 
         Route::get('/report-card', [StudentReportCardController::class, 'index'])
             ->middleware('consultant.feature:report_cards')
@@ -265,6 +309,43 @@ Route::middleware('auth')->prefix('consultant')->name('consultant.')->group(func
             Route::put('/{item}', [StudentScheduleController::class, 'update'])->name('update');
             Route::delete('/{item}', [StudentScheduleController::class, 'destroy'])->name('destroy');
             Route::get('/{item}/comments', [StudentScheduleController::class, 'comments'])->name('comments');
+            Route::post('/{item}/comments', [StudentScheduleNoteController::class, 'storeComment'])->name('comments.store');
+        });
+
+        /*
+        | Weekly notes («توضیحات هفته») and the block-dialog's title suggestions.
+        | Both are consultant-authored, student-readable, and gated by the same
+        | student_schedule feature as the planner itself.
+        */
+        Route::prefix('schedule/notes')->name('schedule.notes.')->middleware('consultant.feature:student_schedule')->group(function () {
+            Route::get('/', [StudentScheduleNoteController::class, 'notes'])->name('index');
+            Route::put('/', [StudentScheduleNoteController::class, 'updateNotes'])->name('update');
+        });
+
+        Route::get('/schedule/suggestions', [StudentScheduleNoteController::class, 'suggestions'])
+            ->middleware('consultant.feature:student_schedule')
+            ->name('schedule.suggestions');
+
+        /*
+        | The weekly-planner AI assistant.
+        |
+        | Gated by the SAME `student_schedule` feature as the planner, so a
+        | tenant with the planner switched off cannot reach the assistant
+        | either -- there would be nothing for it to talk about. The tenant-level
+        | `ai.enabled` switch is checked in the controller rather than here,
+        | because it is a per-tenant behaviour knob (site('ai.enabled')) and not a
+        | route-existence question; the panel renders its disabled state instead
+        | of the page 404ing.
+        |
+        | Note the deliberate absence of a write route: suggestions are applied
+        | through `schedule.items.*` above. The assistant has no mutation path of
+        | its own, which is what keeps one validation path for every block.
+        */
+        Route::prefix('schedule/assistant')->name('schedule.assistant.')->middleware('consultant.feature:student_schedule')->group(function () {
+            Route::get('/', [ScheduleAssistantController::class, 'show'])->name('show');
+            Route::post('/messages', [ScheduleAssistantController::class, 'send'])->name('send');
+            Route::delete('/', [ScheduleAssistantController::class, 'clear'])->name('clear');
+            Route::post('/health', [ScheduleAssistantController::class, 'healthCheck'])->name('health');
         });
     });
 });
@@ -414,6 +495,22 @@ Route::middleware('auth:student')->prefix('student')->name('student.')->group(fu
     Route::get('timetable', [StudentTimetableController::class, 'index'])
         ->middleware('student.feature:student_timetable')
         ->name('timetable');
+
+    /*
+    | The student's own half of the weekly planner: the consultant's notes for
+    | the week, marking a block done, and commenting on a block. Gated by the
+    | same tenant flag that publishes the planner to the consultant, so a tenant
+    | without student_schedule cannot reach the JSON either.
+    |
+    | {item} is bound by id and re-checked against the authenticated student in
+    | the controller -> a guessed id answers 404, never a redirect.
+    */
+    Route::prefix('schedule')->name('schedule.')->middleware('student.feature:student_schedule')->group(function () {
+        Route::get('notes', [StudentSchedulePortalController::class, 'notes'])->name('notes');
+        Route::post('items/{item}/completion', [StudentSchedulePortalController::class, 'toggleCompletion'])->name('items.completion');
+        Route::get('items/{item}/comments', [StudentSchedulePortalController::class, 'comments'])->name('items.comments');
+        Route::post('items/{item}/comments', [StudentSchedulePortalController::class, 'storeComment'])->name('items.comments.store');
+    });
 
     /*
     | Exams the student sits themselves. The card on the dashboard opens the

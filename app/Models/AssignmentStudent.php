@@ -43,6 +43,9 @@ class AssignmentStudent extends Model
 
     public function student(): BelongsTo
     {
-        return $this->belongsTo(Student::class);
+        // History relation: a submission keeps its author's name after that
+        // student leaves the roster, so the teacher's review list does not
+        // degrade to anonymous rows.
+        return $this->belongsTo(Student::class)->withoutGlobalScope('roster');
     }
 }

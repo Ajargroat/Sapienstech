@@ -92,6 +92,16 @@ return [
 
         /*
         |------------------------------------------------------------------------
+        | Join requests (درخواست عضویت) — the landing page's signup form, the
+        | pending-request review page, and the add/remove roster actions on a
+        | student's profile. When off, the public form and the consultant page
+        | both 404 and no request can be filed.
+        |------------------------------------------------------------------------
+        */
+        'student_join_requests' => true,
+
+        /*
+        |------------------------------------------------------------------------
         | Teacher Panel — the tenant's teacher sub-level, plus its student-
         | facing half. `teacher_panel` is the master switch: when off, the
         | whole /teacher area 404s. Each section additionally has its own
@@ -201,6 +211,99 @@ return [
             'thread_closed' => 'گفتگو بسته شد.',
             'thread_reopened' => 'گفتگو دوباره باز شد.',
         ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | AI — weekly-planner assistant
+    |--------------------------------------------------------------------------
+    |
+    | Tenant-resolved behavior of the schedule assistant (site('ai.*')), exactly
+    | like the chat block above: baseline here, overridable per tenant through
+    | archetype -> tenant file -> website_configs, and the curated subset is
+    | editable in Settings -> AI assistant without a deploy.
+    |
+    | The MODEL lives here rather than in .env on purpose. `.env` is global, so
+    | an env-only model would force every tenant onto one model and make a
+    | model change a deploy. Here, a tenant can be moved to a different model
+    | (or a different price class) with one settings change, while the endpoint
+    | and the API key stay where a tenant cannot reach them: config/services.php.
+    |
+    | `env('AI_MODEL', 'gpt-4o-mini')` means the value can never be absent — an
+    | empty AI_MODEL= still yields a working default, which is what makes "the
+    | model must 100% be available" structural rather than aspirational. The
+    | `fallback_models` list is tried in order when the primary answers 429,
+    | 5xx or times out, so a single bad model name is survivable.
+    |
+    */
+    'ai' => [
+
+        // Master switch for the assistant panel on the weekly planner. Off =
+        // the routes 404 and the panel is not rendered.
+        'enabled' => true,
+
+        /*
+        | The model name, resolved through the tenant layers. Keep a cheap,
+        | fast model here: this feature makes many small calls (a briefing per
+        | week plus a turn per question), so a frontier model multiplies every
+        | request's cost for marginal benefit on a task this bounded.
+        */
+        'model' => env('AI_MODEL', 'gpt-4o-mini'),
+
+        /*
+        | Tried in order if the primary fails with 429 / 5xx / timeout. Leave
+        | empty to fail straight to a friendly error instead.
+        */
+        'fallback_models' => [],
+
+        // Sampling. Low by default: this is advisory prose about a known
+        // schedule, not creative writing, and a steadier answer is a more
+        // trustworthy one.
+        'temperature' => 0.4,
+        'max_output_tokens' => 1200,
+
+        /*
+        | How much of the student's week is handed to the model. A cap is
+        | required, not decorative: a pathological week (or a tenant that
+        | bulk-imports thousands of blocks) would otherwise build a prompt
+        | that costs more than the answer is worth. The cap truncates to the
+        | blocks nearest the requested week.
+        */
+        'max_context_blocks' => 60,
+        'max_context_days' => 14,
+        'max_note_chars' => 1200,
+
+        // How many prior messages of the thread are replayed into the prompt.
+        'thread_max_messages' => 20,
+
+        // Per-consultant throttle, mirroring chat.rate_limit_per_minute.
+        'rate_limit_per_minute' => 6,
+
+        /*
+        | Monthly token ceiling per tenant, counted over input+output across
+        | every consultant. 0 = unlimited. The tenant owner pays for what their
+        | staff burn, so a ceiling is the only thing standing between "useful
+        | assistant" and "surprise invoice" — requests are refused once it is
+        | reached, and the panel shows the meter the whole time.
+        |
+        | The default is deliberately modest. Because the model is now a
+        | tenant setting, an owner can choose an expensive model; the ceiling
+        | is what stops that from silently multiplying. Raise it on purpose.
+        */
+        'monthly_token_budget' => 1500000,
+
+        // Warn in the panel once this share of the budget is consumed.
+        'warn_at_percent' => 80,
+
+        // UI copy (RTL-safe, per tenant), same convention as the chat block.
+        'placeholder_text' => 'درباره برنامه این هفته یا جلسه بعدی بپرسید…',
+        'empty_text' => 'هنوز گفتگویی نیست. یک سؤال بپرسید یا خلاصه هفته را بگیرید.',
+        'disabled_text' => 'دستیار هوش مصنوعی برای این مجموعه فعال نیست.',
+        'unconfigured_text' => 'سرویس هوش مصنوعی برای این مجموعه تنظیم نشده است.',
+        'unreachable_text' => 'در حال حاضر دسترسی به سرویس هوش مصنوعی ممکن نیست.',
+        'rate_limited_text' => 'تعداد درخواست‌ها زیاد است؛ چند لحظه صبر کنید.',
+        'budget_exhausted_text' => 'اعتبار ماهانه این مجموعه تمام شده است.',
+        'generic_error_text' => 'پاسخ‌گویی ناموفق بود؛ دوباره تلاش کنید.',
     ],
 
     /*
@@ -961,6 +1064,79 @@ return [
                 'items' => [],   // ['label' => '', 'cells' => [true, false, 'متن'], 'visible' => true]
             ],
 
+            /*
+            | Join request («درخواست عضویت»): a visitor imports their own data
+            | and declares the payment they made, so the consultant approves a
+            | finished record instead of typing one into the database.
+            |
+            | Optional, like the sections above: a tenant opts in by adding
+            | 'join' to `sections`. The form posts to a public, throttled route
+            | that resolves the tenant from the host — the same rule every
+            | other public request follows — and the submitted row stays in
+            | `student_join_requests` until a tenant admin/owner approves it.
+            |
+            | `fields` names which inputs the form renders; `amount` and
+            | `reference` are the declared payment, and `pay_button` is the
+            | external link a tenant may point at their own gateway instead.
+            */
+            'join' => [
+                'id' => 'join',
+                'variant' => 'default',
+                'heading' => 'درخواست عضویت',
+                'subheading' => 'اطلاعات خود را وارد کنید؛ پس از تأیید پرداخت، حساب شما ساخته می‌شود.',
+                // The submit button's label.
+                'submit_label' => 'ارسال درخواست',
+                // What the visitor is told once the request is stored.
+                'success_message' => 'درخواست شما ثبت شد. پس از تأیید پرداخت، حساب کاربری شما فعال می‌شود.',
+                // Shown when the tenant has no online payment and the visitor
+                // must transfer manually. `amount` is a hint, not a charge.
+                'payment_note' => null,
+                'amount' => null,
+                // Optional external payment link (the tenant's own gateway).
+                // When set, the form shows it as a button next to the fields.
+                'pay_button' => null,   // ['label' => '', 'href' => '', 'visible' => true]
+                // Which optional inputs the form asks for. Row-shaped like every
+                // other studio list; name and email are always asked and are not
+                // listed here.
+                'fields' => [
+                    ['field' => 'phone'],
+                    ['field' => 'grade'],
+                    ['field' => 'gender'],
+                    ['field' => 'major'],
+                    ['field' => 'bio'],
+                    ['field' => 'reference'],
+                ],
+            ],
+
+            /*
+            | Paying plans («طرح‌ها»): the priced packages a visitor can buy,
+            | shown as a card grid above the join form. This is where a price
+            | is *determined* — the join form only ever lets the visitor name
+            | one of these slugs, never a number, so the amount on a request is
+            | always a price the tenant published (App\Support\Plans).
+            |
+            | Optional, like every other section: a tenant opts in by adding
+            | 'plans' to `sections` and filling `items`. An empty list renders
+            | nothing at all, so the section is a verified no-op until used.
+            |
+            | `features` is newline-separated text, not a nested list, because
+            | the studio's `list` control cannot nest a list inside a row.
+            | `featured` marks the recommended plan and is purely visual.
+            */
+            'plans' => [
+                'variant' => 'default',
+                'id' => 'plans',
+                'heading' => 'طرح‌های مشاوره',
+                'subheading' => 'طرح مناسب خود را انتخاب کنید؛ پس از پرداخت، فرم عضویت را پر کنید.',
+                // The label on each card's button, and where it points. The
+                // anchor defaults to the join form on the same page, which is
+                // the intended flow: pick a plan, then declare the payment.
+                'cta_label' => 'انتخاب این طرح',
+                'cta_href' => '#join',
+                'columns' => 3,
+                'items' => [],   // ['slug' => '', 'name' => '', 'price' => 0, 'period' => '', 'features' => '', 'cta_label' => null, 'featured' => false, 'visible' => true]
+            ],
+
             // Free-composition section: a vertical stack of tenant-authored
             // blocks. Each row's `type` decides which keys it carries; the
             // studio's list control renders the matching cells per row.
@@ -1012,6 +1188,12 @@ return [
             'submit_label' => 'ورود',
             'tabs' => ['consultant' => 'مشاور', 'student' => 'دانش‌آموز'],
             'back_link' => ['label' => 'بازگشت به سایت', 'route' => 'home', 'visible' => true],
+            // The way out for a visitor who has no account yet: the membership
+            // form lives on the home page, so this points there. Rendered only
+            // when the tenant's landing page carries the `join` section (see
+            // resources/views/auth/login.blade.php), so a tenant that has not
+            // opted into the flow shows exactly the login page it did before.
+            'signup_link' => ['label' => 'حساب کاربری ندارید؟ درخواست عضویت دهید', 'fragment' => 'plans', 'visible' => true],
             'card' => ['max_width' => '26rem', 'glass' => true],
         ],
 

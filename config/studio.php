@@ -146,7 +146,12 @@ $href = ['required', 'string', 'max:2048', 'regex:/^(#|\/|https?:\/\/)[A-Za-z0-9
 $faClass = ['nullable', 'string', 'max:255', 'regex:/^[A-Za-z0-9 \-]+$/'];
 $btnStyle = ['solid' => 'Filled', 'ghost' => 'Subtle glass', 'primary' => 'Brand', 'outline' => 'Outline'];
 $btnIcon = ['' => 'Theme default', 'none' => 'None', 'arrow' => 'Arrow (follows text)', 'arrow-ltr' => 'Arrow right', 'arrow-down' => 'Arrow down', 'chevron' => 'Chevron', 'plus' => 'Plus', 'sparkle' => 'Glow', 'download' => 'Download', 'play' => 'Play'];
-$siteRoutes = ['login' => 'Login page', 'home' => 'Home page', 'about' => 'About us', 'contact' => 'Contact', 'student.login' => 'Student login'];
+// Page destinations navigate; '#' entries scroll to a section of the home
+// page. The anchors exist so a call-to-action can point at the plans grid or
+// the membership form — the two stops on the join flow — without inventing a
+// route for them. A tenant whose home page has no such section simply gets a
+// link that scrolls nowhere, exactly like a stale `#about` does today.
+$siteRoutes = ['login' => 'Login page', 'home' => 'Home page', 'about' => 'About us', 'contact' => 'Contact', 'student.login' => 'Student login', '#plans' => 'Plans section (home page)', '#join' => 'Membership form (home page)'];
 
 // Typed-block variants of the shared fragments. The leading '' option on
 // every block select matters twice over: it keeps an untouched select
@@ -489,6 +494,8 @@ return [
                     'options' => ['default' => 'Default']],
                 ['path' => 'public.landing.blocks.variant', 'label' => 'Blocks template', 'control' => 'select', 'rules' => ['required', 'in:default'],
                     'options' => ['default' => 'Default']],
+                ['path' => 'public.landing.plans.variant', 'label' => 'Paying plans template', 'control' => 'select', 'rules' => ['required', 'in:default'],
+                    'options' => ['default' => 'Card grid']],
             ],
         ],
 
@@ -502,7 +509,7 @@ return [
                         'hero' => 'Hero', 'advisor' => 'Advisor', 'ecosystem' => 'Ecosystem', 'services' => 'Services',
                         'stats' => 'Stats', 'testimonials' => 'Testimonials', 'blog' => 'Blog', 'cta' => 'Call to action',
                         'logos' => 'Logos', 'process' => 'Process', 'faq' => 'FAQ', 'comparison' => 'Comparison',
-                        'blocks' => 'Custom blocks',
+                        'blocks' => 'Custom blocks', 'join' => 'Join request', 'plans' => 'Paying plans',
                     ]],
                 ['path' => 'public.landing.meta.title', 'label' => 'Meta title (SEO)', 'control' => 'text', 'rules' => ['required', 'string', 'max:255']],
                 ['path' => 'public.landing.meta.description', 'label' => 'Meta description', 'control' => 'textarea', 'rules' => ['required', 'string', 'max:2000']],
@@ -609,6 +616,33 @@ return [
                 ['path' => 'public.landing.faq.subheading', 'label' => 'FAQ: subheading', 'control' => 'text', 'rules' => ['nullable', 'string', 'max:2000']],
                 ['path' => 'public.landing.comparison.heading', 'label' => 'Comparison: heading', 'control' => 'text', 'rules' => ['required', 'string', 'max:255']],
                 ['path' => 'public.landing.comparison.subheading', 'label' => 'Comparison: subheading', 'control' => 'text', 'rules' => ['nullable', 'string', 'max:2000']],
+                ['path' => 'public.landing.join.heading', 'label' => 'Join request: heading', 'control' => 'text', 'rules' => ['required', 'string', 'max:255']],
+                ['path' => 'public.landing.join.subheading', 'label' => 'Join request: subheading', 'control' => 'text', 'rules' => ['nullable', 'string', 'max:2000']],
+                ['path' => 'public.landing.join.submit_label', 'label' => 'Join request: submit button', 'control' => 'text', 'rules' => ['required', 'string', 'max:255']],
+                ['path' => 'public.landing.join.success_message', 'label' => 'Join request: thank-you message', 'control' => 'textarea', 'rules' => ['required', 'string', 'max:2000']],
+                ['path' => 'public.landing.join.payment_note', 'label' => 'Join request: payment instructions', 'hint' => 'Shown above the form so the visitor knows how and where to pay before submitting.', 'control' => 'textarea', 'rules' => ['nullable', 'string', 'max:2000']],
+                ['path' => 'public.landing.join.amount', 'label' => 'Join request: amount (tomans)', 'hint' => 'The price the tenant verifies against the declared transfer. Never taken from the visitor.', 'control' => 'number', 'rules' => ['nullable', 'integer', 'min:0', 'max:100000000000']],
+                ['path' => 'public.landing.join.fields', 'label' => 'Join request: form fields', 'hint' => 'Name and email are always asked; unticking the rest hides them from the form.', 'control' => 'list', 'max' => 8, 'rules' => ['nullable', 'array', 'max:8'],
+                    'item' => [
+                        ['key' => 'field', 'label' => 'Field', 'control' => 'select', 'rules' => ['required', 'in:phone,grade,gender,major,bio,reference'],
+                            'options' => ['phone' => 'Phone', 'grade' => 'Grade', 'gender' => 'Gender', 'major' => 'Major', 'bio' => 'Short bio', 'reference' => 'Payment reference']],
+                    ]],
+                ['path' => 'public.landing.plans.heading', 'label' => 'Paying plans: heading', 'control' => 'text', 'rules' => ['required', 'string', 'max:255']],
+                ['path' => 'public.landing.plans.subheading', 'label' => 'Paying plans: subheading', 'control' => 'textarea', 'rules' => ['nullable', 'string', 'max:2000']],
+                ['path' => 'public.landing.plans.cta_label', 'label' => 'Paying plans: default button text', 'hint' => 'Used by any plan that has no button text of its own.', 'control' => 'text', 'rules' => ['required', 'string', 'max:255']],
+                ['path' => 'public.landing.plans.cta_href', 'label' => 'Paying plans: button target', 'hint' => 'Where each plan button goes. Default #join scrolls to the membership form on the same page.', 'control' => 'text', 'rules' => $href],
+                ['path' => 'public.landing.plans.items', 'label' => 'Plans', 'hint' => 'Each row is one priced plan. The price here is the one the consultant verifies against a declared payment — the visitor never types an amount.', 'control' => 'list', 'max' => 8, 'rules' => ['nullable', 'array', 'max:8'],
+                    'item' => [
+                        ['key' => 'slug', 'label' => 'Key', 'hint' => 'A short latin id (e.g. basic, standard). It identifies the plan in code; keep it unique.', 'control' => 'text', 'rules' => ['required', 'string', 'max:40', 'regex:/^[a-z0-9][a-z0-9_-]*$/']],
+                        ['key' => 'name', 'label' => 'Plan name', 'control' => 'text', 'rules' => ['required', 'string', 'max:255']],
+                        ['key' => 'price', 'label' => 'Price (tomans)', 'control' => 'number', 'min' => 0, 'max' => 100000000000, 'rules' => ['required', 'integer', 'min:0', 'max:100000000000']],
+                        ['key' => 'period', 'label' => 'Period', 'hint' => 'Optional, e.g. “ماهانه” or “سه ماهه”.', 'control' => 'text', 'rules' => ['nullable', 'string', 'max:255']],
+                        ['key' => 'features', 'label' => 'Features', 'hint' => 'One feature per line.', 'control' => 'textarea', 'rules' => ['nullable', 'string', 'max:2000']],
+                        ['key' => 'cta_label', 'label' => 'Button text', 'control' => 'text', 'rules' => ['nullable', 'string', 'max:255']],
+                        ['key' => 'badge', 'label' => 'Badge text', 'hint' => 'Shown only on the recommended plan.', 'control' => 'text', 'rules' => ['nullable', 'string', 'max:255']],
+                        ['key' => 'featured', 'label' => 'Recommended', 'control' => 'toggle'],
+                        ['key' => 'visible', 'label' => 'Visible', 'control' => 'toggle'],
+                    ]],
                 ['path' => 'public.landing.services.items', 'label' => 'Service cards', 'hint' => 'Add, remove and reorder cards; “Visible” toggles each card on its own.', 'control' => 'list', 'max' => 12, 'rules' => ['nullable', 'array', 'max:12'],
                     'item' => [
                         ['key' => 'title', 'label' => 'Title', 'control' => 'text', 'rules' => ['required', 'string', 'max:255']],
@@ -657,7 +691,7 @@ return [
                 ['path' => 'public.landing.cta.buttons', 'label' => 'Call-to-action buttons', 'control' => 'list', 'max' => 3, 'rules' => ['nullable', 'array', 'max:3'],
                     'item' => [
                         ['key' => 'label', 'label' => 'Text', 'control' => 'text', 'rules' => ['required', 'string', 'max:255']],
-                        ['key' => 'route', 'label' => 'Destination', 'control' => 'select', 'rules' => ['required', 'in:'.implode(',', array_keys($siteRoutes))], 'options' => $siteRoutes],
+                        ['key' => 'route', 'label' => 'Destination', 'hint' => 'Page entries navigate; “Plans section” and “Membership form” scroll down the home page.', 'control' => 'select', 'rules' => ['required', 'in:'.implode(',', array_keys($siteRoutes))], 'options' => $siteRoutes],
                         ['key' => 'style', 'label' => 'Style', 'control' => 'select', 'rules' => ['required', 'in:solid,ghost,primary,outline'], 'options' => $btnStyle],
                         ['key' => 'visible', 'label' => 'Visible', 'control' => 'toggle'],
                     ]],
@@ -826,6 +860,9 @@ return [
                 ['path' => 'public.login.submit_label', 'label' => 'Login button label', 'control' => 'text', 'rules' => ['required', 'string', 'max:255']],
                 ['path' => 'public.login.back_link.label', 'label' => 'Back link text', 'control' => 'text', 'rules' => ['required', 'string', 'max:255']],
                 ['path' => 'public.login.back_link.visible', 'label' => 'Show back link', 'control' => 'toggle', 'rules' => $bool],
+                ['path' => 'public.login.signup_link.label', 'label' => 'Signup link text', 'hint' => 'Offered to a visitor who has no account yet, so the login page is not a dead end. Shown only for tenants whose landing page carries the membership form.', 'control' => 'text', 'rules' => ['required', 'string', 'max:255']],
+                ['path' => 'public.login.signup_link.fragment', 'label' => 'Signup link section', 'hint' => 'Which section of the home page the link scrolls to, e.g. plans or join. Clearing it restores the default (plans).', 'control' => 'text', 'rules' => ['nullable', 'string', 'max:60', 'regex:/^[a-z0-9][a-z0-9_-]*$/']],
+                ['path' => 'public.login.signup_link.visible', 'label' => 'Show signup link', 'control' => 'toggle', 'rules' => $bool],
                 ['path' => 'public.login.card.max_width', 'label' => 'Login card width', 'control' => 'range', 'min' => 12, 'max' => 60, 'step' => 1, 'unit' => 'rem', 'rules' => $len],
                 ['path' => 'public.login.card.glass', 'label' => 'Glass card', 'hint' => 'The login card becomes glassy and what is behind it shows through blurred.', 'control' => 'toggle', 'rules' => $bool],
                 ['path' => 'public.student_login.title', 'label' => 'Student login: title', 'control' => 'text', 'rules' => ['required', 'string', 'max:255']],
@@ -856,6 +893,7 @@ return [
                 ['path' => 'features.student_exams', 'label' => 'Exams', 'control' => 'toggle', 'rules' => $bool, 'admin' => true],
                 ['path' => 'features.student_schedule', 'label' => 'Weekly schedule', 'control' => 'toggle', 'rules' => $bool, 'admin' => true],
                 ['path' => 'features.deals', 'label' => 'Renewal & payment', 'control' => 'toggle', 'rules' => $bool, 'admin' => true],
+                ['path' => 'features.student_join_requests', 'label' => 'Join requests', 'control' => 'toggle', 'rules' => $bool, 'admin' => true],
                 ['path' => 'features.teacher_panel', 'label' => 'Teacher panel', 'control' => 'toggle', 'rules' => $bool, 'admin' => true],
                 ['path' => 'features.teacher_materials', 'label' => 'Teacher materials', 'control' => 'toggle', 'rules' => $bool, 'admin' => true],
                 ['path' => 'features.teacher_assignments', 'label' => 'Teacher assignments', 'control' => 'toggle', 'rules' => $bool, 'admin' => true],
@@ -888,6 +926,40 @@ return [
                 ['path' => 'chat.idle_autoclose_days', 'label' => 'Auto-close after (days, 0 = off)', 'control' => 'number', 'rules' => ['nullable', 'integer', 'min:0', 'max:365'], 'admin' => true],
                 ['path' => 'chat.greeting_text', 'label' => 'Chat greeting', 'hint' => 'The first thing a student sees in the chat room; empty means no greeting.', 'control' => 'textarea', 'rules' => ['nullable', 'string', 'max:500'], 'admin' => true],
                 ['path' => 'chat.placeholder_text', 'label' => 'Message field placeholder', 'control' => 'text', 'rules' => ['nullable', 'string', 'max:200'], 'admin' => true],
+            ],
+        ],
+
+        /*
+        | The weekly-planner AI assistant. The endpoint and the API key are NOT
+        | here and must stay out: they live in config/services.php (.env). This
+        | tab decides what the assistant *does* for this tenant — which model,
+        | how much it may spend, how fast a consultant may call it.
+        |
+        | `model` and `fallback_models` are free text rather than a dropdown on
+        | purpose: the provider is any OpenAI-compatible endpoint, so the set of
+        | valid model names is not knowable here. A typo fails loudly (the
+        | health probe reports unreachable) rather than silently degrading.
+        */
+        'ai_assistant' => [
+            'label' => 'AI assistant',
+            'icon' => 'fa-wand-magic-sparkles',
+            'hint' => 'The weekly-planner assistant. The provider endpoint and API key are set on the server, not here.',
+            'admin' => true,
+            'fields' => [
+                ['path' => 'ai.enabled', 'label' => 'Enable the planner assistant', 'control' => 'toggle', 'rules' => $bool, 'admin' => true],
+                ['path' => 'ai.model', 'label' => 'Model', 'hint' => 'Any model name your provider accepts, e.g. gpt-4o-mini. Leave as-is unless you know your provider’s names.', 'control' => 'text', 'rules' => ['required', 'string', 'max:120'], 'admin' => true],
+                ['path' => 'ai.fallback_models', 'label' => 'Fallback models', 'hint' => 'Tried in order if the model above is rate-limited or unavailable. One per line; leave empty to fail with a message instead.', 'control' => 'list', 'max' => 3, 'rules' => ['nullable', 'array', 'max:3'],
+                    'item' => [
+                        ['key' => 'model', 'label' => 'Model', 'control' => 'text', 'rules' => ['required', 'string', 'max:120']],
+                    ]],
+                ['path' => 'ai.temperature', 'label' => 'Creativity (temperature)', 'control' => 'range', 'min' => 0, 'max' => 1, 'step' => 0.1, 'rules' => ['nullable', 'numeric', 'min:0', 'max:1'], 'admin' => true],
+                ['path' => 'ai.max_output_tokens', 'label' => 'Max answer length (tokens)', 'control' => 'number', 'rules' => ['nullable', 'integer', 'min:128', 'max:8000'], 'admin' => true],
+                ['path' => 'ai.max_context_blocks', 'label' => 'Schedule blocks sent per request', 'hint' => 'Caps the prompt size. Lower it to cut cost, raise it if busy weeks get truncated.', 'control' => 'number', 'rules' => ['nullable', 'integer', 'min:5', 'max:300'], 'admin' => true],
+                ['path' => 'ai.thread_max_messages', 'label' => 'Conversation memory (messages)', 'control' => 'number', 'rules' => ['nullable', 'integer', 'min:0', 'max:100'], 'admin' => true],
+                ['path' => 'ai.rate_limit_per_minute', 'label' => 'Requests per minute per consultant', 'control' => 'number', 'rules' => ['nullable', 'integer', 'min:1', 'max:60'], 'admin' => true],
+                ['path' => 'ai.monthly_token_budget', 'label' => 'Monthly token budget (0 = unlimited)', 'hint' => 'Counted over every consultant in this academy, input + output. Requests are refused once it is reached.', 'control' => 'number', 'rules' => ['nullable', 'integer', 'min:0', 'max:200000000'], 'admin' => true],
+                ['path' => 'ai.warn_at_percent', 'label' => 'Warn at (% of budget)', 'control' => 'number', 'rules' => ['nullable', 'integer', 'min:10', 'max:100'], 'admin' => true],
+                ['path' => 'ai.placeholder_text', 'label' => 'Question field placeholder', 'control' => 'text', 'rules' => ['nullable', 'string', 'max:200'], 'admin' => true],
             ],
         ],
     ],

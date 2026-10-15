@@ -1,6 +1,6 @@
 {
   "lucide": {
-    "mapped": 178,
+    "mapped": 179,
     "fallback": [],
     "icons": {
       "align-center": "text-align-center",
@@ -58,6 +58,7 @@
       "comment": "message-circle",
       "comments": "messages-square",
       "compress": "minimize",
+      "copy": "copy",
       "cubes": "boxes",
       "desktop": "monitor",
       "download": "download",
@@ -184,7 +185,7 @@
     }
   },
   "tabler": {
-    "mapped": 178,
+    "mapped": 179,
     "fallback": [],
     "icons": {
       "align-center": "align-center",
@@ -242,6 +243,7 @@
       "comment": "message-circle",
       "comments": "messages",
       "compress": "minimize",
+      "copy": "copy",
       "cubes": "box",
       "desktop": "device-desktop",
       "download": "download",
@@ -368,7 +370,7 @@
     }
   },
   "bi": {
-    "mapped": 178,
+    "mapped": 179,
     "fallback": [],
     "icons": {
       "align-center": "text-center",
@@ -426,6 +428,7 @@
       "comment": "chat",
       "comments": "chat-dots",
       "compress": "arrows-angle-contract",
+      "copy": "copy",
       "cubes": "boxes",
       "desktop": "display",
       "download": "download",
@@ -552,7 +555,7 @@
     }
   },
   "la": {
-    "mapped": 178,
+    "mapped": 179,
     "fallback": [],
     "icons": {
       "align-center": "align-center",
@@ -610,6 +613,7 @@
       "comment": "comment",
       "comments": "comments",
       "compress": "compress",
+      "copy": "copy",
       "cubes": "cubes",
       "desktop": "desktop",
       "download": "download",

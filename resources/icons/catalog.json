@@ -336,6 +336,12 @@
       "bi": "arrows-angle-contract",
       "la": "compress"
     },
+    "copy": {
+      "lucide": "copy",
+      "tabler": "copy",
+      "bi": "copy",
+      "la": "copy"
+    },
     "cubes": {
       "lucide": "boxes",
       "tabler": "box",

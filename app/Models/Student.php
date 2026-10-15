@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
+use App\Support\StudentAccess;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -12,18 +14,45 @@ use Illuminate\Notifications\Notifiable;
 
 class Student extends Authenticatable
 {
-    use HasFactory, Notifiable, BelongsToTenant;
+    use BelongsToTenant, HasFactory, Notifiable;
 
     protected static function booted(): void
     {
-        static::addGlobalScope('staff_access', function (\Illuminate\Database\Eloquent\Builder $query) {
+        /**
+         * Removed students are invisible everywhere.
+         *
+         * Removal is a soft marker (`removed_at`), not a delete, so a removed
+         * student's deals, attempts and chat history survive — but the person
+         * is off the roster: they must not appear in the dashboard, chat
+         * pickers, bulk selection, report cards or teacher lists, and must not
+         * be able to log in.
+         *
+         * The scope is deliberately UNCONDITIONAL (unlike `staff_access`, which
+         * skips student-portal paths to avoid inheriting a web actor). Because
+         * the student session guard resolves its user through this same query,
+         * an unconditional scope is what makes "removed" also mean "logged
+         * out": the moment a student is removed, their next request can no
+         * longer resolve them and the session ends.
+         *
+         * A named scope rather than being folded into `staff_access` keeps the
+         * concerns separate — `staff_access` answers "which students may this
+         * actor see", `roster` answers "is this person on the roster at all".
+         * Surfaces that must still render a removed student's *history* (deal
+         * rows, notifications, chat threads) opt out explicitly with
+         * `withoutGlobalScope('roster')`.
+         */
+        static::addGlobalScope('roster', function (Builder $query) {
+            $query->whereNull('students.removed_at');
+        });
+
+        static::addGlobalScope('staff_access', function (Builder $query) {
             // Student authentication must not inherit a concurrently logged-in web actor.
             if (request()->is('student', 'student/*')) {
                 return;
             }
             $staff = auth('web')->user();
             if ($staff instanceof User) {
-                \App\Support\StudentAccess::scope($query, $staff);
+                StudentAccess::scope($query, $staff);
             }
         });
     }
@@ -69,7 +98,21 @@ class Student extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'preferences' => 'array',
+            'removed_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Whether this person has been taken off the roster.
+     *
+     * Normally unreachable through a scoped query (the `roster` global scope
+     * hides these rows); it matters when a caller opts out of that scope to
+     * render history for a deal, payment or chat thread that outlives the
+     * removal.
+     */
+    public function isRemoved(): bool
+    {
+        return $this->removed_at !== null;
     }
 
     /**

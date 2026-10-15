@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Http\Controllers\Consultant\Bulk\BulkHistoryController;
+use App\Http\Middleware\IdentifyTenant;
 use App\Models\BulkAction;
 use App\Models\Student;
 use App\Models\Tenant;
@@ -46,6 +47,9 @@ class HierarchyBulkHistoryTest extends TestCase
                 $table->string('name');
                 if ($name === 'users') {
                     $table->string('role');
+                } else {
+                    // Soft roster marker (Student's `roster` global scope).
+                    $table->timestamp('removed_at')->nullable();
                 }
                 $table->timestamps();
             });
@@ -88,13 +92,13 @@ class HierarchyBulkHistoryTest extends TestCase
         });
 
         // Exercise controller and route binding without unrelated host/layout dependencies.
-        $this->withoutMiddleware(\App\Http\Middleware\IdentifyTenant::class);
+        $this->withoutMiddleware(IdentifyTenant::class);
         Route::middleware(['web', 'auth:web'])->group(function () {
             Route::get('/_bulk-history', [BulkHistoryController::class, 'index']);
             Route::delete('/_bulk-history/{action}', [BulkHistoryController::class, 'revert']);
         });
         $this->withHeader('Accept', 'application/json');
-        
+
         View::partialMock()->shouldReceive('make')->andReturnUsing(function ($name, $data = []) {
             $view = Mockery::mock(\Illuminate\View\View::class);
             $view->shouldReceive('render')->andReturn('Bulk history fixture');

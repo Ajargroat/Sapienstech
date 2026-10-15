@@ -44,6 +44,25 @@
             </a>
             @endif
 
+            @if(site('features.student_join_requests', false) && \Illuminate\Support\Facades\Route::has('consultant.requests.index'))
+            @php
+                // Pending join requests, surfaced like the deal bell so the
+                // tenant notices a visitor waiting on approval.
+                $pendingJoinRequests = \App\Models\StudentJoinRequest::query()
+                    ->where('status', \App\Models\StudentJoinRequest::STATUS_PENDING)
+                    ->count();
+            @endphp
+            <a
+                href="{{ route('consultant.requests.index') }}"
+                class="topnav-link topnav-link--badged {{ request()->routeIs('consultant.requests*') ? 'active' : '' }}"
+            >
+                درخواست‌ها
+                @if($pendingJoinRequests)
+                    <span class="topnav-notif-badge">{{ persian_digits($pendingJoinRequests) }}</span>
+                @endif
+            </a>
+            @endif
+
             {{-- Bulk assignment now lives inside the dashboard filter popover;
                  the «اقدامات گروهی» nav entry is intentionally gone. The
                  تاریخچه page is still reachable from the popover footer. --}}

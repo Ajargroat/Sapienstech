@@ -19,7 +19,9 @@ use Tests\TestCase;
 class ChatRelationAuthorizationTest extends TestCase
 {
     private Tenant $tenant;
+
     private User $staff;
+
     private Student $student;
 
     protected function setUp(): void
@@ -56,6 +58,8 @@ class ChatRelationAuthorizationTest extends TestCase
                     $table->string('role');
                 } else {
                     $table->string('grade')->nullable();
+                    // Soft roster marker (Student's `roster` global scope).
+                    $table->timestamp('removed_at')->nullable();
                 }
                 $table->timestamps();
             });

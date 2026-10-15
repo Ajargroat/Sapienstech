@@ -1,12 +1,19 @@
 # Frontend Spec Template
 
 How to describe a front-end change so an AI agent implements it right the first
-time. Copy one **block** per feature area; keep every heading.
+time — without sketching anything. Copy one **block** per feature area; keep
+every heading.
 
-The core idea: **words for behaviour, an image for look, a text diagram for
-flow.** A picture alone loses behaviour; words alone lose look; a picture with
-arrows loses the arrows (the model reads them as vague proximity, not a
-sequence). Layer all three in one block and the ambiguity is gone.
+The core idea: **words for behaviour, a named reference plus numbers for look,
+a text diagram for flow.** The agent is blind — it reads code, not pixels — so a
+look must arrive as something readable: the closest existing view ("like the card
+in `resources/views/.../x.blade.php`, but full-width with an 8px gap"),
+decomposed into structure, chrome, spacing, text and states, with numbers for
+everything you would otherwise draw. A picture alone loses behaviour, spacing
+and breakpoints; a picture with arrows loses the arrows (the model reads them as
+vague proximity, not a sequence). Layer reference + structure + numbers in one
+block and the ambiguity is gone. An image stays the last resort — only for pure
+taste with no textual referent.
 
 ---
 
@@ -23,11 +30,17 @@ Where:
 - Behavior: resources/js/features/<...>.js    (the handler / init)
   (write "N/A" for any layer the change does not touch — do not leave it blank)
 
+Structure: <boxes in order + layout words (row/column/gap/align/wrap); per-box
+  chrome (border/radius/background/shadow); spacing in numbers; exact strings;
+  states (default/hover/focus/empty); responsive (breakpoint + what stacks or
+  hides below it). Write "N/A" only when no pixel on screen changes.>
+
 Now → Should:
 - Now:    <what it does today — quote the class, line, or wording>
 - Should: <what it must do instead — concrete, measurable>
 
-Visual target: <screenshot, or "match the card in resources/views/.../x.blade.php">
+Visual target: <closest in-repo view or named pattern — "like X, but …";
+  screenshot only when nothing in-repo matches and taste itself is the spec>
 
 Flow: <only if there is a sequence — a Mermaid or ASCII arrow line, see §4>
 
@@ -42,13 +55,16 @@ Acceptance: <page + which data row you'll check it on in the browser>
 
 | What is fuzzy                | Cheapest medium              | Why                                                              |
 |------------------------------|------------------------------|------------------------------------------------------------------|
-| What it should **look** like | Screenshot / mock            | AI can't invent your taste; one image transfers the look         |
+| What it should **look** like | Named reference + numbers    | An in-repo view carries its exact CSS; "like X, but …" transfers the look with zero ambiguity |
 | How parts **connect / flow** | Diagram, but as **text**     | Arrows in a PNG are read lossily; text arrows are exact + editable |
 | What it should **do**, where | Markdown + **anchors**       | Behaviour, state and naming are where words beat pixels          |
 
 Rule of thumb: **if you'd draw an arrow, write it as text (Mermaid). If you'd
-say "like this", attach a picture. If you'd explain a rule, write prose + a
-`file:class` anchor.**
+say "like this", name the closest existing view first ("like the card in
+`resources/views/.../x.blade.php`, but …") and number the differences. If you'd
+explain a rule, write prose + a `file:class` anchor.** Attach a picture only
+when no reference exists and taste itself is the spec — and still fill the
+block, because the image cannot carry spacing, breakpoints or behaviour.
 
 ---
 
@@ -66,11 +82,14 @@ Where:
 - Style:    resources/css/features/exams.css  (.exam-question, .exam-option)
 - Behavior: N/A
 
+Structure: column of cards; option blocks separated by a gap;
+  single column below 640px
+
 Now → Should:
 - Now:    .exam-question has 8px padding and .exam-option blocks touch (0 gap)
 - Should: 16px card padding; 8px gap between options; below 640px options stack
 
-Visual target: attached mock
+Visual target: N/A — the numbers in Should are the whole spec, no picture needed
 
 Out of scope: don't touch the timer, progress bar, or submit button
 
@@ -88,6 +107,8 @@ Where:
 - UI:       N/A
 - Style:    N/A
 - Behavior: resources/js/features/consultant-report-cards.js  (sort handler)
+
+Structure: N/A (no pixel on screen changes)
 
 Now → Should:
 - Now:    sort resets to default on every reload
@@ -125,16 +146,29 @@ click sort ──► persist key ──► re-render ──► on reload: read k
 
 ## 4. Rules
 
-1. **Name all three layers** (UI / Style / Behavior) or write `N/A`. This is the
+1. **Reference first.** Before describing from scratch, name the closest
+   existing thing: an in-repo view ("like the card in
+   `resources/views/.../x.blade.php`, but full-width"), else a known pattern
+   ("a GitHub-style comment thread") pinned down with concrete properties.
+   A reference the agent can read beats any picture you could attach.
+2. **Name all three layers** (UI / Style / Behavior) or write `N/A`. This is the
    single highest-value habit — it stops the agent "improving" adjacent code.
-2. **Now → Should, never just "make it nicer".** "Cramped" is unanswerable;
-   "8px → 16px padding, 0 → 8px gap" is fully answerable.
-3. **One section per area**, titled `## <area>` — this is exactly the shape
-   `.agent/PROMPT.md` expects, so a block drops straight into the pipeline.
-4. **A picture is a reference, not a spec.** Never rely on an image to carry
-   exact spacing, hex colours, or z-order — state those in `Should`.
-5. **`Out of scope` is mandatory.** It bounds the blast radius.
-6. **Anchors beat descriptions.** `resources/css/features/exams.css
+3. **Fill Structure for anything that moves a pixel.** Boxes in order, layout
+   words (row/column/gap/align/wrap), per-box chrome
+   (border/radius/background/shadow), spacing in numbers, exact strings, states
+   (default/hover/focus/empty), responsive (breakpoint + what stacks or hides).
+   Describe relationships, not positions ("button at row end, center-aligned
+   with the input" — never x/y coordinates; RTL flips absolutes anyway).
+4. **Now → Should, never just "make it nicer".** "Cramped" is unanswerable;
+   "8px → 16px padding, 0 → 8px gap" is fully answerable. Colors as tokens
+   ("primary background"), never hex — tenant theming must survive.
+5. **One section per area**, titled `## <area>` — this is exactly the shape
+   the plan agent's brief expects, so a block drops straight into the pipeline.
+6. **A picture is a last resort, not a spec.** It is only for pure taste with no
+   textual referent — and even then it never carries exact spacing, hex colours,
+   breakpoints or z-order; state those in `Should`.
+7. **`Out of scope` is mandatory.** It bounds the blast radius.
+8. **Anchors beat descriptions.** `resources/css/features/exams.css
    (.exam-question)` locates the change; "the question styling" does not.
 
 ---
@@ -142,24 +176,31 @@ click sort ──► persist key ──► re-render ──► on reload: read k
 ## 5. Anti-patterns
 
 - **A lone screenshot + "make it like this"** → the agent guesses behaviour,
-  spacing, and which breakpoints. Attach the image *and* fill the block.
+  spacing, and which breakpoints. Name the closest in-repo reference *and* fill
+  the block; attach an image only when nothing in-repo matches.
 - **Arrows only inside a PNG** → read as proximity, not order. Redraw as Mermaid.
 - **Pasting whole files as "context"** → no signal about what changes. Point at
   the one region.
 - **Leaving scope open** → the agent touches things you didn't want moved.
 - **"Should be responsive"** → say the breakpoint and what changes below it.
+- **"Make it prettier / cleaner"** → unanswerable. Say what changes, in numbers
+  (Now → Should).
+- **Absolute positions ("button at x=320")** → describe relationships ("button at
+  row end, center-aligned with the input"). The agent thinks in flex/grid.
 
 ---
 
 ## 6. How this plugs into the workflow
 
-- **Fastest path:** paste one `## <area>` block straight into `.agent/PROMPT.md`
-  (its inbox holds one section per area). Drop your screenshot next to it and
-  reference it from `Visual target:`.
-- **Full path:** run `/pipeline` with the block as your message — the
-  orchestrator captures it into `.agent/PROMPT.md` and spawns the plan stage.
-- The plan agent turns the block into anchors; propose sketches the diff; punish
-  implements and tests. A well-filled block removes the rework round-trips.
+- **Fastest path:** run `/pipeline` with one `## <area>` block as your message
+  (the orchestrator passes it to the plan agent verbatim). If nothing in-repo
+  matches the look you want, drop a screenshot next to it and reference it from
+  `Visual target:` — the block itself still carries the spec.
+- **Batch path:** keep adding `## <area>` blocks with more `/pipeline` calls; the
+  system pauses after planning so you can queue several, then run `/go`.
+- The plan agent turns the block into anchors (code view, alternatives, diagram);
+  the resolver deconflicts it against other plans; propose implements and tests.
+  A well-filled block removes the rework round-trips.
 
 ---
 
@@ -177,11 +218,13 @@ Where:
 - Style:
 - Behavior:
 
+Structure:
+
 Now → Should:
 - Now:
 - Should:
 
-Visual target:
+Visual target: (closest in-repo view, or N/A — screenshot only as last resort)
 
 Flow:
 

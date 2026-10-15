@@ -11,8 +11,14 @@
     @endphp
 
     @if ($crop)
+        {{-- `width:100%` is load-bearing: the crop is drawn by an absolutely
+             positioned <img>, so without a width this wrapper has no intrinsic
+             size and collapsed to 0px inside the row-flex question bodies
+             (runner, review, preview) — the picture never appeared. Filling its
+             parent (capped by max-width) gives the aspect-ratio box a width to
+             hang the crop off. --}}
         <div {{ $attributes->merge(['class' => 'overflow-hidden rounded-lg border border-gray-200']) }}
-             style="position:relative;max-width:{{ $maxWidth }}px;aspect-ratio:{{ round($bbox['w'] / $bbox['h'], 4) }}">
+             style="position:relative;width:100%;max-width:{{ $maxWidth }}px;aspect-ratio:{{ round($bbox['w'] / $bbox['h'], 4) }}">
             <img src="{{ $url }}" alt="" loading="lazy"
                  style="position:absolute;max-width:none;width:{{ round($bbox['pw'] / $bbox['w'] * 100, 2) }}%;left:{{ round(-$bbox['x'] / $bbox['w'] * 100, 2) }}%;top:{{ round(-$bbox['y'] / $bbox['h'] * 100, 2) }}%">
         </div>

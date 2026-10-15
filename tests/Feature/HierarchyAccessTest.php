@@ -5,25 +5,25 @@ namespace Tests\Feature;
 use App\Models\Classroom;
 use App\Models\Domain;
 use App\Models\Student;
+use App\Models\Tenant;
+use App\Models\User;
 use App\Support\BulkSelection;
 use App\Support\SettingsTabs;
+use App\Support\SiteConfig;
+use App\Support\StudentAccess;
 use App\Support\StudentFilter;
 use Database\Seeders\HierarchyDemoSeeder;
 use Illuminate\Database\QueryException;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
 use Mockery;
 use PHPUnit\Framework\Attributes\DataProvider;
-use App\Models\Tenant;
-use App\Models\User;
-use App\Support\SiteConfig;
-use App\Support\StudentAccess;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 class HierarchyAccessTest extends TestCase
@@ -39,8 +39,8 @@ class HierarchyAccessTest extends TestCase
         DB::purge('hierarchy_access_test');
         Event::fake();
         $site = $this->mock(SiteConfig::class);
-                $site->shouldReceive('personalize')->andReturnSelf();
-                $site->shouldReceive('all')->andReturn(['features' => [
+        $site->shouldReceive('personalize')->andReturnSelf();
+        $site->shouldReceive('all')->andReturn(['features' => [
             'teacher_panel' => true, 'student_profile' => true, 'settings_profile' => true,
             'settings_chat' => true, 'theme_studio' => true, 'blog_management' => true,
         ]]);
@@ -67,48 +67,50 @@ class HierarchyAccessTest extends TestCase
                     foreach (['grade', 'gender', 'major'] as $column) {
                         $table->string($column)->nullable();
                     }
+                    // Soft roster marker (Student's `roster` global scope).
+                    $table->timestamp('removed_at')->nullable();
                 }
                 $table->timestamps();
             });
         }
         (require database_path('migrations/2026_09_18_000001_create_tenant_hierarchy.php'))->up();
-                Schema::create('domains', function (Blueprint $table) {
-                    $table->id();
-                    $table->unsignedBigInteger('tenant_id');
-                    $table->string('domain')->unique();
-                    $table->boolean('is_primary')->default(true);
-                    $table->timestamp('verified_at')->nullable();
-                    $table->timestamps();
-                });
-                Schema::create('website_configs', function (Blueprint $table) {
-                    $table->id();
-                    $table->unsignedBigInteger('tenant_id');
-                    $table->text('layout_config')->nullable();
-                    $table->timestamps();
-                });
-                Schema::create('schedule_items', function (Blueprint $table) {
-                    $table->id();
-                    foreach (['tenant_id', 'student_id', 'created_by_user_id', 'created_by_student_id', 'page_count', 'test_count'] as $column) {
-                        $table->unsignedBigInteger($column)->nullable();
-                    }
-                    foreach (['title', 'description', 'week_start_date', 'start_datetime', 'end_datetime', 'completion_timestamp', 'color', 'item_type', 'created_by_type', 'book_name'] as $column) {
-                        $table->text($column)->nullable();
-                    }
-                    $table->boolean('is_completed')->default(false);
-                    $table->timestamps();
-                });
-                foreach (['assignments', 'lesson_materials'] as $name) {
-                    Schema::create($name, function (Blueprint $table) {
-                        $table->id();
-                        $table->unsignedBigInteger('tenant_id');
-                        $table->unsignedBigInteger('teacher_id');
-                        foreach (['grade', 'title', 'subject', 'file_name'] as $column) {
-                            $table->string($column)->nullable();
-                        }
-                        $table->timestamps();
-                    });
+        Schema::create('domains', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('tenant_id');
+            $table->string('domain')->unique();
+            $table->boolean('is_primary')->default(true);
+            $table->timestamp('verified_at')->nullable();
+            $table->timestamps();
+        });
+        Schema::create('website_configs', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('tenant_id');
+            $table->text('layout_config')->nullable();
+            $table->timestamps();
+        });
+        Schema::create('schedule_items', function (Blueprint $table) {
+            $table->id();
+            foreach (['tenant_id', 'student_id', 'created_by_user_id', 'created_by_student_id', 'page_count', 'test_count'] as $column) {
+                $table->unsignedBigInteger($column)->nullable();
+            }
+            foreach (['title', 'description', 'week_start_date', 'start_datetime', 'end_datetime', 'completion_timestamp', 'color', 'item_type', 'created_by_type', 'book_name'] as $column) {
+                $table->text($column)->nullable();
+            }
+            $table->boolean('is_completed')->default(false);
+            $table->timestamps();
+        });
+        foreach (['assignments', 'lesson_materials'] as $name) {
+            Schema::create($name, function (Blueprint $table) {
+                $table->id();
+                $table->unsignedBigInteger('tenant_id');
+                $table->unsignedBigInteger('teacher_id');
+                foreach (['grade', 'title', 'subject', 'file_name'] as $column) {
+                    $table->string($column)->nullable();
                 }
-                Cache::flush();
+                $table->timestamps();
+            });
+        }
+        Cache::flush();
     }
 
     protected function tearDown(): void

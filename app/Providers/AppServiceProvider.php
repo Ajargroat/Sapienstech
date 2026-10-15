@@ -24,6 +24,19 @@ class AppServiceProvider extends ServiceProvider
             );
         });
 
+        /**
+         * Public join requests. Tighter than login per email but permissive per
+         * IP, so one shared office connection does not lock out a whole cohort:
+         * the email key catches repeat submissions for the same person, the IP
+         * key catches a script cycling addresses.
+         */
+        RateLimiter::for('join-request', function (Request $request) {
+            return [
+                Limit::perMinute(3)->by(strtolower((string) $request->input('email'))),
+                Limit::perMinute(10)->by($request->ip()),
+            ];
+        });
+
         // Role authorization (roadmap Phase 6). These gates are enforced on
         // the upcoming admin pages with ->middleware('can:manage-users')
         // and ->middleware('can:manage-website').

@@ -133,6 +133,8 @@
                                 style="--accent: {{ $accent }}"
                                 data-sched-item="sched-tpl-{{ $item->id }}"
                                 data-sched-title="{{ $item->title }}"
+                                data-sched-id="{{ $item->id }}"
+                                data-sched-completed="{{ $item->is_completed ? '1' : '0' }}"
                                 aria-haspopup="dialog"
                             >
                                 <span class="sched-box-time">
@@ -242,8 +244,12 @@
                             {{-- Always rendered, hidden until its start instant:
                                  student-dashboard.js flips it live so the card
                                  needs no reload when the window opens. --}}
+                            {{-- Timing attribute: compared against the real
+                                 browser clock, so it must be a true instant
+                                 (with the +03:30 offset), never a wall-clock
+                                 string suffixed with a fake `Z`. --}}
                             <a href="{{ route('student.exams.show', $exam) }}" class="exam-run-btn"
-                               data-start-at="{{ $exam->scheduled_at->format('Y-m-d\TH:i') }}Z"
+                               data-start-at="{{ $exam->scheduled_at->toIso8601String() }}"
                                @unless($live) hidden @endunless>
                                 <i class="fas fa-play"></i> شروع آزمون
                             </a>
@@ -328,11 +334,44 @@
                 <span class="sched-modal-value">{{ persian_digits($item->test_count) }}</span>
             </div>
         @endif
+        {{-- The student is the one who knows whether it got done, so the status
+             line is a control, not a read-out. --}}
         <div class="exam-field">
             <label>وضعیت انجام</label>
-            <span class="sched-modal-value @if($item->is_completed) is-done @endif">
-                @if($item->is_completed)<i class="fas fa-check-circle"></i> تکمیل‌شده@else <i class="far fa-circle"></i> انجام‌نشده @endif
-            </span>
+            <button
+                type="button"
+                class="sched-modal-value sched-done-toggle @if($item->is_completed) is-done @endif"
+                data-student-done-toggle
+                data-item-id="{{ $item->id }}"
+                aria-pressed="{{ $item->is_completed ? 'true' : 'false' }}"
+            >
+                <i class="fas @if($item->is_completed) fa-check-circle @else fa-circle @endif" aria-hidden="true"></i>
+                <span class="sched-done-label">@if($item->is_completed)تکمیل‌شده@else انجام‌نشده @endif</span>
+            </button>
+            <p class="sched-done-status" data-student-done-status hidden></p>
+        </div>
+        {{-- The student's own thread on the block; the consultant reads it
+             back on their side. --}}
+        <div class="exam-field exam-field--wide">
+            <label>یادداشت من</label>
+            <div class="comment-composer" data-student-comment-composer data-item-id="{{ $item->id }}">
+                <div class="comment-composer-row">
+                    <textarea
+                        class="draft-field w-full"
+                        rows="2"
+                        maxlength="2000"
+                        data-student-comment-text
+                    ></textarea>
+                    <button type="button" class="draft-btn draft-btn--primary shrink-0" data-student-comment-submit>
+                        <i class="fas fa-paper-plane w-4 h-4" aria-hidden="true"></i>
+                        <span>ثبت</span>
+                    </button>
+                </div>
+                <p class="comment-composer-status" data-student-comment-status hidden></p>
+            </div>
+            <div class="comment-thread" data-student-comment-thread>
+                <p class="comment-item comment-item--empty" data-student-comment-empty>هنوز یادداشتی ثبت نکرده‌اید.</p>
+            </div>
         </div>
         @if($item->link_url)
             <div class="exam-field exam-field--wide">
@@ -349,7 +388,13 @@
     </template>
 @endforeach
 
-<dialog id="schedule-detail-modal" class="exam-modal" aria-labelledby="sched-modal-title">
+{{-- The student portal's own endpoints. Server-rendered so the script never
+     hardcodes a route and a tenant prefix is never guessed. --}}
+<dialog id="schedule-detail-modal" class="exam-modal"
+    data-csrf="{{ csrf_token() }}"
+    data-url-completion-template="{{ url('/student/schedule/items/__ITEM__/completion') }}"
+    data-url-comments-template="{{ url('/student/schedule/items/__ITEM__/comments') }}"
+    aria-labelledby="sched-modal-title">
     <div class="exam-modal-head sched-modal-head">
         <h3 id="sched-modal-title"><i class="fas fa-calendar-check"></i> <span></span></h3>
         <button type="button" class="sched-modal-close" aria-label="بستن" data-sched-close>

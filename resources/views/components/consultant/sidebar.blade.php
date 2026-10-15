@@ -52,6 +52,25 @@
         </a>
         @endif
 
+        @if(site('features.student_join_requests', false) && \Illuminate\Support\Facades\Route::has('consultant.requests.index'))
+        @php
+            // Mirrors the topnav badge: pending join requests the tenant should see.
+            $pendingJoinRequests = \App\Models\StudentJoinRequest::query()
+                ->where('status', \App\Models\StudentJoinRequest::STATUS_PENDING)
+                ->count();
+        @endphp
+        <a
+            href="{{ route('consultant.requests.index') }}"
+            class="sidebar-link sidebar-link--badged {{ request()->routeIs('consultant.requests*') ? 'active' : '' }}"
+        >
+            <i class="fas fa-inbox" aria-hidden="true"></i>
+            <span>درخواست‌ها</span>
+            @if($pendingJoinRequests)
+                <span class="topnav-notif-badge">{{ persian_digits($pendingJoinRequests) }}</span>
+            @endif
+        </a>
+        @endif
+
         {{-- Sidebar mirrors the topnav; bulk assignment lives in the
              dashboard filter popover, so the nav entry is gone from both. --}}
     </nav>

@@ -50,7 +50,10 @@ class StudentDeal extends Model
 
     public function student(): BelongsTo
     {
-        return $this->belongsTo(Student::class);
+        // History relation: a deal outlives the student's roster membership, and
+        // the deals/notifications views render this name unguarded. Without the
+        // opt-out the `roster` scope would null it and 500 the page.
+        return $this->belongsTo(Student::class)->withoutGlobalScope('roster');
     }
 
     public function consultant(): BelongsTo

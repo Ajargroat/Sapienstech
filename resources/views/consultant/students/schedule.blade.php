@@ -22,6 +22,8 @@
     class="flex flex-col h-full"
     data-student-id="{{ $student->id }}"
     data-student-name="{{ $student->name }}"
+    data-staff-id="{{ auth()->id() }}"
+    data-tenant-id="{{ tenant()->id }}"
     data-csrf="{{ csrf_token() }}"
     data-url-dashboard="{{ route('consultant.dashboard') }}"
     data-url-items="{{ route('consultant.student.schedule.items.index', $student) }}"
@@ -32,6 +34,23 @@
     data-url-drafts="{{ route('consultant.student.schedule.drafts.index', $student) }}"
     data-url-draft-update-template="{{ route('consultant.student.schedule.drafts.update', [$student, '__DRAFT__']) }}"
     data-url-draft-apply-template="{{ route('consultant.student.schedule.drafts.apply', [$student, '__DRAFT__']) }}"
+    data-url-notes="{{ route('consultant.student.schedule.notes.index', $student) }}"
+    data-url-notes-update="{{ route('consultant.student.schedule.notes.update', $student) }}"
+    data-url-suggestions="{{ route('consultant.student.schedule.suggestions', $student) }}"
+    data-url-comment-store-template="{{ route('consultant.student.schedule.items.comments.store', [$student, '__ITEM__']) }}"
+    {{-- AI assistant. URLs only; the provider endpoint and the API key are
+         server-side secrets and deliberately have no representation here.
+         Emitted only when the tenant has the assistant on, so a disabled
+         tenant's page does not advertise routes its panel cannot use. --}}
+    @if (\App\Support\ScheduleAssistant::enabled())
+    data-url-assistant="{{ route('consultant.student.schedule.assistant.show', $student) }}"
+    data-url-assistant-send="{{ route('consultant.student.schedule.assistant.send', $student) }}"
+    data-url-assistant-clear="{{ route('consultant.student.schedule.assistant.clear', $student) }}"
+    data-url-assistant-health="{{ route('consultant.student.schedule.assistant.health', $student) }}"
+    data-assistant-enabled="1"
+    data-assistant-empty-text="{{ site('ai.empty_text', '') }}"
+    data-assistant-generic-error-text="{{ site('ai.generic_error_text', '') }}"
+    @endif
 >
     <style>
         /* ------------------------------------------------------------------
@@ -280,6 +299,11 @@
         #schedule-app .color-swatch[data-color="red"]    { --swatch: var(--c-accent-red, #ef4444); }
         #schedule-app .color-swatch[data-color="purple"] { --swatch: var(--c-accent-violet, #a855f7); }
         #schedule-app .color-swatch[data-color="pink"]   { --swatch: var(--c-accent-pink, #ec4899); }
+        #schedule-app .color-swatch[data-color="orange"] { --swatch: var(--c-accent-orange, #fb923c); }
+        #schedule-app .color-swatch[data-color="teal"]   { --swatch: var(--c-accent-teal, #2dd4bf); }
+        #schedule-app .color-swatch[data-color="lime"]   { --swatch: var(--c-accent-lime, #a3e635); }
+        #schedule-app .color-swatch[data-color="cyan"]   { --swatch: var(--c-accent-cyan, #22d3ee); }
+        #schedule-app .color-swatch[data-color="rose"]   { --swatch: var(--c-accent-rose, #fb7185); }
 
         /* --- toolbar / field primitives ---------------------------------- */
         /* Shared chrome for the header cluster, the draft editor bar and the
@@ -351,6 +375,240 @@
             #schedule-app .hidden-mobile { display: block; }
             #schedule-app .mobile-only { display: none !important; }
         }
+
+        /* ==================================================================
+           Copy / paste ("کپی") affordance
+           --------------------------------------------------------------
+           A copied block is clipboard *state*, so it is shown the way the
+           tenant would show any armed mode: one accent ring plus a soft wash,
+           both derived from the accent ramp. Geometry (radius, border width,
+           antialiasing) is re-stated from the same --draft-* tokens the base
+           .event-card uses, so the shape never drifts per tenant.
+           ================================================================== */
+        #schedule-app .event-card--copied {
+            border: var(--draft-border-w) solid var(--draft-accent);
+            border-right-width: 4px;
+            border-radius: var(--draft-radius-sm);
+            box-shadow:
+                0 0 0 calc(var(--draft-border-w) * 2) color-mix(in srgb, var(--draft-accent) 40%, transparent),
+                var(--draft-shadow);
+        }
+        /* The origin keeps a 60% wash of the same accent so "source" and
+           "armed" read as one pair. */
+        #schedule-app .event-card--source {
+            box-shadow:
+                inset 0 0 0 calc(var(--draft-border-w) * 2) color-mix(in srgb, var(--draft-accent) 45%, transparent);
+        }
+        /* Non-block surfaces that accept a paste light up as one region. */
+        #schedule-app .paste-armed {
+            outline: calc(var(--draft-border-w) * 2) dashed var(--draft-accent);
+            outline-offset: -2px;
+        }
+        /* Busy clone: the card that is mid-flight to the server. */
+        #schedule-app .event-card--busy { opacity: .55; }
+
+        /* ==================================================================
+           Block toolbar (hover/focus cluster on each card)
+           ================================================================== */
+        #schedule-app .event-card-tools {
+            position: absolute;
+            top: 2px;
+            inset-inline-start: 2px;
+            display: flex;
+            gap: 2px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity var(--draft-duration) var(--draft-ease);
+            z-index: 2;
+        }
+        #schedule-app .event-card:hover .event-card-tools,
+        #schedule-app .event-card:focus-within .event-card-tools,
+        #schedule-app .event-card--copied .event-card-tools { opacity: 1; pointer-events: auto; }
+        /* Touch devices have no hover: keep the cluster permanently visible. */
+        @media (hover: none) {
+            #schedule-app .event-card-tools { opacity: 1; pointer-events: auto; }
+        }
+        #schedule-app .event-card-tool {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 1.125rem; height: 1.125rem;
+            border: 0; padding: 0; cursor: pointer;
+            border-radius: calc(var(--draft-radius-sm) / 2);
+            background: color-mix(in srgb, var(--draft-surface) 88%, transparent);
+            color: var(--c-text);
+            font-size: .5625rem; line-height: 1;
+            transition: background var(--draft-duration) var(--draft-ease), color var(--draft-duration) var(--draft-ease);
+        }
+        #schedule-app .event-card-tool:hover { background: var(--draft-accent); color: var(--draft-on-accent); }
+        #schedule-app .event-card-tool.is-on { background: var(--draft-accent); color: var(--draft-on-accent); }
+
+        /* ==================================================================
+           Weekly notes ("توضیحات هفته")
+           --------------------------------------------------------------
+           One flat surface directly under <main>, reading the same
+           --draft-* chrome as the draft tray. Nothing here is a literal.
+           ================================================================== */
+        #schedule-app .week-notes { background: var(--draft-surface-alt); border-top: var(--draft-border-w) solid var(--draft-line); }
+        #schedule-app .week-notes-head { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; }
+        #schedule-app .week-notes-title { display: inline-flex; align-items: center; gap: .5rem; font-weight: 700; color: var(--c-text); margin: 0; }
+        #schedule-app .week-notes-hint { margin: .25rem 0 0; font-size: .75rem; color: var(--c-muted); display: flex; align-items: center; gap: .375rem; }
+        #schedule-app .week-notes-card { border-top: var(--draft-border-w) solid var(--draft-line); padding-top: .75rem; }
+        #schedule-app .week-notes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: .75rem; margin-bottom: .75rem; }
+        #schedule-app .week-notes-field { display: flex; flex-direction: column; }
+        #schedule-app .week-notes-label { font-size: .6875rem; font-weight: 600; color: var(--c-muted); margin-bottom: .25rem; }
+        #schedule-app .week-notes-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .75rem; }
+        #schedule-app .week-notes-status { font-size: .75rem; font-weight: 600; color: var(--c-muted); }
+        #schedule-app .week-notes-saved { font-size: .75rem; font-weight: 600; color: var(--c-muted); }
+        #schedule-app .week-notes-text {
+            margin: 0; font-size: .8125rem; line-height: 1.9; color: var(--c-text);
+            white-space: pre-line; overflow-wrap: anywhere;
+        }
+        #schedule-app .week-notes-target { display: inline-flex; align-items: center; gap: .375rem; font-size: .75rem; font-weight: 700; color: var(--draft-accent); }
+
+        /* ==================================================================
+           AI assistant panel
+           --------------------------------------------------------------
+           LAYOUT ONLY. The panel's chrome (background, border, radius,
+           shadow) comes from `.draft-surface`, its bubbles from `.draft-card`,
+           its states container from `.draft-inset` — the same primitives the
+           draft tray uses. Nothing here re-declares a border, radius or
+           background, so the assistant cannot drift from the planner's look
+           and a tenant's archetype reaches it automatically.
+
+           That also keeps the "a component owns its chrome" rule intact: the
+           panel is a SIBLING surface to #draft-panel, never a card nested
+           inside one, so there is no double border or radius fight to resolve.
+           ================================================================== */
+        #schedule-app .assistant-panel { padding: 1rem 1rem 1.125rem; }
+        #schedule-app .assistant-head {
+            display: flex; flex-wrap: wrap; align-items: center;
+            justify-content: space-between; gap: .5rem .75rem;
+        }
+        #schedule-app .assistant-title { display: flex; align-items: center; gap: .5rem; margin: 0; font-size: .9375rem; font-weight: 700; color: var(--c-text); }
+        #schedule-app .assistant-tools { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+
+        /* Status dot. Colour is a token, never a literal — the three states are
+           filled with the tenant's own success/danger/muted roles. */
+        #schedule-app .assistant-status { display: inline-flex; align-items: center; gap: .375rem; font-size: .75rem; font-weight: 600; color: var(--c-muted); }
+        #schedule-app .assistant-status-dot {
+            width: .5rem; height: .5rem; border-radius: 999px; flex-shrink: 0;
+            background: var(--c-muted);
+        }
+        #schedule-app .assistant-status[data-state="ok"] .assistant-status-dot { background: var(--c-success, #22c55e); }
+        #schedule-app .assistant-status[data-state="down"] .assistant-status-dot,
+        #schedule-app .assistant-status[data-state="unconfigured"] .assistant-status-dot { background: var(--c-danger, #ef4444); }
+
+        /*
+           Budget meter. Deliberately a thin bar plus a percentage rather than a
+           big dial: the consultant needs to notice it, not study it. The fill
+           switches to the danger role past the warn threshold so "you are close
+           to the ceiling" is visible without reading the number.
+        */
+        #schedule-app .assistant-meter { display: flex; flex-direction: column; gap: .25rem; min-width: 190px; }
+        #schedule-app .assistant-meter-bar {
+            height: .25rem; border-radius: 999px; overflow: hidden;
+            background: var(--draft-line);
+        }
+        #schedule-app .assistant-meter-fill {
+            height: 100%; width: 0%; border-radius: 999px;
+            background: var(--draft-accent);
+            transition: width var(--draft-duration) var(--draft-ease);
+        }
+        #schedule-app .assistant-meter[data-warn="true"] .assistant-meter-fill { background: var(--c-danger, #ef4444); }
+        #schedule-app .assistant-meter-text { font-size: .6875rem; color: var(--c-muted); }
+
+        /* Scroll region. max-height rather than a fixed height so a short
+           conversation does not leave a hole under the header. */
+        #schedule-app .assistant-log {
+            margin-top: .75rem; padding: .625rem;
+            max-height: 22rem; overflow-y: auto;
+            display: flex; flex-direction: column; gap: .5rem;
+        }
+        #schedule-app .assistant-row { display: flex; }
+        #schedule-app .assistant-row--user { justify-content: flex-start; }
+        #schedule-app .assistant-row--assistant { justify-content: flex-end; }
+
+        #schedule-app .assistant-bubble {
+            max-width: 85%; padding: .625rem .75rem; font-size: .8125rem; line-height: 1.9;
+        }
+        #schedule-app .assistant-bubble-body { margin: 0; color: var(--c-text); white-space: pre-wrap; overflow-wrap: anywhere; }
+        #schedule-app .assistant-bubble--user { border-color: color-mix(in srgb, var(--draft-accent) 40%, transparent); }
+        #schedule-app .assistant-bubble--user .assistant-bubble-body { color: var(--c-text); }
+        /* A failed turn is visually its own thing rather than a normal answer
+           the consultant might mistake for advice. */
+        #schedule-app .assistant-bubble--error { border-color: var(--c-danger, #ef4444); }
+        #schedule-app .assistant-bubble--error .assistant-bubble-body { color: var(--c-danger, #ef4444); }
+        #schedule-app .assistant-bubble-meta { display: flex; align-items: center; gap: .375rem; margin-top: .375rem; font-size: .6875rem; color: var(--c-muted); }
+
+        /* Suggestion cards. The accent rule on the inline-start edge marks them
+           as proposals rather than content, using the tenant's own accent. */
+        #schedule-app .assistant-suggestions { display: flex; flex-direction: column; gap: .5rem; margin-top: .625rem; }
+        #schedule-app .assistant-suggestion {
+            border-inline-start: 3px solid var(--draft-accent);
+            padding: .625rem .75rem;
+        }
+        #schedule-app .assistant-suggestion[data-apply="false"] { border-inline-start-color: var(--draft-line-strong); }
+        #schedule-app .assistant-suggestion[data-applied="true"] { opacity: .6; }
+        #schedule-app .assistant-suggestion-head { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+        #schedule-app .assistant-suggestion-kind { font-size: .6875rem; font-weight: 700; color: var(--draft-accent); }
+        #schedule-app .assistant-suggestion-when { font-size: .75rem; font-weight: 600; color: var(--c-text); }
+        #schedule-app .assistant-suggestion-label { margin: .375rem 0 0; font-size: .8125rem; font-weight: 600; color: var(--c-text); white-space: pre-wrap; overflow-wrap: anywhere; }
+        #schedule-app .assistant-suggestion-meta { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .25rem; font-size: .6875rem; color: var(--c-muted); }
+        #schedule-app .assistant-suggestion-reason { margin: .375rem 0 0; font-size: .75rem; line-height: 1.8; color: var(--c-muted); }
+        #schedule-app .assistant-suggestion-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin-top: .5rem; }
+        #schedule-app .assistant-suggestion-swatch { width: .875rem; height: .875rem; border-radius: 999px; flex-shrink: 0; border: 1px solid var(--draft-line-strong); }
+
+        /* The ideas lane: suggestions the model was not sure enough about to
+           earn an action. No button is rendered at all, so these are
+           structurally incapable of changing a schedule. */
+        #schedule-app .assistant-ideas { margin-top: .75rem; padding: .625rem .75rem; }
+        #schedule-app .assistant-ideas-head { display: flex; align-items: center; gap: .375rem; font-size: .75rem; font-weight: 700; color: var(--c-muted); }
+        #schedule-app .assistant-ideas-list { margin: .5rem 0 0; padding-inline-start: 1.125rem; display: flex; flex-direction: column; gap: .375rem; }
+        #schedule-app .assistant-ideas-list li { font-size: .75rem; line-height: 1.8; color: var(--c-muted); }
+
+        /* Composer. A block with an explicit send button and an Enter handler —
+           never a nested <form>, which the HTML parser would silently drop. */
+        #schedule-app .assistant-composer { display: flex; flex-wrap: wrap; align-items: flex-end; gap: .5rem; margin-top: .75rem; }
+        #schedule-app .assistant-composer .draft-field { flex: 1 1 16rem; min-width: 0; resize: vertical; min-height: 2.75rem; }
+        #schedule-app .assistant-hint { margin: .5rem 0 0; font-size: .6875rem; color: var(--c-muted); }
+        #schedule-app .assistant-empty { text-align: center; font-size: .75rem; color: var(--c-muted); padding: .5rem 0; }
+        #schedule-app .assistant-off { margin: .75rem 0 0; font-size: .75rem; color: var(--c-muted); display: flex; align-items: center; gap: .375rem; }
+
+        /* ==================================================================
+           Modal sub-cards (completion + comments) and the comment composer
+           --------------------------------------------------------------
+           The two modal sections intentionally share ONE class: they are the
+           same component (a titled inset panel) used twice, so neither can
+           drift from the other.
+           ================================================================== */
+        #schedule-app .modal-block { border-top: var(--draft-border-w) solid var(--draft-line); padding-top: .875rem; }
+        #schedule-app .modal-block-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; margin-bottom: .5rem; }
+        #schedule-app .modal-block-title { margin: 0; font-size: .8125rem; font-weight: 700; color: var(--c-text); }
+        /* Explains that the dialog is holding a block copied from another
+           student. Reads from the tenant's own tokens, like every other panel
+           here, so it inherits the active archetype rather than fixing a hue. */
+        #schedule-app .modal-block--hint {
+            border-top: none;
+            border: var(--draft-border-w) solid var(--draft-line);
+            border-inline-start-width: 3px;
+            border-inline-start-color: var(--draft-accent);
+            border-radius: var(--draft-radius);
+            background: color-mix(in srgb, var(--draft-accent) 10%, transparent);
+            padding: .5rem .75rem;
+            margin: 0;
+            font-size: .75rem;
+            line-height: 1.7;
+            color: var(--c-text);
+        }
+        #schedule-app .comment-composer { display: flex; flex-direction: column; gap: .5rem; margin-top: .5rem; }
+        #schedule-app .comment-composer-row { display: flex; align-items: flex-end; gap: .5rem; }
+        #schedule-app .comment-composer .draft-field { flex: 1; resize: none; }
+        #schedule-app .comment-item { padding: .5rem; }
+        #schedule-app .comment-item-head { display: flex; justify-content: space-between; align-items: center; gap: .5rem; margin-bottom: .25rem; }
+        #schedule-app .comment-item-name { font-size: .75rem; font-weight: 700; color: var(--draft-accent); }
+        #schedule-app .comment-item-time { font-size: .625rem; color: var(--c-muted); }
+        #schedule-app .comment-item-text { margin: 0; font-size: .75rem; color: var(--c-text); white-space: pre-wrap; overflow-wrap: anywhere; }
+        #schedule-app .comment-item--empty { text-align: center; font-size: .75rem; color: var(--c-muted); padding: .5rem 0; }
+        #schedule-app .comment-item--error { text-align: center; font-size: .75rem; color: var(--c-danger); padding: .5rem 0; }
     </style>
 
     {{-- Header cluster. Everything visual comes from the .draft-* primitives in
@@ -394,6 +652,25 @@
                 <span>ذخیره پیش‌نویس</span>
                 <i class="fas fa-spinner draft-spinner w-4 h-4" aria-hidden="true"></i>
             </button>
+            @if (\App\Support\ScheduleAssistant::enabled())
+            {{-- The assistant's only entry point. Sits beside the draft button
+                 in the same action cluster, so it reads as a planner tool
+                 rather than a separate destination.
+
+                 Guarded by the SAME switch as the panel it opens. An unguarded
+                 button here would be a dead control in a tenant that disabled
+                 the assistant -- it would render, and opening it would reveal
+                 nothing. --}}
+            <button id="assistant-toggle" type="button"
+                    aria-label="دستیار هوش مصنوعی"
+                    title="دستیار هوش مصنوعی"
+                    aria-expanded="false"
+                    aria-controls="assistant-panel"
+                    class="draft-btn draft-btn--soft">
+                <i class="fas fa-wand-magic-sparkles w-4 h-4" aria-hidden="true"></i>
+                <span class="hidden-mobile">دستیار هوشمند</span>
+            </button>
+            @endif
             <button id="add-event-button" type="button" aria-label="پیش‌نویس‌های برنامه هفتگی" title="پیش‌نویس‌های برنامه هفتگی" aria-expanded="false" aria-controls="draft-panel" class="draft-btn draft-btn--primary draft-btn--icon shrink-0">
                 <i class="fas fa-folder-open w-5 h-5" aria-hidden="true"></i>
             </button>
@@ -448,6 +725,91 @@
         </p>
     </section>
 
+    {{--
+        AI assistant panel.
+
+        A SIBLING of #draft-panel and #draft-editor, not a card inside either:
+        all three are independent .draft-surface strips under the header, so
+        there is exactly one border, one background and one radius per strip.
+        Nesting two would produce a double border and a radius fight.
+
+        Rendered only when the tenant has the assistant enabled. The tenant
+        switch is read here rather than gating the route, so a tenant that turns
+        it off gets a planner with no assistant — not a 404 page. Every other
+        value the client needs (URLs, copy, the csrf token) arrives as a
+        data-* attribute, matching how the rest of this screen is wired.
+    --}}
+    @if (\App\Support\ScheduleAssistant::enabled())
+    <section id="assistant-panel" aria-labelledby="assistant-panel-title" class="draft-surface assistant-panel hidden">
+        <div class="assistant-head">
+            <h2 id="assistant-panel-title" class="assistant-title">
+                <span class="draft-chip w-8 h-8">
+                    <i class="fas fa-wand-magic-sparkles w-4 h-4" aria-hidden="true"></i>
+                </span>
+                <span>دستیار هوشمند برنامه</span>
+            </h2>
+
+            <div class="assistant-tools">
+                {{-- Service state. Filled from the health payload; the dot is
+                     data-state driven so no hue is hardcoded in markup. --}}
+                <span id="assistant-status" class="assistant-status" data-state="closed" role="status" aria-live="polite">
+                    <span class="assistant-status-dot" aria-hidden="true"></span>
+                    <span id="assistant-status-text">در حال بررسی…</span>
+                </span>
+
+                <button id="assistant-health-button" type="button" class="draft-btn draft-btn--quiet draft-btn--sm" title="بررسی مجدد اتصال">
+                    <i class="fas fa-rotate w-3.5 h-3.5" aria-hidden="true"></i>
+                    <span>بررسی اتصال</span>
+                </button>
+
+                <button id="assistant-clear-button" type="button" class="draft-btn draft-btn--danger draft-btn--sm">
+                    <i class="fas fa-trash w-3.5 h-3.5" aria-hidden="true"></i>
+                    <span>پاک‌کردن گفتگو</span>
+                </button>
+            </div>
+        </div>
+
+        {{-- The meter the owner cares about and the consultant benefits from
+             seeing: how much of this academy's monthly allowance is spent. --}}
+        <div id="assistant-meter" class="assistant-meter" data-warn="false">
+            <div class="assistant-meter-bar">
+                <div id="assistant-meter-fill" class="assistant-meter-fill"></div>
+            </div>
+            <span id="assistant-meter-text" class="assistant-meter-text"></span>
+        </div>
+
+        <div class="assistant-tools" style="margin-top:.75rem">
+            <button id="assistant-briefing-button" type="button" class="draft-btn draft-btn--primary draft-btn--sm">
+                <i class="fas fa-list-check w-3.5 h-3.5" aria-hidden="true"></i>
+                <span>خلاصه این هفته</span>
+            </button>
+        </div>
+
+        {{-- The conversation. Owned exclusively by the renderer in
+             consultant-schedule-assistant.js — nothing else may append here. --}}
+        <div id="assistant-log" class="draft-inset assistant-log" aria-live="polite" aria-busy="false"></div>
+
+        {{-- A block with an explicit action button, never a <form>: this panel
+             lives inside the page shell, and a nested <form> would be dropped
+             by the HTML parser while still looking correct in the source. --}}
+        <div class="assistant-composer">
+            <textarea id="assistant-input" class="draft-field" rows="1" maxlength="2000"
+                      aria-label="سؤال از دستیار"
+                      placeholder="{{ site('ai.placeholder_text', '') }}"></textarea>
+            <button id="assistant-send-button" type="button" class="draft-btn draft-btn--primary">
+                <i class="fas fa-paper-plane w-4 h-4" aria-hidden="true"></i>
+                <span>ارسال</span>
+                <i class="fas fa-spinner draft-spinner w-4 h-4" aria-hidden="true"></i>
+            </button>
+        </div>
+
+        <p class="assistant-hint">
+            <i class="fas fa-shield-halved w-3 h-3 shrink-0" aria-hidden="true"></i>
+            <span>فقط عنوان و زمان بلوک‌های همین دانش‌آموز برای تحلیل فرستاده می‌شود. هیچ پیشنهادی بدون تأیید شما در برنامه اعمال نمی‌شود.</span>
+        </p>
+    </section>
+    @endif
+
     <main class="flex-1 flex flex-col overflow-hidden px-2 sm:px-4 lg:px-6 py-3 sm:py-4">
         <div id="mobile-day-tabs" class="mobile-only flex overflow-x-auto gap-2 pb-2 mb-2 snap-x hide-scrollbar"></div>
 
@@ -469,10 +831,73 @@
             </div>
         </div>
 
-        <div class="mt-2 text-center text-[10px] sm:text-xs text-[var(--c-muted)] flex items-center justify-center gap-1 sm:gap-2">
+        <div class="draft-row-meta mt-2 text-center flex items-center justify-center gap-1 sm:gap-2">
             <i class="fas fa-arrow-pointer w-3 h-3 sm:w-4 sm:h-4" aria-hidden="true"></i>
-            برای ایجاد برنامه جدید، روی فضای خالی تقویم کلیک کرده و درگ کنید.
+            <span>برای ایجاد برنامه جدید، روی فضای خالی تقویم کلیک کرده و درگ کنید. با «Ctrl + C / Ctrl + V» یا دکمه‌های کپی روی هر بلوک، آن را در روز و ساعت دیگری تکرار کنید.</span>
         </div>
+
+        {{-- ============================================================
+             توضیحات هفته — the consultant's notes for the student, read
+             from the calendar's perspective (one card per weekday, in the
+             order they appear on the grid). Sits directly under the grid
+             panel inside <main>. Everything it needs is data-driven:
+             the target list, the URL, the labels.
+             ============================================================ --}}
+        <section id="week-notes" class="draft-card week-notes mt-3 px-3 sm:px-4 py-3" aria-labelledby="week-notes-title">
+            <div class="week-notes-head">
+                <h2 id="week-notes-title" class="week-notes-title text-sm">
+                    <span class="draft-chip hidden sm:inline-flex w-7 h-7">
+                        <i class="fas fa-note-sticky w-4 h-4" aria-hidden="true"></i>
+                    </span>
+                    توضیحات هفته
+                    <span id="week-notes-range" class="draft-row-meta"></span>
+                </h2>
+                <div class="week-notes-actions ms-auto">
+                    <button type="button" id="week-notes-edit" class="draft-btn draft-btn--soft draft-btn--sm">
+                        <i class="fas fa-pen w-4 h-4" aria-hidden="true"></i>
+                        <span>ویرایش توضیحات</span>
+                    </button>
+                    <button type="button" id="week-notes-copy" class="draft-btn draft-btn--outline draft-btn--sm">
+                        <i class="fas fa-clone w-4 h-4" aria-hidden="true"></i>
+                        <span>کپی از روز دیگر</span>
+                    </button>
+                </div>
+            </div>
+
+            <p class="week-notes-hint">
+                <i class="fas fa-circle-info w-3.5 h-3.5 shrink-0" aria-hidden="true"></i>
+                <span>این متن‌ها در پنل دانش‌آموز نمایش داده می‌شوند؛ هفته‌به‌هفته ذخیره می‌شوند.</span>
+            </p>
+
+            {{-- Read view: one card per weekday. Populated from the API. --}}
+            <div id="week-notes-list" class="week-notes-grid mt-3" aria-live="polite"></div>
+            <p id="week-notes-empty" class="week-notes-hint hidden"></p>
+            <p id="week-notes-status" class="week-notes-status hidden mt-2" role="status"></p>
+
+            {{-- Edit view: class-driven fields, one per weekday. --}}
+            <form id="week-notes-form" class="week-notes-card hidden mt-2" novalidate>
+                <div id="week-notes-fields" class="week-notes-grid"></div>
+                <div class="week-notes-actions">
+                    <button type="submit" id="week-notes-save" class="draft-btn draft-btn--primary">
+                        <i class="fas fa-save w-4 h-4" aria-hidden="true"></i>
+                        <span>ذخیره توضیحات</span>
+                        <i class="fas fa-spinner draft-spinner w-4 h-4" aria-hidden="true"></i>
+                    </button>
+                    <button type="button" id="week-notes-cancel" class="draft-btn draft-btn--quiet">انصراف</button>
+                    <span id="week-notes-saved" class="week-notes-saved"></span>
+                </div>
+            </form>
+
+            {{-- Copy view: pick a source weekday, paste its text everywhere. --}}
+            <div id="week-notes-copy-panel" class="week-notes-card hidden mt-2">
+                <label class="week-notes-label" for="week-notes-copy-source">متن کدام روز روی همه روزهای هفته تکرار شود؟</label>
+                <div class="flex flex-wrap items-center gap-2 mt-1">
+                    <select id="week-notes-copy-source" class="draft-field"></select>
+                    <button type="button" id="week-notes-copy-apply" class="draft-btn draft-btn--primary draft-btn--sm">اعمال روی همه روزها</button>
+                    <button type="button" id="week-notes-copy-cancel" class="draft-btn draft-btn--quiet draft-btn--sm">انصراف</button>
+                </div>
+            </div>
+        </section>
     </main>
 
     <div id="event-modal" class="fixed inset-0 backdrop-blur-sm z-50 hidden flex items-center justify-center p-2 sm:p-4 opacity-0 transition-opacity duration-300" style="background: color-mix(in srgb, var(--c-text) 30%, transparent)">
@@ -488,9 +913,19 @@
                 <form id="event-form" class="space-y-4">
                     <input type="hidden" id="event_id" value="">
 
+                    {{-- A block copied on ANOTHER student's planner: the fields
+                         below hold that student's block, and saving creates a
+                         new one here. Hidden unless the clipboard came from a
+                         different student, so the common case stays quiet. --}}
+                    <p id="clipboard-hint" class="modal-block modal-block--hint hidden" role="status"></p>
+
                     <div>
-                        <label class="block text-sm font-medium text-[var(--c-muted)] mb-1">عنوان برنامه <span class="text-red-500">*</span></label>
-                        <input type="text" id="title" required placeholder="مثال: مطالعه ریاضی دهم" class="draft-field w-full">
+                        <label class="block text-sm font-medium text-[var(--c-muted)] mb-1">عنوان برنامه <span class="draft-required">*</span></label>
+                        <input type="text" id="title" required list="title-suggestions" autocomplete="off" placeholder="مثال: مطالعه ریاضی دهم" class="draft-field w-full">
+                        {{-- Suggestions come from this tenant's own past blocks (API),
+                             never a shared pool, so they match how *this* consultant
+                             words a task. --}}
+                        <datalist id="title-suggestions"></datalist>
                     </div>
 
                     <div>
@@ -512,13 +947,18 @@
 
                     <div>
                         <label class="block text-sm font-medium text-[var(--c-muted)] mb-2">رنگ دسته‌بندی</label>
-                        <div class="flex flex-wrap gap-2 sm:gap-3" id="color-picker" role="radiogroup">
-                            <button type="button" data-color="blue" class="color-swatch w-7 h-7 sm:w-8 sm:h-8" role="radio" aria-checked="true" title="آبی"></button>
-                            <button type="button" data-color="green" class="color-swatch w-7 h-7 sm:w-8 sm:h-8" role="radio" aria-checked="false" title="سبز"></button>
-                            <button type="button" data-color="yellow" class="color-swatch w-7 h-7 sm:w-8 sm:h-8" role="radio" aria-checked="false" title="زرد"></button>
-                            <button type="button" data-color="red" class="color-swatch w-7 h-7 sm:w-8 sm:h-8" role="radio" aria-checked="false" title="قرمز"></button>
-                            <button type="button" data-color="purple" class="color-swatch w-7 h-7 sm:w-8 sm:h-8" role="radio" aria-checked="false" title="بنفش"></button>
-                            <button type="button" data-color="pink" class="color-swatch w-7 h-7 sm:w-8 sm:h-8" role="radio" aria-checked="false" title="صورتی"></button>
+                        <div class="flex flex-wrap gap-2 sm:gap-3" id="color-picker" role="radiogroup" aria-label="رنگ دسته‌بندی">
+                            <button type="button" data-color="blue" class="color-swatch w-7 h-7 sm:w-8 sm:h-8 selected" role="radio" aria-checked="true" title="آبی" aria-label="آبی"></button>
+                            <button type="button" data-color="green" class="color-swatch w-7 h-7 sm:w-8 sm:h-8" role="radio" aria-checked="false" title="سبز" aria-label="سبز"></button>
+                            <button type="button" data-color="yellow" class="color-swatch w-7 h-7 sm:w-8 sm:h-8" role="radio" aria-checked="false" title="زرد" aria-label="زرد"></button>
+                            <button type="button" data-color="red" class="color-swatch w-7 h-7 sm:w-8 sm:h-8" role="radio" aria-checked="false" title="قرمز" aria-label="قرمز"></button>
+                            <button type="button" data-color="purple" class="color-swatch w-7 h-7 sm:w-8 sm:h-8" role="radio" aria-checked="false" title="بنفش" aria-label="بنفش"></button>
+                            <button type="button" data-color="pink" class="color-swatch w-7 h-7 sm:w-8 sm:h-8" role="radio" aria-checked="false" title="صورتی" aria-label="صورتی"></button>
+                            <button type="button" data-color="orange" class="color-swatch w-7 h-7 sm:w-8 sm:h-8" role="radio" aria-checked="false" title="نارنجی" aria-label="نارنجی"></button>
+                            <button type="button" data-color="teal" class="color-swatch w-7 h-7 sm:w-8 sm:h-8" role="radio" aria-checked="false" title="فیروزه‌ای" aria-label="فیروزه‌ای"></button>
+                            <button type="button" data-color="lime" class="color-swatch w-7 h-7 sm:w-8 sm:h-8" role="radio" aria-checked="false" title="لیمویی" aria-label="لیمویی"></button>
+                            <button type="button" data-color="cyan" class="color-swatch w-7 h-7 sm:w-8 sm:h-8" role="radio" aria-checked="false" title="آبی روشن" aria-label="آبی روشن"></button>
+                            <button type="button" data-color="rose" class="color-swatch w-7 h-7 sm:w-8 sm:h-8" role="radio" aria-checked="false" title="سرخابی" aria-label="سرخابی"></button>
                         </div>
                         <input type="hidden" id="color_theme" value="blue">
                     </div>
@@ -550,16 +990,48 @@
                         <textarea id="description" rows="2" placeholder="نکات تکمیلی برای دانش‌آموز..." class="draft-field w-full resize-none">></textarea>
                     </div>
 
-                    <div id="status-container" class="hidden mt-4 pt-4 border-t border-[var(--c-border)] flex justify-between items-center">
-                        <span class="text-sm font-medium text-[var(--c-muted)]">وضعیت انجام:</span>
-                        <span id="completion-status" class="text-sm font-bold"></span>
+                    <div id="status-container" class="modal-block hidden mt-4">
+                        <div class="modal-block-head">
+                            <h4 class="modal-block-title">
+                                <i class="fas fa-circle-check draft-accent-text" aria-hidden="true"></i>
+                                وضعیت انجام
+                            </h4>
+                            <span id="completion-status" class="text-sm font-bold"></span>
+                        </div>
                     </div>
 
-                    <div id="comments-section" class="hidden mt-3">
-                        <label class="block text-xs font-medium text-[var(--c-muted)] mb-2">نظرات دانش‌آموز</label>
+                    <div id="comments-section" class="modal-block hidden mt-3">
+                        <div class="modal-block-head">
+                            <h4 class="modal-block-title">
+                                <i class="fas fa-comments draft-accent-text" aria-hidden="true"></i>
+                                گفت‌وگو درباره این بلوک
+                            </h4>
+                            <span id="comments-count" class="draft-row-meta"></span>
+                        </div>
+                        {{-- #comments-list is owned exclusively by the thread
+                             renderer, so nothing else may live inside it. --}}
                         <div id="comments-list" class="draft-inset space-y-2 max-h-40 overflow-y-auto p-3"></div>
                     </div>
-                </form>
+
+                    {{-- The consultant replies on the same thread the student writes
+                         in. It is a SIBLING of #comments-section, not a child: the
+                         thread renderer replaces that section's list wholesale. --}}
+                    <div id="consultant-comment-block" class="modal-block hidden mt-3">
+                        {{-- Deliberately NOT a nested <form>: the HTML parser drops a
+                             form inside #event-form. The button carries the action
+                             and Enter submits from the textarea. --}}
+                        <div id="consultant-comment-form" class="comment-composer">
+                            <label class="week-notes-label" for="consultant-comment-text">یادداشت مشاور برای دانش‌آموز</label>
+                            <div class="comment-composer-row">
+                                <textarea id="consultant-comment-text" rows="2" maxlength="2000"
+                                    class="draft-field w-full" placeholder="مثلاً: این بلوک را برای مرور هفته آینده نگه دار..."></textarea>
+                                <button type="button" id="consultant-comment-submit" class="draft-btn draft-btn--primary shrink-0">
+                                    <i class="fas fa-paper-plane w-4 h-4" aria-hidden="true"></i>
+                                    <span>ثبت</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
             </div>
 
             <div class="draft-surface-top flex flex-wrap sm:flex-nowrap justify-between items-center gap-3 p-4 sm:p-5 shrink-0">
@@ -576,6 +1048,20 @@
             </div>
         </div>
     </div>
+
+    {{-- Cloned by consultant-schedule.js when a block is dragged to a new
+         day/time. Kept as markup (not a JS string) so Tailwind sees the
+         utilities and the tenant's build keeps them. --}}
+    <template id="event-card-tpl">
+        <div class="event-card flex flex-col gap-1" role="button" tabindex="0">
+            <div class="event-card-tools">
+                <button type="button" class="event-card-tool" data-card-action="copy" title="کپی بلوک" aria-label="کپی بلوک">
+                    <i class="fas fa-clone" aria-hidden="true"></i>
+                </button>
+            </div>
+            <div class="event-card-body"></div>
+        </div>
+    </template>
 
     <div id="toast" class="draft-toast fixed bottom-5 left-1/2 -translate-x-1/2 text-[var(--c-text)] px-4 py-3 flex items-center gap-3 transition-all duration-300 transform translate-y-20 opacity-0 z-50">
         <i class="fas fa-circle-check w-5 h-5 draft-success-text" aria-hidden="true"></i>

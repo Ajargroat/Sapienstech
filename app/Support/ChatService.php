@@ -633,6 +633,15 @@ class ChatService
     /**
      * Fail closed for the whole group if any membership has been revoked.
      * Hiding only that member would still expose their history and identity.
+     *
+     * `withoutGlobalScope('roster')` is deliberate: this method's question is
+     * "is every participant still a *member* of this thread?" — i.e. has a
+     * student_staff link been detached — and NOT "is every participant still on
+     * the tenant roster?". A removed student keeps their threads (the user's
+     * rule is that removal hides the person, not their history), and they
+     * cannot log in to use them anyway. Folding the roster marker in here would
+     * instead hide a whole group thread from its *other* members because one
+     * participant left, which nobody asked for.
      */
     private static function relationsAllow(ChatConversation $conversation): bool
     {
@@ -653,6 +662,7 @@ class ChatService
         }
 
         $students = Student::withoutGlobalScope('staff_access')
+            ->withoutGlobalScope('roster')
             ->where('tenant_id', $conversation->tenant_id)->whereIn('id', $studentIds);
 
         return StudentAccess::scope($students, $staff)->count() === $studentIds->count();

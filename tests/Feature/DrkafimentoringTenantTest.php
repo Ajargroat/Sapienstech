@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Domain;
 use App\Models\Student;
 use App\Models\StudentAssignedQuiz;
+use App\Models\StudentJoinRequest;
 use App\Models\Tenant;
 use App\Models\User;
 use Database\Seeders\DrkafimentoringTenantSeeder;
@@ -94,6 +95,79 @@ class DrkafimentoringTenantTest extends TestCase
 
         // The structural "single non-hierarchical consultant" fact.
         $this->assertNull($tenant->fresh()->hierarchy_type);
+    }
+
+    /**
+     * The visitor's whole journey on this tenant's own site: the landing page
+     * carries the membership form (the `join` section is in the tenant file's
+     * `sections`), submitting it files a pending request rather than creating a
+     * student, and the consultant sees that request in their queue.
+     *
+     * Nothing else in the suite renders *this* tenant's landing page, so this
+     * is what would catch the section silently disappearing again.
+     */
+    public function test_a_visitor_can_file_a_join_request_from_this_tenants_landing_page(): void
+    {
+        [$tenant, $host] = $this->seedTenant();
+
+        $this->get("http://{$host}/")
+            ->assertOk()
+            ->assertSee('درخواست عضویت')
+            ->assertSee(route('join.store'), false);
+
+        $this->post("http://{$host}/join", [
+            'name' => 'زهرا محمدی',
+            'email' => 'zahra@drkafimentoring.ir',
+            'phone' => '09120000000',
+            'grade' => 'دهم',
+            'reference' => 'REF-12345',
+        ])->assertRedirect();
+        // Pending, and not on the roster: an unapproved visitor must never
+        // appear among the eight seeded students.
+        $this->assertSame(1, StudentJoinRequest::withoutGlobalScopes()
+            ->where('tenant_id', $tenant->id)
+            ->where('status', StudentJoinRequest::STATUS_PENDING)
+            ->count());
+
+        $this->assertSame(8, Student::withoutGlobalScopes()
+            ->where('tenant_id', $tenant->id)
+            ->count());
+
+        // And the consultant can act on it.
+        $this->actingAs($this->owner($tenant))
+            ->get("http://{$host}/consultant/requests")
+            ->assertOk()
+            ->assertSee('زهرا محمدی');
+    }
+
+    /**
+     * A visitor with no account must be able to *find* the flow.
+     *
+     * The form is useless if nothing links to it: before this, the nav's only
+     * destination was the login page and the hero's primary button pointed at
+     * '#'. This pins the three entry points, and the login page's way out for
+     * someone who has no account yet.
+     */
+    public function test_the_join_flow_is_reachable_from_the_pages_entry_points(): void
+    {
+        [, $host] = $this->seedTenant();
+
+        $landing = $this->get("http://{$host}/")->assertOk()->getContent();
+
+        // The nav link, the hero button and the closing band all lead to the
+        // plans grid, which is where the join flow starts.
+        $this->assertStringContainsString('>طرح‌ها</a>', $landing);
+        $this->assertGreaterThanOrEqual(
+            2,
+            substr_count($landing, 'href="#plans"'),
+            'the hero and the closing call-to-action should both point at the plans grid',
+        );
+
+        // The login page offers a visitor without an account a way forward.
+        $this->get("http://{$host}/login")
+            ->assertOk()
+            ->assertSee('حساب کاربری ندارید؟ درخواست عضویت دهید')
+            ->assertSee(route('home').'#plans', false);
     }
 
     public function test_the_owner_can_log_in_through_the_tenant_host_and_see_the_roster(): void
