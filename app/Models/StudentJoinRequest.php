@@ -34,6 +34,7 @@ class StudentJoinRequest extends Model
         'name',
         'email',
         'phone',
+        'national_code',
         'grade',
         'gender',
         'major',
@@ -84,13 +85,15 @@ class StudentJoinRequest extends Model
     /**
      * The duplicate guard's value for an open request.
      *
-     * Scoped by tenant so the same person may hold an open request on two
-     * different tenants' sites, and cleared on review so a rejected applicant
-     * can apply again later.
+     * `$identity` is the primary identifier, type-prefixed by the caller
+     * (nc: / ph: / em:) so identifier shapes can never collide. Scoped by
+     * tenant so the same person may hold an open request on two different
+     * tenants' sites, and cleared on review so a rejected applicant can apply
+     * again later.
      */
-    public static function openKey(int $tenantId, string $email): string
+    public static function openKey(int $tenantId, string $identity): string
     {
-        return $tenantId.'|'.mb_strtolower(trim($email));
+        return $tenantId.'|'.mb_strtolower(trim($identity));
     }
 
     /**

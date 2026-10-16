@@ -7,6 +7,7 @@ use App\Http\Middleware\EnsureUserDomain;
 use App\Http\Middleware\IdentifyTenant;
 use App\Models\ItemComment;
 use App\Models\ScheduleItem;
+use App\Models\ScheduleWeekNote;
 use App\Models\Student;
 use App\Models\Tenant;
 use App\Support\SiteConfig;
@@ -153,6 +154,26 @@ class StudentSchedulePortalTest extends TestCase
         ], $attributes));
     }
 
+    /** Seed one weekday's consultant note for a student-week. */
+    private function note(Student $student, int $dayIndex, ?string $text, ?string $weekStart = null): ScheduleWeekNote
+    {
+        return ScheduleWeekNote::create([
+            'tenant_id' => $student->tenant_id,
+            'student_id' => $student->id,
+            'week_start_date' => $weekStart ?? $this->weekStart(),
+            'day_index' => $dayIndex,
+            'note_text' => $text,
+        ]);
+    }
+
+    /** The Saturday the portal resolves an un-parameterized week request to. */
+    private function weekStart(): string
+    {
+        $today = now();
+
+        return $today->copy()->subDays(($today->dayOfWeek + 1) % 7)->startOfDay()->toDateString();
+    }
+
     public function test_student_can_mark_a_block_done(): void
     {
         $item = $this->item($this->student);
@@ -247,5 +268,44 @@ class StudentSchedulePortalTest extends TestCase
 
         $this->postJson($this->completionUrl($item), ['is_completed' => true])->assertStatus(404);
         $this->assertDatabaseHas('schedule_items', ['id' => $item->id, 'is_completed' => 0]);
+    }
+
+    // =========================================================================
+    // Weekly notes («توضیحات هفته») — the student's read end
+    // =========================================================================
+
+    public function test_student_reads_the_weeks_notes(): void
+    {
+        $weekStart = $this->weekStart();
+
+        $this->note($this->student, 0, 'صفحه ۱۰ تا ۲۰');
+        $this->note($this->student, 2, 'آزمون فصل ۳', $weekStart);
+
+        $this->actingAs($this->student, 'student');
+
+        $response = $this->getJson('/student/schedule/notes')->assertOk();
+
+        $this->assertSame($weekStart, $response->json('week_start_date'));
+        $this->assertSame(2, $response->json('note_count'));
+        $this->assertSame('صفحه ۱۰ تا ۲۰', $response->json('days.0.text'));
+        $this->assertTrue($response->json('days.0.has_text'));
+        $this->assertFalse($response->json('days.1.has_text'));
+        $this->assertNull($response->json('days.1.text'));
+        $this->assertSame('آزمون فصل ۳', $response->json('days.2.text'));
+    }
+
+    public function test_notes_belong_to_the_authenticated_student(): void
+    {
+        $this->note($this->otherStudent, 0, 'یادداشت دانش‌آموز دیگر');
+
+        $this->actingAs($this->student, 'student');
+
+        $response = $this->getJson('/student/schedule/notes')->assertOk();
+
+        $this->assertSame(0, $response->json('note_count'));
+        $this->assertSame(
+            [null, null, null, null, null, null, null],
+            array_column($response->json('days'), 'text'),
+        );
     }
 }

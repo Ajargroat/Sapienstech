@@ -111,6 +111,7 @@ class StudentDashboardController extends Controller
         return view('student.dashboard', [
             'student' => $student,
             'weekItems' => $weekItems,
+            'weekStart' => $weekStart,
             'upcomingExams' => $upcomingExams,
             'recentResults' => $recentResults,
             'statuses' => self::STATUSES,

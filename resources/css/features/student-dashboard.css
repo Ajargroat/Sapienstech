@@ -1,0 +1,14 @@
+/* Student dashboard: the read-only «توضیحات هفته» list.
+   The day chrome (.sched-day / .sched-day-head) is shared with the schedule
+   grid; only the note body is new. Token-driven — no literal colors. */
+.student-week-notes-text {
+  margin: 0;
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 1.9;
+  color: var(--c-text);
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--c-surface) 78%, transparent);
+}

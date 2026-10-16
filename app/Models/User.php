@@ -3,20 +3,25 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\HasLoginIdentifier;
+use App\Models\Concerns\NormalizesIdentity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, BelongsToTenant;
+    use BelongsToTenant, HasFactory, HasLoginIdentifier, NormalizesIdentity, Notifiable;
 
     public const ROLE_PLATFORM_ADMIN = 'platform_admin';
+
     public const ROLE_TENANT_ADMIN = 'tenant_admin';
+
     public const ROLE_CONSULTANT_STAFF = 'consultant_staff';
+
     public const ROLE_TEACHER = 'teacher';
 
     protected $fillable = [
@@ -24,6 +29,8 @@ class User extends Authenticatable
         'domain_id',
         'name',
         'email',
+        'phone',
+        'national_code',
         'password',
         'role',
         'avatar',

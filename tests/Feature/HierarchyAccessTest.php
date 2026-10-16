@@ -408,8 +408,8 @@ class HierarchyAccessTest extends TestCase
         $tenant = $this->academy();
         $foreign = $this->academy('foreign');
         $teacher = $this->staff($tenant);
-        $credentials = ['email' => $teacher->email, 'password' => 'HierarchyTest!2026'];
-        $this->post($this->url($foreign, '/login'), $credentials)->assertSessionHasErrors('email');
+        $credentials = ['identifier' => $teacher->email, 'password' => 'HierarchyTest!2026'];
+        $this->post($this->url($foreign, '/login'), $credentials)->assertSessionHasErrors('identifier');
         $this->assertGuest('web');
         $this->post($this->url($tenant, '/login'), $credentials)->assertRedirect($this->url($tenant, '/teacher/dashboard'));
         $this->assertAuthenticatedAs($teacher, 'web');

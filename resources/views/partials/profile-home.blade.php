@@ -4,8 +4,9 @@
 
     1. action bar   — quick tiles for the portal's main features (the same
                       destinations the top navigation carries),
-    2. info list    — the account's data rows; the email is the handle and
-                      gets the accent color, exactly like Telegram's @username,
+    2. info list    — the account's data rows; the login identifier
+                      (email, phone or کد ملی) gets the accent color,
+                      exactly like Telegram's @username,
     3. settings list — one row per profile section from App\Support\SettingsTabs
                       (edit, appearance, chat — feature-gated), each
                       a link *into* the hub's ?tab= sections. The 'profile'
@@ -22,6 +23,10 @@
 --}}
 @php
     $logoutRoute = $portal === 'student' ? 'student.logout' : 'logout';
+    $handle = $profile->loginIdentifier();
+    $handleKey = $handle === null ? null
+        : (str_contains($handle, '@') ? 'email'
+        : (preg_match('/^09\d{9}$/', $handle) === 1 ? 'phone' : 'national_code'));
 @endphp
 <div class="profile-page">
     @if(! empty($actions))
@@ -37,8 +42,16 @@
 
     <section class="profile-info-list">
         <div class="profile-info-row">
+            <span class="profile-info-label">{{ $labels['phone'] ?? 'شمارهٔ موبایل' }}</span>
+            <span class="profile-info-value {{ $profile->phone ? '' : 'is-muted' }}{{ $handleKey === 'phone' ? ' is-accent' : '' }}" dir="ltr">{{ $profile->phone ?: 'ثبت نشده' }}</span>
+        </div>
+        <div class="profile-info-row">
+            <span class="profile-info-label">{{ $labels['national_code'] ?? 'کد ملی' }}</span>
+            <span class="profile-info-value {{ $profile->national_code ? '' : 'is-muted' }}{{ $handleKey === 'national_code' ? ' is-accent' : '' }}" dir="ltr">{{ $profile->national_code ?: 'ثبت نشده' }}</span>
+        </div>
+        <div class="profile-info-row">
             <span class="profile-info-label">{{ $labels['email'] ?? 'ایمیل' }}</span>
-            <span class="profile-info-value is-accent" dir="ltr">{{ $profile->email }}</span>
+            <span class="profile-info-value {{ $profile->email ? '' : 'is-muted' }}{{ $handleKey === 'email' ? ' is-accent' : '' }}" dir="ltr">{{ $profile->email ?: 'ثبت نشده' }}</span>
         </div>
         <div class="profile-info-row">
             <span class="profile-info-label">{{ $labels['bio'] ?? 'توضیحات' }}</span>

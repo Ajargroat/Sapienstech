@@ -21,14 +21,14 @@ class LoginController extends Controller
     public function login(Request $request): RedirectResponse
     {
         $credentials = $request->validate([
-            'email'    => ['required', 'string', 'email'],
+            'identifier' => ['required', 'string', 'max:255'],
             'password' => ['required', 'string'],
         ]);
 
         $tenant = tenant() ?? abort(404);
         $domain = domain() ?? abort(404);
 
-        $user = User::where('email', $credentials['email'])
+        $user = User::whereIdentifier($credentials['identifier'])
             ->where('tenant_id', $tenant->id)
             ->first();
 
@@ -40,7 +40,7 @@ class LoginController extends Controller
             // Deliberately generic: don't reveal whether the failure was
             // the password, the domain assignment, or the account itself.
             throw ValidationException::withMessages([
-                'email' => trans('auth.failed'),
+                'identifier' => trans('auth.failed'),
             ]);
         }
 

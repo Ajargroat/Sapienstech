@@ -5,9 +5,11 @@ namespace Tests\Feature\Consultant;
 use App\Models\Domain;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Support\IranianIdentity;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -26,8 +28,8 @@ class SettingsProfileTest extends TestCase
         $tenant = Tenant::factory()->create();
         $host = Str::lower(Str::random(10)).'.sapienstech.test';
         Domain::create([
-            'tenant_id'  => $tenant->id,
-            'domain'     => $host,
+            'tenant_id' => $tenant->id,
+            'domain' => $host,
             'is_primary' => true,
         ]);
         Cache::forget(Domain::cacheKey($host));
@@ -86,7 +88,7 @@ class SettingsProfileTest extends TestCase
 
         $this->assertStringContainsString('name="name"', $edit);
         $this->assertStringContainsString('name="bio"', $edit);
-        foreach (['avatar', 'name', 'email', 'bio', 'password'] as $field) {
+        foreach (['avatar', 'name', 'phone', 'national_code', 'email', 'bio', 'password'] as $field) {
             $this->assertStringContainsString('data-profile-open="profile-dialog-'.$field.'"', $edit);
             $this->assertStringContainsString('<dialog class="profile-dialog" id="profile-dialog-'.$field.'"', $edit);
         }
@@ -126,7 +128,7 @@ class SettingsProfileTest extends TestCase
             ])->assertSessionHasErrors('email');
 
         $this->get($url)->assertOk()
-            ->assertSee('aria-label="ایمیل (شناسهٔ حساب شما)"  data-profile-auto-open', false)
+            ->assertSee('aria-label="ایمیل (اختیاری)"  data-profile-auto-open', false)
             ->assertSee('value="not-an-email"', false)
             ->assertSee('id="profile-error-email"', false);
     }
@@ -154,7 +156,7 @@ class SettingsProfileTest extends TestCase
             ->assertSee('role="switch"', false)
             ->assertDontSee('data-chat-hint', false)
             ->assertDontSee('chat-setting-chat_read_receipts-help', false)
-                        ->assertDontSee('فرستنده از خوانده‌شدن پیام مطلع شود.')
+            ->assertDontSee('فرستنده از خوانده‌شدن پیام مطلع شود.')
             ->assertDontSee('profile-chat-section-help', false)
             ->assertDontSee('profile-chat-appearance', false)
             ->assertDontSee('tab=appearance', false)
@@ -193,7 +195,7 @@ class SettingsProfileTest extends TestCase
 
         $this->actingAs($user)->patch("http://{$host}/consultant/settings/profile", [
             'name' => 'نام جدید',
-            'email' => 'new-' . Str::lower(Str::random(6)) . '@example.test',
+            'email' => 'new-'.Str::lower(Str::random(6)).'@example.test',
         ])->assertRedirect();
 
         $this->assertSame('نام جدید', $user->fresh()->name);
@@ -205,13 +207,95 @@ class SettingsProfileTest extends TestCase
         $user = $this->consultantFor($tenant);
         $colleague = User::factory()->consultant()->create([
             'tenant_id' => $tenant->id,
-            'email' => 'taken-' . Str::lower(Str::random(6)) . '@example.test',
+            'email' => 'taken-'.Str::lower(Str::random(6)).'@example.test',
         ]);
 
         $this->actingAs($user)->patch("http://{$host}/consultant/settings/profile", [
             'name' => 'هرچیز',
             'email' => $colleague->email,
         ])->assertSessionHasErrors('email');
+    }
+
+    public function test_profile_identity_fields_are_normalised_before_saving(): void
+    {
+        [$tenant, $host] = $this->tenantWithDomain();
+        $user = $this->consultantFor($tenant);
+        $code = IranianIdentity::randomValidNationalCode();
+
+        // Persian digits, spaces and the +98 shape must land canonical.
+        $this->actingAs($user)->patch("http://{$host}/consultant/settings/profile", [
+            'name' => $user->name,
+            'phone' => '+98 ۹۱۲ ۳۴۵ ۶۷۸۹',
+            'national_code' => $code,
+        ])->assertRedirect();
+
+        $fresh = $user->fresh();
+        $this->assertSame('09123456789', $fresh->phone);
+        $this->assertSame($code, $fresh->national_code);
+    }
+
+    public function test_phone_and_national_code_conflicts_are_rejected(): void
+    {
+        [$tenant, $host] = $this->tenantWithDomain();
+        $user = $this->consultantFor($tenant);
+        $colleague = User::factory()->consultant()->withIdentity()->create([
+            'tenant_id' => $tenant->id,
+        ]);
+
+        $this->actingAs($user)->patch("http://{$host}/consultant/settings/profile", [
+            'name' => $user->name,
+            'phone' => $colleague->phone,
+        ])->assertSessionHasErrors('phone');
+
+        // The same number typed with Persian digits must hit the same check.
+        $this->actingAs($user)->patch("http://{$host}/consultant/settings/profile", [
+            'name' => $user->name,
+            'phone' => $this->persianDigits($colleague->phone),
+        ])->assertSessionHasErrors('phone');
+
+        $this->actingAs($user)->patch("http://{$host}/consultant/settings/profile", [
+            'name' => $user->name,
+            'national_code' => $colleague->national_code,
+        ])->assertSessionHasErrors('national_code');
+    }
+
+    public function test_national_code_conflict_is_rejected_even_across_tenants(): void
+    {
+        [$tenant, $host] = $this->tenantWithDomain();
+        $user = $this->consultantFor($tenant);
+
+        [$otherTenant] = $this->tenantWithDomain();
+        app()->instance('tenant', $otherTenant);
+        $foreign = User::factory()->consultant()->withIdentity()->create([
+            'tenant_id' => $otherTenant->id,
+        ]);
+
+        // One person, one کد ملی: another tenant's account blocks the code.
+        $this->actingAs($user)->patch("http://{$host}/consultant/settings/profile", [
+            'name' => $user->name,
+            'national_code' => $foreign->national_code,
+        ])->assertSessionHasErrors('national_code');
+    }
+
+    public function test_email_is_optional_on_update(): void
+    {
+        [$tenant, $host] = $this->tenantWithDomain();
+        $user = $this->consultantFor($tenant);
+
+        // A dialog that does not carry an email (or a legacy account without
+        // one) must still save: phone or کد ملی can be the login instead.
+        $this->actingAs($user)->patch("http://{$host}/consultant/settings/profile", [
+            'name' => 'بدون تغییر ایمیل',
+        ])->assertRedirect();
+
+        $this->assertSame('بدون تغییر ایمیل', $user->fresh()->name);
+        $this->assertSame($user->email, $user->fresh()->email);
+    }
+
+    /** Re-spell ASCII digits the way a Persian keyboard types them. */
+    private function persianDigits(string $value): string
+    {
+        return strtr($value, array_combine(range('0', '9'), ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹']));
     }
 
     public function test_password_change_requires_the_current_password(): void
@@ -236,7 +320,7 @@ class SettingsProfileTest extends TestCase
         ])->assertRedirect();
 
         $this->assertTrue(
-            \Illuminate\Support\Facades\Hash::check('brand-new-secret', $user->fresh()->password)
+            Hash::check('brand-new-secret', $user->fresh()->password)
         );
     }
 

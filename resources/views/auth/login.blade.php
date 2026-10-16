@@ -90,8 +90,8 @@
             <h2 class="text-lg font-bold text-center mb-1">{{ $c['title'] }}</h2>
             <p class="text-center mb-6 text-sm" style="color:var(--c-muted)">{{ $c['subtitle'] }}</p>
 
-            <label for="email-c" class="block mb-1 text-sm font-medium">{{ $c['email_label'] }}</label>
-            <input id="email-c" type="email" name="email" value="{{ old('email') }}" required autofocus autocomplete="email" dir="ltr"
+            <label for="identifier-c" class="block mb-1 text-sm font-medium">{{ $c['identifier_label'] }}</label>
+            <input id="identifier-c" type="text" name="identifier" value="{{ old('identifier') }}" required autofocus autocomplete="username" dir="ltr"
                    class="w-full px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-(--c-primary)"
                    style="background:var(--c-surface-alt);border:1px solid var(--c-border);border-radius:var(--radius-input);color:var(--c-text)">
 
@@ -117,8 +117,8 @@
             <h2 class="text-lg font-bold text-center mb-1">{{ $s['title'] }}</h2>
             <p class="text-center mb-6 text-sm" style="color:var(--c-muted)">{{ $s['subtitle'] }}</p>
 
-            <label for="email-s" class="block mb-1 text-sm font-medium">{{ $s['email_label'] }}</label>
-            <input id="email-s" type="email" name="email" value="{{ old('email') }}" required autocomplete="email" dir="ltr"
+            <label for="identifier-s" class="block mb-1 text-sm font-medium">{{ $s['identifier_label'] }}</label>
+            <input id="identifier-s" type="text" name="identifier" value="{{ old('identifier') }}" required autocomplete="username" dir="ltr"
                    class="w-full px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-(--c-primary)"
                    style="background:var(--c-surface-alt);border:1px solid var(--c-border);border-radius:var(--radius-input);color:var(--c-text)">
 

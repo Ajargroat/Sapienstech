@@ -119,27 +119,29 @@ class StudentJoinRequestTest extends TestCase
         $this->assertSame('REF-99999', StudentJoinRequest::withoutGlobalScopes()->firstOrFail()->reference);
     }
 
-    public function test_name_and_email_are_required(): void
+    public function test_name_and_phone_are_required(): void
     {
         [, $host] = $this->tenantWithDomain('join-required.test');
 
-        $this->post("http://{$host}/join", ['name' => '', 'email' => ''])
-            ->assertSessionHasErrors(['name', 'email']);
+        $this->post("http://{$host}/join", ['name' => '', 'email' => '', 'phone' => ''])
+            ->assertSessionHasErrors(['name', 'phone']);
 
         $this->assertSame(0, StudentJoinRequest::withoutGlobalScopes()->count());
     }
 
-    public function test_an_email_already_on_the_active_roster_is_refused(): void
+    public function test_an_identity_already_on_the_active_roster_is_refused(): void
     {
         [$tenant, $host] = $this->tenantWithDomain('join-existing.test');
 
         app()->instance('tenant', $tenant);
         Student::factory()->for($tenant)->create(['email' => 'zahra@example.test']);
 
-        // Accepting this would let whoever typed the address take over an
-        // existing student's account, because approval issues a new password.
+        // Accepting this would let whoever typed an identity that is already
+        // on the roster take over an existing student's account, because
+        // approval issues a new password. The refusal lands on the primary
+        // handle — `phone`.
         $this->post("http://{$host}/join", $this->payload())
-            ->assertSessionHasErrors('email');
+            ->assertSessionHasErrors('phone');
 
         $this->assertSame(0, StudentJoinRequest::withoutGlobalScopes()->count());
     }

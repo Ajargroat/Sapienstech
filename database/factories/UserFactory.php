@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Models\Domain;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Support\IranianIdentity;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -29,6 +30,10 @@ class UserFactory extends Factory
             'domain_id' => null,
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
+            // NULL = the account logs in by email only (legacy shape).
+            // withIdentity() fills in the phone / کد ملی pair.
+            'phone' => null,
+            'national_code' => null,
             'password' => Hash::make('password'),
             'role' => 'consultant_staff',
             'email_verified_at' => now(),
@@ -49,6 +54,17 @@ class UserFactory extends Factory
     public function teacher(): static
     {
         return $this->state(fn () => ['role' => 'teacher']);
+    }
+
+    /**
+     * Give the account a phone + کد ملی so it can log in by either.
+     */
+    public function withIdentity(?string $phone = null, ?string $nationalCode = null): static
+    {
+        return $this->state(fn () => [
+            'phone' => $phone ?? sprintf('09%09d', fake()->unique()->numberBetween(0, 999999999)),
+            'national_code' => $nationalCode ?? IranianIdentity::randomValidNationalCode(),
+        ]);
     }
 
     /**

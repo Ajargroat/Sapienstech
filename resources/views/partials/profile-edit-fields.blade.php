@@ -3,9 +3,18 @@
     $profileRoute = fn (string $suffix) => route($portal . '.settings.profile' . $suffix);
     $fields = [
         'name' => ['label' => 'نام', 'icon' => 'fa-user', 'type' => 'text'],
-        'email' => ['label' => 'ایمیل (شناسهٔ حساب شما)', 'icon' => 'fa-at', 'type' => 'email'],
+        'phone' => ['label' => 'شمارهٔ موبایل', 'icon' => 'fa-mobile-screen-button', 'type' => 'tel', 'empty' => 'هنوز ثبت نشده', 'autocomplete' => 'tel'],
+        'national_code' => ['label' => 'کد ملی', 'icon' => 'fa-id-card', 'type' => 'text', 'empty' => 'هنوز ثبت نشده', 'autocomplete' => 'off'],
+        'email' => ['label' => 'ایمیل (اختیاری)', 'icon' => 'fa-at', 'type' => 'email', 'empty' => 'هنوز ثبت نشده'],
         'bio' => ['label' => 'توضیحات', 'icon' => 'fa-circle-info', 'type' => 'textarea'],
     ];
+    // The handle row (the value this person signs in with) wears the accent,
+    // exactly like the profile hub: email ?: phone ?: کد ملی.
+    $identityFields = ['phone', 'national_code', 'email'];
+    $handle = $profile->loginIdentifier();
+    $handleKey = $handle === null ? null
+        : (str_contains($handle, '@') ? 'email'
+        : (preg_match('/^09\d{9}$/', $handle) === 1 ? 'phone' : 'national_code'));
 @endphp
 
 <div class="profile-page profile-edit-fields" data-profile-dialogs>
@@ -42,7 +51,7 @@
                     <span class="profile-setting-icon"><i class="fas {{ $field['icon'] }}" aria-hidden="true"></i></span>
                     <span class="profile-edit-row-content">
                         <span class="profile-edit-row-label">{{ $field['label'] }}</span>
-                        <span class="profile-edit-row-value {{ $name === 'email' ? 'is-accent' : '' }}" @if($name === 'email') dir="ltr" @endif>{{ $profile->{$name} ?: 'هنوز متنی ننوشته‌اید' }}</span>
+                        <span class="profile-edit-row-value {{ $name === $handleKey ? 'is-accent' : '' }}" @if(in_array($name, $identityFields, true)) dir="ltr" @endif>{{ $profile->{$name} ?: ($field['empty'] ?? 'هنوز متنی ننوشته‌اید') }}</span>
                     </span>
                     <i class="fas fa-chevron-left profile-setting-chevron" aria-hidden="true"></i>
                 </button>
@@ -65,7 +74,7 @@
                 @if($field['type'] === 'textarea')
                     <textarea id="profile-input-{{ $name }}" name="{{ $name }}" rows="4" maxlength="500" class="settings-input" autofocus aria-invalid="{{ $errors->has($name) ? 'true' : 'false' }}" @error($name) aria-describedby="profile-error-{{ $name }}" @enderror>{{ old($name, $profile->{$name}) }}</textarea>
                 @else
-                    <input id="profile-input-{{ $name }}" type="{{ $field['type'] }}" name="{{ $name }}" value="{{ old($name, $profile->{$name}) }}" class="settings-input" required autofocus autocomplete="{{ $name }}" @if($name === 'email') dir="ltr" @endif aria-invalid="{{ $errors->has($name) ? 'true' : 'false' }}" @error($name) aria-describedby="profile-error-{{ $name }}" @enderror>
+                    <input id="profile-input-{{ $name }}" type="{{ $field['type'] }}" name="{{ $name }}" value="{{ old($name, $profile->{$name}) }}" class="settings-input" @required($name === 'name') autofocus autocomplete="{{ $field['autocomplete'] ?? $name }}" @if(in_array($name, $identityFields, true)) dir="ltr" @endif aria-invalid="{{ $errors->has($name) ? 'true' : 'false' }}" @error($name) aria-describedby="profile-error-{{ $name }}" @enderror>
                 @endif
                 @error($name)<span class="settings-error" id="profile-error-{{ $name }}" role="alert">{{ $message }}</span>@enderror
                 <div class="profile-dialog-actions">

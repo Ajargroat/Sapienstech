@@ -23,8 +23,9 @@
     // but the form is public — keep the surface enumerable).
     $allowed = [
         'name'      => ['label' => 'نام و نام خانوادگی', 'type' => 'text',  'required' => true,  'autocomplete' => 'name'],
-        'email'     => ['label' => 'ایمیل',              'type' => 'email', 'required' => true,  'autocomplete' => 'email'],
-        'phone'     => ['label' => 'شماره تماس',         'type' => 'tel',   'required' => false, 'autocomplete' => 'tel'],
+        'phone'     => ['label' => 'شمارهٔ موبایل',      'type' => 'tel',   'required' => true,  'autocomplete' => 'tel'],
+        'email'     => ['label' => 'ایمیل (اختیاری)',    'type' => 'email', 'required' => false, 'autocomplete' => 'email'],
+        'national_code' => ['label' => 'کد ملی (اختیاری)', 'type' => 'text', 'required' => false, 'autocomplete' => 'off'],
         'grade'     => ['label' => 'پایه تحصیلی',        'type' => 'text',  'required' => false, 'autocomplete' => 'off'],
         'gender'    => ['label' => 'جنسیت',              'type' => 'text',  'required' => false, 'autocomplete' => 'off'],
         'major'     => ['label' => 'رشته تحصیلی',        'type' => 'text',  'required' => false, 'autocomplete' => 'off'],
@@ -40,10 +41,10 @@
         (array) ($j['fields'] ?? [])
     );
 
-    // `name` and `email` are structural: a request without them cannot become a
+    // `name` and `phone` are structural: a request without them cannot become a
     // student. Everything else is the tenant's choice.
     $wanted = array_values(array_intersect(
-        array_merge(['name', 'email'], $configured),
+        array_merge(['name', 'phone'], $configured),
         array_keys($allowed)
     ));
 
@@ -161,7 +162,7 @@
                                 value="{{ old($field) }}"
                                 autocomplete="{{ $meta['autocomplete'] }}"
                                 @if ($meta['required']) required @endif
-                                @if ($field === 'email') dir="ltr" @endif
+                                @if (in_array($field, ['email', 'phone', 'national_code'], true)) dir="ltr" @endif
                                 class="w-full px-3 py-2 focus:outline-none focus:ring-2 focus:ring-(--c-primary)"
                                 style="{{ $inputStyle }}"
                             >

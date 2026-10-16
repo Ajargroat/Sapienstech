@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\HasLoginIdentifier;
+use App\Models\Concerns\NormalizesIdentity;
 use App\Support\StudentAccess;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,7 +16,7 @@ use Illuminate\Notifications\Notifiable;
 
 class Student extends Authenticatable
 {
-    use BelongsToTenant, HasFactory, Notifiable;
+    use BelongsToTenant, HasFactory, HasLoginIdentifier, NormalizesIdentity, Notifiable;
 
     protected static function booted(): void
     {
@@ -78,6 +80,8 @@ class Student extends Authenticatable
         'domain_id',
         'name',
         'email',
+        'phone',
+        'national_code',
         'password',
         'grade',
         'gender',

@@ -23,6 +23,7 @@
     ];
     $rows = [
         'ایمیل'         => $request->email,
+        'کد ملی'        => $request->national_code,
         'شماره تماس'    => $request->phone,
         'پایه تحصیلی'   => $request->grade,
         'جنسیت'         => $request->gender,

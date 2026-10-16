@@ -32,10 +32,10 @@ class StudentAuthTest extends TestCase
         [, , $host] = $this->makeTenantWithStudent('tenant-student.test');
 
         // /student/login now forwards to the shared page with the student tab open.
-        $this->get("http://tenant-student.test/student/login")
+        $this->get('http://tenant-student.test/student/login')
             ->assertRedirect(route('login', ['tab' => 'student']));
 
-        $this->get("http://tenant-student.test/login?tab=student")
+        $this->get('http://tenant-student.test/login?tab=student')
             ->assertOk()
             ->assertSee('ورود دانش‌آموز');
     }
@@ -44,8 +44,8 @@ class StudentAuthTest extends TestCase
     {
         [, $student, $host] = $this->makeTenantWithStudent('tenant-student.test');
 
-        $this->post("http://tenant-student.test/student/login", [
-            'email' => $student->email,
+        $this->post('http://tenant-student.test/student/login', [
+            'identifier' => $student->email,
             'password' => 'password',
         ])->assertRedirect(route('student.dashboard'));
 
@@ -56,10 +56,10 @@ class StudentAuthTest extends TestCase
     {
         [, $student, $host] = $this->makeTenantWithStudent('tenant-student.test');
 
-        $this->post("http://tenant-student.test/student/login", [
-            'email' => $student->email,
+        $this->post('http://tenant-student.test/student/login', [
+            'identifier' => $student->email,
             'password' => 'wrong-password',
-        ])->assertSessionHasErrors('email');
+        ])->assertSessionHasErrors('identifier');
 
         $this->assertGuest('student');
     }
@@ -70,10 +70,10 @@ class StudentAuthTest extends TestCase
         [, $studentB, $hostB] = $this->makeTenantWithStudent('tenant-b.test');
 
         // Try to login to Tenant A's domain using Tenant B's student email
-        $this->post("http://tenant-a.test/student/login", [
-            'email' => $studentB->email,
+        $this->post('http://tenant-a.test/student/login', [
+            'identifier' => $studentB->email,
             'password' => 'password',
-        ])->assertSessionHasErrors('email');
+        ])->assertSessionHasErrors('identifier');
 
         $this->assertGuest('student');
     }
@@ -83,7 +83,7 @@ class StudentAuthTest extends TestCase
         [, $student, $host] = $this->makeTenantWithStudent('tenant-student.test');
 
         $this->actingAs($student, 'student')
-            ->get("http://tenant-student.test/student/dashboard")
+            ->get('http://tenant-student.test/student/dashboard')
             ->assertOk()
             ->assertSee($student->name);
     }
@@ -92,7 +92,7 @@ class StudentAuthTest extends TestCase
     {
         [, , $host] = $this->makeTenantWithStudent('tenant-student.test');
 
-        $this->get("http://tenant-student.test/student/dashboard")
+        $this->get('http://tenant-student.test/student/dashboard')
             ->assertRedirect(route('student.login'));
     }
 }

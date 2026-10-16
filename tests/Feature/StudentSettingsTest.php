@@ -5,8 +5,8 @@ namespace Tests\Feature;
 use App\Models\Domain;
 use App\Models\Student;
 use App\Models\Tenant;
+use App\Support\IranianIdentity;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -66,6 +66,8 @@ class StudentSettingsTest extends TestCase
             ->assertOk()
             ->getContent();
         $this->assertStringContainsString('name="name"', $edit);
+        $this->assertStringContainsString('data-profile-open="profile-dialog-phone"', $edit);
+        $this->assertStringContainsString('data-profile-open="profile-dialog-national_code"', $edit);
 
         $this->assertStringContainsString('name="current_password"', $edit);
         $this->assertStringContainsString('data-profile-open="profile-dialog-password"', $edit);
@@ -112,10 +114,54 @@ class StudentSettingsTest extends TestCase
 
         $this->actingAs($student, 'student')->patch("http://{$host}/student/settings/profile", [
             'name' => 'دانش‌آموز تازه',
-            'email' => 'new-' . Str::lower(Str::random(6)) . '@example.test',
+            'email' => 'new-'.Str::lower(Str::random(6)).'@example.test',
         ])->assertRedirect();
 
         $this->assertSame('دانش‌آموز تازه', $student->fresh()->name);
+    }
+
+    public function test_student_identity_fields_are_normalised_before_saving(): void
+    {
+        [$tenant, $host] = $this->tenantWithDomain();
+        $student = $this->studentFor($tenant);
+        $code = IranianIdentity::randomValidNationalCode();
+
+        $this->actingAs($student, 'student')->patch("http://{$host}/student/settings/profile", [
+            'name' => $student->name,
+            'phone' => '۰۹۱۲ ۳۴۵ ۶۷۸۹',
+            'national_code' => $code,
+        ])->assertRedirect();
+
+        $fresh = $student->fresh();
+        $this->assertSame('09123456789', $fresh->phone);
+        $this->assertSame($code, $fresh->national_code);
+    }
+
+    public function test_student_phone_conflict_is_rejected_within_the_tenant(): void
+    {
+        [$tenant, $host] = $this->tenantWithDomain();
+        $student = $this->studentFor($tenant);
+        $other = $this->studentFor($tenant);
+
+        $other->forceFill(['phone' => '09121234567'])->save();
+
+        $this->actingAs($student, 'student')->patch("http://{$host}/student/settings/profile", [
+            'name' => $student->name,
+            'phone' => '09121234567',
+        ])->assertSessionHasErrors('phone');
+    }
+
+    public function test_student_email_is_optional_on_update(): void
+    {
+        [$tenant, $host] = $this->tenantWithDomain();
+        $student = $this->studentFor($tenant);
+
+        $this->actingAs($student, 'student')->patch("http://{$host}/student/settings/profile", [
+            'name' => 'نام بدون ایمیل',
+        ])->assertRedirect();
+
+        $this->assertSame('نام بدون ایمیل', $student->fresh()->name);
+        $this->assertSame($student->email, $student->fresh()->email);
     }
 
     public function test_student_personal_theme_applies_only_to_them(): void

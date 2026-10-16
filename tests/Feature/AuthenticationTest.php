@@ -24,8 +24,8 @@ class AuthenticationTest extends TestCase
         $host = Str::lower(Str::random(10)).'.sapienstech.test';
 
         Domain::create([
-            'tenant_id'  => $tenant->id,
-            'domain'     => $host,
+            'tenant_id' => $tenant->id,
+            'domain' => $host,
             'is_primary' => true,
         ]);
 
@@ -73,7 +73,7 @@ class AuthenticationTest extends TestCase
         $user = $this->userFor($tenant);
 
         $response = $this->post("http://{$host}/login", [
-            'email'    => $user->email,
+            'identifier' => $user->email,
             'password' => 'password',
         ]);
 
@@ -90,7 +90,7 @@ class AuthenticationTest extends TestCase
             ->assertRedirect(route('login'));
 
         $this->post("http://{$host}/login", [
-            'email'    => $user->email,
+            'identifier' => $user->email,
             'password' => 'password',
         ])->assertRedirect(route('consultant.dashboard'));
     }
@@ -101,9 +101,9 @@ class AuthenticationTest extends TestCase
         $user = $this->userFor($tenant);
 
         $this->post("http://{$host}/login", [
-            'email'    => $user->email,
+            'identifier' => $user->email,
             'password' => 'wrong-password',
-        ])->assertSessionHasErrors('email');
+        ])->assertSessionHasErrors('identifier');
 
         $this->assertGuest();
     }
@@ -120,7 +120,7 @@ class AuthenticationTest extends TestCase
         $userA = $this->userFor($tenantA);
 
         $this->post("http://{$hostB}/login", [
-            'email'    => $userA->email,
+            'identifier' => $userA->email,
             'password' => 'password',
         ]);
 
@@ -142,7 +142,7 @@ class AuthenticationTest extends TestCase
         $userB = $this->userFor($tenantB, ['email' => $email, 'password' => 'secret-B']);
 
         $this->post("http://{$hostB}/login", [
-            'email'    => $email,
+            'identifier' => $email,
             'password' => 'secret-B',
         ])->assertRedirect(route('consultant.dashboard'));
 
@@ -157,11 +157,11 @@ class AuthenticationTest extends TestCase
         app()->forgetInstance('tenant');
         $admin = User::factory()->create([
             'tenant_id' => null,
-            'role'      => 'platform_admin',
+            'role' => 'platform_admin',
         ]);
 
         $this->post("http://{$host}/login", [
-            'email'    => $admin->email,
+            'identifier' => $admin->email,
             'password' => 'password',
         ]);
 

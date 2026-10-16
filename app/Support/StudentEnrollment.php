@@ -6,6 +6,7 @@ use App\Models\Student;
 use App\Models\StudentJoinRequest;
 use App\Models\Tenant;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -44,46 +45,56 @@ final class StudentEnrollment
 
     /**
      * Record a visitor's join request, or refresh the one already open for that
-     * email on this tenant.
+     * person on this tenant.
      *
      * Re-submitting updates the open row rather than queueing a duplicate: a
      * person who mistyped their transfer reference must be able to correct it
      * without leaving two pending requests for the consultant to puzzle over.
+     * The open row is keyed on the primary identifier — کد ملی, else phone,
+     * else email — through `open_key`.
      *
      * @param  array<string, mixed>  $data
      *
-     * @throws ValidationException when the email already belongs to a student
-     *                             on this tenant's active roster
+     * @throws ValidationException when the person already has an active roster
+     *                             row on this tenant (any identity matches), or
+     *                             the کد ملی already belongs to another account
      */
     public static function submit(Tenant $tenant, array $data): StudentJoinRequest
     {
-        $email = mb_strtolower(trim((string) $data['email']));
+        $email = self::normalizeEmail($data['email'] ?? null);
+        $phone = IranianIdentity::normalizePhone($data['phone'] ?? null);
+        $nationalCode = IranianIdentity::normalizeNationalCode($data['national_code'] ?? null);
 
         /**
-         * An email already on the *active* roster is refused outright.
+         * An active roster match on ANY identity is refused outright.
          *
-         * Approval issues a fresh password for that email, so accepting the
-         * request would hand whoever typed it a working login to an existing
-         * student's account — an account takeover, not a duplicate row. A
-         * removed student (`removed_at` set) is deliberately NOT blocked:
-         * coming back after removal is exactly what re-applying is for.
+         * Approval issues a fresh password for the matched person, so accepting
+         * the request would hand whoever typed it a working login to an
+         * existing student's account — an account takeover, not a duplicate
+         * row. A removed student (`removed_at` set) is deliberately NOT
+         * blocked: coming back after removal is exactly what re-applying is
+         * for.
          */
-        $active = Student::withoutGlobalScopes()
-            ->where('tenant_id', $tenant->id)
-            ->where('email', $email)
-            ->whereNull('removed_at')
-            ->exists();
-
-        if ($active) {
+        if (self::activeRosterExists($tenant->id, $phone, $nationalCode, $email)) {
             throw ValidationException::withMessages([
-                'email' => 'این ایمیل قبلاً در این مجموعه ثبت شده است. برای ورود از صفحهٔ ورود استفاده کنید.',
+                'phone' => 'این مشخصات قبلاً در این مجموعه ثبت شده است. برای ورود از صفحهٔ ورود استفاده کنید.',
             ]);
         }
 
-        return DB::transaction(function () use ($tenant, $data, $email) {
+        // A removed roster row must not free the کد ملی for *another* account
+        // (one کد ملی = one account platform-wide); it stays a reuse target for
+        // this tenant's own re-approval, which asserts with an ignore id.
+        IranianIdentity::assertAvailable($nationalCode, includeRemoved: false);
+
+        $identity = $nationalCode !== null
+            ? 'nc:'.$nationalCode
+            : ($phone !== null ? 'ph:'.$phone : 'em:'.(string) $email);
+        $openKey = StudentJoinRequest::openKey($tenant->id, $identity);
+
+        return DB::transaction(function () use ($tenant, $data, $email, $phone, $nationalCode, $openKey) {
             $existing = StudentJoinRequest::withoutGlobalScopes()
                 ->where('tenant_id', $tenant->id)
-                ->where('email', $email)
+                ->where('open_key', $openKey)
                 ->where('status', StudentJoinRequest::STATUS_PENDING)
                 ->lockForUpdate()
                 ->first();
@@ -92,7 +103,8 @@ final class StudentEnrollment
                 'tenant_id' => $tenant->id,
                 'name' => trim((string) $data['name']),
                 'email' => $email,
-                'phone' => self::nullable($data['phone'] ?? null),
+                'phone' => $phone,
+                'national_code' => $nationalCode,
                 'grade' => self::nullable($data['grade'] ?? null),
                 'gender' => self::nullable($data['gender'] ?? null),
                 'major' => self::nullable($data['major'] ?? null),
@@ -112,7 +124,7 @@ final class StudentEnrollment
 
             return StudentJoinRequest::withoutGlobalScopes()->create($attributes + [
                 'status' => StudentJoinRequest::STATUS_PENDING,
-                'open_key' => StudentJoinRequest::openKey($tenant->id, $email),
+                'open_key' => $openKey,
             ]);
         });
     }
@@ -142,19 +154,32 @@ final class StudentEnrollment
 
             // The same person may have been a student before — approved once,
             // then removed, or applying again after a rejection. Reuse that row
-            // instead of inserting, because `students` carries a unique
-            // (tenant_id, email) key and a blind insert would crash the
-            // approval with a duplicate-key error the admin cannot act on.
-            // Reusing also means "re-added" students get their old deals,
-            // attempts and chat history back, which is the point of a soft
-            // removal.
-            $student = Student::withoutGlobalScopes()
-                ->where('tenant_id', $locked->tenant_id)
-                ->where('email', $locked->email)
-                ->first();
+            // instead of inserting, because `students` carries unique
+            // (tenant_id, email) and (tenant_id, phone) keys and a blind insert
+            // would crash the approval with a duplicate-key error the admin
+            // cannot act on. Reusing also means "re-added" students get their
+            // old deals, attempts and chat history back, which is the point of
+            // a soft removal. The match is on any identity — a legacy row may
+            // predate the phone/کد ملی columns.
+            $student = self::findByIdentity($locked->tenant_id, $locked->phone, $locked->national_code, $locked->email);
+
+            // An *active* match means the person is already on the roster (for
+            // example, the admin added them by hand while the request waited):
+            // approving would overwrite the live account's password — refuse
+            // instead.
+            if ($student && ! $student->isRemoved()) {
+                throw ValidationException::withMessages([
+                    'phone' => 'این شخص قبلاً در فهرست دانشآموزان این مجموعه ثبت شده است.',
+                ]);
+            }
+
+            IranianIdentity::assertAvailable($locked->national_code, ignoreStudentId: $student?->id);
 
             $attributes = [
                 'name' => $locked->name,
+                'phone' => $locked->phone,
+                'national_code' => $locked->national_code,
+                'email' => $locked->email,
                 'grade' => $locked->grade,
                 'gender' => $locked->gender,
                 'major' => $locked->major,
@@ -171,7 +196,6 @@ final class StudentEnrollment
             } else {
                 $student = Student::withoutGlobalScopes()->create($attributes + [
                     'tenant_id' => $locked->tenant_id,
-                    'email' => $locked->email,
                 ]);
             }
 
@@ -216,22 +240,35 @@ final class StudentEnrollment
     public static function create(Tenant $tenant, array $data, ?User $consultant = null): array
     {
         return DB::transaction(function () use ($tenant, $data, $consultant) {
-            $email = mb_strtolower(trim((string) $data['email']));
+            $email = self::normalizeEmail($data['email'] ?? null);
+            $phone = IranianIdentity::normalizePhone($data['phone'] ?? null);
+            $nationalCode = IranianIdentity::normalizeNationalCode($data['national_code'] ?? null);
             $password = self::generatePassword();
 
-            // Same reuse rule as `approve()`: `students` carries a unique
-            // (tenant_id, email) key, so a person who was a student before and
-            // was removed must have that row returned to the roster rather than
-            // have a second one inserted. Reusing also gives them their old
-            // deals, attempts and chat history back, which is the point of a
-            // soft removal.
-            $student = Student::withoutGlobalScopes()
-                ->where('tenant_id', $tenant->id)
-                ->where('email', $email)
-                ->first();
+            // Same reuse rule as `approve()`: `students` carries unique
+            // (tenant_id, email) and (tenant_id, phone) keys, so a person who
+            // was a student before and was removed must have that row returned
+            // to the roster rather than have a second one inserted. Reusing
+            // also gives them their old deals, attempts and chat history back,
+            // which is the point of a soft removal. The match is on any
+            // identity — a legacy row may predate the phone/کد ملی columns.
+            $student = self::findByIdentity($tenant->id, $phone, $nationalCode, $email);
+
+            // An *active* match means the admin is adding someone already on
+            // the roster — refuse rather than overwrite the live account.
+            if ($student && ! $student->isRemoved()) {
+                throw ValidationException::withMessages([
+                    'phone' => 'این شخص قبلاً در فهرست دانشآموزان این مجموعه ثبت شده است.',
+                ]);
+            }
+
+            IranianIdentity::assertAvailable($nationalCode, ignoreStudentId: $student?->id);
 
             $attributes = [
                 'name' => trim((string) $data['name']),
+                'phone' => $phone,
+                'national_code' => $nationalCode,
+                'email' => $email,
                 'grade' => self::nullable($data['grade'] ?? null),
                 'gender' => self::nullable($data['gender'] ?? null),
                 'major' => self::nullable($data['major'] ?? null),
@@ -249,7 +286,6 @@ final class StudentEnrollment
                 // never from the submitted data.
                 $student = Student::withoutGlobalScopes()->create($attributes + [
                     'tenant_id' => $tenant->id,
-                    'email' => $email,
                 ]);
             }
 
@@ -333,6 +369,66 @@ final class StudentEnrollment
     private static function generatePassword(): string
     {
         return Str::password(self::PASSWORD_LENGTH, symbols: false);
+    }
+
+    /**
+     * An active roster row matching ANY of the given identities.
+     *
+     * One predicate for both entry points: `submit()` uses it to refuse a
+     * request outright, and it is what stops approval/creation from handing a
+     * fresh password to an existing login.
+     */
+    public static function activeRosterExists(int $tenantId, ?string $phone, ?string $nationalCode, ?string $email): bool
+    {
+        if ($phone === null && $nationalCode === null && $email === null) {
+            return false;
+        }
+
+        return Student::withoutGlobalScopes()
+            ->where('tenant_id', $tenantId)
+            ->whereNull('removed_at')
+            ->where(function (Builder $query) use ($phone, $nationalCode, $email) {
+                foreach (['phone' => $phone, 'national_code' => $nationalCode, 'email' => $email] as $column => $value) {
+                    if ($value !== null) {
+                        $query->orWhere($column, $value);
+                    }
+                }
+            })
+            ->exists();
+    }
+
+    /**
+     * The roster row matching ANY of the identities, removed or not.
+     *
+     * `students` carries unique (tenant_id, email) and (tenant_id, phone)
+     * keys, so a blind insert of a person seen before would crash with a
+     * duplicate-key error; the reuse target is found by whichever identity the
+     * old row carried.
+     */
+    private static function findByIdentity(int $tenantId, ?string $phone, ?string $nationalCode, ?string $email): ?Student
+    {
+        if ($phone === null && $nationalCode === null && $email === null) {
+            return null;
+        }
+
+        return Student::withoutGlobalScopes()
+            ->where('tenant_id', $tenantId)
+            ->where(function (Builder $query) use ($phone, $nationalCode, $email) {
+                foreach (['phone' => $phone, 'national_code' => $nationalCode, 'email' => $email] as $column => $value) {
+                    if ($value !== null) {
+                        $query->orWhere($column, $value);
+                    }
+                }
+            })
+            ->first();
+    }
+
+    /** Trimmed lowercase email; empty means absent — email is optional now. */
+    private static function normalizeEmail(mixed $value): ?string
+    {
+        $email = mb_strtolower(trim((string) $value));
+
+        return $email === '' ? null : $email;
     }
 
     /** Trim a value, treating an empty string as absent. */

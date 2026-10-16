@@ -4,6 +4,7 @@
 @import "./profile-chat.css";
 @import "./features/studio-block-editor.css";
 @import "./features/exams.css";
+@import "./features/student-dashboard.css";
 
 /* =========================================
    0. Theme color tokens
@@ -1625,6 +1626,24 @@ body.teacher-shell:has(> .lp-ground) {
     gap: 16px;
   }
 
+  /* Below ~900px the brand and the locked icon cluster leave less width than
+     the links need; strip the link row instead of pushing the cluster
+     off-screen (the .studio-tabs pattern). */
+  .topnav-links {
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+  }
+
+  .topnav-links::-webkit-scrollbar {
+    display: none;
+  }
+
+  .topnav-link {
+    flex: 0 0 auto;
+  }
+
   .student-profile-sections {
     grid-template-columns: 1fr;
   }
@@ -1642,13 +1661,26 @@ body.teacher-shell:has(> .lp-ground) {
     .panel-heading-actions {
       flex-wrap: wrap;
       margin-inline-start: auto;
+      flex: 1 1 100%;
+      min-width: 0;
     }
 
   .content-container {
     padding: 20px 14px;
   }
 
+  /* Links drop to their own full-width row: a bare strip leaves only 0-19px
+     of visible links once the brand and cluster claim the row. */
+  .topnav-inner {
+    flex-wrap: wrap;
+    gap: 8px;
+    row-gap: 6px;
+    padding: 8px 14px;
+  }
+
   .topnav-links {
+    order: 3;
+    flex: 1 1 100%;
     gap: 2px;
   }
 
@@ -3445,6 +3477,58 @@ body.landing ::selection { background: var(--c-selection-bg); color: var(--c-sel
   color: var(--c-success);
 }
 
+/* The comment composer in the schedule pop-up. The consultant editor's
+   draft-field/draft-btn chrome is scoped to #schedule-app, so the pop-up
+   carries its own names; values mirror .settings-input / .primary-button
+   at the dialog's compact scale. */
+.sched-comment-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--c-border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--c-text) 4%, transparent);
+  color: var(--c-text);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.7;
+  resize: vertical;
+}
+
+.sched-comment-input::placeholder {
+  color: var(--c-muted);
+}
+
+.sched-comment-input:focus {
+  outline: none;
+  border-color: var(--c-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-primary) 22%, transparent);
+}
+
+.sched-comment-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--c-primary);
+  color: #000;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.sched-comment-submit:hover {
+  background: var(--c-primary-hover, var(--c-primary));
+}
+
+.sched-comment-submit:disabled {
+  opacity: .7;
+  cursor: progress;
+}
+
 /*
  * The student writes in the same pop-up the consultant's answers appear in, so
  * the status line is a control (not a read-out) and every block carries a
@@ -3621,6 +3705,9 @@ body.landing ::selection { background: var(--c-selection-bg); color: var(--c-sel
   }
 
   .student-stats { gap: 10px; }
+
+  /* The shared ≤1100 2-up is too tight inside a dashboard panel on a phone. */
+  .student-panel .exam-grid { grid-template-columns: 1fr; }
 
   .sched-modal-body { grid-template-columns: 1fr; }
 }
@@ -6150,10 +6237,18 @@ body[data-shell-nav="sidebar"] .consultant-content {
 
   .sidebar-links {
     flex-direction: row;
-    overflow-y: visible;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+  }
+
+  .sidebar-links::-webkit-scrollbar {
+    display: none;
   }
 
   .sidebar-link {
+    flex: 0 0 auto;
     flex-direction: column;
     gap: 3px;
     padding: 6px 12px;

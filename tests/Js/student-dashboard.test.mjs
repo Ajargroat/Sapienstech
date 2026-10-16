@@ -24,7 +24,7 @@ const COMMENTS = `/fixture/items/${ITEM}/comments`;
  * csrf <meta> — no student layout renders one, which is exactly why the token
  * has to come off the dialog.
  */
-function fixture({ csrf = 'server-token' } = {}) {
+function fixture({ csrf = 'server-token', notes = '' } = {}) {
     return `<!doctype html><html dir="rtl"><body>
     <div class="sched-box" data-sched-item="sched-tpl-${ITEM}" data-sched-title="ریاضی" data-sched-id="${ITEM}" data-sched-completed="0">
         <span class="sched-box-time"><span>09:00</span></span>
@@ -56,7 +56,7 @@ function fixture({ csrf = 'server-token' } = {}) {
         <div class="exam-modal-head"><h3 id="sched-modal-title"><span></span></h3>
         <button type="button" data-sched-close>×</button></div>
         <div class="sched-modal-body"></div>
-    </dialog>
+    </dialog>${notes}
     </body></html>`;
 }
 
@@ -68,8 +68,8 @@ const response = (body, status = 200) => ({
 
 const settle = async () => { for (let i = 0; i < 3; i += 1) await nextTurn(); };
 
-async function setup(t, { csrf = 'server-token', thread = [], handler } = {}) {
-    const dom = new JSDOM(fixture({ csrf }), { url: 'https://tenant.test', runScripts: 'dangerously' });
+async function setup(t, { csrf = 'server-token', thread = [], handler, notes = '' } = {}) {
+    const dom = new JSDOM(fixture({ csrf, notes }), { url: 'https://tenant.test', runScripts: 'dangerously' });
     const { window } = dom;
     const requests = [];
 
@@ -313,4 +313,93 @@ test('the modal carries no explanatory placeholder copy', async () => {
         'the (مریض بودم و نتوانستم) placeholder was removed on request');
     assert.equal(/دلیل انجام یا انجام‌نشدن/.test(markup), false,
         'the explanatory label tail was removed on request');
+});
+
+/* -------------------------------------------------------- week notes --- */
+
+const NOTES_URL = '/student/schedule/notes';
+const WEEK_START = '2026-10-17';
+
+/** The S1 skeleton exactly as the real blade ships it. */
+const notesSection = (url = NOTES_URL, weekStart = WEEK_START) => `
+    <section class="panel student-panel" id="student-week-notes" hidden
+        data-url-notes="${url}" data-week-start="${weekStart}">
+        <header class="student-panel-head"><h2 id="student-week-notes-title">توضیحات هفته</h2></header>
+        <div id="student-week-notes-list"></div>
+        <p class="student-panel-note" id="student-week-notes-empty" hidden>برای این هفته توضیحی ثبت نشده</p>
+    </section>`;
+
+const day = (index, label, text) => ({
+    day_index: index,
+    label,
+    text,
+    has_text: typeof text === 'string' && text.trim() !== '',
+});
+
+const notesPayload = (days, weekStart = WEEK_START) => ({
+    week_start_date: weekStart,
+    days,
+    note_count: days.filter((d) => d.has_text).length,
+});
+
+test('the week notes render only days with text, in payload order', async (t) => {
+    const payload = notesPayload([
+        day(0, 'شنبه', 'صفحه ۱۰ تا ۲۰'),
+        day(1, 'یکشنبه', null),
+        day(2, 'دوشنبه', '<b>نه</b> HTML'),
+    ]);
+
+    const { doc, requests } = await setup(t, {
+        notes: notesSection(),
+        handler: () => response(payload),
+    });
+
+    const section = doc.getElementById('student-week-notes');
+    const days = section.querySelectorAll('#student-week-notes-list .sched-day');
+
+    assert.equal(section.hidden, false);
+    assert.equal(doc.getElementById('student-week-notes-empty').hidden, true);
+    assert.equal(days.length, 2);
+    assert.equal(days[0].querySelector('.sched-day-head').textContent, 'شنبه');
+    assert.equal(days[0].querySelector('.student-week-notes-text').textContent, 'صفحه ۱۰ تا ۲۰');
+    assert.equal(days[1].querySelector('.sched-day-head').textContent, 'دوشنبه');
+
+    // A note is data: markup inside it stays text, never becomes elements.
+    const body = days[1].querySelector('.student-week-notes-text');
+    assert.equal(body.textContent, '<b>نه</b> HTML');
+    assert.equal(body.querySelector('b'), null);
+
+    // The fetch is pinned to the week the page rendered, as JSON.
+    assert.equal(requests[0].url, `${NOTES_URL}?week_start_date=${WEEK_START}`);
+    assert.equal(requests[0].headers.Accept, 'application/json');
+});
+
+test('an empty week reveals the muted line instead of a list', async (t) => {
+    const payload = notesPayload([day(0, 'شنبه', null), day(1, 'یکشنبه', '')]);
+
+    const { doc } = await setup(t, {
+        notes: notesSection(),
+        handler: () => response(payload),
+    });
+
+    assert.equal(doc.getElementById('student-week-notes').hidden, false);
+    assert.equal(doc.getElementById('student-week-notes-empty').hidden, false);
+    assert.equal(doc.querySelectorAll('#student-week-notes-list .sched-day').length, 0);
+});
+
+test('a failed notes fetch leaves the section hidden', async (t) => {
+    const { doc } = await setup(t, {
+        notes: notesSection(),
+        handler: () => response({ message: 'nope' }, 500),
+    });
+
+    assert.equal(doc.getElementById('student-week-notes').hidden, true);
+    assert.equal(doc.getElementById('student-week-notes-empty').hidden, true);
+});
+
+test('the real dashboard blade ships the week-notes skeleton with its hooks', () => {
+    assert.match(blade, /id="student-week-notes"/);
+    assert.match(blade, /data-url-notes="\{\{ route\('student\.schedule\.notes'\) \}\}"/);
+    assert.match(blade, /data-week-start="\{\{ \$weekStart->toDateString\(\) \}\}"/);
+    assert.match(blade, /id="student-week-notes-empty"[^>]*hidden/);
 });

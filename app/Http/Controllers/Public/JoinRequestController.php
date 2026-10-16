@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Public;
 
 use App\Http\Controllers\Controller;
+use App\Rules\IranianPhone;
+use App\Rules\NationalCode;
 use App\Support\Plans;
 use App\Support\StudentEnrollment;
 use Illuminate\Http\RedirectResponse;
@@ -37,8 +39,10 @@ class JoinRequestController extends Controller
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255'],
-            'phone' => ['nullable', 'string', 'max:40'],
+            // Email is optional now; the phone is the primary identity.
+            'email' => ['nullable', 'string', 'email', 'max:255'],
+            'phone' => ['required', 'string', 'max:40', new IranianPhone],
+            'national_code' => ['nullable', 'string', 'max:20', new NationalCode],
             'grade' => ['nullable', 'string', 'max:50'],
             'gender' => ['nullable', 'string', 'max:50'],
             'major' => ['nullable', 'string', 'max:50'],

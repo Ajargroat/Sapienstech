@@ -20,7 +20,7 @@
         </h3>
         <p class="settings-card-text">
             اطلاعات دانش‌آموزی را که خودتان به او دسترسی داده‌اید اینجا وارد کنید.
-            نام و ایمیل الزامی است؛ بقیهٔ موارد اختیاری‌اند. پس از ثبت، یک رمز عبور
+            نام و شمارهٔ موبایل الزامی است؛ بقیهٔ موارد اختیاری‌اند. پس از ثبت، یک رمز عبور
             ساخته می‌شود که فقط یک‌بار نمایش داده خواهد شد.
         </p>
 
@@ -50,11 +50,27 @@
             </div>
 
             <div class="settings-field">
-                <label class="settings-field-label" for="create-email">ایمیل (نام کاربری ورود)</label>
+                <label class="settings-field-label" for="create-phone">شمارهٔ موبایل (نام کاربری ورود)</label>
+                <input type="tel" id="create-phone" name="phone" value="{{ old('phone') }}"
+                       maxlength="40" required dir="ltr"
+                       class="settings-input @error('phone') is-invalid @enderror">
+                @error('phone') <span class="settings-error">{{ $message }}</span> @enderror
+            </div>
+
+            <div class="settings-field">
+                <label class="settings-field-label" for="create-email">ایمیل (اختیاری)</label>
                 <input type="email" id="create-email" name="email" value="{{ old('email') }}"
-                       maxlength="255" required dir="ltr"
+                       maxlength="255" dir="ltr"
                        class="settings-input @error('email') is-invalid @enderror">
                 @error('email') <span class="settings-error">{{ $message }}</span> @enderror
+            </div>
+
+            <div class="settings-field">
+                <label class="settings-field-label" for="create-national-code">کد ملی (اختیاری)</label>
+                <input type="text" id="create-national-code" name="national_code" value="{{ old('national_code') }}"
+                       maxlength="20" dir="ltr"
+                       class="settings-input @error('national_code') is-invalid @enderror">
+                @error('national_code') <span class="settings-error">{{ $message }}</span> @enderror
             </div>
 
             {{-- پایه تحصیلی، جنسیت و رشته — fixed choice lists, not typing.

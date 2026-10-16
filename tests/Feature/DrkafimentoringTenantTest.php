@@ -176,7 +176,7 @@ class DrkafimentoringTenantTest extends TestCase
         $owner = $this->owner($tenant);
 
         $this->post("http://{$host}/login", [
-            'email' => self::OWNER_EMAIL,
+            'identifier' => self::OWNER_EMAIL,
             'password' => self::PASSWORD,
         ])->assertRedirect(route('consultant.dashboard'));
 
@@ -197,7 +197,7 @@ class DrkafimentoringTenantTest extends TestCase
             ->firstOrFail();
 
         $this->post("http://{$host}/student/login", [
-            'email' => 'student01@drkafimentoring.ir',
+            'identifier' => 'student01@drkafimentoring.ir',
             'password' => self::PASSWORD,
         ])->assertRedirect(route('student.dashboard'));
 
@@ -218,9 +218,9 @@ class DrkafimentoringTenantTest extends TestCase
         Cache::forget(Domain::cacheKey('other.example.test'));
 
         $this->post('http://other.example.test/login', [
-            'email' => self::OWNER_EMAIL,
+            'identifier' => self::OWNER_EMAIL,
             'password' => self::PASSWORD,
-        ])->assertSessionHasErrors('email');
+        ])->assertSessionHasErrors('identifier');
 
         $this->assertGuest();
     }

@@ -53,6 +53,7 @@ class ConsultantStudentCreateTest extends TestCase
         return array_merge([
             'name' => 'مهدی رضایی',
             'email' => 'mehdi@example.test',
+            'phone' => '09121111111',
             'grade' => 'دهم',
             'gender' => 'پسر',
             'major' => 'ریاضی',
@@ -236,30 +237,32 @@ class ConsultantStudentCreateTest extends TestCase
     // Validation
     // =========================================================================
 
-    public function test_name_and_email_are_required(): void
+    public function test_name_and_phone_are_required(): void
     {
         [$tenant, $host] = $this->tenantWithDomain('create-required.test');
         $admin = $this->staffFor($tenant);
 
         $this->actingAs($admin)
-            ->post($this->createUrl($host), ['name' => '', 'email' => ''])
-            ->assertSessionHasErrors(['name', 'email']);
+            ->post($this->createUrl($host), ['name' => '', 'email' => '', 'phone' => ''])
+            ->assertSessionHasErrors(['name', 'phone']);
 
         $this->assertSame(0, Student::withoutGlobalScopes()->where('tenant_id', $tenant->id)->count());
     }
 
-    public function test_an_email_already_on_the_active_roster_is_refused(): void
+    public function test_an_identity_already_on_the_active_roster_is_refused(): void
     {
         [$tenant, $host] = $this->tenantWithDomain('create-existing.test');
         $admin = $this->staffFor($tenant);
 
         Student::factory()->for($tenant)->create(['email' => 'mehdi@example.test']);
 
-        // Issuing a fresh password for that email would hand whoever typed the
-        // address a working login to an existing student's account.
+        // Issuing a fresh password for an identity that is already on the
+        // roster would hand whoever typed it a working login to an existing
+        // student's account. The match is on any identity (email, phone or
+        // کد ملی) so the error lands on the primary handle — `phone`.
         $this->actingAs($admin)
             ->post($this->createUrl($host), $this->payload())
-            ->assertSessionHasErrors('email');
+            ->assertSessionHasErrors('phone');
 
         $this->assertSame(1, Student::withoutGlobalScopes()->where('tenant_id', $tenant->id)->count());
     }

@@ -78,6 +78,11 @@ passes the `teacher.role` middleware (`EnsureTeacher`, which 404s anyone whose
 `isTeacher()` is false). The student portal is the only area on the dedicated
 `student` guard.
 
+Both logins take one `identifier` field — email, mobile or کد ملی — resolved
+through `App\Support\LoginIdentifier` and scoped to the request's tenant;
+failures always report under the `identifier` key, never per column (see
+`docs/identity.md` for the normalization and uniqueness rules).
+
 ## 4. Route-group prefixes and names
 
 `routes/web.php` opens with the public, unauthenticated site, then nests the

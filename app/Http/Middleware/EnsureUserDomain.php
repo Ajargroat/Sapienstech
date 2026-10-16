@@ -34,7 +34,7 @@ class EnsureUserDomain
 
                 return redirect()
                     ->route('login')
-                    ->withErrors(['email' => 'حساب شما اجازه ورود از این دامنه را ندارد.']);
+                    ->withErrors(['identifier' => 'حساب شما اجازه ورود از این دامنه را ندارد.']);
             }
         }
 

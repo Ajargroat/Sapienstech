@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Student;
 use App\Models\StudentJoinRequest;
 use App\Models\User;
+use App\Rules\IranianPhone;
+use App\Rules\NationalCode;
+use App\Support\IranianIdentity;
 use App\Support\StudentEnrollment;
 use App\Support\TenantRoster;
 use Illuminate\Http\RedirectResponse;
@@ -141,7 +144,7 @@ class JoinRequestController extends Controller
             ->route('consultant.requests.show', $joinRequest)
             ->with('status', 'درخواست تأیید شد و دانش‌آموز به فهرست اضافه شد.')
             ->with('generated_password', $result['password'])
-            ->with('generated_password_for', $result['student']->email);
+            ->with('generated_password_for', $result['student']->loginIdentifier() ?? $result['student']->name);
     }
 
     public function reject(Request $request, StudentJoinRequest $joinRequest): RedirectResponse
@@ -216,7 +219,10 @@ class JoinRequestController extends Controller
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255'],
+            // Email is optional now; the phone is the primary login identity.
+            'email' => ['nullable', 'string', 'email', 'max:255'],
+            'phone' => ['required', 'string', 'max:40', new IranianPhone],
+            'national_code' => ['nullable', 'string', 'max:20', new NationalCode],
             // The remaining columns are the roster's own; the max lengths are
             // the column widths (grade/gender/major 50, bio 500).
             'grade' => ['nullable', 'string', 'max:50'],
@@ -235,19 +241,17 @@ class JoinRequestController extends Controller
             ],
         ]);
 
-        $email = mb_strtolower(trim($data['email']));
+        $email = trim((string) ($data['email'] ?? '')) ?: null;
+        $email = $email === null ? null : mb_strtolower($email);
+        $phone = IranianIdentity::normalizePhone($data['phone']);
+        $nationalCode = IranianIdentity::normalizeNationalCode($data['national_code'] ?? null);
 
-        // Only an *active* roster row blocks: a removed row is reused, so an
-        // email that exists-but-removed is legal. Same predicate as submit().
-        $active = Student::withoutGlobalScopes()
-            ->where('tenant_id', tenant()->id)
-            ->where('email', $email)
-            ->whereNull('removed_at')
-            ->exists();
-
-        if ($active) {
+        // Only an *active* roster row blocks: a removed row is reused, so a
+        // person who exists-but-removed is legal. Any identity match counts —
+        // the same predicate as submit().
+        if (StudentEnrollment::activeRosterExists(tenant()->id, $phone, $nationalCode, $email)) {
             throw ValidationException::withMessages([
-                'email' => 'این ایمیل قبلاً در فهرست دانش‌آموزان این مجموعه ثبت شده است.',
+                'phone' => 'این مشخصات قبلاً در فهرست دانش‌آموزان این مجموعه ثبت شده است.',
             ]);
         }
 
@@ -261,6 +265,8 @@ class JoinRequestController extends Controller
         $result = StudentEnrollment::create(tenant(), [
             'name' => $data['name'],
             'email' => $email,
+            'phone' => $phone,
+            'national_code' => $nationalCode,
             'grade' => $data['grade'] ?? null,
             'gender' => $data['gender'] ?? null,
             'major' => $data['major'] ?? null,
@@ -271,7 +277,7 @@ class JoinRequestController extends Controller
             ->route('consultant.student.profile', $result['student'])
             ->with('status', "«{$result['student']->name}» به فهرست دانش‌آموزان اضافه شد.")
             ->with('generated_password', $result['password'])
-            ->with('generated_password_for', $result['student']->email);
+            ->with('generated_password_for', $result['student']->loginIdentifier() ?? $result['student']->name);
     }
 
     /**

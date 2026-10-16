@@ -185,7 +185,7 @@ class StudentRemovalTest extends TestCase
 
         // They could log in before removal.
         $this->post("http://{$host}/student/login", [
-            'email' => $student->email, 'password' => 'password',
+            'identifier' => $student->email, 'password' => 'password',
         ])->assertRedirect(route('student.dashboard'));
 
         $this->post("http://{$host}/student/logout");
@@ -195,8 +195,8 @@ class StudentRemovalTest extends TestCase
         // …and cannot afterwards. The failure is the generic one, so the login
         // page does not confirm the removal to whoever holds the credentials.
         $this->post("http://{$host}/student/login", [
-            'email' => $student->email, 'password' => 'password',
-        ])->assertSessionHasErrors('email');
+            'identifier' => $student->email, 'password' => 'password',
+        ])->assertSessionHasErrors('identifier');
 
         $this->assertGuest('student');
     }
@@ -210,7 +210,7 @@ class StudentRemovalTest extends TestCase
         // request resolves it through the database — the path `actingAs()`
         // would bypass by injecting the model straight into the guard.
         $this->post("http://{$host}/student/login", [
-            'email' => $student->email, 'password' => 'password',
+            'identifier' => $student->email, 'password' => 'password',
         ])->assertRedirect(route('student.dashboard'));
 
         $this->get("http://{$host}/student/dashboard")->assertOk();

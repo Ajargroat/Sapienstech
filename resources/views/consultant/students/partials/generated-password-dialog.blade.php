@@ -25,7 +25,7 @@
 
         <div class="exam-modal-body">
             <div class="exam-field exam-field--wide">
-                <label for="generated-password-username">نام کاربری (ایمیل)</label>
+                <label for="generated-password-username">نام کاربری (شناسهٔ ورود)</label>
                 <input id="generated-password-username" type="text" dir="ltr" readonly
                        autocomplete="off" spellcheck="false"
                        value="{{ session('generated_password_for') }}">

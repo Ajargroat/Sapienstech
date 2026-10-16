@@ -20,7 +20,7 @@ class StudentLoginController extends Controller
     public function login(Request $request): RedirectResponse
     {
         $credentials = $request->validate([
-            'email' => ['required', 'string', 'email'],
+            'identifier' => ['required', 'string', 'max:255'],
             'password' => ['required', 'string'],
         ]);
 
@@ -34,13 +34,13 @@ class StudentLoginController extends Controller
         // consultant as final, and confirming it to whoever holds the credentials
         // would turn the login page into an account-status oracle.
         $student = Student::withoutGlobalScope('roster')
-            ->where('email', $credentials['email'])
+            ->whereIdentifier($credentials['identifier'])
             ->where('tenant_id', $tenant->id)
             ->first();
 
         if (! $student || ! Hash::check($credentials['password'], $student->password)) {
             throw ValidationException::withMessages([
-                'email' => trans('auth.failed'),
+                'identifier' => trans('auth.failed'),
             ]);
         }
 
@@ -49,7 +49,7 @@ class StudentLoginController extends Controller
         // error message stay identical to a bad password.
         if ($student->isRemoved()) {
             throw ValidationException::withMessages([
-                'email' => trans('auth.failed'),
+                'identifier' => trans('auth.failed'),
             ]);
         }
 

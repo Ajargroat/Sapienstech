@@ -171,6 +171,19 @@
         @endif
     </section>
 
+    @if(site('features.student_schedule', false) && \Illuminate\Support\Facades\Route::has('student.schedule.notes'))
+        {{-- Read-only mirror of the consultant's «توضیحات هفته»; filled by
+             student-dashboard.js from the portal's own notes endpoint and
+             revealed only once the week's data has actually rendered. --}}
+        <section class="panel student-panel" id="student-week-notes" aria-labelledby="student-week-notes-title" data-url-notes="{{ route('student.schedule.notes') }}" data-week-start="{{ $weekStart->toDateString() }}" hidden>
+            <header class="student-panel-head">
+                <h2 id="student-week-notes-title"><i class="fas fa-note-sticky"></i> توضیحات هفته</h2>
+            </header>
+            <div id="student-week-notes-list"></div>
+            <p class="student-panel-note" id="student-week-notes-empty" hidden>برای این هفته توضیحی ثبت نشده</p>
+        </section>
+    @endif
+
     <section class="panel student-panel" data-studio-path="public.student.exams">
         <header class="student-panel-head">
             <h2><i class="fas fa-tasks"></i> آزمون‌های پیش‌رو</h2>
@@ -357,12 +370,12 @@
             <div class="comment-composer" data-student-comment-composer data-item-id="{{ $item->id }}">
                 <div class="comment-composer-row">
                     <textarea
-                        class="draft-field w-full"
+                        class="sched-comment-input"
                         rows="2"
                         maxlength="2000"
                         data-student-comment-text
                     ></textarea>
-                    <button type="button" class="draft-btn draft-btn--primary shrink-0" data-student-comment-submit>
+                    <button type="button" class="sched-comment-submit shrink-0" data-student-comment-submit>
                         <i class="fas fa-paper-plane w-4 h-4" aria-hidden="true"></i>
                         <span>ثبت</span>
                     </button>

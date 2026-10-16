@@ -22,6 +22,7 @@ export default function init(region = document) {
     });
 
     initScheduleDialog(region);
+    initWeekNotes(region);
 
     return revealStartButtons(region);
 }
@@ -101,6 +102,65 @@ function initScheduleDialog(region = document) {
     dialog.addEventListener('click', (e) => {
         if (e.target === dialog) dialog.close();
     });
+}
+
+// ---------------------------------------------------------------------------
+// Read-only «توضیحات هفته»: the consultant writes the week's notes on their
+// side, the student reads them here. The section ships hidden and is revealed
+// only once the week's payload has actually rendered — a failed fetch
+// degrades to the status quo (no panel), never to an empty-looking one.
+// ---------------------------------------------------------------------------
+
+function initWeekNotes() {
+    const section = document.getElementById('student-week-notes');
+    if (!section || section.dataset.wired) return;
+    section.dataset.wired = '1';
+
+    const url = section.dataset.urlNotes;
+    if (!url) return;
+
+    const list = section.querySelector('#student-week-notes-list');
+    const empty = section.querySelector('#student-week-notes-empty');
+    const weekStart = section.dataset.weekStart || '';
+    const query = weekStart ? `?week_start_date=${encodeURIComponent(weekStart)}` : '';
+
+    fetch(`${url}${query}`, {
+        headers: { Accept: 'application/json' },
+        credentials: 'same-origin',
+    })
+        .then((res) => (res.ok ? res.json() : Promise.reject(new Error(String(res.status)))))
+        .then((data) => {
+            const days = (data?.days || []).filter((day) => day.has_text);
+
+            if (!days.length) {
+                if (empty) empty.hidden = false;
+            } else {
+                days.forEach((day) => list?.appendChild(buildWeekNote(day)));
+            }
+
+            section.hidden = false;
+        })
+        .catch(() => {
+            // Passive read: there is nothing the student could act on, and an
+            // error strip would be noise on an otherwise healthy page.
+        });
+}
+
+function buildWeekNote(day) {
+    const wrap = document.createElement('div');
+    wrap.className = 'sched-day';
+
+    const head = document.createElement('div');
+    head.className = 'sched-day-head';
+    head.textContent = day.label || '';
+    wrap.appendChild(head);
+
+    const text = document.createElement('p');
+    text.className = 'student-week-notes-text';
+    text.textContent = day.text; // textContent, never innerHTML: a note is data
+    wrap.appendChild(text);
+
+    return wrap;
 }
 
 

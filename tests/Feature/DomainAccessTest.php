@@ -24,8 +24,8 @@ class DomainAccessTest extends TestCase
         foreach ([true, false] as $primary) {
             $host = Str::lower(Str::random(10)).'.sapienstech.test';
             Domain::create([
-                'tenant_id'  => $tenant->id,
-                'domain'     => $host,
+                'tenant_id' => $tenant->id,
+                'domain' => $host,
                 'is_primary' => $primary,
             ]);
             Cache::forget("domain:{$host}");
@@ -51,7 +51,7 @@ class DomainAccessTest extends TestCase
 
         // Logging in through the NON-primary domain must work for admins.
         $this->post("http://{$hostB}/login", [
-            'email'    => $admin->email,
+            'identifier' => $admin->email,
             'password' => 'password',
         ])->assertRedirect(route('consultant.dashboard'));
 
@@ -68,7 +68,7 @@ class DomainAccessTest extends TestCase
         $consultant = $this->userFor($tenant, ['domain_id' => $ownDomain->id]);
 
         $this->post("http://{$hostOwn}/login", [
-            'email'    => $consultant->email,
+            'identifier' => $consultant->email,
             'password' => 'password',
         ])->assertRedirect(route('consultant.dashboard'));
 
@@ -86,9 +86,9 @@ class DomainAccessTest extends TestCase
         $consultant = $this->userFor($tenant, ['domain_id' => $ownDomain->id]);
 
         $this->post("http://{$hostOther}/login", [
-            'email'    => $consultant->email,
+            'identifier' => $consultant->email,
             'password' => 'password',
-        ])->assertSessionHasErrors('email');
+        ])->assertSessionHasErrors('identifier');
 
         $this->assertGuest();
     }
@@ -101,7 +101,7 @@ class DomainAccessTest extends TestCase
         $consultant = $this->userFor($tenant);
 
         $this->post("http://{$hostB}/login", [
-            'email'    => $consultant->email,
+            'identifier' => $consultant->email,
             'password' => 'password',
         ])->assertRedirect(route('consultant.dashboard'));
 
@@ -118,7 +118,7 @@ class DomainAccessTest extends TestCase
         $consultant = $this->userFor($tenant, ['domain_id' => $ownDomain->id]);
 
         $this->post("http://{$hostOwn}/login", [
-            'email'    => $consultant->email,
+            'identifier' => $consultant->email,
             'password' => 'password',
         ]);
 
