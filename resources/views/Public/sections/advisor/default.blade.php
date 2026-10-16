@@ -44,7 +44,7 @@
             </div>
 
             {{-- Details --}}
-            <div class="w-full md:w-3/5 flex flex-col gap-6 text-center md:text-end {{ $reveal ? 'reveal fade-left' : '' }}"
+            <div class="w-full md:w-3/5 flex flex-col gap-6 text-center md:text-start {{ $reveal ? 'reveal fade-left' : '' }}"
                  style="{{ $imgFirst ? '' : 'order:1' }}">
                 @if (!empty($a['eyebrow']))
                     <div class="lp-eyebrow w-max mx-auto md:mx-0">
@@ -58,7 +58,7 @@
                     <p class="text-lg font-medium" data-studio-path="public.landing.advisor.tagline" style="color:{{ $tagColor }}">{{ $a['tagline'] }}</p>
                 </div>
 
-                <p class="text-base md:text-lg leading-relaxed" data-studio-path="public.landing.advisor.bio" style="color:var(--c-muted);max-width:var(--measure)">{{ $a['bio'] }}</p>
+                <p class="text-base md:text-lg leading-relaxed" data-studio-path="public.landing.advisor.bio" style="color:var(--c-muted);max-width:var(--measure);white-space:pre-line">{{ $a['bio'] }}</p>
 
                 @if (!empty($a['stats']))
                     <div class="grid grid-cols-2 md:grid-cols-3 gap-4 my-2">

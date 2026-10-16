@@ -33,7 +33,7 @@
             </div>
         </div>
 
-        <p class="leading-relaxed" data-studio-path="public.landing.advisor.bio" style="color:var(--c-muted)">{{ $a['bio'] }}</p>
+        <p class="leading-relaxed" data-studio-path="public.landing.advisor.bio" style="color:var(--c-muted);white-space:pre-line">{{ $a['bio'] }}</p>
 
         @if (!empty($a['stats']))
             <div class="flex flex-wrap gap-x-10 gap-y-4 w-full">
