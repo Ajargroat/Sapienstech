@@ -74,11 +74,31 @@ php artisan migrate --force
 
 ### 3. Install the vhost
 
+This host already has a vhost: `/etc/nginx/sites-available/sapienstech`, enabled
+as `/etc/nginx/sites-enabled/sapienstech`. **Replace its contents — do not create
+`sapienstech.ir` beside it.** Two blocks claiming the same `server_name` is not a
+config error; nginx logs `conflicting server name` and the *first* one wins,
+which looks exactly like "my change did nothing".
+
+```bash
+sudo cp /etc/nginx/sites-available/sapienstech /root/nginx-sapienstech.ir.bak
+sudo cp deploy/nginx/sapienstech.ir.conf /etc/nginx/sites-available/sapienstech
+sudo grep -nE "root|server_name" /etc/nginx/sites-available/sapienstech
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+The `grep` must print `root /var/www/sapienstech/corporate-site;`. If it still
+says `public`, the copy did not land — fix that before reloading.
+
+Check the PHP socket before reloading: `ls /run/php/`. Debian and Ubuntu install
+one pool per version (`php8.4-fpm.sock` on this server); the checked-in file
+names 8.4.
+
+On a host with no vhost yet, create and enable one instead:
+
 ```bash
 sudo cp deploy/nginx/sapienstech.ir.conf /etc/nginx/sites-available/sapienstech.ir
 sudo ln -s /etc/nginx/sites-available/sapienstech.ir /etc/nginx/sites-enabled/
-ls /run/php/                  # if not php8.2-fpm.sock, edit the fastcgi_pass line
-sudo nginx -t && sudo systemctl reload nginx
 ```
 
 ### 4. HTTPS
@@ -87,9 +107,13 @@ sudo nginx -t && sudo systemctl reload nginx
 sudo certbot --nginx -d sapienstech.ir -d www.sapienstech.ir --redirect
 ```
 
-Certbot rewrites the vhost in place: adds the `443` blocks, points them at the
-new certificate, and turns the `:80` block into a redirect. Renewal is already
-handled by the certbot timer.
+Certbot rewrites the live vhost in place: adds the `443` blocks, points them at
+the certificate and turns the `:80` block into a redirect. Renewal is handled by
+the certbot timer.
+
+The repository copy stays HTTP-only on purpose — it is the skeleton, not a
+byte-for-byte mirror of the live file. After any reinstall, re-run certbot
+(answer **1**, reinstall) to put TLS back.
 
 ### 5. Force `www` to the apex
 
