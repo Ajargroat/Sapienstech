@@ -40,6 +40,14 @@ if (!in_array($source, ['modal', 'footer'], true)) {
 }
 
 // ─── Connect ──────────────────────────────────────────────────────────────
+// config.php resolves DB_* from ../.env (or ../corporate-config.php); an empty
+// database name means neither was readable, not that the credentials are wrong.
+if (DB_NAME === '' || DB_USER === '') {
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => 'Database is not configured']);
+    exit;
+}
+
 try {
     $dsn = sprintf(
         'mysql:host=%s;port=%d;dbname=%s;charset=%s',

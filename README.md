@@ -18,6 +18,9 @@ With `TENANT_FALLBACK_DOMAINS="localhost,127.0.0.1"` (the local default) you can
 open `http://localhost:8000/` immediately — it serves whichever tenant owns a
 primary domain. **Leave that variable empty in production.**
 
+`sapienstech.ir` is the company site, not a tenant: it lives in `corporate-site/`
+and is served by its own nginx vhost. See `docs/corporate-site.md`.
+
 ## How tenancy works
 
 Two things resolve a tenant, and they are independent:
