@@ -1,0 +1,999 @@
+/*
+ * Lesson library — staff surface (import, block editor, question review).
+ *
+ * Tokens only. Every colour here resolves through a tenant token, so a
+ * consultancy that re-skins its dashboard re-skins this feature too, and a
+ * hardcoded hex would silently break that (PREFERENCE §2).
+ *
+ * Layout note: the editor is a 3-column working surface (source page / blocks /
+ * figure shelf) and collapses to one column before the block list gets narrow
+ * enough to lose its tool buttons.
+ */
+
+.lessons-surface {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.lessons-surface-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--c-text);
+}
+
+/* ---------- shared chips / statuses ---------- */
+
+.lesson-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.6rem;
+    border: 1px solid var(--c-border);
+    border-radius: 999px;
+    background: var(--c-surface-alt);
+    color: var(--c-muted);
+    font-size: 0.78rem;
+    line-height: 1.6;
+    text-decoration: none;
+}
+
+button.lesson-chip {
+    cursor: pointer;
+}
+
+.lesson-chip.is-active {
+    border-color: var(--c-primary);
+    color: var(--c-primary);
+}
+
+.lesson-chip--dirty {
+    border-color: var(--c-info);
+    color: var(--c-info);
+}
+
+.lesson-status {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: 1px solid var(--c-border);
+    background: var(--c-surface-alt);
+    color: var(--c-muted);
+}
+
+.lesson-status--ready,
+.lesson-status--published,
+.lesson-status--approved {
+    border-color: var(--c-success);
+    color: var(--c-success);
+}
+
+.lesson-status--running,
+.lesson-status--queued,
+.lesson-status--importing {
+    border-color: var(--c-info);
+    color: var(--c-info);
+}
+
+.lesson-status--failed,
+.lesson-status--needs_ocr,
+.lesson-status--rejected,
+.lesson-status--refused {
+    border-color: var(--c-danger);
+    color: var(--c-danger);
+}
+
+/* ---------- banners ---------- */
+
+.lesson-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.7rem 0.9rem;
+    border-radius: 0.75rem;
+    border: 1px solid var(--c-border);
+    background: var(--c-surface-alt);
+    color: var(--c-text);
+    font-size: 0.88rem;
+}
+
+.lesson-banner--info {
+    border-color: var(--c-info);
+}
+
+.lesson-banner--warn {
+    border-color: var(--c-secondary);
+}
+
+.lesson-banner--error {
+    border-color: var(--c-danger);
+    flex-direction: column;
+}
+
+.lesson-error-list {
+    margin: 0.35rem 0 0;
+    padding-inline-start: 1.1rem;
+    list-style: disc;
+}
+
+/* ---------- editor head ---------- */
+
+.lesson-editor-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.lesson-editor-facts,
+.lesson-editor-actions,
+.lesson-draft-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.lesson-editor-actions form,
+.lesson-draft-actions form {
+    margin: 0;
+}
+
+.lesson-inline-form {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.5rem;
+    margin: 0;
+}
+
+/* ---------- 3-column working surface ---------- */
+
+.lesson-editor-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.6fr) minmax(0, 0.7fr);
+    gap: 1rem;
+    align-items: start;
+}
+
+@media (max-width: 1200px) {
+    .lesson-editor-grid {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+    }
+
+    .lesson-figure-pane {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 820px) {
+    .lesson-editor-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+.lesson-source-pane,
+.lesson-figure-pane {
+    position: sticky;
+    top: 1rem;
+    max-height: calc(100vh - 2rem);
+    overflow: auto;
+}
+
+@media (max-width: 820px) {
+    .lesson-source-pane,
+    .lesson-figure-pane {
+        position: static;
+        max-height: none;
+    }
+}
+
+.lesson-source-page img {
+    width: 100%;
+    height: auto;
+    border-radius: 0.5rem;
+    border: 1px solid var(--c-border);
+    background: var(--c-surface);
+}
+
+.lesson-source-page figcaption {
+    margin-top: 0.35rem;
+    font-size: 0.78rem;
+    color: var(--c-muted);
+    text-align: center;
+}
+
+.lesson-source-switch {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 0.6rem;
+}
+
+/* ---------- blocks ---------- */
+
+.lesson-blocks {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.lesson-block {
+    border: 1px solid var(--c-border);
+    border-radius: 0.75rem;
+    background: var(--c-surface);
+    overflow: hidden;
+}
+
+.lesson-block.is-dragging {
+    opacity: 0.5;
+    border-color: var(--c-primary);
+}
+
+.lesson-block-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.4rem 0.6rem;
+    background: var(--c-surface-alt);
+    border-bottom: 1px solid var(--c-border);
+}
+
+.lesson-block-type {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--c-text);
+}
+
+[data-lesson-drag-handle] {
+    cursor: grab;
+    color: var(--c-muted);
+}
+
+.lesson-block-tools {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.lesson-icon-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border: 1px solid var(--c-border);
+    border-radius: 0.45rem;
+    background: var(--c-surface);
+    color: var(--c-muted);
+    cursor: pointer;
+}
+
+.lesson-icon-button:hover {
+    color: var(--c-primary);
+    border-color: var(--c-primary);
+}
+
+.lesson-icon-button--danger:hover {
+    color: var(--c-danger);
+    border-color: var(--c-danger);
+}
+
+.lesson-block-body {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    padding: 0.7rem;
+    align-items: flex-start;
+}
+
+.lesson-block-body > .settings-field {
+    flex: 1 1 12rem;
+}
+
+.settings-field--narrow {
+    flex: 0 0 8rem;
+}
+
+.lesson-textarea {
+    resize: vertical;
+    line-height: 1.9;
+}
+
+.lesson-textarea--math {
+    font-family: var(--font-mono, monospace);
+}
+
+.lesson-source-field {
+    margin-inline-start: auto;
+}
+
+.lesson-field-error {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.75rem;
+    color: var(--c-danger);
+}
+
+.lesson-points {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    flex: 1 1 100%;
+}
+
+.lesson-point-row {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.lesson-point-icon {
+    flex: 0 0 3.2rem;
+    text-align: center;
+}
+
+.lesson-figure-preview img {
+    max-width: 100%;
+    border-radius: 0.5rem;
+    border: 1px solid var(--c-border);
+}
+
+.lesson-add-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.5rem;
+    margin-top: 0.8rem;
+    padding-top: 0.8rem;
+    border-top: 1px dashed var(--c-border);
+}
+
+.lesson-empty-note {
+    margin: 0;
+    font-size: 0.82rem;
+    color: var(--c-muted);
+}
+
+/* ---------- figure shelf ---------- */
+
+.lesson-figure-shelf {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+    gap: 0.4rem;
+}
+
+.lesson-figure-pick {
+    padding: 0;
+    border: 1px solid var(--c-border);
+    border-radius: 0.5rem;
+    background: var(--c-surface);
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.lesson-figure-pick img {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.lesson-figure-pick:hover {
+    border-color: var(--c-primary);
+}
+
+.lesson-figure-card--low {
+    border-color: var(--c-secondary);
+}
+
+/* ---------- question review ---------- */
+
+.lesson-question-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    margin: 0;
+    padding-inline-start: 1.2rem;
+}
+
+.lesson-question-stem {
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+    color: var(--c-text);
+}
+
+.lesson-question-options {
+    list-style: none;
+    margin: 0 0 0.4rem;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.lesson-question-options li {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.88rem;
+    color: var(--c-muted);
+}
+
+.lesson-question-options li.is-correct {
+    color: var(--c-success);
+    font-weight: 600;
+}
+
+.lesson-quote {
+    margin: 0.5rem 0;
+    padding: 0.4rem 0.7rem;
+    border-inline-start: 3px solid var(--c-border);
+    color: var(--c-muted);
+    font-size: 0.85rem;
+    background: var(--c-surface-alt);
+    border-radius: 0.35rem;
+}
+
+.lesson-question-why {
+    font-size: 0.85rem;
+    color: var(--c-muted);
+}
+
+/* ---------- import views ---------- */
+
+.lesson-import-facts {
+    flex-wrap: wrap;
+}
+
+.lesson-page-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 0.6rem;
+}
+
+.lesson-page-card img {
+    width: 100%;
+    height: auto;
+    border-radius: 0.5rem;
+    border: 1px solid var(--c-border);
+}
+
+.lesson-page-card figcaption,
+.lesson-figure-card figcaption {
+    font-size: 0.75rem;
+    color: var(--c-muted);
+    text-align: center;
+    margin-top: 0.25rem;
+}
+
+.lesson-figure-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 0.6rem;
+}
+
+.lesson-figure-card img {
+    width: 100%;
+    height: auto;
+    border-radius: 0.5rem;
+    border: 1px solid var(--c-border);
+}
+
+.lesson-figure-card--low img {
+    border-color: var(--c-secondary);
+}
+
+.lesson-import-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.lesson-import-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    padding: 0.5rem 0.7rem;
+    border: 1px solid var(--c-border);
+    border-radius: 0.6rem;
+}
+
+.lesson-import-title {
+    font-weight: 600;
+    color: var(--c-primary);
+    text-decoration: none;
+}
+
+/* ==========================================================================
+   Student lesson reader
+   ==========================================================================
+   Two columns: a sticky TOC and the prose. Floats are the demo's figure
+   placements (start/end/wide) — in RTL "start" is the right edge, which is
+   why they are named by direction and never by left/right.
+*/
+
+.lesson-reader {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.lesson-reader-head {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.lesson-breadcrumb {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.8rem;
+    color: var(--c-muted);
+}
+
+.lesson-breadcrumb a {
+    color: var(--c-primary);
+    text-decoration: none;
+}
+
+.lesson-reader-title {
+    font-size: 1.75rem;
+    font-weight: 800;
+    line-height: 1.5;
+    color: var(--c-text);
+}
+
+.lesson-reader-lead {
+    margin: 0;
+    color: var(--c-muted);
+    font-size: 0.95rem;
+}
+
+.lesson-reader-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.lesson-reader-body {
+    display: grid;
+    grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
+    gap: 1.25rem;
+    align-items: start;
+}
+
+@media (max-width: 900px) {
+    .lesson-reader-body {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+/* ---------- TOC + reading meter ---------- */
+
+.lesson-toc {
+    position: sticky;
+    top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding: 0.9rem;
+    border: 1px solid var(--c-border);
+    border-radius: 0.9rem;
+    background: var(--c-surface);
+    max-height: calc(100vh - 2rem);
+    overflow: auto;
+}
+
+@media (max-width: 900px) {
+    .lesson-toc {
+        position: static;
+        max-height: none;
+    }
+}
+
+.lesson-toc-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--c-text);
+}
+
+.lesson-toc-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    margin: 0;
+    padding-inline-start: 1rem;
+    font-size: 0.85rem;
+}
+
+.lesson-toc-list a {
+    display: block;
+    padding: 0.2rem 0.35rem;
+    border-radius: 0.4rem;
+    color: var(--c-muted);
+    text-decoration: none;
+    border-inline-start: 2px solid transparent;
+}
+
+.lesson-toc-list a:hover {
+    color: var(--c-primary);
+}
+
+.lesson-toc-list a.is-active {
+    color: var(--c-primary);
+    border-inline-start-color: var(--c-primary);
+    background: var(--c-surface-alt);
+    font-weight: 600;
+}
+
+.lesson-meter {
+    block-size: 6px;
+    border-radius: 999px;
+    background: var(--c-surface-alt);
+    overflow: hidden;
+}
+
+.lesson-meter-bar {
+    block-size: 100%;
+    border-radius: 999px;
+    background: var(--c-primary);
+    transition: inline-size 0.2s ease-out;
+}
+
+.lesson-meter-label {
+    font-size: 0.75rem;
+    color: var(--c-muted);
+}
+
+/* ---------- prose ---------- */
+
+.lesson-prose {
+    position: relative;
+    display: flow-root; /* contain the floats */
+    padding: 1.1rem 1.25rem;
+    border: 1px solid var(--c-border);
+    border-radius: 0.9rem;
+    background: var(--c-surface);
+    font-size: 1rem;
+    line-height: 2.1;
+    color: var(--c-text);
+}
+
+.lesson-prose p {
+    margin: 0 0 0.9rem;
+}
+
+.lesson-h2 {
+    margin: 1.4rem 0 0.6rem;
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--c-text);
+}
+
+.lesson-h3 {
+    margin: 1.1rem 0 0.5rem;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--c-text);
+}
+
+.lesson-anchor {
+    scroll-margin-top: 1rem;
+}
+
+.lesson-pts {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin: 0 0 1rem;
+    padding: 0;
+    list-style: none;
+}
+
+.lesson-pts li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.5rem 0.7rem;
+    border-radius: 0.6rem;
+    background: var(--c-surface-alt);
+    border-inline-start: 3px solid var(--c-primary);
+}
+
+.lesson-pts-icon {
+    flex: 0 0 auto;
+    font-size: 1.05rem;
+    line-height: 1.6;
+}
+
+.lesson-eq {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin: 0 0 1rem;
+    padding: 0.7rem 0.9rem;
+    border: 1px dashed var(--c-border);
+    border-radius: 0.6rem;
+    background: var(--c-surface-alt);
+    text-align: center;
+}
+
+.lesson-eq-expr {
+    font-family: var(--font-mono, monospace);
+    font-size: 1.05rem;
+    color: var(--c-text);
+}
+
+.lesson-eq-caption {
+    font-size: 0.8rem;
+    color: var(--c-muted);
+}
+
+.lesson-tip {
+    margin: 0 0 1rem;
+    padding: 0.75rem 0.9rem;
+    border-radius: 0.7rem;
+    border-inline-start: 4px solid var(--c-secondary);
+    background: var(--c-surface-alt);
+}
+
+.lesson-tip-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-weight: 700;
+    color: var(--c-secondary);
+}
+
+.lesson-tip p {
+    margin: 0.35rem 0 0;
+}
+
+/* ---------- floats (the demo's figure placements) ---------- */
+
+.lesson-float {
+    margin: 0 0 1rem;
+    padding: 0;
+}
+
+.lesson-float img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 0.6rem;
+    border: 1px solid var(--c-border);
+    background: var(--c-surface-alt);
+}
+
+.lesson-float--wide {
+    max-inline-size: 100%;
+}
+
+.lesson-float--start,
+.lesson-float--end {
+    max-inline-size: 18rem;
+}
+
+.lesson-float--start {
+    float: right;
+    margin-inline-start: 1rem;
+}
+
+.lesson-float--end {
+    float: left;
+    margin-inline-end: 1rem;
+}
+
+@media (max-width: 620px) {
+    .lesson-float--start,
+    .lesson-float--end {
+        float: none;
+        max-inline-size: 100%;
+        margin: 0 0 1rem;
+    }
+}
+
+.lesson-float figcaption {
+    margin-top: 0.35rem;
+    font-size: 0.78rem;
+    color: var(--c-muted);
+    line-height: 1.7;
+}
+
+.lesson-source-link {
+    display: inline-block;
+    margin-inline-start: 0.35rem;
+    color: var(--c-primary);
+    text-decoration: none;
+    border-bottom: 1px dotted currentColor;
+}
+
+.lesson-duo-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+}
+
+.lesson-reader-foot {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-top: 1.4rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--c-border);
+}
+
+/* ---------- the in-page quiz ----------
+ *
+ * Lifted from the approved demo's question card: tag row, stem, option rows
+ * that own their own border/radius, then a feedback line. One component owns
+ * the chrome (.lesson-q-opt), so the states below only recolour it — they never
+ * re-declare its border, radius or padding.
+ */
+
+.lesson-quiz {
+    margin-top: 2rem;
+    padding-top: 0.5rem;
+    border-top: 2px dashed var(--c-border);
+}
+
+.lesson-quiz-hint {
+    margin: 0 0 1rem;
+    font-size: 0.85rem;
+    color: var(--c-muted);
+}
+
+.lesson-q {
+    margin: 0 0 1.1rem;
+    padding: 1rem 1.1rem;
+    border: 1px solid var(--c-border);
+    border-radius: 0.9rem;
+    background: var(--c-surface);
+}
+
+.lesson-q-head {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 0.4rem;
+}
+
+.lesson-q-tag {
+    padding: 0 0.7rem;
+    border-radius: 999px;
+    background: var(--c-surface-alt);
+    color: var(--c-muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.lesson-q-stem {
+    margin: 0 0 0.8rem;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.9;
+    color: var(--c-text);
+}
+
+.lesson-q-opts {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.lesson-q-opt {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.5rem 0.8rem;
+    border: 2px solid var(--c-border);
+    border-radius: 0.7rem;
+    background: var(--c-surface-alt);
+    cursor: pointer;
+    line-height: 1.8;
+}
+
+/* The radio must stay focusable for keyboard users, so it is hidden by
+ * position rather than by display/opacity alone. */
+.lesson-q-opt input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.lesson-q-opt:has(input:focus-visible) {
+    outline: 2px solid var(--c-secondary);
+    outline-offset: 2px;
+}
+
+.lesson-q-opt:hover {
+    border-color: var(--c-primary);
+}
+
+.lesson-q-dot {
+    flex: 0 0 auto;
+    inline-size: 1.4rem;
+    block-size: 1.4rem;
+    border-radius: 50%;
+    border: 2px solid var(--c-muted);
+    display: grid;
+    place-items: center;
+    font-size: 0.75rem;
+    font-weight: 800;
+}
+
+.lesson-q-opt.is-selected {
+    border-color: var(--c-primary);
+}
+
+.lesson-q-opt.is-selected .lesson-q-dot {
+    background: var(--c-primary);
+    border-color: var(--c-primary);
+    color: var(--c-surface);
+}
+
+.lesson-q-opt.is-correct {
+    border-color: var(--c-success);
+}
+
+.lesson-q-opt.is-correct .lesson-q-dot {
+    background: var(--c-success);
+    border-color: var(--c-success);
+    color: var(--c-surface);
+}
+
+.lesson-q-opt.is-wrong {
+    border-color: var(--c-danger);
+}
+
+.lesson-q-opt.is-wrong .lesson-q-dot {
+    background: var(--c-danger);
+    border-color: var(--c-danger);
+    color: var(--c-surface);
+}
+
+.lesson-q-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+    margin-top: 0.8rem;
+}
+
+.lesson-q-note {
+    font-size: 0.8rem;
+    color: var(--c-muted);
+}
+
+.lesson-q-feedback {
+    margin: 0.8rem 0 0;
+    padding: 0.6rem 0.8rem;
+    border-radius: 0.6rem;
+    background: var(--c-surface-alt);
+    font-size: 0.9rem;
+    line-height: 1.9;
+}
+
+.lesson-q-feedback.is-correct {
+    border-inline-start: 3px solid var(--c-success);
+}
+
+.lesson-q-feedback.is-wrong {
+    border-inline-start: 3px solid var(--c-danger);
+}
+

@@ -1,37 +1,22 @@
 @extends('layouts.consultant')
 
 @section('content')
-<div class="panel-heading">
-    <div class="panel-heading-title">
-        <h2>{{ $labels['blog_management'] ?? 'وبلاگ' }}</h2>
-        <span class="count-badge" data-router-region="results">{{ persian_digits($posts->total()) }} نوشته</span>
-    </div>
-
-    <div class="panel-heading-actions">
-        <a href="{{ route('consultant.blog.create') }}" class="exam-tool"
-           aria-label="نوشتهٔ جدید" title="نوشتهٔ جدید"
-           data-router="off" data-blog-form data-form-title="نوشتهٔ جدید">
-            <i class="fas fa-plus" aria-hidden="true"></i>
-        </a>
-    </div>
-</div>
-
+<div class="page-surface">
 @include('consultant.blog.flash')
 
 <div class="blog-filters" data-router-region="results">
     <a href="{{ route('consultant.blog.index') }}" class="blog-chip {{ request('status') === null ? 'is-active' : '' }}">همه</a>
     <a href="{{ route('consultant.blog.index', ['status' => 'published']) }}" class="blog-chip {{ request('status') === 'published' ? 'is-active' : '' }}">منتشرشده</a>
     <a href="{{ route('consultant.blog.index', ['status' => 'draft']) }}" class="blog-chip {{ request('status') === 'draft' ? 'is-active' : '' }}">پیش‌نویس</a>
+    <a href="{{ route('consultant.blog.create') }}" class="exam-tool blog-add"
+       aria-label="نوشتهٔ جدید" title="نوشتهٔ جدید"
+       data-router="off" data-blog-form data-form-title="نوشتهٔ جدید">
+        <i class="fas fa-plus" aria-hidden="true"></i>
+    </a>
 </div>
 
 <div data-router-region="results">
 @if($posts->count())
-    @if($posts->count() > 1)
-        <p class="blog-sort-hint">
-            <i class="fas fa-grip-vertical" aria-hidden="true"></i>
-            برای تغییر ترتیب نمایش، نوشته‌ها را از دستگیرهٔ کنارشان بکشید.
-        </p>
-    @endif
     <div class="blog-list"
          data-blog-sort
          data-sort-url="{{ route('consultant.blog.reorder') }}"
@@ -84,7 +69,7 @@
     <div class="empty-state">
         <i class="fas fa-newspaper"></i>
         <h3>هنوز نوشته‌ای ثبت نشده</h3>
-        <p>با دکمهٔ «+» بالای صفحه اولین مقالهٔ وبلاگ را بسازید.</p>
+        <p>با دکمهٔ «+» در نوار فیلترها اولین مقالهٔ وبلاگ را بسازید.</p>
     </div>
 @endif
 </div>
@@ -108,4 +93,5 @@
 </dialog>
 
 @vite(['resources/js/features/consultant-blog-sort.js', 'resources/js/features/consultant-blog-modal.js'])
+</div>
 @endsection

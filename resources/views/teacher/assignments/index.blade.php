@@ -6,6 +6,7 @@
 @extends('layouts.teacher')
 
 @section('content')
+<div class="page-surface">
 <div class="panel student-panel">
     <header class="student-panel-head">
         <h2><i class="fas fa-tasks"></i> تکالیف من</h2>
@@ -162,4 +163,5 @@
 </div>
 
 @vite(['resources/js/features/teacher-panel.js'])
+</div>
 @endsection

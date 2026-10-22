@@ -1,6 +1,7 @@
 @extends('layouts.consultant')
 
 @section('content')
+<div class="page-surface">
     @if(session('status'))
         <div class="settings-flash settings-flash--success" role="status">
             <i class="fas fa-check-circle" aria-hidden="true"></i>
@@ -80,4 +81,5 @@
     {{-- After creating a student by hand, this page is the redirect target —
          the pop-up shows the generated password exactly once. --}}
     @include('consultant.students.partials.generated-password-dialog')
+</div>
 @endsection

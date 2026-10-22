@@ -1,0 +1,412 @@
+/* =========================================
+   Panel shell — sidebar rail and narrow-screen drawer
+
+   The sidebar is the product default for the consultant, student and teacher
+   panels. It consumes the resolved tenant theme only; the topnav stays
+   available as a per-tenant Studio choice and keeps its own rules in app.css.
+   ========================================= */
+
+.consultant-sidebar {
+  position: fixed;
+  inset-block: 0;
+  inset-inline-start: 0;
+  z-index: 50;
+  width: var(--sidebar-width, 240px);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: var(--sidebar-top, 18px) 14px var(--sidebar-bottom, 16px);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--c-primary) 7%, var(--c-surface)) 0%,
+      var(--c-surface) 36%
+    ),
+    var(--c-surface);
+  border-inline-end: 1px solid var(--c-border);
+  backdrop-filter: blur(var(--backdrop-blur));
+  box-shadow: var(--sidebar-shadow, var(--panel-shadow, none));
+  transition:
+    transform var(--animation-duration) var(--ease, ease),
+    visibility var(--animation-duration) var(--ease, ease);
+}
+
+.sidebar-brand {
+  flex: 0 0 auto;
+  padding: 2px 4px 16px;
+  border-bottom: 1px solid var(--c-border);
+}
+
+.sidebar-brand .brand {
+  width: 100%;
+  min-width: 0;
+}
+
+.sidebar-brand-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.sidebar-brand-copy strong {
+  overflow: hidden;
+  font-size: 13.5px;
+  font-weight: 800;
+  line-height: 1.5;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-brand-copy small {
+  color: var(--c-muted);
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.sidebar-links {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 3px;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 8px 0 12px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.sidebar-section-label {
+  display: block;
+  margin: 8px 10px 6px;
+  color: var(--c-muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1.6;
+}
+
+.sidebar-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sidebar, 12px);
+  color: var(--c-muted);
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.5;
+  transition:
+    color var(--animation-duration) ease,
+    background var(--animation-duration) ease,
+    border-color var(--animation-duration) ease;
+}
+
+.sidebar-link i {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  border-radius: calc(var(--radius-sidebar, 12px) * 0.72);
+  background: color-mix(in oklab, var(--c-text) 5%, transparent);
+  color: var(--c-muted);
+  font-size: 12.5px;
+  transition:
+    color var(--animation-duration) ease,
+    background var(--animation-duration) ease;
+}
+
+.sidebar-link:hover {
+  color: var(--c-text);
+  background: color-mix(in oklab, var(--c-text) 5%, transparent);
+  border-color: color-mix(in oklab, var(--c-text) 9%, transparent);
+}
+
+.sidebar-link:hover i {
+  color: var(--c-text);
+  background: color-mix(in oklab, var(--c-text) 9%, transparent);
+}
+
+.sidebar-link.active {
+  color: var(--c-text);
+  background: color-mix(in oklab, var(--c-primary) 12%, transparent);
+  border-color: color-mix(in oklab, var(--c-primary) 24%, transparent);
+}
+
+.sidebar-link.active i {
+  background: var(--c-primary);
+  color: var(--c-on-primary);
+}
+
+.sidebar-link.active::before {
+  position: absolute;
+  inset-block: 9px;
+  inset-inline-start: 0;
+  width: 3px;
+  border-radius: 999px;
+  background: var(--c-primary);
+  content: "";
+}
+
+.sidebar-link--badged .topnav-notif-badge {
+  top: 4px;
+  inset-inline-end: 4px;
+}
+
+.sidebar-user {
+  flex: 0 0 auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--c-border);
+}
+
+.sidebar-account {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 11px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-card);
+  background: color-mix(in oklab, var(--c-surface-alt) 76%, transparent);
+}
+
+.sidebar-account-id {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.sidebar-avatar {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border-radius: calc(var(--radius-card) * 0.7);
+  background: var(--c-primary);
+  color: var(--c-on-primary);
+  font-size: 12.5px;
+  font-weight: 800;
+}
+
+.sidebar-account-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.sidebar-account-copy strong {
+  overflow: hidden;
+  font-size: 12.5px;
+  line-height: 1.5;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-account-copy small {
+  color: var(--c-muted);
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.sidebar-account-actions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.sidebar-account-actions .topnav-icon-btn {
+  position: relative;
+  width: 31px;
+  height: 31px;
+  border-color: color-mix(in oklab, var(--c-text) 9%, var(--c-border));
+  background: color-mix(in oklab, var(--c-text) 4%, transparent);
+  font-size: 12px;
+}
+
+.sidebar-account-actions form {
+  display: inline-flex;
+}
+
+body[data-shell-nav="sidebar"] .consultant-content {
+  margin-inline-start: var(--sidebar-width, 240px);
+}
+
+/* --- Mobile bar, toggle and scrim (the desktop rail hides all three) --- */
+.sidebar-mobile-bar,
+.sidebar-scrim {
+  display: none;
+}
+
+.sidebar-mobile-bar {
+  position: fixed;
+  inset-block-start: 0;
+  inset-inline: 0;
+  z-index: 70;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  height: var(--sidebar-mobile-bar, 56px);
+  padding-inline: 14px;
+  background: color-mix(in srgb, var(--c-surface) 94%, transparent);
+  border-bottom: 1px solid var(--c-border);
+  backdrop-filter: blur(var(--backdrop-blur));
+}
+
+.sidebar-mobile-brand {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.sidebar-mobile-brand strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-toggle {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 1px solid var(--c-border);
+  border-radius: 12px;
+  background: color-mix(in oklab, var(--c-text) 5%, transparent);
+  color: var(--c-text);
+  cursor: pointer;
+}
+
+.sidebar-toggle:hover {
+  background: color-mix(in oklab, var(--c-primary) 12%, transparent);
+  border-color: color-mix(in oklab, var(--c-primary) 30%, var(--c-border));
+}
+
+.sidebar-toggle-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 16px;
+}
+
+.sidebar-toggle-bars span {
+  display: block;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+  transition:
+    transform var(--animation-duration) var(--ease, ease),
+    opacity var(--animation-duration) ease;
+}
+
+body.sidebar-open .sidebar-toggle-bars span:nth-child(1) {
+  transform: translateY(6px) rotate(45deg);
+}
+
+body.sidebar-open .sidebar-toggle-bars span:nth-child(2) {
+  opacity: 0;
+}
+
+body.sidebar-open .sidebar-toggle-bars span:nth-child(3) {
+  transform: translateY(-6px) rotate(-45deg);
+}
+
+.sidebar-scrim {
+  position: fixed;
+  inset-block: var(--sidebar-mobile-bar, 56px) 0;
+  inset-inline: 0;
+  z-index: 55;
+  background: color-mix(in oklab, var(--c-text) 18%, transparent);
+  backdrop-filter: blur(2px);
+}
+
+.sidebar-scrim[hidden] {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .sidebar-mobile-bar {
+    display: flex;
+  }
+
+  body[data-shell-nav="sidebar"] .consultant-content {
+    margin-inline-start: 0;
+    padding-block-start: var(--sidebar-mobile-bar, 56px);
+  }
+
+  .consultant-sidebar {
+    inset-block: var(--sidebar-mobile-bar, 56px) 0;
+    inset-inline-start: 0;
+    width: min(86vw, 320px);
+    padding: 14px 12px;
+    z-index: 60;
+    visibility: hidden;
+    transform: translateX(100%);
+  }
+
+  [dir="ltr"] .consultant-sidebar {
+    transform: translateX(-100%);
+  }
+
+  body.sidebar-open .consultant-sidebar {
+    visibility: visible;
+    transform: translateX(0);
+  }
+
+  .sidebar-brand {
+    display: none;
+  }
+
+  .sidebar-links {
+    padding-top: 0;
+  }
+
+  .sidebar-scrim {
+    display: block;
+  }
+}
+
+/* A docked rail removes 240px from the content column long before the drawer
+   breakpoint, so a dashboard or roster toolbar with a fixed-width search field
+   can be wider than the page. Wrap it while the rail is docked; below 900px
+   the same rule also covers the topnav shell. */
+@media (max-width: 1100px) {
+  body[data-shell-nav="sidebar"] .panel-heading {
+    flex-wrap: wrap;
+  }
+
+  body[data-shell-nav="sidebar"] .panel-heading-actions {
+    flex: 1 1 100%;
+    min-width: 0;
+    margin-inline-start: 0;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 900px) {
+  .panel-heading {
+    flex-wrap: wrap;
+  }
+
+  .panel-heading-actions {
+    flex: 1 1 100%;
+    min-width: 0;
+    margin-inline-start: 0;
+    flex-wrap: wrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .consultant-sidebar,
+  .sidebar-toggle-bars span {
+    transition: none;
+  }
+}

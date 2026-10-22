@@ -5,16 +5,18 @@
     payment they made (see public/sections/join). This page is where the tenant
     confirms it: approving turns the imported data into a real student.
 
-    The admin can also add a student by hand from here (requests.create), for a
-    person assigned outside this flow — same destination, no declared payment.
+    The admin can also add a student by hand (requests.create), for a person
+    assigned outside this flow — same destination, no declared payment. That
+    entry point is the dashboard's «افزودن دانش‌آموز» button, not this page.
 
-    Reuses the deals page's visual language (.settings-card, .deal-stats,
-    .deal-chip, .deal-due-row, .blog-status, .empty-state, .blog-pager) so both
-    surfaces stay one system.
+    Reuses the deals page's visual language (.settings-card, .deal-chip,
+    .deal-due-row, .blog-status, .empty-state, .blog-pager) so both surfaces
+    stay one system.
 --}}
 @extends('layouts.consultant')
 
 @section('content')
+<div class="page-surface">
 @php
     $statusLabels = [
         'pending'  => 'در انتظار تأیید',
@@ -33,42 +35,10 @@
 
 <div class="settings-cards">
 
-    {{-- Summary ---------------------------------------------------------- --}}
-    <section class="settings-card">
+    {{-- Filters only: the summary card's chrome is dropped so this surface
+         reads like the weblog page instead of a second nested card. --}}
+    <section class="settings-card settings-card--flat">
         <h3 class="settings-card-title"><i class="fas fa-inbox" aria-hidden="true"></i> درخواست‌های عضویت</h3>
-        <p class="settings-card-text">
-            افرادی که از سایت شما درخواست عضویت فرستاده‌اند. با تأیید هر درخواست، اطلاعات وارد‌شده
-            به‌صورت خودکار به فهرست دانش‌آموزان اضافه می‌شود و نیازی به ثبت دستی نیست.
-        </p>
-
-        @if(request()->user()?->isTenantAdmin())
-            {{-- The other way onto the roster: hand-entry, for a student
-                 assigned outside the request flow. --}}
-            <p class="settings-card-text">
-                <a href="{{ route('consultant.requests.create') }}" class="btn">
-                    <i class="fas fa-user-plus" aria-hidden="true"></i>
-                    افزودن دانش‌آموز به‌صورت دستی
-                </a>
-                <span style="margin-inline-start:8px">
-                    دانش‌آموزی که درخواستی نفرستاده است را خودتان ثبت کنید.
-                </span>
-            </p>
-        @endif
-
-        <div class="deal-stats">
-            <div class="deal-stat deal-stat--pending">
-                <span class="deal-stat-lbl"><i class="fas fa-clock" aria-hidden="true"></i> در انتظار تأیید</span>
-                <span class="deal-stat-num">{{ persian_digits($counts['pending']) }}</span>
-            </div>
-            <div class="deal-stat">
-                <span class="deal-stat-lbl"><i class="fas fa-circle-check" aria-hidden="true"></i> تأییدشده</span>
-                <span class="deal-stat-num">{{ persian_digits($counts['approved']) }}</span>
-            </div>
-            <div class="deal-stat">
-                <span class="deal-stat-lbl"><i class="fas fa-circle-xmark" aria-hidden="true"></i> ردشده</span>
-                <span class="deal-stat-num">{{ persian_digits($counts['rejected']) }}</span>
-            </div>
-        </div>
 
         @if(session('status'))
             <div class="settings-flash settings-flash--success">
@@ -175,5 +145,6 @@
 
         <div class="blog-pager">{{ $requests->links() }}</div>
     </section>
+</div>
 </div>
 @endsection

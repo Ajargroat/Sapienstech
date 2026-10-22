@@ -1,6 +1,8 @@
 import './theme';
 import './landing';
 import { onPageRender } from './page-router';
+// Dev-only Agentation toolbar. No-ops outside the Vite dev server.
+import './features/agentation-dev';
 
 // Closing any open filter surface on an outside click is delegated once for
 // the whole shell, so it keeps working across router swaps without stacking
@@ -38,6 +40,72 @@ document.addEventListener('keydown', (event) => {
     const panel = document.getElementById('topnav-notif-panel');
     if (panel) panel.hidden = true;
 });
+
+/*
+ * Panel rail (sidebar shell): on narrow viewports the rail becomes an
+ * off-canvas drawer. One DOM — the desktop rail and the drawer are the same
+ * element — so #theme-toggle-btn and the page-router active links stay unique.
+ */
+const sidebarEl = () => document.getElementById('app-sidebar');
+const sidebarToggleEl = () => document.querySelector('[data-sidebar-toggle]');
+const sidebarScrimEl = () => document.querySelector('[data-sidebar-scrim]');
+const sidebarIsNarrow = () => window.matchMedia('(max-width: 900px)').matches;
+
+const setSidebar = (open) => {
+    const aside = sidebarEl();
+    const toggle = sidebarToggleEl();
+    const scrim = sidebarScrimEl();
+    if (!aside || !toggle) return;
+
+    const isOpen = Boolean(open) && sidebarIsNarrow();
+    document.body.classList.toggle('sidebar-open', isOpen);
+    toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    if (scrim) scrim.hidden = !isOpen;
+    aside.inert = sidebarIsNarrow() && !isOpen;
+    const content = document.querySelector('.consultant-content');
+    if (content) content.inert = isOpen;
+    document.body.style.overflow = isOpen ? 'hidden' : '';
+
+    if (isOpen) {
+        aside.querySelector('.sidebar-link')?.focus({ preventScroll: true });
+    }
+};
+
+document.addEventListener('click', (event) => {
+    if (event.target.closest?.('[data-sidebar-toggle]')) {
+        setSidebar(!document.body.classList.contains('sidebar-open'));
+        return;
+    }
+
+    if (event.target.closest?.('[data-sidebar-scrim]')) {
+        setSidebar(false);
+        sidebarToggleEl()?.focus();
+        return;
+    }
+
+    if (document.body.classList.contains('sidebar-open') && event.target.closest?.('#app-sidebar a')) {
+        setSidebar(false);
+    }
+});
+
+document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape' || !document.body.classList.contains('sidebar-open')) return;
+
+    setSidebar(false);
+    sidebarToggleEl()?.focus();
+});
+
+window.addEventListener('resize', () => {
+    if (!sidebarIsNarrow()) {
+        setSidebar(false);
+    } else if (!document.body.classList.contains('sidebar-open')) {
+        setSidebar(false);
+    }
+});
+
+onPageRender(() => setSidebar(false));
+
+setSidebar(false);
 
 /*
  * Upload tiles (consultant/partials/upload-tile): the native file input is

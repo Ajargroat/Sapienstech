@@ -5,6 +5,7 @@
 @extends('layouts.student')
 
 @section('content')
+<div class="page-surface">
 <div class="student-welcome">
     <section class="student-profile-head">
         <span class="student-avatar-lg"><i class="fas fa-book-open-reader"></i></span>
@@ -17,8 +18,57 @@
     <div class="student-today">
         <span class="student-today-label">فایل‌ها</span>
         <span>{{ persian_digits($total) }} مورد</span>
+        @if($bookLessons->isNotEmpty())
+            <span class="student-tag student-tag-grade">{{ persian_digits($bookLessons->count()) }} درس کتاب</span>
+        @endif
     </div>
 </div>
+
+{{--
+    Book lessons — authored from a real book, read in place (no download).
+    Lives on this page so «درس‌ها» is ONE destination for the student: a file
+    to take away, and a lesson to read. Hidden entirely when the
+    student_lessons flag is off or nothing is published yet.
+--}}
+@if($bookLessons->isNotEmpty())
+    <section class="panel student-panel">
+        <header class="student-panel-head">
+            <h2><i class="fas fa-book-open"></i> درس‌های کتاب</h2>
+            <span class="count-badge">{{ persian_digits($bookLessons->count()) }} درس</span>
+        </header>
+
+        <div class="exam-grid" data-stagger>
+            @foreach($bookLessons as $bookLesson)
+                <article class="exam-card">
+                    <div class="exam-card-icon exam-card-icon--quiz">
+                        <i class="fas fa-book-open-reader teacher-material-icon"></i>
+                        <span class="exam-card-icon-label">{{ $bookLesson->grade ? $bookLesson->grade : 'همه پایه‌ها' }}</span>
+                    </div>
+                    <div class="exam-card-body">
+                        <h3 class="exam-card-title">{{ $bookLesson->lesson_title }}</h3>
+                        <ul class="exam-card-facts">
+                            <li><i class="fas fa-book"></i>{{ $bookLesson->book_title }}</li>
+                            @if($bookLesson->chapter_title)
+                                <li><i class="fas fa-folder-tree"></i>{{ $bookLesson->chapter_title }}</li>
+                            @endif
+                            @if($bookLesson->source_page_from)
+                                <li>
+                                    <i class="fas fa-file-lines"></i>
+                                    صفحهٔ {{ persian_digits($bookLesson->source_page_from) }}@if($bookLesson->source_page_to && $bookLesson->source_page_to !== $bookLesson->source_page_from) تا {{ persian_digits($bookLesson->source_page_to) }}@endif
+                                </li>
+                            @endif
+                        </ul>
+                        <div class="teacher-material-actions">
+                            <a href="{{ route('student.lesson-reader.show', $bookLesson) }}" class="primary-button">
+                                <i class="fas fa-book-open-reader"></i> خواندن درس
+                            </a>
+                        </div>
+                    </div>
+                </article>
+            @endforeach
+        </div>
+    </section>
+@endif
 
 @if($bySubject->isNotEmpty())
     <div class="student-side">
@@ -64,6 +114,7 @@
         @endforeach
     </div>
 @else
+    @if($bookLessons->isEmpty())
     <div class="panel student-panel">
         <div class="empty-state">
             <i class="far fa-folder-open"></i>
@@ -71,7 +122,9 @@
             <p>به‌محض انتشار جزوه‌های کلاس، اینجا می‌توانید دانلودشان کنید.</p>
         </div>
     </div>
+    @endif
 @endif
 
 @vite(['resources/js/features/student-dashboard.js'])
+</div>
 @endsection

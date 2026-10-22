@@ -13,6 +13,7 @@
 @extends('layouts.student')
 
 @section('content')
+<div class="page-surface">
 <p class="result-back">
     <a href="{{ route('student.dashboard') }}"><i class="fas fa-arrow-right"></i> بازگشت به داشبورد</a>
 </p>
@@ -22,4 +23,5 @@
 </div>
 
 @vite(['resources/js/features/student-dashboard.js'])
+</div>
 @endsection

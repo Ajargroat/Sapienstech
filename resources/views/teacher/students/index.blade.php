@@ -5,6 +5,7 @@
 @extends('layouts.teacher')
 
 @section('content')
+<div class="page-surface">
 <div class="panel student-panel">
     <header class="student-panel-head">
         <h2><i class="fas fa-user-group"></i> دانش‌آموزان مجموعه</h2>
@@ -67,5 +68,6 @@
             <p>{{ $search || $grade ? 'دانش‌آموزی مطابق جستجوی شما پیدا نشد.' : 'در حال حاضر دانش‌آموزی برای این مجموعه ثبت نشده است.' }}</p>
         </div>
     @endif
+</div>
 </div>
 @endsection

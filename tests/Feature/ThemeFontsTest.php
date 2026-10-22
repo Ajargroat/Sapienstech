@@ -193,4 +193,79 @@ class ThemeFontsTest extends TestCase
             $this->assertStringNotContainsString("@include('partials.theme-fonts'", $source, $view);
         }
     }
+
+    /**
+     * Bespoke per-tenant landings (resources/landings/{slug}/) are discovered,
+     * not listed. A hand-maintained list would silently stop covering exactly
+     * the page most likely to drift — the one nobody templated — which is the
+     * failure mode this invariant exists to prevent.
+     */
+    public function test_bespoke_landing_surfaces_consume_the_shared_brand_partials(): void
+    {
+        $files = glob(resource_path('landings/*/landing.blade.php')) ?: [];
+
+        // No bespoke pages yet is a legitimate state, not a skipped check: the
+        // assertion below records it so this test never reads as "risky" and
+        // the real assertions start the moment the first page lands.
+        if ($files === []) {
+            $this->assertSame([], $files, 'No bespoke landing surfaces exist yet.');
+
+            return;
+        }
+
+        foreach ($files as $file) {
+            $label = 'landings/'.basename(dirname($file)).'/landing';
+            $source = file_get_contents($file);
+
+            // The brand: palette, type, shape, fonts. Exactly once, as on every
+            // other shell, so a page cannot double-shift its own tokens.
+            $this->assertSame(1, substr_count($source, "@include('partials.theme-vars'"), $label);
+
+            // Behaviour switches (scheme, reduced motion, numerals) — without
+            // these a bespoke page silently ignores the tenant's preferences.
+            $this->assertSame(1, substr_count($source, "@include('partials.theme-attrs'"), $label);
+
+            // No second font pipeline: the shared partial owns fonts, forever.
+            $this->assertStringNotContainsString('font_url', $source, $label);
+            $this->assertStringNotContainsString('fonts.googleapis.com', $source, $label);
+            $this->assertStringNotContainsString('fonts.gstatic.com', $source, $label);
+            $this->assertStringNotContainsString("@include('partials.theme-fonts'", $source, $label);
+        }
+    }
+
+    /**
+     * Bespoke per-tenant login SHELLS (resources/landings/{slug}/
+     * login-shell.blade.php) are discovered, not listed — same doctrine as
+     * the landing surfaces below: a hand-maintained list would silently stop
+     * covering exactly the page most likely to drift, the one nobody
+     * templated. One token sheet; one font pipeline; always.
+     */
+    public function test_bespoke_login_shells_consume_the_shared_brand_partials(): void
+    {
+        $files = glob(resource_path('landings/*/login-shell.blade.php')) ?: [];
+
+        // No bespoke shell yet is a legitimate state, not a skipped check: the
+        // assertion below records it so this test never reads as "risky" and
+        // the real assertions start the moment the first shell is published.
+        if ($files === []) {
+            $this->assertSame([], $files, 'No bespoke login shells exist yet.');
+
+            return;
+        }
+
+        foreach ($files as $file) {
+            $label = 'landings/'.basename(dirname($file)).'/login-shell';
+            $source = file_get_contents($file);
+
+            // The brand: palette, type, shape, fonts. Exactly once, as on
+            // every other shell, so a page cannot double-shift its tokens.
+            $this->assertSame(1, substr_count($source, "@include('partials.theme-vars'"), $label);
+
+            // No second font pipeline: the shared partial owns fonts, forever.
+            $this->assertStringNotContainsString('font_url', $source, $label);
+            $this->assertStringNotContainsString('fonts.googleapis.com', $source, $label);
+            $this->assertStringNotContainsString('fonts.gstatic.com', $source, $label);
+            $this->assertStringNotContainsString("@include('partials.theme-fonts'", $source, $label);
+        }
+    }
 }

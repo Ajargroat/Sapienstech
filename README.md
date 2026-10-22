@@ -340,6 +340,21 @@ Behaviours cannot be custom properties, so they become `data-*` attributes via
 Adding a reveal style is therefore a CSS-only change — `landing.js` keeps
 toggling `.is-visible` and never needs to know.
 
+### React islands
+
+A feature surface may render part of its page with React (the student
+dashboard is the reference). An island mounts inside the Blade shell through
+`resources/js/react/mount.js`; the page-router contract is unchanged — the
+feature entry still ships `export default function init(region)` and returns
+its cleanup. Islands take their look from the same sheet as Blade: semantic
+classes whose CSS resolves the `--c-*` / `--radius-*` / `--font-*` custom
+properties emitted by `partials/theme-vars.blade.php`, or a named role from
+`resources/js/react/tokens.js`. No literal colour belongs in an island.
+
+The shared codebase is one app for every tenant — no per-tenant bundle.
+Landing, login and `public/demo` stay Blade/static, and the studio shell keeps
+its editor chrome, which never consumes tenant tokens.
+
 ## Landing sections
 
 `public.landing.sections` is an ordered list of names. Each name dispatches

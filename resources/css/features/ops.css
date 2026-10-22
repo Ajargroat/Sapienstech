@@ -1,0 +1,235 @@
+/*
+ * Operations console chrome. Editor-side only: this file must never consume a
+ * tenant's theme tokens (PREFERENCE §2 — editor chrome is not branded), and no
+ * tenant view includes it.
+ */
+
+:root {
+    --ops-bg: #f4f6f8;
+    --ops-surface: #ffffff;
+    --ops-ink: #16202a;
+    --ops-muted: #5b6b7a;
+    --ops-line: #dbe3ea;
+    --ops-accent: #16537e;
+    --ops-accent-ink: #ffffff;
+    --ops-soft: #e8f0f6;
+    --ops-ok: #0f7a52;
+    --ops-ok-soft: #e6f4ee;
+    --ops-sand: #b98900;
+    --ops-bad: #b03a2e;
+    --ops-bad-soft: #fbe5e2;
+    --ops-radius: 12px;
+}
+
+* { box-sizing: border-box; }
+
+body.ops {
+    margin: 0;
+    background: var(--ops-bg);
+    color: var(--ops-ink);
+    font: 400 15px/1.8 "IRANSans", "IranSANS", Tahoma, sans-serif;
+}
+
+.ops-top {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 24px;
+    background: var(--ops-surface);
+    border-bottom: 1px solid var(--ops-line);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.ops-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    color: var(--ops-ink);
+    text-decoration: none;
+}
+
+.ops-brand-mark {
+    display: grid;
+    place-items: center;
+    inline-size: 30px;
+    block-size: 30px;
+    border-radius: 9px;
+    background: var(--ops-accent);
+    color: var(--ops-accent-ink);
+    font-weight: 700;
+}
+
+.ops-nav { display: flex; gap: 4px; }
+
+.ops-nav-link {
+    padding: 6px 14px;
+    border-radius: 999px;
+    color: var(--ops-muted);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.ops-nav-link.is-on { background: var(--ops-soft); color: var(--ops-accent); }
+
+.ops-spacer { flex: 1; }
+
+.ops-who { color: var(--ops-muted); font-size: 14px; }
+
+.ops-ghost {
+    font: inherit;
+    border: 1px solid var(--ops-line);
+    background: transparent;
+    color: var(--ops-muted);
+    border-radius: 9px;
+    padding: 4px 12px;
+    cursor: pointer;
+}
+
+.ops-main {
+    max-inline-size: 1120px;
+    margin: 0 auto;
+    padding: 28px 24px 64px;
+}
+
+.ops-flash {
+    margin: 0 0 18px;
+    padding: 10px 16px;
+    border-radius: var(--ops-radius);
+    background: var(--ops-soft);
+    border: 1px solid var(--ops-line);
+    color: var(--ops-accent);
+}
+
+.ops-flash--bad { background: var(--ops-bad-soft); border-color: var(--ops-bad); color: var(--ops-bad); }
+
+.ops-card {
+    background: var(--ops-surface);
+    border: 1px solid var(--ops-line);
+    border-radius: var(--ops-radius);
+    padding: 20px 22px;
+    margin-bottom: 22px;
+}
+
+.ops-card > h2 {
+    margin: 0 0 4px;
+    font-size: 18px;
+}
+
+.ops-hint {
+    margin: 0 0 16px;
+    color: var(--ops-muted);
+    font-size: 14px;
+}
+
+.ops-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    align-items: end;
+}
+
+.ops-field { display: grid; gap: 6px; }
+
+.ops-field > span { font-size: 13px; font-weight: 700; color: var(--ops-muted); }
+
+.ops-input {
+    font: inherit;
+    inline-size: 100%;
+    padding: 9px 12px;
+    border: 1px solid var(--ops-line);
+    border-radius: 9px;
+    background: #fff;
+    color: var(--ops-ink);
+}
+
+.ops-input:focus { outline: 2px solid var(--ops-accent); outline-offset: 1px; }
+
+.ops-button {
+    font: inherit;
+    font-weight: 700;
+    padding: 9px 18px;
+    border-radius: 9px;
+    border: 1px solid var(--ops-accent);
+    background: var(--ops-accent);
+    color: var(--ops-accent-ink);
+    cursor: pointer;
+}
+
+.ops-button--ghost { background: transparent; color: var(--ops-accent); }
+
+.ops-button--sm { padding: 5px 12px; font-size: 13px; }
+
+.ops-table { inline-size: 100%; border-collapse: collapse; }
+
+.ops-table th,
+.ops-table td {
+    text-align: start;
+    padding: 10px 8px;
+    border-bottom: 1px solid var(--ops-line);
+    font-size: 14px;
+    vertical-align: middle;
+}
+
+.ops-table th { color: var(--ops-muted); font-weight: 700; font-size: 13px; }
+
+.ops-status {
+    display: inline-block;
+    padding: 1px 10px;
+    border-radius: 999px;
+    background: var(--ops-soft);
+    color: var(--ops-accent);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.ops-status--ok { background: var(--ops-ok-soft); color: var(--ops-ok); }
+.ops-status--bad { background: var(--ops-bad-soft); color: var(--ops-bad); }
+.ops-status--warn { background: #fff6e0; color: var(--ops-sand); }
+
+.ops-empty {
+    padding: 22px;
+    text-align: center;
+    color: var(--ops-muted);
+    border: 1px dashed var(--ops-line);
+    border-radius: var(--ops-radius);
+}
+
+.ops-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+.ops-inline-form { display: inline-flex; gap: 8px; align-items: center; }
+
+.ops-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    margin: 0 0 18px;
+    padding: 0;
+    list-style: none;
+    color: var(--ops-muted);
+    font-size: 14px;
+}
+
+.ops-meta b { color: var(--ops-ink); }
+
+.ops-thumbs { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+
+.ops-thumb {
+    inline-size: 128px;
+    border: 1px solid var(--ops-line);
+    border-radius: 8px;
+    overflow: hidden;
+    background: #fff;
+}
+
+.ops-thumb img { display: block; inline-size: 100%; block-size: auto; }
+
+.ops-thumb span { display: block; padding: 4px 6px; font-size: 12px; color: var(--ops-muted); }
+
+/* Spacing variants. A form's submit row and a second table inside one card
+ * both need breathing room; an inline `style=` on the element would mean the
+ * component does not own its own chrome. */
+.ops-actions--spaced { margin-block-start: 12px; }
+.ops-table--spaced { margin-block-start: 12px; }

@@ -6,6 +6,7 @@
 @extends('layouts.student')
 
 @section('content')
+<div class="page-surface">
 <div class="student-welcome">
     <section class="student-profile-head">
         <span class="student-avatar-lg"><i class="fas fa-tasks"></i></span>
@@ -69,4 +70,5 @@
 @endif
 
 @vite(['resources/js/features/student-dashboard.js'])
+</div>
 @endsection

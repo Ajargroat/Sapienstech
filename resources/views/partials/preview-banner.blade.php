@@ -17,7 +17,7 @@
             </form>
         @endauth
     </div>
-    <script>
+    <script nonce="{{ csp_nonce() }}">
         // The studio's live-preview pane embeds these pages in an iframe and
         // has its own exit control, so the banner is pure noise there. This
         // runs while the banner is still unpainted, so it never flashes.

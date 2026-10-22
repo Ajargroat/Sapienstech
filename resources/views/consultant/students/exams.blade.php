@@ -29,7 +29,7 @@
     $typeLabels = ['quiz' => 'تمرینی', 'comprehensive' => 'آزمون'];
     $difficultyLabels = ['Easy' => 'آسان', 'Medium' => 'متوسط', 'Hard' => 'سخت'];
 @endphp
-<div id="exams-app">
+<div id="exams-app" class="page-surface">
     <div class="panel-heading">
         <div class="panel-heading-title">
             <h2>فهرست آزمون‌ها</h2>

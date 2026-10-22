@@ -12,6 +12,7 @@
 @extends('layouts.consultant')
 
 @section('content')
+<div class="page-surface">
 <div class="settings-cards">
 
     <section class="settings-card">
@@ -144,5 +145,6 @@
             <i class="fas fa-arrow-right" aria-hidden="true"></i> بازگشت به فهرست دانش‌آموزان
         </a>
     </section>
+</div>
 </div>
 @endsection

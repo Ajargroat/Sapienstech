@@ -60,19 +60,13 @@ return [
             // The accepted demo order. Every surface that would need invented
             // numbers (stats, testimonials, blog, faq, logos) is omitted.
             //
-            // `join` is the opt-in for the membership request form: the visitor
-            // imports their own details and declares the payment, the record
-            // waits in the consultant's «درخواست‌ها» queue, and approving it
-            // creates the student. It sits after `services` (where a visitor
-            // decides) and before `cta` (the closing band). Copy comes from the
-            // baseline `public.landing.join`; this tenant sets no override.
-            //
-            // `plans` sits immediately before it: it is where a price is
-            // *determined*, so the join form can ask which plan the visitor
-            // paid for instead of showing no price at all. The two are a pair —
-            // plans without join has nothing to buy, join without plans cannot
-            // state a price.
-            'sections' => ['hero', 'advisor', 'process', 'services', 'plans', 'join', 'cta'],
+            // `join` stays in the list as the opt-in for the membership
+            // request form — the shared login card keys its «درخواست عضویت»
+            // link off this flag — but the bespoke page no longer renders it
+            // as a section: a plan's button opens the same shared partial in
+            // a dialog. The closing `cta` band was removed outright; the plan
+            // grid is the call to action.
+            'sections' => ['hero', 'advisor', 'process', 'services', 'plans', 'join'],
 
             'hero' => [
                 'eyebrow' => 'مشاوره تحصیلی فردی',

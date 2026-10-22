@@ -170,6 +170,32 @@ class DrkafimentoringTenantTest extends TestCase
             ->assertSee(route('home').'#plans', false);
     }
 
+    /**
+     * The shipped login shell must stay the shell.
+     *
+     * A shell that silently fails to dispatch is indistinguishable from one
+     * that was never written: AuthSurface falls back to the shared card, the
+     * route still answers 200, and the signup-link assertion above still
+     * passes. Pin the bespoke frame and the unchanged security contract.
+     */
+    public function test_the_login_page_carries_the_bespoke_shell(): void
+    {
+        [, $host] = $this->seedTenant();
+
+        $content = $this->get("http://{$host}/login")->assertOk()->getContent();
+
+        $this->assertStringContainsString('data-auth-surface="drkafimentoring"', $content);
+        $this->assertStringContainsString('<body class="ka-auth">', $content);
+        $this->assertStringContainsString('ka-auth__panel', $content);
+
+        // The card is embedded once and unchanged: both guards' forms, one
+        // CSRF token each, and one document.
+        $this->assertSame(1, substr_count($content, 'class="login-card'));
+        $this->assertSame(2, substr_count($content, 'name="_token"'));
+        $this->assertSame(2, substr_count($content, 'name="identifier"'));
+        $this->assertSame(1, substr_count($content, '<!DOCTYPE html>'));
+    }
+
     public function test_the_owner_can_log_in_through_the_tenant_host_and_see_the_roster(): void
     {
         [$tenant, $host] = $this->seedTenant();

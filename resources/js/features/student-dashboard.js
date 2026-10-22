@@ -2,6 +2,23 @@
 // server's Gregorian fallback text, and wire the read-only schedule-details
 // dialog. Same pinned-UTC Intl approach as consultant-exams.js — stored
 // datetimes are wall-clock, so formatting them as UTC can never shift the day.
+//
+// The two lists the old module built by hand (the week-notes days and the
+// comment thread) are now React islands mounted by resources/js/react/mount.js.
+// The page router contract is unchanged: `export default function init(region)`
+// and an optional cleanup returned to page-router.js bindPage/stopPage.
+// Server-rendered DOM stays the owner of the skeleton; React only fills the
+// containers the Blade view already ships.
+
+import { createElement } from 'react';
+import { mountIsland } from '../react/mount.js';
+import { EmptyState, Text } from '../react/primitives.js';
+
+const EMPTY_COMMENT = 'هنوز یادداشتی ثبت نکرده‌اید.';
+
+// One comment-thread island per dialog; reopening clones a fresh template body,
+// so the previous root has to be released before the next one mounts.
+const commentIslands = new WeakMap();
 
 export default function init(region = document) {
     const displayFmt = new Intl.DateTimeFormat('fa-IR-u-ca-persian', {
@@ -21,10 +38,17 @@ export default function init(region = document) {
         if (!Number.isNaN(date.getTime())) el.textContent = weekdayFmt.format(date);
     });
 
-    initScheduleDialog(region);
-    initWeekNotes(region);
+    const islands = [];
 
-    return revealStartButtons(region);
+    initScheduleDialog(region, islands);
+    initWeekNotes(islands);
+
+    const stopReveal = revealStartButtons(region);
+
+    return () => {
+        stopReveal();
+        islands.splice(0).forEach((island) => island.unmount());
+    };
 }
 
 /**
@@ -75,7 +99,7 @@ function revealStartButtons(region) {
 
 // Boxes are <button data-sched-item="#template-id">; details live in hidden
 // server-rendered <template>s and are cloned into one shared <dialog>.
-function initScheduleDialog(region = document) {
+function initScheduleDialog(region = document, islands = []) {
     const dialog = document.getElementById('schedule-detail-modal');
     if (!dialog || dialog.dataset.wired) return;
     dialog.dataset.wired = '1';
@@ -88,10 +112,15 @@ function initScheduleDialog(region = document) {
             const tpl = document.getElementById(box.dataset.schedItem);
             if (!tpl) return;
 
+            // The cloned body replaces the previous thread's raw nodes; release
+            // its React root first so the old tree cannot keep updating.
+            commentIslands.get(dialog)?.unmount();
+            commentIslands.delete(dialog);
+
             body.replaceChildren(tpl.content.cloneNode(true));
             if (title) title.textContent = box.dataset.schedTitle || '';
             init(dialog); // rewrite the freshly cloned Jalali date placeholders
-            wireStudentActions(dialog, box);
+            wireStudentActions(dialog, box, islands);
             dialog.showModal();
         });
     });
@@ -111,15 +140,14 @@ function initScheduleDialog(region = document) {
 // degrades to the status quo (no panel), never to an empty-looking one.
 // ---------------------------------------------------------------------------
 
-function initWeekNotes() {
-    const section = document.getElementById('student-week-notes');
+function initWeekNotes(islands = []) {
+    const section = document.querySelector('[data-react-island="student-week-notes"], #student-week-notes');
     if (!section || section.dataset.wired) return;
     section.dataset.wired = '1';
 
     const url = section.dataset.urlNotes;
     if (!url) return;
 
-    const list = section.querySelector('#student-week-notes-list');
     const empty = section.querySelector('#student-week-notes-empty');
     const weekStart = section.dataset.weekStart || '';
     const query = weekStart ? `?week_start_date=${encodeURIComponent(weekStart)}` : '';
@@ -130,12 +158,18 @@ function initWeekNotes() {
     })
         .then((res) => (res.ok ? res.json() : Promise.reject(new Error(String(res.status)))))
         .then((data) => {
+            // A router swap may have removed the section while the request was
+            // in flight; never mount an island on detached DOM.
+            if (!section.isConnected) return;
+
             const days = (data?.days || []).filter((day) => day.has_text);
 
             if (!days.length) {
                 if (empty) empty.hidden = false;
             } else {
-                days.forEach((day) => list?.appendChild(buildWeekNote(day)));
+                const list = section.querySelector('#student-week-notes-list');
+                const island = mountIsland(list, WeekNotes, { days });
+                if (island) islands.push(island);
             }
 
             section.hidden = false;
@@ -146,30 +180,26 @@ function initWeekNotes() {
         });
 }
 
-function buildWeekNote(day) {
-    const wrap = document.createElement('div');
-    wrap.className = 'sched-day';
-
-    const head = document.createElement('div');
-    head.className = 'sched-day-head';
-    head.textContent = day.label || '';
-    wrap.appendChild(head);
-
-    const text = document.createElement('p');
-    text.className = 'student-week-notes-text';
-    text.textContent = day.text; // textContent, never innerHTML: a note is data
-    wrap.appendChild(text);
-
-    return wrap;
+/**
+ * One week's note days, in payload order. The markup is identical to the DOM
+ * the old appendChild builder produced: day wrapper, muted head, note text.
+ * A note is data, so React's text rendering keeps markup inside it as text.
+ */
+export function WeekNotes({ days }) {
+    return days.map((day) => createElement(
+        'div',
+        { className: 'sched-day', key: String(day.day_index ?? day.label ?? '') },
+        createElement(Text, { as: 'div', className: 'sched-day-head' }, day.label || ''),
+        createElement(Text, { className: 'student-week-notes-text' }, day.text),
+    ));
 }
-
 
 // ---------------------------------------------------------------------------
 // Writable pop-up: mark-done + the student's own comment thread
 // ---------------------------------------------------------------------------
 // The dialog is no longer read-only. The student marks a block done and writes
-// down WHY it was or was not done ("مریض بودم"), and the consultant reads that
-// back on their side. Both calls go to the URLs declared on the dialog as
+// down WHY it was or was not done, and the consultant reads that back on their
+// side. Both calls go to the URLs declared on the dialog as
 // data-url-*-template, so no route is hardcoded here and a tenant prefix is
 // never guessed.
 
@@ -179,14 +209,14 @@ function buildWeekNote(day) {
  * it is what the calendar itself must repaint, so the dialog and the grid can
  * never disagree about whether a block is done.
  */
-function wireStudentActions(dialog, box) {
+function wireStudentActions(dialog, box, islands = []) {
     const itemId = box.dataset.schedId;
     if (!itemId) return;
 
     const urlFor = (template) => (template || '').replace('__ITEM__', itemId);
 
     wireCompletion(dialog, box, urlFor);
-    wireComments(dialog, urlFor);
+    wireComments(dialog, urlFor, islands);
 }
 
 /**
@@ -276,7 +306,7 @@ function paintCompletion(toggle, box, isCompleted) {
     }
 }
 
-function wireComments(dialog, urlFor) {
+function wireComments(dialog, urlFor, islands = []) {
     const composer = dialog.querySelector('[data-student-comment-composer]');
     if (!composer) return;
 
@@ -293,7 +323,34 @@ function wireComments(dialog, urlFor) {
         status.classList.toggle('comment-composer-status--error', Boolean(message) && isError);
     };
 
-    loadComments(thread, url);
+    // The thread is a React island: load the server's comments, then post the
+    // freshly written one locally instead of re-fetching. `null` means loading
+    // — the server-rendered placeholder stays until the first payload lands,
+    // exactly as the old fetch-then-replace builder behaved.
+    let comments = null;
+    let island = null;
+    let locallyPosted = false;
+
+    if (thread && url) {
+        island = mountIsland(thread, StudentComments, { comments });
+        if (island) {
+            islands.push(island);
+            commentIslands.set(dialog, island);
+        }
+    }
+
+    const setComments = (next) => {
+        comments = next;
+        island?.update({ comments });
+    };
+
+    loadComments(url).then((list) => {
+        // Reopening the dialog re-clones the body; the old thread is detached
+        // and must not publish its payload into the new one. A locally posted
+        // comment is newer truth, so a late initial load cannot erase it.
+        if (!thread?.isConnected || locallyPosted) return;
+        setComments(list);
+    });
 
     const send = async () => {
         const value = (text?.value || '').trim();
@@ -321,7 +378,8 @@ function wireComments(dialog, urlFor) {
 
             if (text) text.value = '';
             setStatus('ثبت شد.');
-            appendComment(thread, value, true);
+            locallyPosted = true;
+            setComments([...(comments || []), { comment_text: value, author: 'student' }]);
         } catch {
             // Keep the text on screen so nothing the student typed is lost.
             setStatus('ثبت نشد؛ دوباره تلاش کنید.', true);
@@ -340,8 +398,8 @@ function wireComments(dialog, urlFor) {
     });
 }
 
-async function loadComments(thread, url) {
-    if (!thread || !url) return;
+async function loadComments(url) {
+    if (!url) return [];
 
     try {
         const res = await fetch(url, {
@@ -349,53 +407,44 @@ async function loadComments(thread, url) {
             credentials: 'same-origin',
         });
         const data = await res.json().catch(() => null);
-        const comments = Array.isArray(data) ? data : (data?.comments || []);
-
-        thread.replaceChildren();
-        if (!comments.length) {
-            thread.appendChild(emptyComment());
-            return;
-        }
-        comments.forEach((c) => {
-            thread.appendChild(buildComment(c.comment_text, c.author === 'student'));
-        });
+        return Array.isArray(data) ? data : (data?.comments || []);
     } catch {
-        thread.replaceChildren();
-        thread.appendChild(emptyComment());
+        return [];
     }
 }
 
-const emptyComment = () => {
-    const p = document.createElement('p');
-    p.className = 'comment-item comment-item--empty';
-    p.dataset.studentCommentEmpty = '';
-    p.textContent = 'هنوز یادداشتی ثبت نکرده‌اید.';
-    return p;
-};
+/**
+ * The dialog's comment thread. `comments === null` is the loading state — the
+ * server-rendered placeholder is left in place; an empty array renders the same
+ * muted line the old builder appended; any other array renders the thread.
+ */
+export function StudentComments({ comments }) {
+    if (!comments) return null;
 
-function buildComment(text, isStudent) {
-    const wrap = document.createElement('div');
-    wrap.className = 'comment-item' + (isStudent ? ' comment-item--student' : '');
+    if (!comments.length) {
+        return createElement(
+            EmptyState,
+            {
+                className: 'comment-item comment-item--empty',
+                'data-student-comment-empty': '',
+            },
+            EMPTY_COMMENT,
+        );
+    }
 
-    const body = document.createElement('p');
-    body.className = 'comment-item-text';
-    body.textContent = text; // textContent, never innerHTML: a comment is data
-    wrap.appendChild(body);
-
-    const meta = document.createElement('span');
-    meta.className = 'comment-item-meta';
-    meta.textContent = isStudent ? 'شما' : 'مشاور';
-    wrap.appendChild(meta);
-
-    return wrap;
-}
-
-// A freshly posted comment is appended locally rather than re-fetching the
-// thread: the student just wrote it, so it is already the newest truth.
-function appendComment(thread, text) {
-    if (!thread) return;
-    thread.querySelector('[data-student-comment-empty]')?.remove();
-    thread.appendChild(buildComment(text, true));
+    return comments.map((comment, index) => createElement(
+        'div',
+        {
+            key: `${comment.author || 'comment'}-${index}`,
+            className: `comment-item${comment.author === 'student' ? ' comment-item--student' : ''}`,
+        },
+        createElement(Text, { className: 'comment-item-text' }, comment.comment_text),
+        createElement(
+            Text,
+            { as: 'span', className: 'comment-item-meta' },
+            comment.author === 'student' ? 'شما' : 'مشاور',
+        ),
+    ));
 }
 
 // The router calls init() on every render of this page; this fallback only

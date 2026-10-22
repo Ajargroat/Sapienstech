@@ -27,38 +27,61 @@
      the canvas under the template-owned `public.student.*` root (see
      StudioStyles::TEMPLATE_ROOTS). --}}
 <template data-studio-section-marker="welcome"></template>
-<div class="student-welcome" data-studio-path="public.student.welcome">
-    <section class="student-profile-head">
-        <span class="student-avatar-lg">{{ mb_substr($student->name, 0, 1) }}</span>
-        <div>
-            <h2>خوش آمدید، {{ $student->name }}</h2>
-            <div class="student-tags">
-                @if($student->grade)
-                    <span class="student-tag student-tag-grade">{{ $student->grade }}</span>
-                @endif
-                @if($student->gender)
-                    <span class="student-tag student-tag-gender">{{ $student->gender }}</span>
-                @endif
-                @if($student->major)
-                    <span class="student-tag student-tag-major">{{ $student->major }}</span>
-                @endif
+<div class="dash-page">
+<header class="dash-hero" data-studio-path="public.student.welcome">
+    <div class="dash-hero-main">
+        <span class="dash-eyebrow">پنل دانش‌آموز</span>
+        <h1 class="dash-title">خوش آمدید، {{ $student->name }}</h1>
+        <p class="dash-subtitle">برنامهٔ این هفته، آزمون‌های پیش‌رو و نتیجه‌های اخیرت را یک‌جا ببین.</p>
+        <div class="dash-hero-meta">
+            <span class="student-avatar-lg">{{ mb_substr($student->name, 0, 1) }}</span>
+            <div>
+                <div class="student-tags">
+                    @if($student->grade)
+                        <span class="student-tag student-tag-grade">{{ $student->grade }}</span>
+                    @endif
+                    @if($student->gender)
+                        <span class="student-tag student-tag-gender">{{ $student->gender }}</span>
+                    @endif
+                    @if($student->major)
+                        <span class="student-tag student-tag-major">{{ $student->major }}</span>
+                    @endif
+                </div>
+                <span class="student-email">{{ $student->email }}</span>
             </div>
-            <span class="student-email">{{ $student->email }}</span>
+            <div class="student-today">
+                <span class="student-today-label">امروز</span>
+                <time class="fa-date" datetime="{{ now()->format('Y-m-d\TH:i') }}Z">{{ persian_digits(now()->format('Y/m/d')) }}</time>
+            </div>
         </div>
-    </section>
-
-    <div class="student-today">
-        <span class="student-today-label">امروز</span>
-        <time class="fa-date" datetime="{{ now()->format('Y-m-d\TH:i') }}Z">{{ persian_digits(now()->format('Y/m/d')) }}</time>
+        <div class="dash-actions">
+            @if(site('features.report_cards', false) && \Illuminate\Support\Facades\Route::has('student.report-card'))
+                <a href="{{ route('student.report-card') }}" class="primary-button">
+                    <i class="fas fa-chart-line" aria-hidden="true"></i>
+                    کارنامهٔ من
+                </a>
+            @elseif(site('features.student_timetable', false) && \Illuminate\Support\Facades\Route::has('student.timetable'))
+                <a href="{{ route('student.timetable') }}" class="primary-button">
+                    <i class="fas fa-calendar-day" aria-hidden="true"></i>
+                    برنامهٔ کلاسی
+                </a>
+            @endif
+        </div>
     </div>
-</div>
+
+    @include('partials.dashboard.ring', [
+        'value' => $weekPercent,
+        'label' => 'پیشرفت این هفته',
+        'caption' => $stats['week_sessions'] > 0
+            ? persian_digits($stats['week_done']).' از '.persian_digits($stats['week_sessions']).' جلسه'
+            : 'هنوز جلسه‌ای ثبت نشده',
+    ])
+</header>
 
 @if($dealBanner)
-    <a href="{{ route('student.deals.index') }}"
-       class="mt-4 block rounded-2xl border p-4 no-underline"
-       style="border-color:color-mix(in srgb,var(--c-warning,#FBBF24) 45%,var(--c-border));background:color-mix(in srgb,var(--c-warning,#FBBF24) 10%,transparent)">
-        <b><i class="fas fa-file-invoice"></i> دورهٔ مشاورهٔ شما رو به پایان است</b>
-        <span class="block text-sm" style="color:var(--c-muted)">
+    <a href="{{ route('student.deals.index') }}" class="dash-alert">
+        <span class="dash-alert-title"><i class="fas fa-file-invoice" aria-hidden="true"></i> دورهٔ مشاورهٔ شما رو به پایان است</span>
+        <span class="dash-alert-text">
             @if($dealBanner->daysLeft() < 0) سرسید گذشته — @else {{ persian_digits($dealBanner->daysLeft()) }} روز مانده — @endif
             لطفاً ادامهٔ مسیر یا انصراف خود را اعلام کنید.
         </span>
@@ -66,102 +89,105 @@
 @endif
 
 <template data-studio-section-marker="stats"></template>
-<div class="student-stats" data-stagger data-studio-path="public.student.stats">
-    <div class="student-stat">
-        <span class="student-stat-icon student-stat-icon--primary"><i class="fas fa-calendar-alt"></i></span>
-        <div class="student-stat-text">
-            <span class="student-stat-value">{{ persian_digits($stats['week_sessions']) }}</span>
-            <span class="student-stat-label">جلسه این هفته</span>
-        </div>
-    </div>
+<section class="dash-stats" data-stagger data-studio-path="public.student.stats">
+    @include('partials.dashboard.stat', [
+        'tone' => 'primary',
+        'icon' => 'fa-calendar-day',
+        'label' => 'جلسه‌های این هفته',
+        'value' => $stats['week_sessions'],
+        'meta' => persian_digits($stats['week_done']).' جلسه تکمیل‌شده',
+        'percent' => $weekPercent,
+    ])
+    @include('partials.dashboard.stat', [
+        'tone' => 'success',
+        'icon' => 'fa-check-circle',
+        'label' => 'جلسه‌های تکمیل‌شده',
+        'value' => $stats['week_done'],
+        'meta' => $stats['week_sessions'] > 0
+            ? persian_digits((int) round(($stats['week_done'] / $stats['week_sessions']) * 100)).'٪ از برنامهٔ هفته'
+            : 'برنامه‌ای برای این هفته ثبت نشده',
+    ])
+    @include('partials.dashboard.stat', [
+        'tone' => 'info',
+        'icon' => 'fa-tasks',
+        'label' => 'آزمون‌های پیش‌رو',
+        'value' => $stats['upcoming_exams'],
+        'meta' => 'تا ۳۰ روز آینده',
+    ])
+    @include('partials.dashboard.stat', [
+        'tone' => 'secondary',
+        'icon' => 'fa-chart-line',
+        'label' => 'میانگین درصد آزمون‌ها',
+        'value' => $stats['average_percent'],
+        'meta' => $stats['average_percent'] !== null
+            ? 'بر پایهٔ آزمون‌های تکمیل‌شده'
+            : 'هنوز آزمونی تکمیل نشده',
+    ])
+</section>
 
-    <div class="student-stat">
-        <span class="student-stat-icon student-stat-icon--success"><i class="fas fa-check-circle"></i></span>
-        <div class="student-stat-text">
-            <span class="student-stat-value">{{ persian_digits($stats['week_done']) }}</span>
-            <span class="student-stat-label">تکمیل‌شده</span>
-        </div>
-    </div>
-
-    <div class="student-stat">
-        <span class="student-stat-icon student-stat-icon--info"><i class="fas fa-clipboard-list"></i></span>
-        <div class="student-stat-text">
-            <span class="student-stat-value">{{ persian_digits($stats['upcoming_exams']) }}</span>
-            <span class="student-stat-label">آزمون پیش‌رو</span>
-        </div>
-    </div>
-
-    <div class="student-stat">
-        <span class="student-stat-icon student-stat-icon--secondary"><i class="fas fa-percentage"></i></span>
-        <div class="student-stat-text">
-            <span class="student-stat-value">
-                @if($stats['average_percent'] !== null){{ persian_digits($stats['average_percent']) }}٪@else—@endif
-            </span>
-            <span class="student-stat-label">میانگین درصد آزمون‌ها</span>
-        </div>
-    </div>
-</div>
-
-<div class="student-side">
-    <section class="panel student-panel" data-studio-path="public.student.schedule">
-        <header class="student-panel-head">
+<div class="dash-layout">
+    <div class="dash-main">
+    <section class="panel dash-panel" data-studio-path="public.student.schedule">
+        <header class="dash-panel-head">
             <h2><i class="fas fa-calendar-week"></i> برنامه هفتگی</h2>
             <span class="count-badge">{{ persian_digits($stats['week_sessions']) }} مورد</span>
         </header>
 
         @if($weekItems->isNotEmpty())
-            {{-- Saturday-anchored Persian week, one day-header row of colored
-                 boxes per day. Boxes are styled like the consultant calendar's
-                 event cards (16% tint of the category color + solid accent
-                 border) but are strictly read-only. --}}
-            @foreach($weekItems->groupBy(fn ($item) => $item->start_datetime->toDateString()) as $dayItems)
-                @php $dayStart = $dayItems->first()->start_datetime; @endphp
-                <div class="sched-day">
-                    <h3 class="sched-day-head">
-                        <span class="fa-weekday" data-fa-weekday="{{ $dayStart->format('Y-m-d\TH:i') }}Z"></span>
-                        <time class="fa-date" datetime="{{ $dayStart->format('Y-m-d\TH:i') }}Z">{{ persian_digits($dayStart->format('Y/m/d')) }}</time>
-                    </h3>
-                    <div class="sched-boxes">
-                        @foreach($dayItems as $item)
-                            @php
-                                $isPersonal = $item->item_type === 'student_personal_block';
-                                $accent = $item->color ?: 'var(--c-primary)';
-                            @endphp
-                            <button
-                                type="button"
-                                class="sched-box @if($isPersonal) sched-box--personal @endif @if($item->is_completed) sched-box--done @endif"
-                                style="--accent: {{ $accent }}"
-                                data-sched-item="sched-tpl-{{ $item->id }}"
-                                data-sched-title="{{ $item->title }}"
-                                data-sched-id="{{ $item->id }}"
-                                data-sched-completed="{{ $item->is_completed ? '1' : '0' }}"
-                                aria-haspopup="dialog"
-                            >
-                                <span class="sched-box-time">
-                                    <span>{{ persian_digits($item->start_datetime->format('H:i')) }} – {{ persian_digits($item->end_datetime->format('H:i')) }}</span>
-                                    @if($item->is_completed)
-                                        <i class="fas fa-check-circle" title="تکمیل شد"></i>
-                                    @endif
-                                </span>
-                                <span class="sched-box-title">{{ $item->title }}</span>
-                                @if($item->book_name || $item->page_count || $item->test_count)
-                                    <span class="sched-box-tags">
-                                        @if($item->book_name)
-                                            <span><i class="fas fa-book"></i> {{ $item->book_name }}</span>
-                                        @endif
-                                        @if($item->page_count)
-                                            <span><i class="fas fa-file-alt"></i> {{ persian_digits($item->page_count) }} صفحه</span>
-                                        @endif
-                                        @if($item->test_count)
-                                            <span><i class="fas fa-check-square"></i> {{ persian_digits($item->test_count) }} تست</span>
+            {{-- Saturday-anchored Persian week as a seven-day board. Boxes keep
+                 the consultant calendar's colored-card language but stay
+                 strictly read-only. --}}
+            <div class="dash-week">
+                @foreach($weekDays as $day)
+                    <div class="dash-week-day @if($day['date']->isToday()) is-today @endif">
+                        <div class="dash-week-head">
+                            <span class="dash-week-weekday fa-weekday" data-fa-weekday="{{ $day['date']->format('Y-m-d\TH:i') }}Z">{{ $day['weekday'] }}</span>
+                            <time class="dash-week-date fa-date" datetime="{{ $day['date']->format('Y-m-d\TH:i') }}Z">{{ persian_digits($day['date']->format('Y/m/d')) }}</time>
+                        </div>
+                        <div class="dash-week-items">
+                            @forelse($day['items'] as $item)
+                                @php
+                                    $isPersonal = $item->item_type === 'student_personal_block';
+                                    $accent = $item->color ?: 'var(--c-primary)';
+                                @endphp
+                                <button
+                                    type="button"
+                                    class="sched-box @if($isPersonal) sched-box--personal @endif @if($item->is_completed) sched-box--done @endif"
+                                    style="--accent: {{ $accent }}"
+                                    data-sched-item="sched-tpl-{{ $item->id }}"
+                                    data-sched-title="{{ $item->title }}"
+                                    data-sched-id="{{ $item->id }}"
+                                    data-sched-completed="{{ $item->is_completed ? '1' : '0' }}"
+                                    aria-haspopup="dialog"
+                                >
+                                    <span class="sched-box-time">
+                                        <span>{{ persian_digits($item->start_datetime->format('H:i')) }} – {{ persian_digits($item->end_datetime->format('H:i')) }}</span>
+                                        @if($item->is_completed)
+                                            <i class="fas fa-check-circle" title="تکمیل شد"></i>
                                         @endif
                                     </span>
-                                @endif
-                            </button>
-                        @endforeach
+                                    <span class="sched-box-title">{{ $item->title }}</span>
+                                    @if($item->book_name || $item->page_count || $item->test_count)
+                                        <span class="sched-box-tags">
+                                            @if($item->book_name)
+                                                <span><i class="fas fa-book"></i> {{ $item->book_name }}</span>
+                                            @endif
+                                            @if($item->page_count)
+                                                <span><i class="fas fa-file-alt"></i> {{ persian_digits($item->page_count) }} صفحه</span>
+                                            @endif
+                                            @if($item->test_count)
+                                                <span><i class="fas fa-check-square"></i> {{ persian_digits($item->test_count) }} تست</span>
+                                            @endif
+                                        </span>
+                                    @endif
+                                </button>
+                            @empty
+                                <p class="dash-week-empty">بدون برنامه</p>
+                            @endforelse
+                        </div>
                     </div>
-                </div>
-            @endforeach
+                @endforeach
+            </div>
         @else
             <div class="empty-state empty-state--compact">
                 <i class="far fa-calendar"></i>
@@ -175,8 +201,8 @@
         {{-- Read-only mirror of the consultant's «توضیحات هفته»; filled by
              student-dashboard.js from the portal's own notes endpoint and
              revealed only once the week's data has actually rendered. --}}
-        <section class="panel student-panel" id="student-week-notes" aria-labelledby="student-week-notes-title" data-url-notes="{{ route('student.schedule.notes') }}" data-week-start="{{ $weekStart->toDateString() }}" hidden>
-            <header class="student-panel-head">
+        <section class="panel dash-panel" id="student-week-notes" data-react-island="student-week-notes" aria-labelledby="student-week-notes-title" data-url-notes="{{ route('student.schedule.notes') }}" data-week-start="{{ $weekStart->toDateString() }}" hidden>
+            <header class="dash-panel-head">
                 <h2 id="student-week-notes-title"><i class="fas fa-note-sticky"></i> توضیحات هفته</h2>
             </header>
             <div id="student-week-notes-list"></div>
@@ -184,8 +210,8 @@
         </section>
     @endif
 
-    <section class="panel student-panel" data-studio-path="public.student.exams">
-        <header class="student-panel-head">
+    <section class="panel dash-panel" data-studio-path="public.student.exams">
+        <header class="dash-panel-head">
             <h2><i class="fas fa-tasks"></i> آزمون‌های پیش‌رو</h2>
             @if($upcomingExams->isNotEmpty())
                 <span class="count-badge">{{ persian_digits($upcomingExams->count()) }} آزمون</span>
@@ -274,9 +300,36 @@
             <p class="student-panel-note">آزمونی برای ماه آینده زمان‌بندی نشده است.</p>
         @endif
     </section>
+</div>
 
-    <section class="panel student-panel" data-studio-path="public.student.results">
-        <header class="student-panel-head">
+<aside class="dash-rail">
+    <section class="dash-feature" data-studio-path="public.student.next_exam">
+        <span class="dash-feature-icon"><i class="fas fa-hourglass-half" aria-hidden="true"></i></span>
+        <span class="dash-feature-eyebrow">آزمون بعدی</span>
+        @if($nextExam)
+            <h3 class="dash-feature-title">{{ $nextExam->test->test_title }}</h3>
+            <p class="dash-feature-meta">
+                {{ $nextExam->test->lesson ?: 'آزمون' }}
+                ·
+                <time class="fa-date" datetime="{{ $nextExam->scheduled_at->format('Y-m-d\TH:i') }}Z">{{ persian_digits($nextExam->scheduled_at->format('Y/m/d')) }}</time>
+                — {{ persian_digits($nextExam->scheduled_at->format('H:i')) }}
+            </p>
+            @if($nextExam->windowOpen())
+                <a href="{{ route('student.exams.show', $nextExam) }}" class="dash-feature-cta">
+                    شروع آزمون
+                    <i class="fas fa-arrow-left" aria-hidden="true"></i>
+                </a>
+            @else
+                <p class="dash-feature-meta">پنجرهٔ آزمون در زمان مقرر باز می‌شود.</p>
+            @endif
+        @else
+            <h3 class="dash-feature-title">فعلاً آزمونی زمان‌بندی نشده</h3>
+            <p class="dash-feature-meta">آزمون‌های تازه در همین صفحه نمایش داده می‌شوند.</p>
+        @endif
+    </section>
+
+    <section class="panel dash-panel" data-studio-path="public.student.results">
+        <header class="dash-panel-head">
             <h2><i class="fas fa-chart-line"></i> آخرین نتایج</h2>
             @if($stats['completed_exams'] > 0)
                 <span class="count-badge">{{ persian_digits($stats['completed_exams']) }} آزمون</span>
@@ -312,6 +365,66 @@
             <p class="student-panel-note">هنوز نتیجه‌ای ثبت نشده است.</p>
         @endif
     </section>
+
+    @php
+        $quickActions = [];
+
+        if (site('features.student_materials', false) && \Illuminate\Support\Facades\Route::has('student.lessons.index')) {
+            $quickActions[] = [
+                'label' => 'درسنامه‌ها',
+                'href' => route('student.lessons.index'),
+                'icon' => 'fa-book-open-reader',
+                'tone' => 'info',
+            ];
+        }
+
+        if (site('features.student_assignments', false) && \Illuminate\Support\Facades\Route::has('student.assignments.index')) {
+            $quickActions[] = [
+                'label' => 'تکالیف',
+                'href' => route('student.assignments.index'),
+                'icon' => 'fa-clipboard-list',
+                'tone' => 'warning',
+            ];
+        }
+
+        if (site('features.student_timetable', false) && \Illuminate\Support\Facades\Route::has('student.timetable')) {
+            $quickActions[] = [
+                'label' => 'برنامهٔ کلاسی',
+                'href' => route('student.timetable'),
+                'icon' => 'fa-calendar-day',
+                'tone' => 'primary',
+            ];
+        }
+
+        if (site('features.report_cards', false) && \Illuminate\Support\Facades\Route::has('student.report-card')) {
+            $quickActions[] = [
+                'label' => 'کارنامه',
+                'href' => route('student.report-card'),
+                'icon' => 'fa-chart-line',
+                'tone' => 'secondary',
+            ];
+        }
+
+        if (site('features.student_chat', false) && \Illuminate\Support\Facades\Route::has('student.direct-chat.page')) {
+            $quickActions[] = [
+                'label' => 'گفتگو',
+                'href' => route('student.direct-chat.page'),
+                'icon' => 'fa-paper-plane',
+                'tone' => 'success',
+            ];
+        }
+    @endphp
+
+    @if($quickActions)
+        <section class="panel dash-panel" data-studio-path="public.student.quick_actions">
+            <header class="dash-panel-head">
+                <h2><i class="fas fa-paper-plane" aria-hidden="true"></i> دسترسی سریع</h2>
+            </header>
+            @include('partials.dashboard.quick-actions', ['actions' => $quickActions])
+        </section>
+    @endif
+</aside>
+</div>
 </div>
 
 {{-- Read-only schedule item details: cloned into the dialog by
@@ -382,7 +495,7 @@
                 </div>
                 <p class="comment-composer-status" data-student-comment-status hidden></p>
             </div>
-            <div class="comment-thread" data-student-comment-thread>
+            <div class="comment-thread" data-student-comment-thread data-react-island="student-comments">
                 <p class="comment-item comment-item--empty" data-student-comment-empty>هنوز یادداشتی ثبت نکرده‌اید.</p>
             </div>
         </div>

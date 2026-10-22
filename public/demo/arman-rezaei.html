@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<!--
+  public/demo/arman-rezaei.html — static landing page preview.
+
+  Fictional consultant page. No Blade, no JavaScript, no build step.
+  All colour, type, shape and motion values are consumed from theme.css, the
+  generated ThemeTokens sheet for this palette. The page only adds layout and
+  decoration — no new brand tokens are introduced here.
+-->
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <title>آرمان رضایی | مشاور تحصیلی</title>
+  <meta name="description" content="همراهی هدفمند در مسیر آمادگی کنکور">
+  <link rel="stylesheet" href="theme.css">
+  <link rel="stylesheet" href="arman-rezaei.css">
+</head>
+<body>
+
+  <header class="masthead">
+    <div class="shell masthead__bar">
+      <a class="brand" href="#top">
+        <span class="brand__mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" fill="none">
+            <path d="M6 24V15.5C6 9.7 10.5 5 16 5s10 4.7 10 10.5V24" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            <path d="M11 24v-8.6c0-2.9 2.2-5.2 5-5.2s5 2.3 5 5.2V24" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity=".5"/>
+            <circle cx="16" cy="24" r="1.7" fill="currentColor"/>
+          </svg>
+        </span>
+        <span class="brand__words">
+          <span class="brand__name">آرمان رضایی</span>
+          <span class="brand__role">مشاور تحصیلی کنکور</span>
+        </span>
+      </a>
+
+      <nav class="masthead__nav" aria-label="ناوبری اصلی">
+        <a class="masthead__link is-current" href="#top" aria-current="page">صفحه اصلی</a>
+        <a class="masthead__link" href="#services">خدمات مشاوره</a>
+        <a class="masthead__link" href="#process">روش کار</a>
+        <a class="masthead__link" href="#about">درباره من</a>
+      </nav>
+
+      <a class="btn btn--primary btn--compact masthead__cta" href="#contact">
+        <span>درخواست مشاوره</span>
+        <svg class="btn__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M19 12H5m6-6-6 6 6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </a>
+    </div>
+  </header>
+
+  <main id="main">
+
+    <section class="hero" id="top">
+      <div class="hero__ground" aria-hidden="true">
+        <span class="hero__grid"></span>
+        <span class="hero__wash hero__wash--one"></span>
+        <span class="hero__wash hero__wash--two"></span>
+        <span class="hero__arc"></span>
+      </div>
+
+      <div class="shell hero__layout">
+        <div class="hero__copy">
+          <p class="eyebrow">
+            <span class="eyebrow__pip" aria-hidden="true"></span>
+            <span>مشاوره تخصصی کنکور تجربی و ریاضی</span>
+          </p>
+
+          <h1 class="hero__title">
+            برای رتبه بهتر، فقط بیشتر درس نخوان؛
+            <span class="hero__mark">هدفمندتر</span> درس بخوان.
+          </h1>
+
+          <p class="hero__description">
+            با برنامه‌ریزی متناسب با شرایطت، پیگیری منظم و تحلیل دقیق آزمون‌ها،
+            مسیر مطالعه‌ات را آگاهانه مدیریت کن.
+          </p>
+
+          <div class="hero__actions">
+            <a class="btn btn--primary" href="#contact">
+              <span>شروع مشاوره</span>
+              <svg class="btn__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M19 12H5m6-6-6 6 6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </a>
+            <a class="btn btn--ghost" href="#services">
+              <span>مشاهده خدمات</span>
+            </a>
+          </div>
+
+          <p class="hero__meta">برنامه‌ریزی شخصی‌سازی‌شده · پیگیری مستمر · تحلیل آزمون</p>
+        </div>
+
+        <figure class="hero-art" aria-hidden="true">
+          <span class="hero-art__sun"></span>
+          <span class="hero-art__orbit"></span>
+          <span class="hero-art__cross hero-art__cross--one"></span>
+          <span class="hero-art__cross hero-art__cross--two"></span>
+
+          <div class="hero-art__plate">
+            <div class="hero-art__paper">
+              <div class="hero-art__head">
+                <span class="hero-art__seal">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M12 3c0 5 4 9 9 9-5 0-9 4-9 9 0-5-4-9-9-9 5 0 9-4 9-9Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+                  </svg>
+                </span>
+                <span class="hero-art__rule"></span>
+                <span class="hero-art__pip"></span>
+              </div>
+
+              <div class="hero-art__map">
+                <span class="hero-art__map-grid"></span>
+                <span class="hero-art__contour hero-art__contour--one"></span>
+                <span class="hero-art__contour hero-art__contour--two"></span>
+
+                <svg class="hero-art__trail" viewBox="0 0 420 300" fill="none">
+                  <path class="hero-art__trail-line"
+                        d="M352 266c-22-18-36-30-60-38-34-11-46-40-78-50-30-9-44-37-76-46-30-9-46-34-76-44"
+                        stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path class="hero-art__trail-ghost"
+                        d="M352 266c-22-18-36-30-60-38-34-11-46-40-78-50-30-9-44-37-76-46-30-9-46-34-76-44"
+                        stroke="currentColor" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" opacity=".07"/>
+                  <circle cx="292" cy="228" r="5.5" fill="var(--paper-warm)" stroke="currentColor" stroke-width="2"/>
+                  <circle cx="214" cy="178" r="5.5" fill="var(--paper-warm)" stroke="currentColor" stroke-width="2"/>
+                  <circle cx="138" cy="132" r="5.5" fill="var(--paper-warm)" stroke="currentColor" stroke-width="2"/>
+                  <circle cx="62" cy="88" r="19" stroke="currentColor" stroke-width="1.2" opacity=".35"/>
+                  <circle cx="62" cy="88" r="11" stroke="currentColor" stroke-width="1.2" opacity=".65"/>
+                  <circle cx="62" cy="88" r="4.5" fill="currentColor"/>
+                </svg>
+
+                <span class="hero-art__pin hero-art__pin--a"></span>
+                <span class="hero-art__pin hero-art__pin--b"></span>
+              </div>
+
+              <div class="hero-art__foot">
+                <div class="hero-art__bars">
+                  <span style="--bar:.34"></span>
+                  <span style="--bar:.52"></span>
+                  <span style="--bar:.46"></span>
+                  <span style="--bar:.74"></span>
+                  <span style="--bar:.92"></span>
+                </div>
+                <span class="hero-art__check">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="m6 12.5 4 4L18.5 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="hero-art__float">
+            <span class="hero-art__ring">
+              <svg viewBox="0 0 52 52" fill="none">
+                <circle cx="26" cy="26" r="21" stroke="currentColor" stroke-width="2" opacity=".13"/>
+                <circle cx="26" cy="26" r="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-dasharray="92 132" transform="rotate(-90 26 26)"/>
+              </svg>
+              <span class="hero-art__ring-dot"></span>
+            </span>
+            <span class="hero-art__float-bars">
+              <span style="--bar:.42"></span>
+              <span style="--bar:.7"></span>
+              <span style="--bar:1"></span>
+            </span>
+            <span class="hero-art__float-mark"></span>
+          </div>
+        </figure>
+      </div>
+    </section>
+
+    <section class="section services" id="services">
+      <div class="shell">
+        <div class="section-head">
+          <div class="section-head__text">
+            <span class="section-head__rule" aria-hidden="true"></span>
+            <h2 class="section-title">در مسیر کنکور، همراهت هستم</h2>
+            <p class="section-subtitle">از برنامه روزانه تا تحلیل آزمون؛ هر مرحله با هدف مشخص.</p>
+          </div>
+          <span class="section-head__ornament" aria-hidden="true">
+            <span></span><span></span><span></span>
+            <span></span><span></span><span></span>
+            <span></span><span></span><span></span>
+          </span>
+        </div>
+
+        <div class="services__grid">
+          <article class="service-card">
+            <div class="service-card__top">
+              <span class="service-card__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <rect x="3.25" y="4.25" width="17.5" height="16.5" rx="2.25" stroke="currentColor" stroke-width="1.5"/>
+                  <path d="M3.5 9h17M8 2.5v3.5M16 2.5v3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                  <path d="M7.5 13h3M7.5 16.75h6.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+              </span>
+              <span class="service-card__corner" aria-hidden="true"></span>
+            </div>
+            <h3 class="service-card__title">برنامه‌ریزی شخصی</h3>
+            <p class="service-card__text">برنامه‌ای متناسب با سطح درسی، زمان آزاد، نقاط ضعف و اهداف تو.</p>
+            <a class="text-link" href="#contact">
+              <span>جزئیات برنامه‌ریزی</span>
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M19 12H5m6-6-6 6 6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </a>
+          </article>
+
+          <article class="service-card">
+            <div class="service-card__top">
+              <span class="service-card__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M20 11a8 8 0 1 0-2.35 5.65" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                  <path d="M20 4v7h-7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="m8.5 12 2.25 2.25L15.5 9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+              <span class="service-card__corner" aria-hidden="true"></span>
+            </div>
+            <h3 class="service-card__title">پیگیری و رفع اشکال</h3>
+            <p class="service-card__text">بررسی عملکرد هفتگی، پیگیری اجرای برنامه و شناسایی موانع مطالعه.</p>
+            <a class="text-link" href="#contact">
+              <span>مشاهده جزئیات</span>
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M19 12H5m6-6-6 6 6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </a>
+          </article>
+
+          <article class="service-card">
+            <div class="service-card__top">
+              <span class="service-card__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M4 20V3.75M4 20h17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                  <path d="m6.75 15.25 3.5-4.1 3 2.2 5.5-6.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  <circle cx="6.75" cy="15.25" r="1.2" fill="currentColor"/>
+                  <circle cx="18.75" cy="7.25" r="1.2" fill="currentColor"/>
+                </svg>
+              </span>
+              <span class="service-card__corner" aria-hidden="true"></span>
+            </div>
+            <h3 class="service-card__title">تحلیل آزمون</h3>
+            <p class="service-card__text">بررسی درصدها، مدیریت زمان و پیدا کردن مباحثی که نیاز به تمرین بیشتر دارند.</p>
+            <a class="text-link" href="#contact">
+              <span>آشنایی با تحلیل آزمون</span>
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M19 12H5m6-6-6 6 6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </a>
+          </article>
+
+          <article class="service-card">
+            <div class="service-card__top">
+              <span class="service-card__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.5"/>
+                  <path d="m15.25 8.75-1.8 4.7-4.7 1.8 1.8-4.7 4.7-1.8Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                  <circle cx="12" cy="12" r="1.15" fill="currentColor"/>
+                </svg>
+              </span>
+              <span class="service-card__corner" aria-hidden="true"></span>
+            </div>
+            <h3 class="service-card__title">انتخاب رشته</h3>
+            <p class="service-card__text">بررسی رتبه، علاقه و اولویت‌ها برای تصمیم‌گیری آگاهانه‌تر درباره انتخاب رشته.</p>
+            <a class="text-link" href="#contact">
+              <span>دریافت راهنمایی</span>
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M19 12H5m6-6-6 6 6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </a>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section process" id="process">
+      <div class="process__ornament" aria-hidden="true">
+        <span class="process__arc process__arc--one"></span>
+        <span class="process__arc process__arc--two"></span>
+        <span class="process__dot"></span>
+      </div>
+
+      <div class="shell">
+        <div class="section-head section-head--process">
+          <div class="section-head__text">
+            <span class="section-head__rule" aria-hidden="true"></span>
+            <h2 class="section-title">مسیر پیشرفتت از اینجا شروع می‌شود</h2>
+          </div>
+        </div>
+
+        <ol class="process__steps">
+          <li class="process__step">
+            <div class="process__marker">
+              <span class="process__number">01</span>
+              <span class="process__dash" aria-hidden="true">—</span>
+            </div>
+            <h3 class="process__title">شناخت شرایط</h3>
+            <p class="process__text">سطح درسی، هدف و زمان در دسترس را بررسی می‌کنیم.</p>
+          </li>
+          <li class="process__step">
+            <div class="process__marker">
+              <span class="process__number">02</span>
+              <span class="process__dash" aria-hidden="true">—</span>
+            </div>
+            <h3 class="process__title">طراحی برنامه</h3>
+            <p class="process__text">برنامه‌ای واقع‌بینانه با وظایف روزانه و اهداف هفتگی تنظیم می‌شود.</p>
+          </li>
+          <li class="process__step">
+            <div class="process__marker">
+              <span class="process__number">03</span>
+              <span class="process__dash" aria-hidden="true">—</span>
+            </div>
+            <h3 class="process__title">بررسی و اصلاح</h3>
+            <p class="process__text">عملکردت بررسی می‌شود و برنامه بر اساس نتایج واقعی تغییر می‌کند.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="section about" id="about">
+      <div class="shell about__grid">
+        <div class="about__copy">
+          <span class="section-head__rule" aria-hidden="true"></span>
+          <h2 class="section-title about__title">هر دانش‌آموز، مسیر پیشرفت خودش را دارد.</h2>
+          <p class="about__lead">
+            هدف از مشاوره، صرفاً نوشتن یک برنامه درسی نیست؛ بلکه ساختن مسیری قابل اجراست
+            که با شرایط واقعی، توانایی‌ها و اهداف دانش‌آموز هماهنگ باشد.
+          </p>
+          <ul class="about__points">
+            <li>
+              <span class="about__point-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="m6 12.5 4 4L18.5 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+              <span>برنامه متناسب با شرایط فردی</span>
+            </li>
+            <li>
+              <span class="about__point-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="m6 12.5 4 4L18.5 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+              <span>پیگیری منظم و هدفمند</span>
+            </li>
+            <li>
+              <span class="about__point-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="m6 12.5 4 4L18.5 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+              <span>تصمیم‌گیری بر اساس عملکرد واقعی</span>
+            </li>
+          </ul>
+        </div>
+
+        <figure class="portrait" aria-hidden="true">
+          <div class="portrait__arch">
+            <span class="portrait__sun"></span>
+            <span class="portrait__rings"></span>
+            <span class="portrait__grid"></span>
+            <span class="portrait__head"></span>
+            <span class="portrait__shoulders"></span>
+            <span class="portrait__frame"></span>
+          </div>
+          <span class="portrait__seal">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M12 2.5c0 5.25 4.25 9.5 9.5 9.5-5.25 0-9.5 4.25-9.5 9.5 0-5.25-4.25-9.5-9.5-9.5 5.25 0 9.5-4.25 9.5-9.5Z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <span class="portrait__rule"></span>
+        </figure>
+      </div>
+    </section>
+
+    <section class="section closing" id="contact">
+      <div class="shell">
+        <div class="closing__panel">
+          <svg class="closing__pattern" aria-hidden="true">
+            <defs>
+              <pattern id="arman-girih" width="64" height="64" patternUnits="userSpaceOnUse">
+                <path d="M32 2 62 32 32 62 2 32Z" fill="none" stroke="currentColor" stroke-width=".8"/>
+                <path d="M32 12 52 32 32 52 12 32Z" fill="none" stroke="currentColor" stroke-width=".7" opacity=".75"/>
+                <circle cx="32" cy="32" r="2" fill="currentColor" opacity=".7"/>
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#arman-girih)"/>
+          </svg>
+
+          <span class="closing__glow" aria-hidden="true"></span>
+
+          <div class="closing__copy">
+            <span class="closing__rule" aria-hidden="true"></span>
+            <h2 class="closing__title">برای شروع، از همین‌جا قدم اول را بردار.</h2>
+            <p class="closing__text">از وضعیت فعلی درسی‌ات شروع می‌کنیم و قدم بعدی را مشخص می‌کنیم.</p>
+            <button class="btn btn--cream" type="button">
+              <span>درخواست جلسه مشاوره</span>
+              <svg class="btn__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M19 12H5m6-6-6 6 6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+          </div>
+
+          <div class="closing__motif" aria-hidden="true">
+            <span class="closing__ring closing__ring--one"></span>
+            <span class="closing__ring closing__ring--two"></span>
+            <span class="closing__ring closing__ring--three"></span>
+            <span class="closing__star">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M12 3c0 5 4 9 9 9-5 0-9 4-9 9 0-5-4-9-9-9 5 0 9-4 9-9Z" stroke="currentColor" stroke-width=".9" stroke-linejoin="round"/>
+              </svg>
+            </span>
+          </div>
+
+          <span class="closing__corner closing__corner--tl" aria-hidden="true"></span>
+          <span class="closing__corner closing__corner--br" aria-hidden="true"></span>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <div class="footer__arc" aria-hidden="true"></div>
+    <div class="shell">
+      <div class="footer__top">
+        <div class="footer__brand">
+          <p class="footer__name">آرمان رضایی | مشاور تحصیلی</p>
+          <p class="footer__description">همراهی هدفمند در مسیر آمادگی کنکور</p>
+        </div>
+        <nav class="footer__links" aria-label="ناوبری پاورقی">
+          <a href="#top">صفحه اصلی</a>
+          <a href="#services">خدمات مشاوره</a>
+          <a href="#about">درباره من</a>
+          <a href="#contact">تماس با مشاور</a>
+        </nav>
+      </div>
+      <div class="footer__bottom">
+        <p class="footer__copyright">© ۱۴۰۵ آرمان رضایی. تمامی حقوق محفوظ است.</p>
+        <span class="footer__mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M12 3c0 5 4 9 9 9-5 0-9 4-9 9 0-5-4-9-9-9 5 0 9-4 9-9Z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/>
+          </svg>
+        </span>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

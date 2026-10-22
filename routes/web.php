@@ -9,21 +9,24 @@ use App\Http\Controllers\Consultant\Bulk\BulkScheduleController;
 use App\Http\Controllers\Consultant\ChatController as ConsultantChatController;
 use App\Http\Controllers\Consultant\ConsultantDashboardController;
 use App\Http\Controllers\Consultant\ConsultantFeatureController;
+use App\Http\Controllers\Consultant\ConsultationRequestController as ConsultantConsultationRequestController;
 use App\Http\Controllers\Consultant\DealController as ConsultantDealController;
 use App\Http\Controllers\Consultant\JoinRequestController as ConsultantJoinRequestController;
+use App\Http\Controllers\Consultant\ScheduleAssistantController;
 use App\Http\Controllers\Consultant\Settings\ChatSettingsController as ConsultantChatSettingsController;
 use App\Http\Controllers\Consultant\Settings\ProfileController as ConsultantProfileController;
 use App\Http\Controllers\Consultant\StudentExamController;
-use App\Http\Controllers\Consultant\ScheduleAssistantController;
 use App\Http\Controllers\Consultant\StudentFeatureController;
 use App\Http\Controllers\Consultant\StudentReportCardController;
 use App\Http\Controllers\Consultant\StudentScheduleController;
 use App\Http\Controllers\Consultant\StudentScheduleNoteController;
 use App\Http\Controllers\Public\BlogController as PublicBlogController;
+use App\Http\Controllers\Public\ConsultationRequestController;
 use App\Http\Controllers\Public\JoinRequestController;
 use App\Http\Controllers\Public\PageController;
 use App\Http\Controllers\Student\ChatController as StudentChatController;
 use App\Http\Controllers\Student\DealController as StudentDealController;
+use App\Http\Controllers\Student\LessonReaderController;
 use App\Http\Controllers\Student\Settings\ProfileController as StudentProfileController;
 use App\Http\Controllers\Student\StudentAssignmentController;
 use App\Http\Controllers\Student\StudentDashboardController;
@@ -51,6 +54,17 @@ Route::get('/about', [PageController::class, 'about'])->name('about');
 Route::get('/contact', [PageController::class, 'contact'])->name('contact');
 
 /*
+ * Bespoke landing draft preview. Staff-only (`auth` is the web guard, so
+ * students and guests never reach it): renders the tenant's surface with
+ * force:true, i.e. the `enabled` flag is bypassed but the slug and file
+ * checks still apply. Same `*.landing` composer as the published page, plus
+ * X-Robots-Tag noindex from the controller. Never linked publicly.
+ */
+Route::get('/landing/preview', [PageController::class, 'preview'])
+    ->middleware('auth')
+    ->name('landing.preview');
+
+/*
 | Join request («درخواست عضویت») — the landing page's join section posts here.
 | Public by necessity (the visitor has no account yet), so it is throttled and
 | the tenant is taken from the host, never from the form. The row it creates is
@@ -59,6 +73,18 @@ Route::get('/contact', [PageController::class, 'contact'])->name('contact');
 Route::post('/join', [JoinRequestController::class, 'store'])
     ->middleware('throttle:join-request')
     ->name('join.store');
+
+/*
+| Consultation request - a one-way public submission: the visitor asks to be
+| contacted back; there is no payment and nothing becomes a roster row.
+| Public like /join, so it is throttled and the tenant is taken from the
+| host, never from the form. The staff email rides the queue. Wave 2b adds
+| the flag row and the shell - until `features.consultation_requests` is
+| configured, site() answers false and this route 404s.
+*/
+Route::post('/consultation', [ConsultationRequestController::class, 'store'])
+    ->middleware('throttle:consultation-request')
+    ->name('consultation.store');
 
 /*
 |--------------------------------------------------------------------------
@@ -83,6 +109,18 @@ Route::middleware('guest')->group(function () {
 Route::post('/logout', [LoginController::class, 'logout'])
     ->middleware('auth')
     ->name('logout');
+
+/*
+|--------------------------------------------------------------------------
+| Operations console (/ops) — ours, not a tenant's.
+|--------------------------------------------------------------------------
+|
+| The PDF extraction pipeline lives here and nowhere else. It carries its own
+| platform-admin gate (`ops.access`), its own `ops.` route names and no tenant
+| feature flag, so no panel's role matrix or shell decides whether our own
+| machinery works. See routes/ops.php for why extraction runs inline.
+*/
+require __DIR__.'/ops.php';
 
 /*
 |--------------------------------------------------------------------------
@@ -242,9 +280,42 @@ Route::middleware('auth')->prefix('consultant')->name('consultant.')->group(func
         Route::post('{joinRequest}/reject', [ConsultantJoinRequestController::class, 'reject'])->name('reject');
     });
 
+    /*
+    | Consultation requests («درخواست مشاوره») — the queue of visitors who
+    | asked to be contacted back from the tenant's public consultation form.
+    | A pure status decision: approving creates nothing, rejecting deletes
+    | nothing — the row is the record (App\Support\ConsultationRequests).
+    | Gated by the tenant `consultation_requests` flag.
+    */
+    Route::prefix('consultations')->name('consultations.')->middleware('consultant.feature:consultation_requests')->group(function (): void {
+        Route::get('/', [ConsultantConsultationRequestController::class, 'index'])->name('index');
+        Route::get('{consultationRequest}', [ConsultantConsultationRequestController::class, 'show'])->name('show');
+        Route::post('{consultationRequest}/approve', [ConsultantConsultationRequestController::class, 'approve'])->name('approve');
+        Route::post('{consultationRequest}/reject', [ConsultantConsultationRequestController::class, 'reject'])->name('reject');
+    });
+
     Route::get('/permissions', [ConsultantFeatureController::class, 'show'])->defaults('feature', 'permissions')->middleware('consultant.feature:book_access')->name('permissions');
     Route::get('/questions', [ConsultantFeatureController::class, 'show'])->defaults('feature', 'questions')->middleware('consultant.feature:question_management')->name('questions');
     Route::get('/quizzes', [ConsultantFeatureController::class, 'show'])->defaults('feature', 'quizzes')->middleware('consultant.feature:quiz_management')->name('quizzes');
+
+    /*
+    | The lesson library's staff surface (import + block editor + AI drafts +
+    | question review). Mounted a SECOND time under /teacher/lessons from the
+    | identical require below — same controllers, same LessonAccess.
+    |
+    | `require` inside this closure is evaluated WHILE the group is active, so
+    | the `consultant.` name root and `auth` are inherited. A require at the
+    | file's top level does NOT inherit anything: it would register the same
+    | routes ungated at /lessons (measured: `lessons.index` with only `web`),
+    | which is why this file must be required ONLY from here and from the
+    | teacher group. The mount adds ONLY the panel name root; `lessons.php`
+    | owns its own `lessons` URI prefix and name segment (the previous version
+    | declared both ends, producing `/consultant/lessons/lessons` and
+    | `consultant.lessons.lessons.*` — measured on `route:list`).
+    */
+    Route::group([], function () {
+        require __DIR__.'/lessons.php';
+    });
 
     Route::prefix('students/{student}')->name('student.')->group(function () {
 
@@ -427,6 +498,19 @@ Route::middleware(['auth', 'teacher.role'])
             Route::put('/{item}', [TeacherScheduleController::class, 'update'])->name('update');
             Route::delete('/{item}', [TeacherScheduleController::class, 'destroy'])->name('destroy');
         });
+
+        /*
+        | The lesson library, second mount. A school teacher must work inside
+        | the teacher shell, not the whole-tenant consultant one — and a
+        | consultancy's staff must not be locked out by EnsureTeacher, which is
+        | why the surface exists under both prefixes with ONE controller set.
+        | Required inside the closure (no extra prefix/name root) so `teacher.`
+        | + `auth` + `teacher.role` are inherited — never at the top level of
+        | this file. lessons.php owns the `lessons` URI prefix and name segment.
+        */
+        Route::group([], function () {
+            require __DIR__.'/lessons.php';
+        });
     });
 
 /*
@@ -555,4 +639,32 @@ Route::middleware('auth:student')->prefix('student')->name('student.')->group(fu
         Route::put('profile/avatar', [StudentProfileController::class, 'updateAvatar'])->name('profile.avatar');
         Route::delete('profile/avatar', [StudentProfileController::class, 'deleteAvatar'])->name('profile.avatar.delete');
     });
+});
+
+/*
+|--------------------------------------------------------------------------
+| Lesson reader — the book-lesson screen, for students AND staff preview.
+|--------------------------------------------------------------------------
+|
+| Deliberately NOT inside the `auth:student` group above: that guard sends a
+| consultant to /student/login, so a staff preview would never reach the
+| controller (the reader is the one screen both audiences share). Its own
+| group, `auth:student` OR a tenant staff session, and the controller decides
+| which rule applies — published+grade for a student, own-tenant for staff.
+|
+| Route names are `student.lesson-reader.*` and NOT `student.lessons.*`: that
+| prefix is the material library, and the later registration would silently
+| win the name.
+|
+*/
+Route::middleware(['lesson-reader.access'])->prefix('student/lesson-reader')->name('student.lesson-reader.')->group(function () {
+    Route::get('/{lesson}', [LessonReaderController::class, 'show'])->name('show');
+    // `page` is the reserved paginator name; the parameter is `pageNumber`.
+    Route::get('/{lesson}/pages/{pageNumber}', [LessonReaderController::class, 'page'])
+        ->whereNumber('pageNumber')
+        ->name('page');
+    Route::post('/{lesson}/progress', [LessonReaderController::class, 'progress'])->name('progress');
+    // Grades ONE released question in place; the answer key never ships in the
+    // HTML (the demo showed it because the demo was static).
+    Route::post('/{lesson}/answer', [LessonReaderController::class, 'answer'])->name('answer');
 });

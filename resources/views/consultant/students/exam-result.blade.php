@@ -8,11 +8,13 @@
 @extends('layouts.consultant')
 
 @section('content')
+<div class="page-surface">
 <p class="result-back">
     <a href="{{ route('consultant.student.exams', $student) }}"><i class="fas fa-arrow-right"></i> بازگشت به فهرست آزمون‌ها</a>
 </p>
 <div class="result-wrap">
     @include('partials.exam-result-hero', ['report' => $report, 'test' => $test])
     @include('partials.exam-result-review', ['questions' => $questions, 'answers' => $answers])
+</div>
 </div>
 @endsection

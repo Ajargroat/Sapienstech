@@ -28,6 +28,19 @@ return [
                 'icons' => ['set' => 'lucide'], // Choices: resources/icons/catalog.json
 
         /*
+        | Brand lock — this academy's palette is its identity, so a single
+        | user's Studio preference may not swing it. Measured reason: admin
+        | user #1 had a saved personal layer (archetype brutalist_mono,
+        | primary #07d57b, secondary #a855f7) which repainted the dashboard
+        | while the landing and login stayed emerald — the exact cross-surface
+        | inconsistency this lock exists to prevent. Locking `colors` makes
+        | the dashboard resolve the same palette as the public surfaces;
+        | everything else a user owns (layout, motion, non-brand groups)
+        | still applies per user.
+        */
+        'brand_lock' => ['colors'],
+
+        /*
         | Colors — the "neon garden" palette: emerald + gold on a deep green-
         | black, so جنت reads as its own brand instead of the default cyan/
         | violet platform identity. Derived tokens (hovers, borders, glass,

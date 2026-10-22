@@ -8,6 +8,7 @@
 @extends('layouts.student')
 
 @section('content')
+<div class="page-surface">
 <div class="student-welcome">
     <section class="student-panel-head student-page-head">
         <h2><i class="fas fa-chart-pie"></i> کارنامه</h2>
@@ -22,5 +23,6 @@
             <p>کارنامه تحصیلی شما به‌زودی در همین صفحه در دسترس خواهد بود.</p>
         </div>
     </section>
+</div>
 </div>
 @endsection

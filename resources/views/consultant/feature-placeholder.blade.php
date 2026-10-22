@@ -1,6 +1,7 @@
 @extends('layouts.consultant')
 
 @section('content')
+<div class="page-surface">
     <div class="dashboard-header">
         <div>
             <h1>{{ $page['title'] }}</h1>
@@ -16,4 +17,5 @@
         <p>این صفحه در MVP مرز feature است؛ منطق اصلی باید در کنترلر/سرویس tenant-scoped قرار بگیرد.</p>
         <a href="{{ route('consultant.dashboard') }}" class="primary-button">بازگشت</a>
     </section>
+</div>
 @endsection

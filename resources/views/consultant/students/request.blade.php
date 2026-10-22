@@ -10,6 +10,7 @@
 @extends('layouts.consultant')
 
 @section('content')
+<div class="page-surface">
 @php
     $statusLabels = [
         'pending'  => 'در انتظار تأیید',
@@ -178,4 +179,5 @@
 {{-- After approving, this page is the redirect target — the pop-up shows the
      generated password exactly once. --}}
 @include('consultant.students.partials.generated-password-dialog')
+</div>
 @endsection

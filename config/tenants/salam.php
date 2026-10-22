@@ -48,6 +48,8 @@ return [
         'student_materials' => false,
         'student_assignments' => false,
         'student_timetable' => false,
+        'lesson_library' => false,
+        'student_lessons' => false,
         'appearance_staff_publish' => false,
     ],
 

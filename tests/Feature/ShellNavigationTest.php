@@ -93,10 +93,10 @@ class ShellNavigationTest extends TestCase
 
         $this->assertNotNull($field, 'shell_nav must be whitelisted in config/studio.php');
         $this->assertSame('layout', $field['group']);
-        $this->assertSame(['topnav' => 'Top bar', 'sidebar' => 'Sidebar'], $field['options']);
+        $this->assertSame(['sidebar' => 'Sidebar', 'topnav' => 'Top bar'], $field['options']);
     }
 
-    public function test_the_shell_defaults_to_the_topnav(): void
+    public function test_the_shell_defaults_to_the_sidebar(): void
     {
         [$tenant, $host] = $this->tenantWithDomain();
         $user = $this->userFor($tenant, 'tenant_admin');
@@ -106,32 +106,35 @@ class ShellNavigationTest extends TestCase
             ->assertOk()
             ->getContent();
 
-        $this->assertStringContainsString('data-shell-nav="topnav"', $html);
-        $this->assertStringContainsString('class="consultant-topnav"', $html);
-        $this->assertStringNotContainsString('consultant-sidebar', $html);
+        $this->assertStringContainsString('data-shell-nav="sidebar"', $html);
+        $this->assertStringContainsString('class="consultant-sidebar"', $html);
+        $this->assertStringNotContainsString('class="consultant-topnav"', $html);
+        $this->assertStringContainsString('sidebar-link', $html);
+        $this->assertStringContainsString('topnav-profile', $html);
+        $this->assertStringContainsString('id="theme-toggle-btn"', $html);
     }
 
-    public function test_tenant_can_switch_the_panel_to_the_sidebar(): void
+    public function test_tenant_can_switch_the_panel_back_to_the_topnav(): void
     {
         [$tenant, $host] = $this->tenantWithDomain();
         $admin = $this->userFor($tenant, 'tenant_admin');
 
-        $this->publish($tenant, $host, $admin, 'sidebar');
+        $this->publish($tenant, $host, $admin, 'topnav');
 
         $row = WebsiteConfig::withoutGlobalScopes()->where('tenant_id', $tenant->id)->first();
-        $this->assertSame('sidebar', data_get($row->layout_config, 'theme.layout.shell_nav'));
+        $this->assertSame('topnav', data_get($row->layout_config, 'theme.layout.shell_nav'));
 
         $html = $this->actingAs($admin)
             ->get("http://{$host}/consultant/dashboard")
             ->assertOk()
             ->getContent();
 
-        $this->assertStringContainsString('data-shell-nav="sidebar"', $html);
-        $this->assertStringContainsString('class="consultant-sidebar"', $html);
-        $this->assertStringNotContainsString('class="consultant-topnav"', $html);
+        $this->assertStringContainsString('data-shell-nav="topnav"', $html);
+        $this->assertStringContainsString('class="consultant-topnav"', $html);
+        $this->assertStringNotContainsString('class="consultant-sidebar"', $html);
 
-        // The rail carries the same tabs, so navigation stays complete.
-        $this->assertStringContainsString('sidebar-link', $html);
+        // The topbar carries the same tabs, so navigation stays complete.
+        $this->assertStringContainsString('topnav-link', $html);
         $this->assertStringContainsString('topnav-profile', $html);
         $this->assertStringContainsString('id="theme-toggle-btn"', $html);
     }
@@ -142,16 +145,16 @@ class ShellNavigationTest extends TestCase
         $admin = $this->userFor($tenant, 'tenant_admin');
         $student = $this->studentFor($tenant);
 
-        $this->publish($tenant, $host, $admin, 'sidebar');
+        $this->publish($tenant, $host, $admin, 'topnav');
 
         $html = $this->actingAs($student, 'student')
             ->get("http://{$host}/student/dashboard")
             ->assertOk()
             ->getContent();
 
-        $this->assertStringContainsString('data-shell-nav="sidebar"', $html);
-        $this->assertStringContainsString('class="consultant-sidebar"', $html);
-        $this->assertStringNotContainsString('class="consultant-topnav"', $html);
+        $this->assertStringContainsString('data-shell-nav="topnav"', $html);
+        $this->assertStringContainsString('class="consultant-topnav"', $html);
+        $this->assertStringNotContainsString('class="consultant-sidebar"', $html);
     }
 
     public function test_a_user_can_switch_only_their_own_shell(): void
@@ -160,7 +163,9 @@ class ShellNavigationTest extends TestCase
         $staff = $this->userFor($tenant, 'consultant_staff');
         $other = $this->userFor($tenant, 'consultant_staff');
 
-        $payload = $this->payload(['theme.layout.shell_nav' => 'sidebar']);
+        // The tenant default is the sidebar; one user opts personally into the
+        // topbar and the other keeps the default.
+        $payload = $this->payload(['theme.layout.shell_nav' => 'topnav']);
         $payload['scope'] = 'me';
 
         $this->actingAs($staff)
@@ -168,11 +173,11 @@ class ShellNavigationTest extends TestCase
             ->assertRedirect();
 
         $this->assertStringContainsString(
-            'class="consultant-sidebar"',
+            'class="consultant-topnav"',
             $this->actingAs($staff)->get("http://{$host}/consultant/dashboard")->getContent()
         );
         $this->assertStringContainsString(
-            'class="consultant-topnav"',
+            'class="consultant-sidebar"',
             $this->actingAs($other)->get("http://{$host}/consultant/dashboard")->getContent()
         );
     }
@@ -193,12 +198,12 @@ class ShellNavigationTest extends TestCase
         $this->assertNull(data_get($row?->layout_config, 'theme.layout.shell_nav'));
     }
 
-    public function test_resetting_the_key_falls_back_to_the_topnav(): void
+    public function test_resetting_the_key_falls_back_to_the_sidebar(): void
     {
         [$tenant, $host] = $this->tenantWithDomain();
         $admin = $this->userFor($tenant, 'tenant_admin');
 
-        $this->publish($tenant, $host, $admin, 'sidebar');
+        $this->publish($tenant, $host, $admin, 'topnav');
 
         $this->actingAs($admin)->post("http://{$host}/studio/reset", [
             'path' => 'theme.layout.shell_nav',
@@ -210,7 +215,54 @@ class ShellNavigationTest extends TestCase
             ->assertOk()
             ->getContent();
 
-        $this->assertStringContainsString('data-shell-nav="topnav"', $html);
-        $this->assertStringContainsString('class="consultant-topnav"', $html);
+        $this->assertStringContainsString('data-shell-nav="sidebar"', $html);
+        $this->assertStringContainsString('class="consultant-sidebar"', $html);
+        $this->assertStringNotContainsString('class="consultant-topnav"', $html);
+    }
+
+    public function test_the_sidebar_default_applies_to_all_three_panels(): void
+    {
+        [$tenant, $host] = $this->tenantWithDomain();
+        $admin = $this->userFor($tenant, 'tenant_admin');
+        $student = $this->studentFor($tenant);
+        $teacher = User::factory()->teacher()->create(['tenant_id' => $tenant->id]);
+
+        $consultant = $this->actingAs($admin)
+            ->get("http://{$host}/consultant/dashboard")
+            ->assertOk()
+            ->getContent();
+        $this->assertStringContainsString('class="consultant-sidebar"', $consultant);
+        $this->assertStringContainsString('data-shell-nav="sidebar"', $consultant);
+
+        $studentHtml = $this->actingAs($student, 'student')
+            ->get("http://{$host}/student/dashboard")
+            ->assertOk()
+            ->getContent();
+        $this->assertStringContainsString('class="consultant-sidebar"', $studentHtml);
+        $this->assertStringContainsString('data-shell-nav="sidebar"', $studentHtml);
+
+        $teacherHtml = $this->actingAs($teacher)
+            ->get("http://{$host}/teacher/dashboard")
+            ->assertOk()
+            ->getContent();
+        $this->assertStringContainsString('class="consultant-sidebar"', $teacherHtml);
+        $this->assertStringContainsString('data-shell-nav="sidebar"', $teacherHtml);
+    }
+
+    public function test_the_rail_keeps_one_theme_toggle_and_the_router_contract(): void
+    {
+        [$tenant, $host] = $this->tenantWithDomain();
+        $user = $this->userFor($tenant, 'tenant_admin');
+
+        $html = $this->actingAs($user)
+            ->get("http://{$host}/consultant/dashboard")
+            ->assertOk()
+            ->getContent();
+
+        $this->assertSame(1, substr_count($html, 'id="theme-toggle-btn"'));
+        $this->assertStringContainsString('data-sidebar-toggle', $html);
+        $this->assertStringContainsString('data-sidebar-scrim', $html);
+        $this->assertStringContainsString('aria-controls="app-sidebar"', $html);
+        $this->assertStringContainsString('class="sidebar-link', $html);
     }
 }

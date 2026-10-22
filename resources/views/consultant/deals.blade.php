@@ -21,6 +21,7 @@
 @extends('layouts.consultant')
 
 @section('content')
+<div class="page-surface">
 @php
     $today = \Illuminate\Support\Carbon::today();
     $statusLabels = [
@@ -288,14 +289,14 @@
                 <input type="text" name="q" value="{{ $filters['q'] }}" placeholder="نام دانش‌آموز"
                        class="rounded-xl border border-[var(--c-border)] bg-transparent px-3 py-2 text-sm text-[var(--c-text)]">
                 <select name="consultant_id"
-                        class="rounded-xl border border-[var(--c-border)] bg-transparent p-2 text-sm text-[var(--c-text)]">
+                        class="filter-input deal-filter-select">
                     <option value="">همهٔ مشاوران</option>
                     @foreach($consultants as $c)
                         <option value="{{ $c->id }}" @if($filters['consultant_id'] === (int) $c->id) selected @endif>{{ $c->name }}</option>
                     @endforeach
                 </select>
                 <select name="status"
-                        class="rounded-xl border border-[var(--c-border)] bg-transparent p-2 text-sm text-[var(--c-text)]">
+                        class="filter-input deal-filter-select">
                     @foreach($statusLabels as $key => $label)
                         <option value="{{ $key }}" @if($filters['status'] === $key) selected @endif>{{ $label }}</option>
                     @endforeach
@@ -494,7 +495,7 @@
     <div id="dealDrawerBody"></div>
 </aside>
 
-<script>
+<script nonce="{{ csp_nonce() }}">
 (function () {
     var drawer = document.getElementById('dealDrawer');
     var back = document.getElementById('dealDrawerBack');
@@ -529,4 +530,5 @@
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeDrawer(); });
 })();
 </script>
+</div>
 @endsection

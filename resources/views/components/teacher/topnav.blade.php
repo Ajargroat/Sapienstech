@@ -51,6 +51,20 @@
                     {{ $labels['teacher_schedule'] ?? 'برنامه کلاسی' }}
                 </a>
             @endif
+
+            {{--
+                The lesson library. Uses lessons_route() rather than a hardcoded
+                prefix so this nav and the consultant nav cannot drift, and so
+                the link follows whichever panel the user is standing in.
+            --}}
+            @if(\App\Support\Lessons\LessonAccess::staffCanAuthor())
+                <a
+                    href="{{ lessons_route('index') }}"
+                    class="topnav-link {{ request()->routeIs('*.lessons.*') ? 'active' : '' }}"
+                >
+                    {{ $labels['lesson_library'] ?? 'کتاب و درس' }}
+                </a>
+            @endif
         </nav>
 
         <div class="topnav-user">

@@ -11,6 +11,7 @@
 @extends('layouts.consultant')
 
 @section('content')
+<div class="page-surface">
 @php
     $letters = ['الف', 'ب', 'ج', 'د', 'ه', 'و'];
 @endphp
@@ -63,5 +64,6 @@
             </article>
         @endforeach
     </section>
+</div>
 </div>
 @endsection

@@ -46,9 +46,13 @@ class DashboardIdsTest extends TestCase
     {
         foreach ([
             'public.consultant.content', 'public.consultant.content.main',
-            'public.consultant.heading', 'public.consultant.students.grid',
-            'public.student.welcome', 'public.student.schedule',
-            'public.teacher.stats',
+            'public.consultant.heading', 'public.consultant.stats',
+            'public.consultant.roster', 'public.consultant.insights',
+            'public.consultant.students.grid',
+            'public.student.welcome', 'public.student.next_exam',
+            'public.student.quick_actions', 'public.student.schedule',
+            'public.teacher.stats', 'public.teacher.rail',
+            'public.teacher.quick_actions',
         ] as $path) {
             $this->assertTrue(StudioStyles::validPath($path), $path);
             $this->assertTrue(StudioStyles::validNodeId($path), $path);
@@ -94,6 +98,9 @@ class DashboardIdsTest extends TestCase
         $this->assertStringContainsString('data-studio-path="public.consultant.content"', $html);
         $this->assertStringContainsString('data-studio-path="public.consultant.content.main"', $html);
         $this->assertStringContainsString('data-studio-path="public.consultant.heading"', $html);
+        $this->assertStringContainsString('data-studio-path="public.consultant.stats"', $html);
+        $this->assertStringContainsString('data-studio-path="public.consultant.roster"', $html);
+        $this->assertStringContainsString('data-studio-path="public.consultant.insights"', $html);
 
         // Sections bind by marker -> nextElementSibling, so each marker must be
         // present and distinct.
@@ -120,6 +127,7 @@ class DashboardIdsTest extends TestCase
         foreach ([
             'public.student.content', 'public.student.welcome',
             'public.student.stats', 'public.student.schedule',
+            'public.student.next_exam', 'public.student.quick_actions',
         ] as $path) {
             $this->assertStringContainsString('data-studio-path="'.$path.'"', $html, $path);
         }
@@ -139,7 +147,10 @@ class DashboardIdsTest extends TestCase
             ->assertOk()
             ->getContent();
 
-        foreach (['public.teacher.content', 'public.teacher.welcome', 'public.teacher.stats'] as $path) {
+        foreach ([
+            'public.teacher.content', 'public.teacher.welcome', 'public.teacher.stats',
+            'public.teacher.rail', 'public.teacher.quick_actions',
+        ] as $path) {
             $this->assertStringContainsString('data-studio-path="'.$path.'"', $html, $path);
         }
 

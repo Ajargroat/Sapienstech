@@ -64,6 +64,27 @@ class TenantUploads
         }
     }
 
+    /**
+     * Absolute path inside the current tenant's folder, for writers that are
+     * not an uploaded file — the PDF extraction worker writes PNGs directly.
+     *
+     * Everything under public/tenants/{slug}/ has exactly one owner (this
+     * class); controllers and jobs must not paste public_path() strings.
+     * The directory is created when missing, like store() does.
+     */
+    public static function pathFor(string $folder, string $filename): string
+    {
+        $folder = trim($folder, '/');
+
+        return rtrim(self::directory(self::slug(), $folder), '/\\').DIRECTORY_SEPARATOR.$filename;
+    }
+
+    /** The DB-relative form of an absolute tenant file ("{folder}/{name}"). */
+    public static function relative(string $absolute, string $folder): string
+    {
+        return trim($folder, '/').'/'.basename(str_replace('\\', '/', $absolute));
+    }
+
     protected static function slug(): string
     {
         $slug = tenant()?->slug;

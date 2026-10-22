@@ -108,11 +108,30 @@ class StudentDashboardController extends Controller
                 ->first()
             : null;
 
+        $weekPercent = $weekItems->count() > 0
+            ? (int) round(($weekItems->where('is_completed', true)->count() / $weekItems->count()) * 100)
+            : 0;
+
+        $weekDays = collect(range(0, 6))->map(function (int $offset) use ($weekStart, $weekItems): array {
+            $date = $weekStart->copy()->addDays($offset);
+
+            return [
+                'date' => $date,
+                'weekday' => StudentFilter::SCHEDULE_DAYS[$offset] ?? '',
+                'items' => $weekItems
+                    ->filter(fn (ScheduleItem $item) => $item->start_datetime->isSameDay($date))
+                    ->values(),
+            ];
+        });
+
         return view('student.dashboard', [
             'student' => $student,
             'weekItems' => $weekItems,
+            'weekDays' => $weekDays,
+            'weekPercent' => $weekPercent,
             'weekStart' => $weekStart,
             'upcomingExams' => $upcomingExams,
+            'nextExam' => $upcomingExams->first(),
             'recentResults' => $recentResults,
             'statuses' => self::STATUSES,
             'quizTypes' => StudentFilter::QUIZ_TYPE_VALUES,

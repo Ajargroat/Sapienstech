@@ -7,6 +7,7 @@
 @extends('layouts.student')
 
 @section('content')
+<div class="page-surface">
 <a href="{{ route('student.assignments.index') }}" class="teacher-backlink">
     <i class="fas fa-arrow-right"></i> بازگشت به تکالیف
 </a>
@@ -130,4 +131,5 @@
 </div>
 
 @vite(['resources/js/features/student-dashboard.js'])
+</div>
 @endsection

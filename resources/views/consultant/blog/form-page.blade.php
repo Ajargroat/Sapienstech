@@ -5,6 +5,7 @@
 @endphp
 
 @section('content')
+<div class="page-surface">
 <div class="panel-heading">
     <div class="panel-heading-title">
         <h2>{{ $isEdit ? 'ویرایش نوشته' : 'نوشتهٔ جدید' }}</h2>
@@ -21,4 +22,5 @@
 @include('consultant.blog.form')
 
 @vite(['resources/js/features/blog-editor.js'])
+</div>
 @endsection

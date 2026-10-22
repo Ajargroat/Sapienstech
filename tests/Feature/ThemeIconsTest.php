@@ -144,4 +144,31 @@ class ThemeIconsTest extends TestCase
         $this->assertSame(1, substr_count($html, 'font-awesome/6.4.0'));
         $this->assertStringNotContainsString('data-icon-set', $html);
     }
+
+    /**
+     * Bespoke per-tenant login shells are DISCOVERED, not listed: the icon
+     * rule stays "one shared loader", so a hand-written shell inventing its
+     * own icon <link> fails here exactly the way it fails every templated
+     * shell. No bespoke shell yet is a pinned count, not a silence.
+     */
+    public function test_bespoke_login_shells_load_icons_through_the_shared_partial_only(): void
+    {
+        $files = glob(resource_path('landings/*/login-shell.blade.php')) ?: [];
+
+        if ($files === []) {
+            $this->assertSame([], $files, 'No bespoke login shells exist yet.');
+
+            return;
+        }
+
+        foreach ($files as $file) {
+            $view = 'landings/'.basename(dirname($file)).'/login-shell';
+            $source = file_get_contents($file);
+
+            $this->assertSame(1, substr_count($source, "@include('partials.theme-vars'"), $view);
+            $this->assertStringNotContainsString('icon_library_url', $source, $view);
+            $this->assertStringNotContainsString('cdnjs.cloudflare.com', $source, $view);
+            $this->assertStringNotContainsString("@include('partials.theme-icons'", $source, $view);
+        }
+    }
 }

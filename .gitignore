@@ -33,6 +33,7 @@
 /.kilo
 /.agent
 /AGENTS.md
+/.agent-memory.md
 
 # Editor & OS files
 .DS_Store

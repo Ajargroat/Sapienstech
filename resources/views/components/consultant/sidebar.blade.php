@@ -8,13 +8,29 @@
     classes so the theme toggle, settings dropdown and their delegated JS
     keep working unchanged.
 --}}
-<aside class="consultant-sidebar">
+<header class="sidebar-mobile-bar">
     <a href="{{ route('consultant.dashboard') }}" class="brand">
         <span class="brand-mark brand-mark-small"></span>
         <strong>{{ $tenant['short_name'] }}</strong>
     </a>
+    <button type="button" class="sidebar-toggle" data-sidebar-toggle aria-controls="app-sidebar" aria-expanded="false" aria-label="منو">
+        <span class="sidebar-toggle-bars" aria-hidden="true"><span></span><span></span><span></span></span>
+    </button>
+</header>
+<div class="sidebar-scrim" data-sidebar-scrim hidden></div>
+<aside id="app-sidebar" class="consultant-sidebar" aria-label="ناوبری پنل">
+    <div class="sidebar-brand">
+        <a href="{{ route('consultant.dashboard') }}" class="brand">
+            <span class="brand-mark brand-mark-small"></span>
+            <span class="sidebar-brand-copy">
+                <strong>{{ $tenant['short_name'] }}</strong>
+                <small>پنل مدیریت</small>
+            </span>
+        </a>
+    </div>
 
     <nav class="sidebar-links" aria-label="ناوبری اصلی">
+        <span class="sidebar-section-label">فضای کاری</span>
         <a
             href="{{ route('consultant.dashboard') }}"
             class="sidebar-link {{ request()->routeIs('consultant.dashboard') || request()->routeIs('consultant.student.*') ? 'active' : '' }}"
@@ -70,12 +86,52 @@
             @endif
         </a>
         @endif
+        @if(site('features.consultation_requests', false) && \Illuminate\Support\Facades\Route::has('consultant.consultations.index'))
+        @php
+            // Mirrors the topnav badge: pending consultation requests the
+            // tenant should see.
+            $pendingConsultationRequests = \App\Models\ConsultationRequest::query()
+                ->where('status', \App\Models\ConsultationRequest::STATUS_PENDING)
+                ->count();
+        @endphp
+        <a
+            href="{{ route('consultant.consultations.index') }}"
+            class="sidebar-link sidebar-link--badged {{ request()->routeIs('consultant.consultations*') ? 'active' : '' }}"
+        >
+            <i class="fas fa-inbox" aria-hidden="true"></i>
+            <span>درخواست مشاوره</span>
+            @if($pendingConsultationRequests)
+                <span class="topnav-notif-badge">{{ persian_digits($pendingConsultationRequests) }}</span>
+            @endif
+        </a>
+        @endif
+
+        @if(\App\Support\Lessons\LessonAccess::staffCanAuthor())
+        {{-- Lesson library (کتاب و درس) — the staff surface for importing a
+             book PDF and authoring lessons; same gate as the topnav twin. --}}
+        <a
+            href="{{ lessons_route('index') }}"
+            class="sidebar-link {{ request()->routeIs('consultant.lessons*') || request()->routeIs('teacher.lessons*') ? 'active' : '' }}"
+        >
+            <i class="fas fa-book-open" aria-hidden="true"></i>
+            <span>{{ $labels['lesson_library'] ?? 'کتاب و درس' }}</span>
+        </a>
+        @endif
 
         {{-- Sidebar mirrors the topnav; bulk assignment lives in the
              dashboard filter popover, so the nav entry is gone from both. --}}
     </nav>
 
     <div class="sidebar-user topnav-user">
+        <div class="sidebar-account">
+            <div class="sidebar-account-id">
+                <span class="sidebar-avatar" aria-hidden="true">{{ mb_substr(auth()->user()?->name ?? $tenant['short_name'], 0, 1) }}</span>
+                <span class="sidebar-account-copy">
+                    <strong>{{ auth()->user()?->name ?? $tenant['short_name'] }}</strong>
+                    <small>حساب کاربری</small>
+                </span>
+            </div>
+            <div class="sidebar-account-actions">
         <button
             type="button"
             id="theme-toggle-btn"
@@ -148,5 +204,7 @@
                 @endif
             </a>
         @endif
+            </div>
+        </div>
     </div>
 </aside>

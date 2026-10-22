@@ -1,0 +1,2192 @@
+/* ==========================================================================
+   public/demo/arman-rezaei.css
+   Bespoke static landing surface. Layout + decoration only.
+   Colour, type, shape, rhythm and motion are read from theme.css.
+   ========================================================================== */
+
+:root {
+  /* Layout is this page's own; the core landing sheet deliberately excludes it. */
+  --page-max: 78rem;
+  --page-gutter: clamp(1.25rem, 4vw, 3rem);
+  --section-space: clamp(4.75rem, 9vw, 8rem);
+
+  /* A small, consistent spacing scale. */
+  --space-2xs: 0.25rem;
+  --space-xs: 0.5rem;
+  --space-sm: 0.75rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
+  --space-3xl: 4.5rem;
+
+  /* Derived brand colours — no new brand colour literals are introduced. */
+  --paper: color-mix(in oklab, var(--c-background) 82%, var(--c-surface));
+  --paper-warm: color-mix(in oklab, var(--paper) 94%, var(--c-accent-amber));
+  --forest: color-mix(in oklab, var(--c-primary) 80%, var(--c-text));
+  --forest-deep: color-mix(in oklab, var(--c-primary) 54%, var(--c-text));
+  --sage: color-mix(in oklab, var(--c-primary) 13%, var(--c-background));
+  --clay: color-mix(in oklab, var(--c-accent-orange) 58%, var(--c-text));
+  --clay-bright: color-mix(in oklab, var(--c-accent-amber) 72%, var(--c-surface));
+  --ink: var(--c-text);
+  --muted: var(--c-muted);
+  --line: color-mix(in oklab, var(--c-text) 11%, transparent);
+  --line-strong: color-mix(in oklab, var(--c-text) 20%, transparent);
+  --on-forest: color-mix(in oklab, var(--c-surface) 94%, var(--c-background));
+  --on-forest-soft: color-mix(in oklab, var(--c-surface) 68%, var(--forest-deep));
+  --shadow-soft: 0 28px 70px color-mix(in oklab, var(--forest-deep) 16%, transparent);
+  --shadow-card: 0 18px 45px color-mix(in oklab, var(--forest-deep) 9%, transparent);
+}
+
+/* --------------------------------------------------------------------------
+   Reset and page base
+   -------------------------------------------------------------------------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-block-start: 6.5rem;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: max(1rem, var(--body-size));
+  font-weight: var(--body-weight);
+  line-height: var(--line-height);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 82% 0%, color-mix(in oklab, var(--clay) 4%, transparent), transparent 34rem),
+    radial-gradient(circle at 8% 36%, color-mix(in oklab, var(--c-primary) 4%, transparent), transparent 30rem);
+}
+
+h1,
+h2,
+h3,
+p,
+figure,
+ol,
+ul {
+  margin: 0;
+}
+
+ol,
+ul {
+  padding: 0;
+}
+
+a {
+  color: inherit;
+}
+
+button {
+  font: inherit;
+}
+
+svg {
+  display: block;
+}
+
+::selection {
+  background: var(--c-selection-bg);
+  color: var(--c-selection-text);
+}
+
+:focus-visible {
+  outline: 2px solid var(--clay);
+  outline-offset: 4px;
+}
+
+.shell {
+  width: min(var(--page-max), calc(100% - (var(--page-gutter) * 2)));
+  margin-inline: auto;
+}
+
+.section {
+  position: relative;
+  padding-block: var(--section-space);
+}
+
+/* --------------------------------------------------------------------------
+   Buttons, links and shared small parts
+   -------------------------------------------------------------------------- */
+
+.btn {
+  --btn-bg: var(--forest-deep);
+  --btn-fg: var(--on-forest);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  min-height: 3.25rem;
+  padding: 0.78rem 1.5rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-button);
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  font-family: var(--font-button);
+  font-size: 0.95rem;
+  font-weight: 650;
+  line-height: 1.2;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color calc(var(--animation-duration) * 1.4) var(--ease),
+    border-color calc(var(--animation-duration) * 1.4) var(--ease),
+    color calc(var(--animation-duration) * 1.4) var(--ease),
+    transform calc(var(--animation-duration) * 1.4) var(--ease),
+    box-shadow calc(var(--animation-duration) * 1.4) var(--ease);
+}
+
+.btn--primary {
+  box-shadow: 0 12px 26px color-mix(in oklab, var(--forest-deep) 22%, transparent);
+}
+
+.btn--primary:hover,
+.btn--primary:focus-visible {
+  background: var(--forest);
+  transform: translateY(-2px);
+  box-shadow: 0 18px 34px color-mix(in oklab, var(--forest-deep) 25%, transparent);
+}
+
+.btn--ghost {
+  background: color-mix(in oklab, var(--c-surface) 40%, transparent);
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+.btn--ghost:hover,
+.btn--ghost:focus-visible {
+  background: var(--c-surface);
+  border-color: var(--forest);
+  color: var(--forest);
+  transform: translateY(-2px);
+}
+
+.btn--compact {
+  min-height: 2.75rem;
+  padding: 0.6rem 1rem;
+  font-size: 0.86rem;
+}
+
+.btn--cream {
+  background: var(--on-forest);
+  color: var(--forest-deep);
+  box-shadow: 0 14px 30px color-mix(in oklab, var(--c-text) 24%, transparent);
+}
+
+.btn--cream:hover,
+.btn--cream:focus-visible {
+  background: var(--c-surface);
+  transform: translateY(-2px);
+  box-shadow: 0 20px 38px color-mix(in oklab, var(--c-text) 30%, transparent);
+}
+
+.btn__icon {
+  width: 1.1rem;
+  height: 1.1rem;
+  flex: 0 0 auto;
+  transition: transform calc(var(--animation-duration) * 1.4) var(--ease);
+}
+
+.btn:hover .btn__icon,
+.btn:focus-visible .btn__icon {
+  transform: translateX(-3px);
+}
+
+.text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-block-start: auto;
+  padding-block-start: var(--space-xl);
+  color: var(--forest);
+  font-size: 0.9rem;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.text-link span {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-position: 100% 100%;
+  background-size: 0 1px;
+  transition: background-size calc(var(--animation-duration) * 2) var(--ease);
+}
+
+.text-link svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  flex: 0 0 auto;
+  transition: transform calc(var(--animation-duration) * 1.5) var(--ease);
+}
+
+.text-link:hover span,
+.text-link:focus-visible span {
+  background-size: 100% 1px;
+}
+
+.text-link:hover svg,
+.text-link:focus-visible svg {
+  transform: translateX(-4px);
+}
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  color: var(--forest);
+  font-size: 0.82rem;
+  font-weight: 650;
+  line-height: 1.6;
+}
+
+.eyebrow__pip {
+  width: 0.5rem;
+  height: 0.5rem;
+  flex: 0 0 auto;
+  background: var(--clay);
+  transform: rotate(45deg);
+}
+
+.section-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-xl);
+  margin-block-end: clamp(2.5rem, 5vw, 4rem);
+}
+
+.section-head__text {
+  min-width: 0;
+}
+
+.section-head__rule {
+  display: block;
+  width: 3.25rem;
+  height: 2px;
+  margin-block-end: var(--space-lg);
+  background: var(--clay);
+}
+
+.section-title {
+  max-width: 20ch;
+  color: var(--ink);
+  font-family: var(--font-heading);
+  font-size: clamp(2rem, 3.7vw, 3.35rem);
+  font-weight: 800;
+  line-height: 1.35;
+  text-wrap: balance;
+}
+
+.section-subtitle {
+  max-width: 48ch;
+  margin-block-start: 0.85rem;
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1.85;
+}
+
+.section-head__ornament {
+  display: grid;
+  flex: 0 0 auto;
+  grid-template-columns: repeat(3, 5px);
+  gap: 0.55rem;
+  padding-block-end: 0.55rem;
+}
+
+.section-head__ornament span {
+  width: 5px;
+  height: 5px;
+  background: var(--line-strong);
+  border-radius: 50%;
+}
+
+.section-head__ornament span:nth-child(2),
+.section-head__ornament span:nth-child(4),
+.section-head__ornament span:nth-child(9) {
+  background: var(--clay);
+}
+
+/* --------------------------------------------------------------------------
+   Masthead
+   -------------------------------------------------------------------------- */
+
+.masthead {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 100;
+  background: color-mix(in oklab, var(--paper) 84%, transparent);
+  border-block-end: 1px solid var(--line);
+  -webkit-backdrop-filter: blur(18px) saturate(1.15);
+  backdrop-filter: blur(18px) saturate(1.15);
+}
+
+.masthead__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-xl);
+  min-height: 5rem;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.85rem;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.brand__mark {
+  position: relative;
+  display: grid;
+  width: 2.8rem;
+  height: 2.8rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  background:
+    linear-gradient(145deg, color-mix(in oklab, var(--c-surface) 88%, transparent), transparent),
+    var(--paper-warm);
+  color: var(--forest);
+}
+
+.brand__mark::after {
+  content: "";
+  position: absolute;
+  inset-block-start: 0.28rem;
+  inset-inline-end: 0.3rem;
+  width: 0.3rem;
+  height: 0.3rem;
+  border-radius: 50%;
+  background: var(--clay);
+}
+
+.brand__mark svg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.brand__words {
+  display: grid;
+  gap: 0.12rem;
+}
+
+.brand__name {
+  font-family: var(--font-heading);
+  font-size: 1.08rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.brand__role {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 450;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.masthead__nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(1rem, 2.2vw, 1.9rem);
+}
+
+.masthead__link {
+  position: relative;
+  padding-block: 0.45rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: color calc(var(--animation-duration) * 1.5) var(--ease);
+}
+
+.masthead__link::after {
+  content: "";
+  position: absolute;
+  inset-inline: 50%;
+  inset-block-end: 0.1rem;
+  width: 0;
+  height: 2px;
+  background: var(--clay);
+  transform: translateX(50%);
+  transition: width calc(var(--animation-duration) * 1.8) var(--ease);
+}
+
+.masthead__link:hover,
+.masthead__link:focus-visible,
+.masthead__link.is-current {
+  color: var(--ink);
+}
+
+.masthead__link:hover::after,
+.masthead__link.is-current::after {
+  width: 1.2rem;
+}
+
+/* --------------------------------------------------------------------------
+   Hero
+   -------------------------------------------------------------------------- */
+
+.hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding-block: clamp(3.5rem, 8vw, 7rem) clamp(4.5rem, 10vw, 8.5rem);
+}
+
+.hero__ground {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.hero__grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 5rem 5rem;
+  opacity: 0.3;
+  -webkit-mask-image: linear-gradient(to bottom, var(--c-text) 0%, transparent 84%);
+  mask-image: linear-gradient(to bottom, var(--c-text) 0%, transparent 84%);
+}
+
+.hero__wash {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(4px);
+  pointer-events: none;
+}
+
+.hero__wash--one {
+  inset-block-start: -14rem;
+  inset-inline-start: -10rem;
+  width: 36rem;
+  height: 36rem;
+  background: radial-gradient(circle, color-mix(in oklab, var(--clay) 9%, transparent), transparent 68%);
+}
+
+.hero__wash--two {
+  inset-block-end: -18rem;
+  inset-inline-end: -8rem;
+  width: 34rem;
+  height: 34rem;
+  background: radial-gradient(circle, color-mix(in oklab, var(--c-primary) 7%, transparent), transparent 68%);
+}
+
+.hero__arc {
+  position: absolute;
+  inset-block-start: 12%;
+  inset-inline-start: -18rem;
+  width: 38rem;
+  height: 38rem;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  opacity: 0.72;
+}
+
+.hero__arc::before,
+.hero__arc::after {
+  content: "";
+  position: absolute;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+}
+
+.hero__arc::before {
+  inset: 3.5rem;
+}
+
+.hero__arc::after {
+  inset: 8rem;
+  border-color: color-mix(in oklab, var(--clay) 20%, transparent);
+}
+
+.hero__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.82fr);
+  align-items: center;
+  gap: clamp(2.5rem, 6vw, 6rem);
+}
+
+.hero__copy {
+  position: relative;
+  z-index: 1;
+  max-width: 48rem;
+}
+
+.hero__title {
+  max-width: 15.5ch;
+  margin-block-start: clamp(1.25rem, 2.5vw, 2rem);
+  color: var(--ink);
+  font-family: var(--font-heading);
+  font-size: clamp(2.35rem, 4.75vw, 4.5rem);
+  font-weight: 850;
+  line-height: 1.3;
+  text-wrap: balance;
+}
+
+.hero__mark {
+  position: relative;
+  display: inline;
+  color: var(--forest-deep);
+  background-image: linear-gradient(
+    to top,
+    color-mix(in oklab, var(--clay) 24%, transparent) 0,
+    color-mix(in oklab, var(--clay) 24%, transparent) 34%,
+    transparent 34%
+  );
+}
+
+.hero__description {
+  max-width: 58ch;
+  margin-block-start: var(--space-lg);
+  color: var(--muted);
+  font-size: clamp(0.98rem, 1.1vw, 1.08rem);
+  line-height: 1.95;
+  text-wrap: pretty;
+}
+
+.hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-block-start: clamp(1.75rem, 3vw, 2.25rem);
+}
+
+.hero__meta {
+  max-width: 40rem;
+  margin-block-start: clamp(1.7rem, 3vw, 2.35rem);
+  padding-block-start: 1.15rem;
+  border-block-start: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.8;
+}
+
+/* --------------------------------------------------------------------------
+   Hero art — a study map, not a stock image
+   -------------------------------------------------------------------------- */
+
+.hero-art {
+  position: relative;
+  width: 100%;
+  max-width: 33rem;
+  aspect-ratio: 0.86;
+  justify-self: end;
+}
+
+.hero-art__sun {
+  position: absolute;
+  inset-block-start: -3%;
+  inset-inline-start: -1%;
+  width: 43%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 45% 45%,
+    color-mix(in oklab, var(--clay) 38%, transparent) 0,
+    color-mix(in oklab, var(--c-accent-amber) 16%, transparent) 48%,
+    transparent 70%
+  );
+  filter: blur(2px);
+}
+
+.hero-art__orbit {
+  position: absolute;
+  inset-block-start: 12%;
+  inset-inline-start: -8%;
+  width: 54%;
+  aspect-ratio: 1;
+  border: 1px solid color-mix(in oklab, var(--clay) 30%, transparent);
+  border-radius: 50%;
+  opacity: 0.8;
+}
+
+.hero-art__orbit::before {
+  content: "";
+  position: absolute;
+  inset: 18%;
+  border: 1px dashed color-mix(in oklab, var(--forest) 24%, transparent);
+  border-radius: 50%;
+}
+
+.hero-art__orbit::after {
+  content: "";
+  position: absolute;
+  inset-block-start: 10%;
+  inset-inline-end: 9%;
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 50%;
+  background: var(--clay);
+}
+
+.hero-art__cross {
+  position: absolute;
+  width: 0.9rem;
+  height: 0.9rem;
+  opacity: 0.7;
+}
+
+.hero-art__cross::before,
+.hero-art__cross::after {
+  content: "";
+  position: absolute;
+  background: var(--line-strong);
+}
+
+.hero-art__cross::before {
+  inset-block-start: 50%;
+  inset-inline: 0;
+  height: 1px;
+}
+
+.hero-art__cross::after {
+  inset-inline-start: 50%;
+  inset-block: 0;
+  width: 1px;
+}
+
+.hero-art__cross--one {
+  inset-block-start: 1%;
+  inset-inline-end: -2%;
+}
+
+.hero-art__cross--two {
+  inset-block-end: 3%;
+  inset-inline-start: -1%;
+}
+
+.hero-art__plate {
+  position: absolute;
+  inset-block: 0.9rem 0;
+  inset-inline: 6% 0;
+  overflow: hidden;
+  border: 1px solid color-mix(in oklab, var(--forest-deep) 65%, transparent);
+  border-radius: 50% 50% var(--radius-card) var(--radius-card) / 35% 35% var(--radius-card) var(--radius-card);
+  background:
+    linear-gradient(168deg, color-mix(in oklab, var(--forest) 82%, var(--c-surface)) 0%, var(--forest-deep) 72%);
+  box-shadow: var(--shadow-soft);
+  animation: art-in 900ms var(--ease) 120ms both;
+}
+
+.hero-art__plate::before {
+  content: "";
+  position: absolute;
+  inset-block-start: 1.8rem;
+  inset-inline-start: 1.8rem;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: var(--clay-bright);
+  box-shadow: 0 0 0 6px color-mix(in oklab, var(--clay-bright) 12%, transparent);
+}
+
+.hero-art__paper {
+  position: absolute;
+  inset: 0.7rem;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: clamp(1.5rem, 3.2vw, 2.25rem) clamp(1.25rem, 2.7vw, 1.9rem) 1.35rem;
+  border: 1px solid color-mix(in oklab, var(--c-surface) 35%, transparent);
+  border-radius: 49% 49% calc(var(--radius-card) - 2px) calc(var(--radius-card) - 2px) / 35% 35% calc(var(--radius-card) - 2px) calc(var(--radius-card) - 2px);
+  background-color: var(--paper-warm);
+  background-image:
+    radial-gradient(circle at 18% 14%, color-mix(in oklab, var(--clay) 11%, transparent), transparent 36%),
+    radial-gradient(circle at 80% 80%, color-mix(in oklab, var(--c-primary) 8%, transparent), transparent 42%);
+}
+
+.hero-art__paper::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(color-mix(in oklab, var(--c-text) 12%, transparent) 0.55px, transparent 0.55px);
+  background-size: 5px 5px;
+  opacity: 0.28;
+}
+
+.hero-art__head {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding-inline: 14%;
+}
+
+.hero-art__seal {
+  display: grid;
+  width: 2.2rem;
+  height: 2.2rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  color: var(--forest);
+}
+
+.hero-art__seal svg {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+.hero-art__rule {
+  flex: 1;
+  height: 1px;
+  background: var(--line-strong);
+}
+
+.hero-art__pip {
+  width: 0.38rem;
+  height: 0.38rem;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--clay);
+}
+
+.hero-art__map {
+  position: relative;
+  flex: 1;
+  min-height: 17rem;
+  margin-block: 0.85rem 0.4rem;
+}
+
+.hero-art__map-grid {
+  position: absolute;
+  inset: 12% 0 6%;
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 2.55rem 2.55rem;
+  -webkit-mask-image: radial-gradient(ellipse at center, var(--c-text) 20%, transparent 78%);
+  mask-image: radial-gradient(ellipse at center, var(--c-text) 20%, transparent 78%);
+  opacity: 0.8;
+}
+
+.hero-art__contour {
+  position: absolute;
+  border: 1px solid color-mix(in oklab, var(--forest) 16%, transparent);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.hero-art__contour--one {
+  inset-block-start: 6%;
+  inset-inline-start: 1%;
+  width: 6rem;
+  height: 6rem;
+}
+
+.hero-art__contour--two {
+  inset-block-end: 4%;
+  inset-inline-end: 5%;
+  width: 10rem;
+  height: 10rem;
+  border-style: dashed;
+  opacity: 0.7;
+}
+
+.hero-art__trail {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  color: var(--forest);
+  overflow: visible;
+}
+
+.hero-art__trail-line {
+  stroke-dasharray: 760;
+  stroke-dashoffset: 760;
+  animation: trail-draw 1800ms var(--ease) 480ms forwards;
+}
+
+.hero-art__pin {
+  position: absolute;
+  width: 0.35rem;
+  height: 0.35rem;
+  border-radius: 50%;
+  background: var(--clay);
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--clay) 10%, transparent);
+}
+
+.hero-art__pin--a {
+  inset-block-start: 30%;
+  inset-inline-end: 34%;
+}
+
+.hero-art__pin--b {
+  inset-block-end: 20%;
+  inset-inline-start: 31%;
+}
+
+.hero-art__foot {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-inline: 6%;
+}
+
+.hero-art__bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.34rem;
+  height: 2.4rem;
+  padding-block-end: 0.15rem;
+  border-block-end: 1px solid var(--line-strong);
+}
+
+.hero-art__bars span {
+  display: block;
+  width: 0.38rem;
+  height: calc(var(--bar) * 100%);
+  border-radius: 2px 2px 0 0;
+  background: var(--forest);
+  opacity: 0.72;
+}
+
+.hero-art__bars span:last-child {
+  background: var(--clay);
+  opacity: 1;
+}
+
+.hero-art__check {
+  display: grid;
+  width: 2.65rem;
+  height: 2.65rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--forest-deep);
+  color: var(--on-forest);
+  box-shadow: 0 9px 18px color-mix(in oklab, var(--forest-deep) 25%, transparent);
+}
+
+.hero-art__check svg {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+.hero-art__float {
+  position: absolute;
+  inset-block-end: 5.5%;
+  inset-inline-start: -2%;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  width: 42%;
+  min-width: 10.5rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: color-mix(in oklab, var(--c-surface) 92%, var(--paper));
+  box-shadow: var(--shadow-card);
+  animation: art-in 900ms var(--ease) 300ms both, float-soft 7s ease-in-out 1.2s infinite alternate;
+}
+
+.hero-art__ring {
+  position: relative;
+  display: block;
+  width: 2.7rem;
+  height: 2.7rem;
+  flex: 0 0 auto;
+  color: var(--forest);
+}
+
+.hero-art__ring svg {
+  width: 100%;
+  height: 100%;
+}
+
+.hero-art__ring-dot {
+  position: absolute;
+  inset-block-start: -0.07rem;
+  inset-inline-start: 50%;
+  width: 0.36rem;
+  height: 0.36rem;
+  border-radius: 50%;
+  background: var(--clay);
+  transform: translateX(-50%);
+}
+
+.hero-art__float-bars {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.hero-art__float-bars span {
+  display: block;
+  width: calc(var(--bar) * 100%);
+  height: 0.32rem;
+  border-radius: 999px;
+  background: var(--line-strong);
+}
+
+.hero-art__float-bars span:last-child {
+  background: var(--forest);
+}
+
+.hero-art__float-mark {
+  width: 0.38rem;
+  height: 0.38rem;
+  flex: 0 0 auto;
+  background: var(--clay);
+  transform: rotate(45deg);
+}
+
+/* --------------------------------------------------------------------------
+   Services
+   -------------------------------------------------------------------------- */
+
+.services {
+  background: var(--c-surface);
+  border-block: 1px solid var(--line);
+}
+
+.services__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(0.9rem, 1.8vw, 1.4rem);
+}
+
+.service-card {
+  position: relative;
+  display: flex;
+  min-height: 18rem;
+  flex-direction: column;
+  overflow: hidden;
+  padding: clamp(1.5rem, 2.8vw, 2.35rem);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--paper);
+  transition:
+    transform calc(var(--animation-duration) * 2) var(--ease),
+    border-color calc(var(--animation-duration) * 2) var(--ease),
+    box-shadow calc(var(--animation-duration) * 2) var(--ease),
+    background-color calc(var(--animation-duration) * 2) var(--ease);
+}
+
+.service-card::before {
+  content: "";
+  position: absolute;
+  inset-block-start: -45%;
+  inset-inline-start: -18%;
+  width: 65%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in oklab, var(--clay) 9%, transparent), transparent 68%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity calc(var(--animation-duration) * 2.5) var(--ease);
+}
+
+.service-card:hover,
+.service-card:focus-within {
+  border-color: color-mix(in oklab, var(--forest) 34%, var(--line));
+  background: var(--paper-warm);
+  box-shadow: var(--shadow-card);
+  transform: translateY(calc(var(--hover-lift) * -1));
+}
+
+.service-card:hover::before,
+.service-card:focus-within::before {
+  opacity: 1;
+}
+
+.service-card__top {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.service-card__icon {
+  display: grid;
+  width: 3.15rem;
+  height: 3.15rem;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--c-surface);
+  color: var(--forest);
+}
+
+.service-card__icon svg {
+  width: 1.45rem;
+  height: 1.45rem;
+}
+
+.service-card__corner {
+  width: 1.4rem;
+  height: 1.4rem;
+  border-block-start: 1px solid var(--line-strong);
+  border-inline-start: 1px solid var(--line-strong);
+  border-start-start-radius: 3px;
+  opacity: 0.8;
+}
+
+.service-card__title {
+  position: relative;
+  z-index: 1;
+  margin-block: clamp(1.5rem, 3vw, 2.2rem) 0.75rem;
+  color: var(--ink);
+  font-family: var(--font-heading);
+  font-size: 1.42rem;
+  font-weight: 750;
+  line-height: 1.55;
+}
+
+.service-card__text {
+  position: relative;
+  z-index: 1;
+  max-width: 38ch;
+  color: var(--muted);
+  font-size: 0.96rem;
+  line-height: 1.9;
+  text-wrap: pretty;
+}
+
+.service-card .text-link {
+  position: relative;
+  z-index: 1;
+}
+
+/* --------------------------------------------------------------------------
+   Process
+   -------------------------------------------------------------------------- */
+
+.process {
+  overflow: hidden;
+  border-block-end: 1px solid var(--line);
+  background:
+    linear-gradient(115deg, color-mix(in oklab, var(--c-primary) 8%, var(--c-surface)) 0%, var(--c-surface) 54%, color-mix(in oklab, var(--clay) 4%, var(--c-surface)) 100%);
+}
+
+.process__ornament {
+  position: absolute;
+  inset-block-start: -20%;
+  inset-inline-start: -12rem;
+  width: 34rem;
+  height: 34rem;
+  pointer-events: none;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  opacity: 0.65;
+}
+
+.process__arc {
+  position: absolute;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+}
+
+.process__arc--one {
+  inset: 16%;
+}
+
+.process__arc--two {
+  inset: 32%;
+  border-color: color-mix(in oklab, var(--clay) 22%, transparent);
+}
+
+.process__dot {
+  position: absolute;
+  inset-block-start: 26%;
+  inset-inline-end: 16%;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: var(--clay);
+}
+
+.section-head--process {
+  margin-block-end: clamp(2rem, 4vw, 3rem);
+}
+
+.section-head--process .section-title {
+  max-width: 24ch;
+}
+
+.process__steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  list-style: none;
+  border-block-start: 1px solid var(--line-strong);
+}
+
+.process__step {
+  position: relative;
+  padding: 2.5rem clamp(1.1rem, 2.8vw, 2.5rem) 0.25rem;
+}
+
+.process__step:first-child {
+  padding-inline-start: 0;
+}
+
+.process__step:last-child {
+  padding-inline-end: 0;
+}
+
+.process__step + .process__step {
+  border-inline-start: 1px solid var(--line);
+}
+
+.process__step::before {
+  content: "";
+  position: absolute;
+  inset-block-start: -4px;
+  inset-inline-start: clamp(1.1rem, 2.8vw, 2.5rem);
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--clay);
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--clay) 10%, transparent);
+}
+
+.process__step:first-child::before {
+  inset-inline-start: 0;
+}
+
+.process__marker {
+  display: flex;
+  align-items: baseline;
+  gap: 0.7rem;
+  margin-block-end: 1.3rem;
+  color: var(--forest);
+}
+
+.process__number {
+  font-family: var(--font-heading);
+  font-size: 2rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  letter-spacing: 0.01em;
+}
+
+.process__dash {
+  color: var(--clay);
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.process__title {
+  color: var(--ink);
+  font-family: var(--font-heading);
+  font-size: 1.4rem;
+  font-weight: 750;
+  line-height: 1.55;
+}
+
+.process__text {
+  max-width: 33ch;
+  margin-block-start: 0.7rem;
+  color: var(--muted);
+  font-size: 0.96rem;
+  line-height: 1.9;
+  text-wrap: pretty;
+}
+
+/* --------------------------------------------------------------------------
+   About
+   -------------------------------------------------------------------------- */
+
+.about {
+  overflow: hidden;
+  background: var(--paper);
+}
+
+.about__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+  align-items: center;
+  gap: clamp(2.5rem, 7vw, 6rem);
+}
+
+.about__copy {
+  min-width: 0;
+}
+
+.about__title {
+  max-width: 17ch;
+  margin-block: 0 1.5rem;
+}
+
+.about__lead {
+  max-width: 55ch;
+  color: var(--muted);
+  font-size: 1.02rem;
+  line-height: 1.95;
+  text-wrap: pretty;
+}
+
+.about__points {
+  display: grid;
+  margin-block-start: 2rem;
+  list-style: none;
+}
+
+.about__points li {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding-block: 1.05rem;
+  border-block-start: 1px solid var(--line);
+  color: var(--ink);
+  font-size: 0.96rem;
+  font-weight: 600;
+}
+
+.about__points li:last-child {
+  border-block-end: 1px solid var(--line);
+}
+
+.about__point-icon {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid color-mix(in oklab, var(--forest) 14%, transparent);
+  border-radius: 50%;
+  background: var(--sage);
+  color: var(--forest);
+}
+
+.about__point-icon svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* Editorial portrait placeholder, drawn entirely in CSS. */
+.portrait {
+  position: relative;
+  width: 100%;
+  max-width: 27.5rem;
+  aspect-ratio: 0.8;
+  justify-self: center;
+}
+
+.portrait::before {
+  content: "";
+  position: absolute;
+  inset: -0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 50% 50% calc(var(--radius-card) + 2px) calc(var(--radius-card) + 2px) / 36% 36% calc(var(--radius-card) + 2px) calc(var(--radius-card) + 2px);
+  opacity: 0.85;
+}
+
+.portrait__arch {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 50% 50% var(--radius-card) var(--radius-card) / 36% 36% var(--radius-card) var(--radius-card);
+  background:
+    linear-gradient(176deg, color-mix(in oklab, var(--c-primary) 8%, var(--paper)) 0%, var(--sage) 100%);
+  box-shadow: var(--shadow-card);
+}
+
+.portrait__arch::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(color-mix(in oklab, var(--c-text) 16%, transparent) 0.55px, transparent 0.55px);
+  background-size: 5px 5px;
+  opacity: 0.25;
+}
+
+.portrait__grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 3.1rem 3.1rem;
+  -webkit-mask-image: linear-gradient(to bottom, var(--c-text) 0%, transparent 82%);
+  mask-image: linear-gradient(to bottom, var(--c-text) 0%, transparent 82%);
+  opacity: 0.75;
+}
+
+.portrait__sun {
+  position: absolute;
+  inset-block-start: 9%;
+  inset-inline-start: 50%;
+  width: 42%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--clay);
+  opacity: 0.17;
+  transform: translateX(50%);
+  filter: blur(1px);
+}
+
+.portrait__rings {
+  position: absolute;
+  inset-block-start: 5%;
+  inset-inline-start: 50%;
+  width: 56%;
+  aspect-ratio: 1;
+  border: 1px solid color-mix(in oklab, var(--forest) 20%, transparent);
+  border-radius: 50%;
+  transform: translateX(50%);
+}
+
+.portrait__rings::before,
+.portrait__rings::after {
+  content: "";
+  position: absolute;
+  border: 1px solid color-mix(in oklab, var(--forest) 15%, transparent);
+  border-radius: 50%;
+}
+
+.portrait__rings::before {
+  inset: 12%;
+}
+
+.portrait__rings::after {
+  inset: 27%;
+  border-style: dashed;
+}
+
+.portrait__head {
+  position: absolute;
+  inset-block-start: 25%;
+  inset-inline-start: 50%;
+  z-index: 2;
+  width: 29%;
+  height: 31%;
+  border-radius: 48% 48% 46% 46%;
+  background: linear-gradient(155deg, color-mix(in oklab, var(--forest) 82%, var(--c-surface)) 0%, var(--forest-deep) 74%);
+  box-shadow:
+    inset -0.7rem -0.8rem 1.5rem color-mix(in oklab, var(--forest-deep) 55%, transparent),
+    0 0.8rem 2rem color-mix(in oklab, var(--forest-deep) 16%, transparent);
+  transform: translateX(50%);
+}
+
+.portrait__head::after {
+  content: "";
+  position: absolute;
+  inset-block-end: -9%;
+  inset-inline-start: 50%;
+  width: 34%;
+  height: 22%;
+  border-radius: 0 0 45% 45%;
+  background: var(--forest-deep);
+  transform: translateX(50%);
+}
+
+.portrait__shoulders {
+  position: absolute;
+  inset-block-end: -5%;
+  inset-inline-start: 50%;
+  z-index: 1;
+  width: 76%;
+  height: 39%;
+  border-radius: 50% 50% 0 0 / 62% 62% 0 0;
+  background: linear-gradient(155deg, var(--forest) 0%, var(--forest-deep) 78%);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--c-surface) 18%, transparent),
+    inset 0 1.1rem 2rem color-mix(in oklab, var(--forest-deep) 45%, transparent);
+  transform: translateX(50%);
+}
+
+.portrait__shoulders::before {
+  content: "";
+  position: absolute;
+  inset-block-start: 7%;
+  inset-inline-start: 50%;
+  width: 1px;
+  height: 54%;
+  border-radius: 1px;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in oklab, var(--c-surface) 36%, transparent),
+    transparent
+  );
+  transform: translateX(50%);
+  opacity: 0.7;
+}
+
+.portrait__frame {
+  position: absolute;
+  inset: 0.8rem;
+  z-index: 3;
+  pointer-events: none;
+  border: 1px solid color-mix(in oklab, var(--c-surface) 52%, transparent);
+  border-radius: 50% 50% calc(var(--radius-card) - 1px) calc(var(--radius-card) - 1px) / 36% 36% calc(var(--radius-card) - 1px) calc(var(--radius-card) - 1px);
+}
+
+.portrait__seal {
+  position: absolute;
+  inset-block-end: 2.1rem;
+  inset-inline-start: -1.45rem;
+  z-index: 5;
+  display: grid;
+  width: 4.7rem;
+  height: 4.7rem;
+  place-items: center;
+  border: 5px solid var(--paper);
+  border-radius: 50%;
+  background: var(--forest-deep);
+  color: var(--clay-bright);
+  box-shadow: 0 14px 30px color-mix(in oklab, var(--forest-deep) 20%, transparent);
+}
+
+.portrait__seal svg {
+  width: 2rem;
+  height: 2rem;
+}
+
+.portrait__rule {
+  position: absolute;
+  inset-block-end: 0;
+  inset-inline-start: 50%;
+  width: 1px;
+  height: 13%;
+  background: linear-gradient(to bottom, transparent, var(--line-strong));
+}
+
+/* --------------------------------------------------------------------------
+   Closing call to action
+   -------------------------------------------------------------------------- */
+
+.closing {
+  padding-block: clamp(2rem, 5vw, 4rem) var(--section-space);
+  background: var(--paper);
+}
+
+.closing__panel {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(10rem, 0.8fr);
+  align-items: center;
+  gap: var(--space-xl);
+  min-height: 25rem;
+  overflow: hidden;
+  padding: clamp(2.25rem, 6vw, 5.25rem);
+  border-radius: var(--radius-card);
+  background:
+    radial-gradient(circle at 12% 108%, color-mix(in oklab, var(--forest) 65%, var(--c-primary)) 0%, transparent 46%),
+    linear-gradient(145deg, var(--forest-deep) 0%, color-mix(in oklab, var(--forest-deep) 82%, var(--c-text)) 100%);
+  color: var(--on-forest);
+  box-shadow: 0 35px 85px color-mix(in oklab, var(--forest-deep) 30%, transparent);
+}
+
+.closing__panel::before {
+  content: "";
+  position: absolute;
+  inset: 0.8rem;
+  z-index: 2;
+  pointer-events: none;
+  border: 1px solid color-mix(in oklab, var(--c-surface) 15%, transparent);
+  border-radius: calc(var(--radius-card) - 1px);
+}
+
+.closing__pattern {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  color: var(--on-forest);
+  opacity: 0.06;
+  pointer-events: none;
+}
+
+.closing__glow {
+  position: absolute;
+  inset-block-start: -30%;
+  inset-inline-start: 55%;
+  width: 32rem;
+  height: 32rem;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in oklab, var(--clay) 24%, transparent), transparent 66%);
+  filter: blur(6px);
+  pointer-events: none;
+}
+
+.closing__copy {
+  position: relative;
+  z-index: 3;
+  max-width: 43rem;
+}
+
+.closing__rule {
+  display: block;
+  width: 3.25rem;
+  height: 2px;
+  margin-block-end: 1.4rem;
+  background: var(--clay-bright);
+}
+
+.closing__title {
+  max-width: 17ch;
+  color: var(--on-forest);
+  font-family: var(--font-heading);
+  font-size: clamp(2.1rem, 4vw, 3.8rem);
+  font-weight: 800;
+  line-height: 1.38;
+  text-wrap: balance;
+}
+
+.closing__text {
+  max-width: 46ch;
+  margin-block: 1.15rem 2rem;
+  color: var(--on-forest-soft);
+  font-size: 1rem;
+  line-height: 1.9;
+  text-wrap: pretty;
+}
+
+.closing__motif {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: min(100%, 20rem);
+  aspect-ratio: 1;
+  place-items: center;
+  justify-self: center;
+  color: var(--on-forest);
+}
+
+.closing__ring {
+  position: absolute;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+}
+
+.closing__ring--one {
+  inset: 0;
+  opacity: 0.16;
+}
+
+.closing__ring--two {
+  inset: 14%;
+  border-style: dashed;
+  opacity: 0.26;
+}
+
+.closing__ring--three {
+  inset: 29%;
+  opacity: 0.34;
+}
+
+.closing__ring--one::before,
+.closing__ring--one::after {
+  content: "";
+  position: absolute;
+  width: 0.38rem;
+  height: 0.38rem;
+  border-radius: 50%;
+  background: var(--clay-bright);
+}
+
+.closing__ring--one::before {
+  inset-block-start: 12%;
+  inset-inline-start: 12%;
+}
+
+.closing__ring--one::after {
+  inset-block-end: 12%;
+  inset-inline-end: 12%;
+  opacity: 0.6;
+}
+
+.closing__star {
+  display: grid;
+  width: 4.2rem;
+  height: 4.2rem;
+  place-items: center;
+  border: 1px solid color-mix(in oklab, var(--on-forest) 22%, transparent);
+  border-radius: 50%;
+  background: color-mix(in oklab, var(--forest-deep) 74%, transparent);
+  color: var(--clay-bright);
+  box-shadow: 0 0 0 0.9rem color-mix(in oklab, var(--clay-bright) 4%, transparent);
+}
+
+.closing__star svg {
+  width: 1.9rem;
+  height: 1.9rem;
+}
+
+.closing__corner {
+  position: absolute;
+  z-index: 3;
+  width: 1.2rem;
+  height: 1.2rem;
+  opacity: 0.6;
+}
+
+.closing__corner::before,
+.closing__corner::after {
+  content: "";
+  position: absolute;
+  background: var(--clay-bright);
+}
+
+.closing__corner::before {
+  inset-block-start: 50%;
+  inset-inline: 0;
+  height: 1px;
+}
+
+.closing__corner::after {
+  inset-inline-start: 50%;
+  inset-block: 0;
+  width: 1px;
+}
+
+.closing__corner--tl {
+  inset-block-start: 1.7rem;
+  inset-inline-start: 1.7rem;
+}
+
+.closing__corner--br {
+  inset-block-end: 1.7rem;
+  inset-inline-end: 1.7rem;
+}
+
+/* --------------------------------------------------------------------------
+   Footer
+   -------------------------------------------------------------------------- */
+
+.footer {
+  position: relative;
+  overflow: hidden;
+  padding-block: clamp(3rem, 6vw, 4.5rem) 1.75rem;
+  background: var(--forest-deep);
+  color: var(--on-forest);
+}
+
+.footer__arc {
+  position: absolute;
+  inset-block-end: -58rem;
+  inset-inline-start: -20rem;
+  width: 70rem;
+  height: 70rem;
+  border: 1px solid color-mix(in oklab, var(--on-forest) 10%, transparent);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.footer__arc::before,
+.footer__arc::after {
+  content: "";
+  position: absolute;
+  border: 1px solid color-mix(in oklab, var(--on-forest) 8%, transparent);
+  border-radius: 50%;
+}
+
+.footer__arc::before {
+  inset: 4rem;
+}
+
+.footer__arc::after {
+  inset: 9rem;
+}
+
+.footer .shell {
+  position: relative;
+  z-index: 1;
+}
+
+.footer__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 2rem;
+  padding-block-end: clamp(2rem, 4vw, 2.75rem);
+  border-block-end: 1px solid color-mix(in oklab, var(--on-forest) 14%, transparent);
+}
+
+.footer__name {
+  color: var(--on-forest);
+  font-family: var(--font-heading);
+  font-size: 1.15rem;
+  font-weight: 750;
+  line-height: 1.6;
+}
+
+.footer__description {
+  margin-block-start: 0.45rem;
+  color: var(--on-forest-soft);
+  font-size: 0.88rem;
+  line-height: 1.8;
+}
+
+.footer__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem 2rem;
+}
+
+.footer__links a {
+  position: relative;
+  color: var(--on-forest-soft);
+  font-size: 0.9rem;
+  text-decoration: none;
+  transition: color calc(var(--animation-duration) * 1.5) var(--ease);
+}
+
+.footer__links a::after {
+  content: "";
+  position: absolute;
+  inset-block-end: -0.25rem;
+  inset-inline-start: 0;
+  width: 0;
+  height: 1px;
+  background: var(--clay-bright);
+  transition: width calc(var(--animation-duration) * 1.8) var(--ease);
+}
+
+.footer__links a:hover,
+.footer__links a:focus-visible {
+  color: var(--on-forest);
+}
+
+.footer__links a:hover::after,
+.footer__links a:focus-visible::after {
+  width: 100%;
+}
+
+.footer__bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-block-start: 1.5rem;
+}
+
+.footer__copyright {
+  color: color-mix(in oklab, var(--on-forest) 64%, var(--forest-deep));
+  font-size: 0.76rem;
+  line-height: 1.8;
+}
+
+.footer__mark {
+  width: 1.55rem;
+  height: 1.55rem;
+  flex: 0 0 auto;
+  color: var(--clay-bright);
+  opacity: 0.8;
+}
+
+.footer__mark svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* --------------------------------------------------------------------------
+   Entrance and decorative motion
+   -------------------------------------------------------------------------- */
+
+.hero__copy > * {
+  animation: rise 800ms var(--ease) both;
+}
+
+.hero__copy > :nth-child(1) { animation-delay: 40ms; }
+.hero__copy > :nth-child(2) { animation-delay: 100ms; }
+.hero__copy > :nth-child(3) { animation-delay: 170ms; }
+.hero__copy > :nth-child(4) { animation-delay: 240ms; }
+.hero__copy > :nth-child(5) { animation-delay: 310ms; }
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(1.1rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes art-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.9rem) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes trail-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes float-soft {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-0.45rem);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Responsive layout
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 68rem) {
+  .masthead__bar {
+    gap: 1.25rem;
+  }
+
+  .masthead__nav {
+    gap: 1rem;
+  }
+
+  .hero__layout {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.78fr);
+    gap: 2.5rem;
+  }
+
+  .hero__title {
+    max-width: 14.5ch;
+  }
+}
+
+@media (max-width: 60rem) {
+  .masthead {
+    position: relative;
+  }
+
+  .masthead__bar {
+    flex-wrap: wrap;
+    padding-block: 0.9rem;
+    row-gap: 0.8rem;
+  }
+
+  .brand {
+    order: 1;
+    margin-inline-end: auto;
+  }
+
+  .masthead__cta {
+    order: 2;
+  }
+
+  .masthead__nav {
+    order: 3;
+    width: 100%;
+    flex-wrap: wrap;
+    padding-block-start: 0.75rem;
+    border-block-start: 1px solid var(--line);
+    gap: 0.4rem 1.35rem;
+  }
+
+  .masthead__link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+  }
+
+  .hero__layout {
+    grid-template-columns: 1fr;
+    gap: clamp(3rem, 9vw, 4.5rem);
+  }
+
+  .hero__copy {
+    max-width: 46rem;
+  }
+
+  .hero__title {
+    max-width: 16.5ch;
+  }
+
+  .hero-art {
+    justify-self: center;
+    max-width: 31rem;
+  }
+
+  .about__grid {
+    grid-template-columns: 1fr;
+    gap: clamp(3rem, 8vw, 4.5rem);
+  }
+
+  .about__copy {
+    max-width: 44rem;
+  }
+
+  .portrait {
+    justify-self: center;
+    max-width: 25rem;
+  }
+
+  .portrait__seal {
+    inset-inline-start: auto;
+    inset-inline-end: 1.1rem;
+  }
+}
+
+@media (max-width: 47.99rem) {
+  .services__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .service-card {
+    min-height: 0;
+  }
+
+  .section-head__ornament {
+    display: none;
+  }
+
+  .process__steps {
+    grid-template-columns: 1fr;
+    border-block-start: 0;
+  }
+
+  .process__step,
+  .process__step:first-child,
+  .process__step:last-child {
+    padding: 2rem 0;
+    border-block-start: 1px solid var(--line);
+  }
+
+  .process__step + .process__step {
+    border-inline-start: 0;
+  }
+
+  .process__step::before,
+  .process__step:first-child::before {
+    inset-inline-start: 0;
+  }
+
+  .process__text {
+    max-width: 48ch;
+  }
+
+  .closing__panel {
+    grid-template-columns: 1fr;
+    min-height: 0;
+    padding: clamp(2rem, 7vw, 3rem);
+  }
+
+  .closing__motif {
+    position: absolute;
+    inset-block-end: -28%;
+    inset-inline-start: -10%;
+    width: 18rem;
+    opacity: 0.36;
+    pointer-events: none;
+  }
+
+  .closing__copy {
+    max-width: 34rem;
+  }
+
+  .closing__title {
+    max-width: 18ch;
+  }
+
+  .footer__top {
+    flex-direction: column;
+    gap: 1.6rem;
+  }
+
+  .footer__links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+  }
+}
+
+@media (max-width: 32rem) {
+  .masthead__cta {
+    flex: 0 0 auto;
+    order: 2;
+    min-height: 2.75rem;
+    padding: 0.55rem 0.8rem;
+    font-size: 0.8rem;
+  }
+
+  .masthead__nav {
+    order: 3;
+    gap: 0.35rem 0.7rem;
+  }
+
+  .masthead__link {
+    font-size: 0.8rem;
+  }
+
+  .brand__mark {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  .brand__name {
+    font-size: 1rem;
+  }
+
+  .brand__role {
+    font-size: 0.7rem;
+  }
+
+  .hero {
+    padding-block-start: 2.75rem;
+  }
+
+  .hero__title {
+    max-width: none;
+    line-height: 1.38;
+  }
+
+  .hero__description {
+    line-height: 1.9;
+  }
+
+  .hero-art {
+    max-width: 21rem;
+  }
+
+  .hero-art__float {
+    inset-block-end: 2%;
+  }
+
+  .hero-art__paper {
+    padding: 1.4rem 1rem 1rem;
+  }
+
+  .hero-art__head {
+    padding-inline: 10%;
+  }
+
+  .hero-art__map {
+    min-height: 13.5rem;
+  }
+
+  .section-title {
+    font-size: clamp(1.8rem, 8vw, 2.4rem);
+  }
+
+  .footer__bottom {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .footer__links {
+    gap: 0.75rem 1.35rem;
+  }
+}
+
+@media (max-width: 22rem) {
+  .masthead__bar {
+    column-gap: 0.55rem;
+  }
+
+  .masthead__cta {
+    padding-inline: 0.7rem;
+    font-size: 0.76rem;
+  }
+
+  .masthead__cta .btn__icon {
+    display: none;
+  }
+
+  .hero__title {
+    font-size: 1.9rem;
+  }
+
+  .hero__actions {
+    flex-direction: column;
+  }
+
+  .hero__actions .btn {
+    width: 100%;
+  }
+
+  .hero-art {
+    max-width: 18rem;
+  }
+
+  .hero-art__float {
+    width: 46%;
+    min-width: 9.5rem;
+    padding: 0.7rem;
+  }
+
+  .hero-art__ring {
+    width: 2.2rem;
+    height: 2.2rem;
+  }
+
+  .btn--cream,
+  .closing__copy .btn {
+    width: 100%;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Reduced motion: a tenant preference, not a suggestion.
+   -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .hero-art__trail-line {
+    stroke-dasharray: none;
+    stroke-dashoffset: 0;
+  }
+
+  .hero__copy > *,
+  .hero-art__plate,
+  .hero-art__float {
+    opacity: 1;
+    transform: none;
+  }
+}

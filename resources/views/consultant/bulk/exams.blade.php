@@ -4,7 +4,7 @@
 <form method="POST" action="{{ route('consultant.bulk.exams.store') }}" class="bulk-form" data-router="off">
     @csrf
 
-    <div class="settings-cards">
+    <div class="settings-cards page-surface">
         <section class="settings-card">
             <h3 class="settings-card-title">۱. آزمون</h3>
             @if($tests->isEmpty())

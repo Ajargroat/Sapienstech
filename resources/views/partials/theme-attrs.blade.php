@@ -18,7 +18,7 @@
     $acc = $t['accessibility'] ?? [];
 @endphp
 data-archetype="{{ $t['archetype'] ?? 'default' }}"
-data-shell-nav="{{ ($t['layout']['shell_nav'] ?? 'topnav') === 'sidebar' ? 'sidebar' : 'topnav' }}"
+data-shell-nav="{{ ($t['layout']['shell_nav'] ?? 'sidebar') === 'topnav' ? 'topnav' : 'sidebar' }}"
 data-surface="{{ $t['surface']['material'] ?? 'glass' }}"
 data-bg-mode="{{ $bg['mode'] ?? 'glow' }}"
 data-alternation="{{ $bg['section_alternation'] ?? 'none' }}"

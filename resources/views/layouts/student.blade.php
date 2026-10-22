@@ -26,7 +26,7 @@
     <div class="min-h-screen relative z-10">
         {{-- Same tenant-chosen shell nav as the consultant portal:
              theme.layout.shell_nav (topnav | sidebar). --}}
-        @php $shellNav = site('theme.layout.shell_nav') === 'sidebar' ? 'sidebar' : 'topnav'; @endphp
+        @php $shellNav = site('theme.layout.shell_nav') === 'topnav' ? 'topnav' : 'sidebar'; @endphp
         {{-- Studio ids under the student root; see layouts/consultant.blade.php
              for the template-owned namespace contract. --}}
         <template data-studio-section-marker="nav"></template>

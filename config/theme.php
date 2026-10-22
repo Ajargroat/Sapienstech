@@ -102,6 +102,16 @@ return [
 
         /*
         |------------------------------------------------------------------------
+        | Consultation requests (درخواست مشاوره) — the landing page's advice-
+        | request form and its consultant triage queue. Fail-closed: when off,
+        | the public POST route 404s and nothing can be filed. A tenant turns
+        | this on with the Studio Features toggle (config/studio.php).
+        |------------------------------------------------------------------------
+        */
+        'consultation_requests' => false,
+
+        /*
+        |------------------------------------------------------------------------
         | Teacher Panel — the tenant's teacher sub-level, plus its student-
         | facing half. `teacher_panel` is the master switch: when off, the
         | whole /teacher area 404s. Each section additionally has its own
@@ -116,6 +126,18 @@ return [
         'student_materials' => true,
         'student_assignments' => true,
         'student_timetable' => true,
+
+        /*
+        |--------------------------------------------------------------------------
+        | Lesson library (books -> lessons). `lesson_library` is the STAFF surface
+        | (import + block editor), mounted under BOTH /consultant/lessons and
+        | /teacher/lessons; `student_lessons` is the student reader. Two flags
+        | because an academy may publish PDFs and not lessons, or the reverse —
+        | the journal link never disappears because of the other flag.
+        |--------------------------------------------------------------------------
+        */
+        'lesson_library' => true,
+        'student_lessons' => true,
 
         /*
         |--------------------------------------------------------------------------
@@ -304,6 +326,63 @@ return [
         'rate_limited_text' => 'تعداد درخواست‌ها زیاد است؛ چند لحظه صبر کنید.',
         'budget_exhausted_text' => 'اعتبار ماهانه این مجموعه تمام شده است.',
         'generic_error_text' => 'پاسخ‌گویی ناموفق بود؛ دوباره تلاش کنید.',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Lesson library
+    |--------------------------------------------------------------------------
+    |
+    | Importing a textbook PDF and drafting questions out of it.
+    |
+    | The QUESTION path defaults ON because it is the feature that was asked
+    | for: a lesson ends with «خودتان را بسنجید», exactly like the approved
+    | demo. Turning the switch on does not publish anything by itself — a
+    | human still has to generate a draft, read it, approve it, and press
+    | release per question. Block drafting stays OFF: it rewrites the lesson
+    | body, which nobody asked for.
+    |
+    | A tenant that does not want to pay for generation sets these false in its
+    | own config/tenants/<slug>.php; the routes then 404 and no panel renders.
+    |
+    | `pdf_python` is the interpreter that runs scripts/pdf/extract.py. It is an
+    | absolute path on purpose: the worker calls it through Symfony Process with
+    | an args array, never through a shell, because a Persian PDF filename
+    | contains spaces and parentheses.
+    |
+    */
+    'lessons' => [
+
+        'ai_blocks_enabled' => false,
+        'ai_questions_enabled' => true,
+
+        // How many MCQs one draft asks for, and the hard ceiling a tenant may raise it to.
+        'ai_questions_default' => 5,
+        'ai_questions_max' => 12,
+
+        /*
+         | Writing an approved AI question into the SHARED pool is its own
+         | switch, because that pool deliberately crosses tenants (§7.5). It is
+         | ON for the same reason as above: the release is a per-question human
+         | action (approve → release), so the switch unlocks a button, it does
+         | not publish anything on its own.
+         */
+        'questions_release_enabled' => true,
+
+        'pdf_python' => env('LESSON_PDF_PYTHON', 'C:\Python314\python.exe'),
+        'page_dpi' => 150,
+        'figure_dpi' => 200,
+        'max_pages' => 400,
+
+        /*
+        | Seconds one extraction run may take. MUST stay below every queue
+        | connection's retry_after (PREFERENCE §7.3) — otherwise a slow import is
+        | retried while it is still running and the work is paid for twice. The
+        | database driver's default retry_after is 60, so 30 leaves headroom for
+        | the job to record its own failure before the queue hands it out again.
+        | The guard test (LessonPipelineGuardsTest) pins the relation.
+        */
+        'extract_timeout' => 30,
     ],
 
     /*
@@ -511,6 +590,27 @@ return [
             'position' => 'start',
         ],
 
+        /*
+        | Brand-group lock. The token groups this tenant's identity keeps
+        | from every personal ("just for me") layer riding on it. Entries
+        | are top-level group names from the REAL ThemeTokens::VARS
+        | vocabulary: background, buttons, colors, effects, gradients,
+        | layout, landing, motion, portal, scale, shape, spacing, surface,
+        | typography. A personal layer carrying a locked group has those
+        | token paths dropped in ApplyPersonalTheme::effectiveLayer()
+        | BEFORE any merge, so no single user's preferences can swing the
+        | brand on the surfaces it opens; groups not listed stay
+        | overridable per user. The tenant file is the author (the DB and
+        | runtime layers may also set it; the personal layer itself cannot,
+        | because the lock is read from the layers BELOW it). Only real
+        | vocabulary entries take effect: a misspelled group is inert, an
+        | empty list is inert, and null (this baseline) locks nothing --
+        | byte-identical to the behaviour before this key existed. This is
+        | NOT a Studio key on purpose: it is a deploy-time, reviewable
+        | decision of the tenant that owns the brand.
+        */
+        'brand_lock' => null,
+
         // numerals: auto | fa | en    calendar: gregorian | jalali
         'i18n' => [
             'numerals' => 'auto',
@@ -542,18 +642,21 @@ return [
                 'text' => '#111827',
             ],
             // Declared so the toggle's 'dark' destination is always a real,
-            // validated palette. Mirrors the baseline primitives (the platform
-            // default IS dark), so a tenant that adds a light scheme without
-            // declaring dark still boots and toggles onto the platform palette.
-            'dark' => [
-                'background' => '#000000',
-                'surface' => '#111111',
-                'surface_alt' => '#1A1A1A',
-                'surface_elevated' => '#1A1A1A',
-                'text' => '#FFFFFF',
-                'primary' => '#06B6D4',
-                'secondary' => '#A855F7',
-            ],
+            // validated palette — but with NO overrides, which per the rule
+            // above means "the tenant's own base palette, under the name
+            // dark". This used to mirror the baseline primitives (cyan/violet
+            // on black), and that was a brand defect: `default_scheme` is
+            // 'dark', so every tenant whose base palette differs from the
+            // platform default had its colours silently replaced at render
+            // time. Measured before the fix — tenant-one resolved emerald
+            // #34D399 in :root yet painted #06B6D4, and salam resolved
+            // #FB923C yet painted #06B6D4. The tenant's identity only survived
+            // if it happened to already BE the stock palette
+            // (drkafimentoring) or booted light (moein). An empty override
+            // list re-derives every token from the tenant's own primitives, so
+            // a visitor now sees the brand the tenant configured, on landing,
+            // login and dashboard alike.
+            'dark' => [],
         ],
 
         // Which scheme a first-time visitor boots in. Deliberately 'dark' in the
@@ -634,11 +737,12 @@ return [
             // Split-hero column ratio: 50-50 | 60-40 | 40-60 | 70-30 | 30-70.
             // ThemeTokens derives the `--hero-cols` grid value from it.
             'hero_ratio' => '50-50',
-            // Where the panel's section tabs live: topnav | sidebar. The
-            // tenant's choice (Appearance studio); both the consultant and
-            // student shells follow it. Consumed as a data attribute by
+            // Where the panel's section tabs live: sidebar | topnav. The
+            // tenant's choice (Appearance studio); all three panel shells
+            // follow it. Sidebar is the product default; topnav remains a
+            // supported tenant override. Consumed as a data attribute by
             // partials/theme-attrs, not as a CSS token.
-            'shell_nav' => 'topnav',
+            'shell_nav' => 'sidebar',
         ],
 
         // Driven by `scale.density` / `scale.container_width` / section_rhythm.
@@ -1106,6 +1210,23 @@ return [
                     ['field' => 'bio'],
                     ['field' => 'reference'],
                 ],
+            ],
+
+            /*
+            | Consultation request (درخواست مشاوره): a visitor asks for advice
+            | and the row waits in `consultation_requests` for a tenant admin to
+            | triage it. Optional like `join`: a tenant opts in by adding
+            | 'consultation' to `sections`. The gate is
+            | `features.consultation_requests` (default false): off means the
+            | public POST 404s. The thank-you message is structural — the
+            | controller owns it — so it is deliberately not a config key here.
+            */
+            'consultation' => [
+                'id' => 'consultation',
+                'variant' => 'default',
+                'heading' => 'درخواست مشاوره',
+                'subheading' => 'شماره و ایمیل خود را بگذارید تا کارشناسان ما با شما تماس بگیرند.',
+                'submit_label' => 'ارسال درخواست',
             ],
 
             /*

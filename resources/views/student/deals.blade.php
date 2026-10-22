@@ -19,6 +19,7 @@
 @extends('layouts.student')
 
 @section('content')
+<div class="page-surface">
 @if(session('status'))
     <div class="rounded-2xl border border-[var(--c-border)] p-3 text-sm" style="color:var(--c-success,#34D399)">
         {{ session('status') }}
@@ -186,5 +187,6 @@
             @endforeach
         </section>
     @endif
+</div>
 </div>
 @endsection

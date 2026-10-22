@@ -7,5 +7,7 @@
 @extends('layouts.student')
 
 @section('content')
+<div class="page-surface">
     @include('partials.chat.workspace', ['chat' => $chat])
+</div>
 @endsection

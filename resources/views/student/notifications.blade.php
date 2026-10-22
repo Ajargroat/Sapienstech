@@ -9,6 +9,7 @@
 @extends('layouts.student')
 
 @section('content')
+<div class="page-surface">
 <div class="student-welcome">
     <section class="student-profile-head">
         <span class="student-avatar-lg">{{ mb_substr($student->name, 0, 1) }}</span>
@@ -74,5 +75,6 @@
             <div class="blog-pager">{{ $notifications->links() }}</div>
         @endif
     </section>
+</div>
 </div>
 @endsection

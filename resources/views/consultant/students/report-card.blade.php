@@ -12,6 +12,7 @@
 @extends('layouts.consultant')
 
 @section('content')
+<div class="page-surface">
 @php
     // Company vs built-in glyphs: minimal, single-color (currentColor) so the
     // card's pale tenant plate tints them; --rc-brand only tints the percent bar.
@@ -192,4 +193,5 @@
     </dialog>
 </div>
 @vite(['resources/js/features/consultant-report-cards.js'])
+</div>
 @endsection

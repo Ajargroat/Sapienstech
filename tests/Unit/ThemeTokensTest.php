@@ -2,6 +2,7 @@
 
 namespace Tests\Unit;
 
+use App\Support\Merge;
 use App\Support\ThemeTokens;
 use PHPUnit\Framework\TestCase;
 
@@ -296,5 +297,128 @@ class ThemeTokensTest extends TestCase
         $this->assertSame([255, 255, 255], ThemeTokens::hexToRgb('#fff'));
         $this->assertSame([255, 255, 255], ThemeTokens::hexToRgb('#FFFFFF'));
         $this->assertNull(ThemeTokens::hexToRgb('#ff'));
+    }
+
+    // =========================================================================
+    // Scheme fidelity â€” the brand must survive every scheme
+    // =========================================================================
+
+    /**
+     * Measured defect this pins: the baseline declared `schemes.dark` as the
+     * stock platform palette (cyan/violet on black) while `default_scheme` is
+     * 'dark'. Because a scheme block re-declares `--c-*` AFTER `:root`, every
+     * tenant whose palette was not that stock palette had its brand replaced
+     * at render time â€” tenant-one resolved emerald #34D399 yet painted
+     * #06B6D4, and salam resolved #FB923C yet painted #06B6D4. The fix is an
+     * EMPTY override list, which per the documented rule means "the tenant's
+     * own palette, under that name".
+     */
+    public function test_the_baseline_dark_scheme_does_not_replace_a_tenants_palette(): void
+    {
+        $baseline = require dirname(__DIR__, 2).'/config/theme.php';
+
+        $this->assertSame(
+            [],
+            $baseline['theme']['schemes']['dark'] ?? null,
+            'schemes.dark must carry no overrides, or it silently overwrites every tenant palette',
+        );
+        $this->assertSame('dark', $baseline['theme']['default_scheme']);
+    }
+
+    public function test_an_empty_scheme_override_resolves_the_tenants_own_palette(): void
+    {
+        // A tenant that declares the name but no values keeps its identity.
+        $theme = ThemeTokens::resolve(array_merge($this->primitives([
+            'primary' => '#34D399',
+            'background' => '#04120C',
+        ]), [
+            'schemes' => ['dark' => []],
+            'default_scheme' => 'dark',
+        ]));
+
+        $schemes = ThemeTokens::schemeVars($theme);
+
+        $this->assertSame('#34D399', $schemes['dark']['c-primary']);
+        $this->assertSame('#04120C', $schemes['dark']['c-background']);
+        $this->assertSame(
+            $theme['vars']['c-primary'],
+            $schemes['dark']['c-primary'],
+            'the boot scheme must agree with :root for a tenant that overrides nothing',
+        );
+    }
+
+    public function test_an_explicit_scheme_override_still_wins(): void
+    {
+        // The escape hatch survives the fix: a tenant that really wants a
+        // different dark palette says so, and is honoured.
+        $theme = ThemeTokens::resolve(array_merge($this->primitives([
+            'primary' => '#34D399',
+            'background' => '#04120C',
+        ]), [
+            'schemes' => ['dark' => ['primary' => '#8B5CF6', 'background' => '#0B0B12']],
+            'default_scheme' => 'dark',
+        ]));
+
+        $schemes = ThemeTokens::schemeVars($theme);
+
+        $this->assertSame('#8B5CF6', $schemes['dark']['c-primary']);
+        $this->assertSame('#0B0B12', $schemes['dark']['c-background']);
+    }
+
+    /**
+     * Every shipped tenant must keep its own palette in its boot scheme.
+     * Derived from the config directory (never a hard-coded list) so a new
+     * tenant is covered the day it lands.
+     *
+     * CRITICAL: the comparison is against the MERGED tree (baseline + tenant),
+     * never the raw tenant file. A tenant file is a sparse diff â€” it does not
+     * mention `schemes` at all, so resolving it alone cannot see the baseline's
+     * scheme block, which is precisely where the defect lived. Judged on the
+     * raw file this test is vacuous: it passed with the stock dark block
+     * restored. Judged on the merged tree it fails, which is the point.
+     *
+     * A tenant with NO override for its boot scheme is correct, not broken:
+     * `schemeVars()` emits only declared schemes, and a scheme emitting no
+     * `--c-*` block leaves `:root` in force â€” which already carries the
+     * tenant's palette.
+     */
+    public function test_every_shipped_tenant_keeps_its_palette_in_its_boot_scheme(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $baseline = (require $root.'/config/theme.php')['theme'];
+        $files = glob($root.'/config/tenants/*.php') ?: [];
+
+        $this->assertNotEmpty($files, 'no tenant configs found â€” the glob is wrong, not the tenants');
+
+        $checked = 0;
+
+        foreach ($files as $file) {
+            $tenant = (require $file)['theme'] ?? null;
+
+            if (! is_array($tenant)) {
+                continue;
+            }
+
+            // The merge the renderer actually sees: tenant over baseline.
+            $theme = Merge::structural($baseline, $tenant);
+
+            $resolved = ThemeTokens::resolve($theme);
+            $schemes = ThemeTokens::schemeVars($resolved);
+            $boot = $resolved['default_scheme'] ?? 'dark';
+            $slug = basename($file, '.php');
+
+            // No emitted block for the boot scheme means :root is the answer.
+            $effective = $schemes[$boot]['c-primary'] ?? $resolved['vars']['c-primary'];
+
+            $this->assertSame(
+                $resolved['vars']['c-primary'],
+                $effective,
+                "{$slug}: theme '{$boot}' renders a different primary than the tenant configured",
+            );
+
+            $checked++;
+        }
+
+        $this->assertGreaterThan(0, $checked, 'no tenant resolved â€” this test verified nothing');
     }
 }

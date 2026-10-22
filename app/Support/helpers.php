@@ -3,6 +3,22 @@
 use App\Support\ChatActor;
 use App\Support\SiteConfig;
 
+if (! function_exists('csp_nonce')) {
+    /**
+     * The per-response CSP nonce, or null when nonces are disabled.
+     *
+     * Views put this on the inline <script> tags they need to authorise
+     * (`nonce="{{ csp_nonce() }}"`). Emitted by SecurityHeaders, which is why
+     * this reads a request attribute rather than generating a value: a nonce
+     * the policy did not publish authorises nothing, and two different
+     * nonces in one response would silently break the tag that lost.
+     */
+    function csp_nonce(): ?string
+    {
+        return request()->attributes->get('csp_nonce');
+    }
+}
+
 if (! function_exists('site')) {
     /**
      * Tenant-resolved site config. Same dotted syntax as config(), but the
@@ -82,6 +98,53 @@ if (! function_exists('chat_session_actors')) {
         }
 
         return $actors;
+    }
+}
+
+if (! function_exists('lessons_prefix')) {
+    /**
+     * The staff lesson surface is mounted twice — /consultant/lessons/* and
+     * /teacher/lessons/* — with one controller set. No view may name either
+     * prefix: every link resolves through here, so a teacher stays inside the
+     * teacher shell and a consultancy's staff never 404 on a route that only
+     * exists in the other panel.
+     *
+     * Resolution is by the CURRENT request's name root first (the same page
+     * keeps its own panel when it links to itself), then by the actor.
+     */
+    function lessons_prefix(?string $root = null): string
+    {
+        $root ??= request()->route()?->getName();
+
+        if (is_string($root) && str_starts_with($root, 'teacher.')) {
+            return 'teacher.';
+        }
+
+        if (is_string($root) && str_starts_with($root, 'consultant.')) {
+            return 'consultant.';
+        }
+
+        $user = \Illuminate\Support\Facades\Auth::user();
+
+        if ($user instanceof \App\Models\User && $user->isTeacher()) {
+            return 'teacher.';
+        }
+
+        // A consultant_staff user is NOT a teacher (EnsureTeacher would refuse
+        // them), so the consultant panel is the only surface they own.
+        return 'consultant.';
+    }
+}
+
+if (! function_exists('lessons_route')) {
+    /**
+     * route() for the lesson surface, resolved to the current actor's panel.
+     * `lessons_route('editor', $lesson)` → consultant.lessons.editor or
+     * teacher.lessons.editor.
+     */
+    function lessons_route(string $name, mixed $parameters = [], bool $absolute = true): string
+    {
+        return route(lessons_prefix().'lessons.'.$name, $parameters, $absolute);
     }
 }
 

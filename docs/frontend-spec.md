@@ -204,7 +204,31 @@ click sort ──► persist key ──► re-render ──► on reload: read k
 
 ---
 
-## 7. Your first spec (fill this in)
+## 7. React islands
+
+The student dashboard (`resources/js/features/student-dashboard.js`) is the
+reference island. When the change lives in one:
+
+- **UI stays Blade-owned.** The island mounts into a container the server
+  rendered (the `data-react-island` hooks in
+  `resources/views/student/dashboard.blade.php`); do not move the page
+  skeleton into React in one step.
+- **Style is the token sheet.** Islands wear the same semantic classes as the
+  Blade surface — their CSS resolves the `var(--c-…)` properties emitted by
+  `partials/theme-vars.blade.php` — or a named role from
+  `resources/js/react/tokens.js`. A literal colour or an inline style is a
+  defect, and direction comes from the shell, not the island.
+- **Behavior keeps the page-router contract verbatim:** the entry exports
+  `default function init(region)`, may return a cleanup, and React roots are
+  released through it (`resources/js/react/mount.js`). Landing/login and
+  `public/demo` are out of scope; studio chrome never consumes tenant tokens.
+- **Verification:** add a jsdom parity test under `tests/Js/` in the shape of
+  `student-dashboard.react.test.mjs`, then run `npm run test:studio` and
+  `npm run build`.
+
+---
+
+## 8. Your first spec (fill this in)
 
 <!-- TODO(human): replace the placeholder below with your next real front-end ask -->
 

@@ -1,0 +1,872 @@
+/* =========================================
+   Dashboard kit (consultant / student / teacher)
+
+   Shared, token-driven chrome for the three role dashboards. Colours, shape,
+   elevation and motion come from the resolved tenant theme; this file never
+   declares a literal colour. One prototype, many tenants.
+   ========================================= */
+
+/* --- Page + hero ------------------------------------------------------- */
+.dash-page {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(20px, 2.4vw, 28px);
+}
+
+.dash-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(250px, 340px);
+  align-items: center;
+  gap: clamp(18px, 2.4vw, 30px);
+  padding-block-start: clamp(4px, 1vw, 12px);
+}
+
+/* Consultant dashboard header after the greeting block was removed: a plain
+   action row, not the two-column hero. */
+.dash-hero--bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+}
+
+.dash-hero--bar .dash-actions {
+  margin-top: 0;
+}
+
+.dash-hero-main {
+  min-width: 0;
+}
+
+.dash-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 11px;
+  border: 1px solid color-mix(in oklab, var(--c-primary) 22%, var(--c-border));
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--c-primary) 9%, transparent);
+  color: var(--c-primary);
+  font-size: 10.5px;
+  font-weight: 800;
+  line-height: 1.6;
+}
+
+.dash-eyebrow::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--c-primary);
+}
+
+.dash-title {
+  margin: 12px 0 8px;
+  font-family: var(--font-heading);
+  font-size: clamp(1.7rem, 2.4vw, 2.2rem);
+  font-weight: var(--heading-weight);
+  line-height: 1.25;
+  color: var(--c-heading);
+  overflow-wrap: anywhere;
+}
+
+.dash-subtitle {
+  margin: 0;
+  max-width: 68ch;
+  font-size: 13.5px;
+  line-height: 1.8;
+  color: var(--c-muted);
+}
+
+.dash-hero-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  margin-top: 16px;
+}
+
+.dash-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.dash-hero-meta .student-avatar-lg {
+  width: 64px;
+  height: 64px;
+  font-size: 26px;
+}
+
+/* --- Pulse card (the one saturated surface) ---------------------------- */
+.dash-pulse {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  padding: 17px 19px;
+  border: 1px solid color-mix(in oklab, var(--c-border-strong) 62%, transparent);
+  border-radius: var(--radius-card);
+  background-image:
+    linear-gradient(
+      135deg,
+      color-mix(in oklab, var(--c-background) 64%, transparent),
+      color-mix(in oklab, var(--c-background) 46%, transparent)
+    ),
+    var(--brand-gradient);
+  background-size: cover;
+  box-shadow: var(--card-shadow, none);
+  overflow: hidden;
+}
+
+.dash-pulse-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.dash-pulse-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--c-muted);
+}
+
+.dash-pulse-caption {
+  font-size: 13.5px;
+  font-weight: 800;
+  line-height: 1.6;
+  color: var(--c-text);
+}
+
+.dash-ring {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  flex: 0 0 auto;
+}
+
+.dash-ring svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.dash-ring-track {
+  fill: none;
+  stroke: color-mix(in oklab, var(--c-text) 16%, transparent);
+  stroke-width: 6;
+}
+
+.dash-ring-value {
+  fill: none;
+  stroke: var(--c-primary);
+  stroke-width: 6;
+  stroke-linecap: round;
+}
+
+.dash-ring-number {
+  position: relative;
+  z-index: 1;
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--c-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.dash-ring-number small {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--c-muted);
+}
+
+/* --- KPI band ---------------------------------------------------------- */
+.dash-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--card-gap);
+}
+
+.dash-stat {
+  --dash-accent: var(--c-primary);
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  min-width: 0;
+  padding: calc(var(--card-padding) * 0.7);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-card);
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in oklab, var(--dash-accent) 16%, var(--c-surface)),
+      color-mix(in oklab, var(--dash-accent) 6%, var(--c-surface))
+    );
+  box-shadow: var(--card-shadow, none);
+  overflow: hidden;
+}
+
+.dash-stat::before {
+  content: "";
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  height: 3px;
+  background: var(--dash-accent);
+}
+
+.dash-stat--primary { --dash-accent: var(--c-primary); }
+.dash-stat--secondary { --dash-accent: var(--c-secondary); }
+.dash-stat--success { --dash-accent: var(--c-success); }
+.dash-stat--info { --dash-accent: var(--c-info); }
+.dash-stat--warning { --dash-accent: var(--c-warning); }
+
+.dash-stat-icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid color-mix(in oklab, var(--dash-accent) 24%, transparent);
+  border-radius: var(--radius-lg);
+  background: color-mix(in oklab, var(--dash-accent) 16%, var(--c-surface));
+  color: var(--dash-accent);
+  font-size: 15px;
+}
+
+.dash-stat-value {
+  font-size: 1.9rem;
+  font-weight: 800;
+  line-height: 1.2;
+  color: var(--c-text);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.dash-stat-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--c-muted);
+}
+
+.dash-stat-meta {
+  font-size: 11.5px;
+  line-height: 1.7;
+  color: var(--c-muted);
+}
+
+.dash-stat-track {
+  display: block;
+  height: 4px;
+  margin-top: auto;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--c-text) 8%, transparent);
+  overflow: hidden;
+}
+
+.dash-stat-fill {
+  display: block;
+  width: var(--dash-value, 0%);
+  height: 100%;
+  border-radius: inherit;
+  background: var(--dash-accent);
+}
+
+/* --- Main + rail ------------------------------------------------------- */
+.dash-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2.1fr) minmax(280px, 0.9fr);
+  align-items: start;
+  gap: var(--card-gap);
+}
+
+.dash-main,
+.dash-rail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--card-gap);
+  min-width: 0;
+}
+
+/* --- Roster toolbar ---------------------------------------------------- */
+.panel-heading.dash-toolbar {
+  margin-bottom: 0;
+}
+
+.panel-heading.dash-toolbar h2 {
+  font-size: 19px;
+}
+
+.dash-toolbar .panel-heading-actions {
+  flex-wrap: wrap;
+}
+
+@media (min-width: 768px) {
+  .dash-toolbar .search-reveal-input {
+    width: 220px;
+    padding-inline-start: 12px;
+  }
+}
+
+.dash-pager {
+  margin-top: 0;
+}
+
+/* --- Person cards ------------------------------------------------------ */
+.dash-people {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--card-gap);
+}
+
+.dash-person {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: calc(var(--card-padding) * 0.6);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-card);
+  background: var(--c-surface);
+  box-shadow: var(--card-shadow, none);
+  color: var(--c-text);
+  text-decoration: none;
+  transition:
+    transform var(--animation-duration) var(--ease, ease),
+    border-color var(--animation-duration) var(--ease, ease),
+    background var(--animation-duration) var(--ease, ease);
+}
+
+.dash-person:hover {
+  transform: translateY(calc(var(--hover-lift, 3px) * -1));
+  border-color: color-mix(in oklab, var(--c-primary) 42%, var(--c-border));
+  background: color-mix(in oklab, var(--c-primary) 4%, var(--c-surface));
+}
+
+.dash-person-name {
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.6;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dash-person:focus-visible,
+.dash-quick-item:focus-visible,
+.dash-feature-cta:focus-visible {
+  outline: 2px solid var(--c-primary);
+  outline-offset: 2px;
+}
+
+/* --- Panels ------------------------------------------------------------ */
+.dash-panel {
+  padding: calc(var(--card-padding) * 0.75);
+}
+
+.dash-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.dash-panel-head h2 {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+.dash-panel-head h2 i {
+  color: var(--c-primary);
+  font-size: 14px;
+}
+
+.dash-panel-head .count-badge {
+  flex: 0 0 auto;
+}
+
+/* --- Feature card ------------------------------------------------------ */
+.dash-feature {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: calc(var(--card-padding) * 0.75);
+  border: 1px solid color-mix(in oklab, var(--c-primary) 26%, var(--c-border));
+  border-radius: var(--radius-card);
+  background:
+    linear-gradient(
+      145deg,
+      color-mix(in oklab, var(--c-primary) 11%, var(--c-surface)),
+      var(--c-surface) 70%
+    );
+  box-shadow: var(--card-shadow, none);
+  min-width: 0;
+}
+
+.dash-feature-icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  margin-bottom: 2px;
+  border-radius: var(--radius-lg);
+  background: color-mix(in oklab, var(--c-primary) 16%, var(--c-surface));
+  color: var(--c-primary);
+  font-size: 15px;
+}
+
+.dash-feature-eyebrow {
+  font-size: 10.5px;
+  font-weight: 800;
+  color: var(--c-primary);
+}
+
+.dash-feature-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.55;
+  color: var(--c-heading);
+}
+
+.dash-feature-meta {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.8;
+  color: var(--c-muted);
+}
+
+.dash-feature-cta {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 6px;
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--c-primary);
+  text-decoration: none;
+}
+
+.dash-feature-cta:hover {
+  color: var(--c-primary-hover);
+}
+
+/* --- Recent people ----------------------------------------------------- */
+.dash-recent {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dash-recent-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  padding: 7px 8px;
+  border-radius: var(--radius-md);
+  color: var(--c-text);
+  text-decoration: none;
+  transition: background var(--animation-duration) var(--ease, ease);
+}
+
+.dash-recent-row:hover {
+  background: color-mix(in oklab, var(--c-primary) 5%, transparent);
+}
+
+.dash-recent-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.dash-recent-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.dash-recent-meta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10.5px;
+  color: var(--c-muted);
+}
+
+/* --- Bars -------------------------------------------------------------- */
+.dash-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.dash-bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 4px 10px;
+  min-width: 0;
+}
+
+.dash-bar-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--c-text);
+}
+
+.dash-bar-value {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--c-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.dash-bar-track {
+  grid-column: 1 / -1;
+  display: block;
+  height: 6px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--c-text) 8%, transparent);
+  overflow: hidden;
+}
+
+.dash-bar-fill {
+  display: block;
+  width: var(--dash-value, 0%);
+  height: 100%;
+  border-radius: inherit;
+  background: var(--c-primary);
+}
+
+.dash-note {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.8;
+  color: var(--c-muted);
+}
+
+/* --- Quick actions ----------------------------------------------------- */
+.dash-quick {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.dash-quick-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  background: var(--c-surface-alt);
+  color: var(--c-text);
+  text-decoration: none;
+  font-size: 11.5px;
+  font-weight: 700;
+  transition:
+    border-color var(--animation-duration) var(--ease, ease),
+    background var(--animation-duration) var(--ease, ease);
+}
+
+.dash-quick-item:hover {
+  border-color: color-mix(in oklab, var(--c-primary) 40%, var(--c-border));
+  background: color-mix(in oklab, var(--c-primary) 6%, var(--c-surface-alt));
+}
+
+.dash-quick-icon {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  border-radius: var(--radius-md);
+  background: color-mix(in oklab, var(--c-primary) 14%, transparent);
+  color: var(--c-primary);
+  font-size: 12px;
+}
+
+.dash-quick-icon--success { background: color-mix(in oklab, var(--c-success) 14%, transparent); color: var(--c-success); }
+.dash-quick-icon--info { background: color-mix(in oklab, var(--c-info) 14%, transparent); color: var(--c-info); }
+.dash-quick-icon--secondary { background: color-mix(in oklab, var(--c-secondary) 14%, transparent); color: var(--c-secondary); }
+.dash-quick-icon--warning { background: color-mix(in oklab, var(--c-warning) 14%, transparent); color: var(--c-warning); }
+
+/* --- Week board -------------------------------------------------------- */
+.dash-week {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.dash-week-day {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 10px;
+  border-radius: var(--radius-md);
+  background: color-mix(in oklab, var(--c-text) 3%, transparent);
+}
+
+.dash-week-day.is-today {
+  background: color-mix(in oklab, var(--c-primary) 9%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--c-primary) 24%, transparent);
+}
+
+.dash-week-head {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.dash-week-weekday {
+  font-size: 11.5px;
+  font-weight: 800;
+  line-height: 1.6;
+  color: var(--c-text);
+}
+
+.dash-week-date {
+  font-size: 10.5px;
+  line-height: 1.6;
+  color: var(--c-muted);
+}
+
+.dash-week-items {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.dash-week .sched-box {
+  padding: 8px;
+  border-radius: var(--radius-sm);
+  border-inline-start-width: 3px;
+  box-shadow: none;
+}
+
+.dash-week .sched-box:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.dash-week .sched-box-time {
+  font-size: 10px;
+}
+
+.dash-week .sched-box-title {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 12px;
+  line-height: 1.55;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.dash-week .sched-box-tags {
+  gap: 4px;
+}
+
+.dash-week .sched-box-tags span {
+  padding: 0 5px;
+  font-size: 9.5px;
+}
+
+.dash-week-empty {
+  margin: 0;
+  padding: 9px 6px;
+  border: 1px dashed var(--c-border);
+  border-radius: var(--radius-sm);
+  color: var(--c-subtle);
+  font-size: 10.5px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+/* --- Alert (student deal banner) --------------------------------------- */
+.dash-alert {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 13px 15px;
+  border: 1px solid color-mix(in oklab, var(--c-warning) 42%, var(--c-border));
+  border-radius: var(--radius-md);
+  background: color-mix(in oklab, var(--c-warning) 10%, var(--c-surface));
+  color: var(--c-text);
+  text-decoration: none;
+}
+
+.dash-alert-title {
+  font-size: 12.5px;
+  font-weight: 800;
+}
+
+.dash-alert-title i {
+  color: var(--c-warning);
+}
+
+.dash-alert-text {
+  font-size: 11.5px;
+  line-height: 1.8;
+  color: var(--c-muted);
+}
+
+/* --- Glass / material nuance ------------------------------------------ */
+[data-surface="glass"] .dash-stat,
+[data-surface="glass"] .dash-person,
+[data-surface="acrylic"] .dash-stat,
+[data-surface="acrylic"] .dash-person {
+  box-shadow: var(--surface-specular);
+}
+
+[data-surface="glass"] .dash-person,
+[data-surface="acrylic"] .dash-person {
+  background-color: color-mix(in srgb, var(--c-surface) 88%, transparent);
+  -webkit-backdrop-filter: blur(var(--backdrop-blur, 20px));
+  backdrop-filter: blur(var(--backdrop-blur, 20px));
+}
+
+/* --- Calmer ground ------------------------------------------------------
+
+   The dark-luminous archetype paints two large portal glows behind every
+   panel shell. On the dashboard they read as haze at the top and bottom
+   edges, so this surface weakens them and swaps the neon elevation for a
+   neutral, background-tinted depth. Scoped through :has(.dash-page) — the
+   same technique the shell uses for the aurora ground — so the landing and
+   every other consultant surface keep the archetype untouched. */
+body.consultant-shell:has(.dash-page) .page-glow {
+  inline-size: calc(var(--portal-glow-size) * 0.55);
+  block-size: calc(var(--portal-glow-size) * 0.55);
+  filter: blur(calc(var(--portal-glow-blur) * 0.7));
+  opacity: calc(var(--portal-glow-opacity) * 0.4);
+}
+
+body.consultant-shell:has(.dash-page) .dash-page {
+  --shadow: 0 16px 36px color-mix(in srgb, var(--c-background) 42%, transparent);
+  --card-shadow: 0 10px 26px color-mix(in srgb, var(--c-background) 38%, transparent);
+  --sidebar-shadow: 0 16px 36px color-mix(in srgb, var(--c-background) 42%, transparent);
+}
+
+/* --- Responsive -------------------------------------------------------- */
+@media (max-width: 1279px) {
+  .dash-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dash-people {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .dash-layout {
+    grid-template-columns: minmax(0, 1.7fr) minmax(270px, 1fr);
+  }
+
+  .dash-week {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1023px) {
+  .dash-hero,
+  .dash-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dash-people {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dash-pulse {
+    max-width: 420px;
+  }
+}
+
+@media (max-width: 899px) {
+  .dash-week {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .dash-panel {
+    padding: calc(var(--card-padding) * 0.65);
+  }
+
+  .dash-pulse {
+    max-width: none;
+  }
+
+  .panel-heading.dash-toolbar {
+    align-items: flex-start;
+  }
+
+  .dash-toolbar .panel-heading-actions {
+    width: 100%;
+  }
+
+  .dash-week {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  [data-surface="glass"] .dash-person,
+  [data-surface="acrylic"] .dash-person {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background-color: var(--c-surface);
+  }
+}
+
+@media (max-width: 599px) {
+  .dash-stats,
+  .dash-week,
+  .dash-people,
+  .dash-quick {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dash-title {
+    font-size: 1.55rem;
+  }
+
+  .dash-stat {
+    padding: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dash-person,
+  .dash-quick-item {
+    transition: none;
+  }
+
+  .dash-person:hover {
+    transform: none;
+  }
+}

@@ -49,6 +49,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'preferences' => 'array',
+            'is_platform_admin' => 'boolean',
         ];
     }
 
@@ -65,6 +66,22 @@ class User extends Authenticatable
     public function isPlatformAdmin(): bool
     {
         return $this->role === self::ROLE_PLATFORM_ADMIN;
+    }
+
+    /**
+     * May this account run the operations console (/ops)?
+     *
+     * Deliberately NOT the same question as `isPlatformAdmin()`. That one is a
+     * ROLE: a platform admin is a user who belongs to no tenant panel at all.
+     * The PDF pipeline, by contrast, is a chore an existing tenant admin may be
+     * trusted with — they keep their tenant role and gain the console.
+     *
+     * Kept as ONE predicate so the middleware, the reader preview and any later
+     * ops screen cannot drift into three slightly different rules.
+     */
+    public function canRunOps(): bool
+    {
+        return $this->isPlatformAdmin() || (bool) $this->is_platform_admin;
     }
 
     public function isTenantAdmin(): bool

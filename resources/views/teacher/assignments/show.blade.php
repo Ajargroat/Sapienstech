@@ -7,6 +7,7 @@
 @extends('layouts.teacher')
 
 @section('content')
+<div class="page-surface">
 <a href="{{ route('teacher.assignments.index') }}" class="teacher-backlink">
     <i class="fas fa-arrow-right"></i> بازگشت به تکالیف
 </a>
@@ -158,4 +159,5 @@
 </div>
 
 @vite(['resources/js/features/teacher-panel.js'])
+</div>
 @endsection

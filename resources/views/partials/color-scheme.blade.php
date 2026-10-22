@@ -44,7 +44,7 @@
     $toggle = count($cycle) > 1;
 @endphp
 
-<script>
+<script nonce="{{ csp_nonce() }}">
     (function () {
         var STORAGE_KEY = @json($schemeKey);
         var DEFAULT = @json($default);

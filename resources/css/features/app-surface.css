@@ -1,0 +1,710 @@
+/* =========================================
+   App surface — the shared page chrome
+
+   The dashboards own `dash-*`; every other authenticated screen opts in by
+   putting `.page-surface` on its content root. The visual language is the same
+   one the dashboards use: tenant tokens, one soft brand-tinted head per page,
+   restrained cards and a single elevation model. The schedule screens, the
+   exam runner and the lesson reader deliberately do not opt in.
+   ========================================= */
+
+.page-surface {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(16px, 2vw, 24px);
+  min-width: 0;
+}
+
+.page-surface > * {
+  min-width: 0;
+}
+
+/* --- Page head: heading + actions on one brand-tinted plate ------------- */
+.page-surface .panel-heading,
+.page-surface .settings-head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0;
+  padding: clamp(16px, 2vw, 22px) clamp(18px, 2.2vw, 26px);
+  /* The roster/exam filter popover lives in this row; clipping it would make
+     the filter unreachable. The gradient already follows the border radius. */
+  overflow: visible;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-card);
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in oklab, var(--c-primary) 10%, var(--c-surface)) 0%,
+      var(--c-surface) 62%
+    );
+  box-shadow: var(--card-shadow, none);
+}
+
+.page-surface .panel-heading::before,
+.page-surface .settings-head::before {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 22px;
+  height: 3px;
+  border-radius: 0 0 999px 999px;
+  background: linear-gradient(90deg, var(--c-primary), var(--c-secondary));
+  content: "";
+}
+
+.page-surface .panel-heading h2,
+.page-surface .settings-head h2 {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: clamp(1.3rem, 1.8vw, 1.55rem);
+  font-weight: var(--heading-weight, 800);
+  line-height: 1.4;
+  color: var(--c-heading);
+}
+
+.page-surface .panel-heading-title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  min-width: 0;
+}
+
+.page-surface .panel-heading-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.page-surface .count-badge {
+  padding: 5px 11px;
+  border: 1px solid color-mix(in oklab, var(--c-primary) 24%, transparent);
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--c-primary) 10%, transparent);
+  color: var(--c-primary);
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+/* --- Settings shell: head, tabs, cards --------------------------------- */
+.page-surface.settings-shell {
+  width: 100%;
+}
+
+.page-surface .settings-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 6px;
+  border: 1px solid var(--c-border);
+  border-radius: calc(var(--radius-card) * 0.9);
+  background: color-mix(in oklab, var(--c-surface-alt) 70%, transparent);
+}
+
+.page-surface .settings-tab {
+  padding: 8px 15px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: var(--c-muted);
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.page-surface .settings-tab:hover {
+  border-color: var(--c-border);
+  color: var(--c-text);
+}
+
+.page-surface .settings-tab.is-active {
+  background: var(--c-primary);
+  color: var(--c-on-primary, var(--c-background));
+}
+
+.page-surface .settings-cards {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(14px, 1.6vw, 20px);
+}
+
+.page-surface .settings-card {
+  padding: clamp(18px, 2.2vw, 26px);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-card);
+  background: var(--c-surface);
+  box-shadow: var(--card-shadow, none);
+}
+
+.page-surface .settings-card-title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0 0 14px;
+  font-family: var(--font-heading);
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.55;
+  color: var(--c-heading);
+}
+
+.page-surface .settings-card-title i {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  border-radius: 9px;
+  background: color-mix(in oklab, var(--c-primary) 12%, transparent);
+  color: var(--c-primary);
+  font-size: 11px;
+}
+
+.page-surface .settings-card-text {
+  margin: 0 0 14px;
+  color: var(--c-muted);
+  font-size: 12.5px;
+  line-height: 1.9;
+}
+
+.page-surface .settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 460px;
+}
+
+.page-surface .settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.page-surface .settings-field-label {
+  color: var(--c-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.page-surface .settings-input {
+  padding: 10px 13px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-input, 12px);
+  background: color-mix(in oklab, var(--c-text) 4%, transparent);
+  color: var(--c-text);
+  font-family: inherit;
+  font-size: 13px;
+  transition:
+    border-color var(--animation-duration) ease,
+    box-shadow var(--animation-duration) ease;
+}
+
+.page-surface .settings-input:focus {
+  outline: none;
+  border-color: var(--c-primary);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--c-primary) 20%, transparent);
+}
+
+.page-surface .settings-input.is-invalid {
+  border-color: var(--c-danger);
+}
+
+/* --- Cards and panels -------------------------------------------------- */
+.page-surface .panel {
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-card);
+  background: var(--c-surface);
+  box-shadow: var(--card-shadow, none);
+}
+
+.page-surface .student-panel {
+  padding: clamp(18px, 2.2vw, 26px);
+}
+
+.page-surface .student-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 16px;
+  padding-bottom: 13px;
+  border-bottom: 1px solid var(--c-border);
+}
+
+.page-surface .student-panel-head h2 {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: clamp(1.05rem, 1.4vw, 1.2rem);
+  font-weight: 800;
+  line-height: 1.5;
+  color: var(--c-heading);
+}
+
+.page-surface .student-panel-head h2 i {
+  display: grid;
+  place-items: center;
+  width: 29px;
+  height: 29px;
+  flex: 0 0 auto;
+  border-radius: 9px;
+  background: color-mix(in oklab, var(--c-primary) 12%, transparent);
+  color: var(--c-primary);
+  font-size: 11px;
+}
+
+/* --- Student hero ------------------------------------------------------ */
+.page-surface .student-welcome {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: clamp(18px, 2.2vw, 26px);
+  overflow: hidden;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-card);
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in oklab, var(--c-primary) 11%, var(--c-surface)) 0%,
+      var(--c-surface) 64%
+    );
+  box-shadow: var(--card-shadow, none);
+}
+
+.page-surface .student-welcome .student-profile-head {
+  margin: 0;
+  padding: 0;
+  gap: 16px;
+}
+
+.page-surface .student-profile-head h2 {
+  margin: 0 0 3px;
+  font-family: var(--font-heading);
+  font-size: clamp(1.25rem, 1.8vw, 1.55rem);
+  font-weight: var(--heading-weight, 800);
+  line-height: 1.4;
+  color: var(--c-heading);
+}
+
+.page-surface .student-email {
+  color: var(--c-muted);
+  font-size: 12.5px;
+  line-height: 1.8;
+}
+
+.page-surface .student-avatar-lg {
+  display: grid;
+  place-items: center;
+  width: clamp(48px, 6vw, 64px);
+  height: clamp(48px, 6vw, 64px);
+  flex: 0 0 auto;
+  border-radius: calc(var(--radius-card) * 0.8);
+  background: var(--c-primary);
+  color: var(--c-on-primary, var(--c-background));
+  font-size: clamp(19px, 2.4vw, 25px);
+  font-weight: 800;
+}
+
+.page-surface .student-today {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 16px;
+  flex: 0 0 auto;
+  border: 1px solid var(--c-border);
+  border-radius: calc(var(--radius-card) * 0.8);
+  background: var(--c-surface);
+  color: var(--c-text);
+  font-size: 14px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.page-surface .student-today-label {
+  color: var(--c-muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.page-surface .student-page-head {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.page-surface .student-page-head h2 {
+  font-size: clamp(1.2rem, 1.7vw, 1.45rem);
+}
+
+/* --- Stat tiles and tags ----------------------------------------------- */
+.page-surface .student-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.page-surface .student-stat {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 17px;
+  overflow: hidden;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-card);
+  background: var(--c-surface);
+  box-shadow: var(--card-shadow, none);
+  transition:
+    transform var(--animation-duration) ease,
+    border-color var(--animation-duration) ease;
+}
+
+.page-surface .student-stat::before {
+  position: absolute;
+  inset-block: 14px;
+  inset-inline-start: 0;
+  width: 3px;
+  border-radius: 999px;
+  background: var(--c-primary);
+  content: "";
+}
+
+.page-surface .student-stat:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in oklab, var(--c-primary) 32%, var(--c-border));
+}
+
+.page-surface .student-stat-icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  border-radius: 11px;
+  background: color-mix(in oklab, var(--c-primary) 12%, transparent);
+  color: var(--c-primary);
+  font-size: 15px;
+}
+
+.page-surface .student-stat-icon--success {
+  background: color-mix(in oklab, var(--c-success) 13%, transparent);
+  color: var(--c-success);
+}
+
+.page-surface .student-stat-icon--info {
+  background: color-mix(in oklab, var(--c-info) 13%, transparent);
+  color: var(--c-info);
+}
+
+.page-surface .student-stat-icon--secondary {
+  background: color-mix(in oklab, var(--c-secondary) 13%, transparent);
+  color: var(--c-secondary);
+}
+
+.page-surface .student-stat-value {
+  font-size: 21px;
+  font-weight: 800;
+  line-height: 1.3;
+  color: var(--c-heading);
+}
+
+.page-surface .student-stat-label {
+  color: var(--c-muted);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.page-surface .student-tag {
+  padding: 2px 9px;
+  border: 1px solid color-mix(in oklab, var(--c-primary) 22%, transparent);
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--c-primary) 9%, transparent);
+  color: var(--c-primary);
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1.8;
+}
+
+.page-surface .student-tag-grade {
+  border-color: color-mix(in oklab, var(--c-primary) 26%, transparent);
+}
+
+.page-surface .student-tag-gender {
+  border-color: color-mix(in oklab, var(--c-info) 26%, transparent);
+  background: color-mix(in oklab, var(--c-info) 9%, transparent);
+  color: var(--c-info);
+}
+
+.page-surface .student-tag-major {
+  border-color: color-mix(in oklab, var(--c-secondary) 26%, transparent);
+  background: color-mix(in oklab, var(--c-secondary) 9%, transparent);
+  color: var(--c-secondary);
+}
+
+/* --- Exam and roster cards --------------------------------------------- */
+.page-surface .exam-card {
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-card);
+  background: var(--c-surface);
+  box-shadow: var(--card-shadow, none);
+  transition:
+    transform var(--animation-duration) ease,
+    border-color var(--animation-duration) ease,
+    box-shadow var(--animation-duration) ease;
+}
+
+.page-surface .exam-card:hover {
+  transform: translateY(-3px);
+  border-color: color-mix(in oklab, var(--c-primary) 36%, var(--c-border));
+  box-shadow: var(--card-shadow-hover, var(--card-shadow, none));
+}
+
+.page-surface .exam-card-icon {
+  border-bottom: 1px solid var(--c-border);
+  background: color-mix(in oklab, var(--c-primary) 7%, var(--c-surface));
+  color: var(--c-primary);
+}
+
+.page-surface .exam-card-body {
+  padding: 15px 17px 17px;
+}
+
+.page-surface .exam-card-title {
+  font-size: 13.5px;
+}
+
+.page-surface .exam-card-percent {
+  color: var(--c-heading);
+}
+
+.page-surface .teacher-student-card {
+  padding: 14px 16px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-card);
+  background: var(--c-surface);
+  box-shadow: var(--card-shadow, none);
+  transition:
+    transform var(--animation-duration) ease,
+    border-color var(--animation-duration) ease;
+}
+
+.page-surface .teacher-student-card:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in oklab, var(--c-primary) 34%, var(--c-border));
+}
+
+/* --- Forms, buttons and actions ---------------------------------------- */
+.page-surface .primary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 10px 17px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-input, 12px);
+  background: var(--c-primary);
+  color: var(--c-on-primary, var(--c-background));
+  font-size: 12.5px;
+  font-weight: 800;
+  line-height: 1.5;
+  cursor: pointer;
+  transition:
+    background var(--animation-duration) ease,
+    transform var(--animation-duration) ease;
+}
+
+.page-surface .primary-button:hover {
+  background: var(--c-primary-hover);
+  transform: translateY(-1px);
+}
+
+.page-surface .secondary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 9px 14px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-input, 12px);
+  background: color-mix(in oklab, var(--c-text) 4%, transparent);
+  color: var(--c-text);
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.page-surface .secondary-button:hover {
+  border-color: color-mix(in oklab, var(--c-primary) 28%, var(--c-border));
+  background: color-mix(in oklab, var(--c-primary) 8%, transparent);
+}
+
+/* --- Empty states, tables and pagination ------------------------------- */
+.page-surface .empty-state {
+  padding: clamp(38px, 5vw, 58px) 20px;
+  border: 1px dashed var(--c-border);
+  border-radius: var(--radius-card);
+  background: color-mix(in oklab, var(--c-surface-alt) 78%, transparent);
+  color: var(--c-muted);
+  text-align: center;
+}
+
+.page-surface .empty-state i {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 12px;
+  border-radius: 14px;
+  background: color-mix(in oklab, var(--c-primary) 10%, transparent);
+  color: var(--c-primary);
+  font-size: 20px;
+}
+
+.page-surface .empty-state h3 {
+  margin: 0 0 5px;
+  color: var(--c-heading);
+  font-size: 14px;
+}
+
+.page-surface .empty-state p {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.9;
+}
+
+.page-surface table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+
+.page-surface th {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--c-border);
+  background: color-mix(in oklab, var(--c-surface-alt) 74%, transparent);
+  color: var(--c-muted);
+  font-size: 10.5px;
+  font-weight: 800;
+  text-align: start;
+  white-space: nowrap;
+}
+
+.page-surface td {
+  padding: 11px 12px;
+  border-bottom: 1px solid color-mix(in oklab, var(--c-border) 70%, transparent);
+  color: var(--c-text);
+  text-align: start;
+}
+
+.page-surface tr:last-child td {
+  border-bottom: 0;
+}
+
+.page-surface .pager,
+.page-surface .blog-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 0;
+}
+
+.page-surface .pager a,
+.page-surface .pager span,
+.page-surface .blog-pager a,
+.page-surface .blog-pager span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 31px;
+  height: 31px;
+  padding: 0 9px;
+  border: 1px solid var(--c-border);
+  border-radius: 9px;
+  background: var(--c-surface);
+  color: var(--c-muted);
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.page-surface .pager a:hover,
+.page-surface .blog-pager a:hover {
+  border-color: color-mix(in oklab, var(--c-primary) 34%, var(--c-border));
+  color: var(--c-primary);
+}
+
+.page-surface .pager .is-active,
+.page-surface .blog-pager .is-active {
+  border-color: var(--c-primary);
+  background: var(--c-primary);
+  color: var(--c-on-primary, var(--c-background));
+}
+
+/* --- Flashes and status pills ------------------------------------------ */
+.page-surface .settings-flash {
+  margin: 0;
+  border-radius: var(--radius-input, 12px);
+}
+
+.page-surface .status-pill {
+  padding: 2px 9px;
+  font-size: 10.5px;
+}
+
+@media (max-width: 900px) {
+  .page-surface .panel-heading,
+  .page-surface .settings-head {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    padding: 16px 17px;
+  }
+
+  .page-surface .panel-heading-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .page-surface .student-welcome {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .page-surface .student-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .page-surface .student-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .page-surface .student-welcome {
+    padding: 16px;
+  }
+
+  .page-surface .student-panel-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-surface .student-stat,
+  .page-surface .exam-card,
+  .page-surface .teacher-student-card,
+  .page-surface .primary-button {
+    transition: none;
+  }
+}

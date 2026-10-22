@@ -24,10 +24,10 @@
                 </a>
             @endif
 
-            @if(site('features.student_materials', false) && \Illuminate\Support\Facades\Route::has('student.lessons.index'))
+            @if((site('features.student_materials', false) || site('features.student_lessons', false)) && \Illuminate\Support\Facades\Route::has('student.lessons.index'))
                 <a
                     href="{{ route('student.lessons.index') }}"
-                    class="topnav-link {{ request()->routeIs('student.lessons*') ? 'active' : '' }}"
+                    class="topnav-link {{ request()->routeIs('student.lessons*') || request()->routeIs('student.lesson-reader*') ? 'active' : '' }}"
                 >
                     درس‌ها
                 </a>

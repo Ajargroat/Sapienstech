@@ -23,7 +23,7 @@
 @endphp
 
 @section('content')
-<div class="settings-shell">
+<div class="settings-shell page-surface">
     @unless($isHome)
     <header class="profile-header">
             <a class="profile-header-back" href="{{ route('consultant.settings.profile') }}" data-router="replace"

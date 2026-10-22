@@ -20,11 +20,23 @@ class Question extends Model
     use HasFactory, SharedAcrossTenants;
 
     protected $fillable = [
-        'tenant_id', 'chapter_id', 'topic_id', 'question_text', 'question_image_path',
+        'tenant_id', 'lesson_id', 'chapter_id', 'topic_id', 'question_text', 'question_image_path',
         'solution_text', 'solution_image_path', 'question_number_in_book',
         'difficulty', 'question_type', 'supabase_id', 'question_image_bbox',
         'subject', 'corp', 'chapter_label',
     ];
+
+    /**
+     * The lesson this question was written for, when it came out of one.
+     *
+     * Pooled questions carry no tenant, so this is the ONLY exact link between
+     * a lesson and the questions a student answers at the end of it. Null for
+     * everything that came from the old bank import.
+     */
+    public function lesson(): BelongsTo
+    {
+        return $this->belongsTo(BookLesson::class, 'lesson_id');
+    }
 
     protected function casts(): array
     {

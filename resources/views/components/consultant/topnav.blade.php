@@ -63,6 +63,42 @@
             </a>
             @endif
 
+            @if(site('features.consultation_requests', false) && \Illuminate\Support\Facades\Route::has('consultant.consultations.index'))
+            @php
+                // Pending consultation requests, surfaced exactly like the
+                // join badge so the tenant notices a visitor waiting to be
+                // contacted back.
+                $pendingConsultationRequests = \App\Models\ConsultationRequest::query()
+                    ->where('status', \App\Models\ConsultationRequest::STATUS_PENDING)
+                    ->count();
+            @endphp
+            <a
+                href="{{ route('consultant.consultations.index') }}"
+                class="topnav-link topnav-link--badged {{ request()->routeIs('consultant.consultations*') ? 'active' : '' }}"
+            >
+                درخواست مشاوره
+                @if($pendingConsultationRequests)
+                    <span class="topnav-notif-badge">{{ persian_digits($pendingConsultationRequests) }}</span>
+                @endif
+            </a>
+            @endif
+
+            @if(\App\Support\Lessons\LessonAccess::staffCanAuthor())
+            {{--
+                Lesson library (کتاب و درس): the staff surface for importing a
+                book PDF and authoring lessons on top of the AI draft.
+                lesson_library is a STAFF flag, so the entry lives here in the
+                consultant shell rather than in the top-level dashboard menu.
+                lessons_route() picks the panel the user is standing in.
+            --}}
+            <a
+                href="{{ lessons_route('index') }}"
+                class="topnav-link {{ request()->routeIs('consultant.lessons*') || request()->routeIs('teacher.lessons*') ? 'active' : '' }}"
+            >
+                {{ $labels['lesson_library'] ?? 'کتاب و درس' }}
+            </a>
+            @endif
+
             {{-- Bulk assignment now lives inside the dashboard filter popover;
                  the «اقدامات گروهی» nav entry is intentionally gone. The
                  تاریخچه page is still reachable from the popover footer. --}}

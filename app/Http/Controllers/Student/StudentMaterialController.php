@@ -3,16 +3,20 @@
 namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
+use App\Models\BookLesson;
 use App\Models\LessonMaterial;
+use App\Models\Student;
 use App\Support\StudentAccess;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
  * The student's lessons library: published materials that match their
  * grade (or are open to every grade), grouped by subject, with one clean
- * download action per file.
+ * download action per file — and, above them, the book lessons they may
+ * read (see bookLessons()).
  *
  * Everything keys off the authenticated student — downloads and the
  * library itself — and BelongsToTenant bounds the data to the academy.
@@ -39,7 +43,34 @@ class StudentMaterialController extends Controller
             'student' => $student,
             'bySubject' => $materials->groupBy(fn (LessonMaterial $m) => $m->subject ?: 'عمومی'),
             'total' => $materials->count(),
+            'bookLessons' => $this->bookLessons($student),
         ]);
+    }
+
+    /**
+     * The book lessons this student may read, for the same page.
+     *
+     * A lesson and a material are two different things the word «درس» covers:
+     * a file to download, and a lesson authored from a real book. They live on
+     * ONE page so a student has a single «درس‌ها» destination and never has to
+     * guess which tab holds what. Empty (and therefore hidden) when the
+     * `student_lessons` flag is off or nothing has been published yet.
+     *
+     * @return Collection<int, BookLesson>
+     */
+    private function bookLessons(Student $student): Collection
+    {
+        if (! site('features.student_lessons', false)) {
+            return collect();
+        }
+
+        return BookLesson::query()
+            ->where('tenant_id', $student->tenant_id)
+            ->visibleTo($student)
+            ->orderBy('book_title')
+            ->orderBy('source_page_from')
+            ->orderBy('id')
+            ->get();
     }
 
     public function download(Request $request, LessonMaterial $material): Response

@@ -3,8 +3,11 @@
 namespace App\Http\Controllers\Consultant;
 
 use App\Http\Controllers\Controller;
+use App\Models\DealPayment;
 use App\Models\ExamCompany;
 use App\Models\Student;
+use App\Models\StudentDeal;
+use App\Models\StudentJoinRequest;
 use App\Models\Test;
 use App\Support\StudentFilter;
 use Illuminate\Http\Request;
@@ -52,6 +55,40 @@ class ConsultantDashboardController extends Controller
             ->mapWithKeys(fn (ExamCompany $company) => [$company->slug => $company->name])
             ->put(StudentFilter::REPORT_INTERNAL, StudentFilter::REPORT_INTERNAL_LABEL);
 
+        $optionCounts = StudentFilter::optionCounts();
+        $weekStart = $this->persianWeekStart();
+
+        // Consultant-facing rollup: the roster count plus the three queues a
+        // consultant actually works — join requests, live contracts and
+        // receipts waiting for verification. Tenant scope comes from each
+        // model's BelongsToTenant, exactly like the roster grid.
+        $pendingRequests = StudentJoinRequest::query()
+            ->where('status', StudentJoinRequest::STATUS_PENDING)
+            ->count();
+
+        $activeDeals = StudentDeal::query()
+            ->whereDate('ends_on', '>=', now()->toDateString())
+            ->count();
+
+        $pendingPayments = DealPayment::query()
+            ->where('status', DealPayment::STATUS_PENDING)
+            ->count();
+
+        $totalStudents = (int) ($optionCounts['total'] ?? 0);
+
+        $gradeBars = collect($optionCounts['grade'] ?? [])
+            ->sortDesc()
+            ->take(5)
+            ->map(fn ($count, $grade) => [
+                'label' => (string) $grade,
+                'count' => (int) $count,
+                'percent' => $totalStudents > 0
+                    ? (int) round(((int) $count / $totalStudents) * 100)
+                    : 0,
+            ])
+            ->values()
+            ->all();
+
         return view('consultant.dashboard', [
             'students' => $students,
             'search' => $filters['search'],
@@ -67,14 +104,27 @@ class ConsultantDashboardController extends Controller
             // joined lessons as one string), with per-option student counts
             // for the report-card-style menus.
             'examLessons' => StudentFilter::examLessons()->all(),
-            'optionCounts' => StudentFilter::optionCounts(),
+            'optionCounts' => $optionCounts,
             'reportStatuses' => StudentFilter::REPORT_STATUSES,
             'reportSources' => $reportSources,
             'scheduleDays' => StudentFilter::SCHEDULE_DAYS,
             'scheduleDoneOptions' => StudentFilter::SCHEDULE_DONE_OPTIONS,
             // Exam assignment (bulk engine): pick an existing tenant test.
             'tests' => Test::query()->latest()->get(['id', 'test_title', 'lesson', 'exam_type']),
-            'weekStart' => $this->persianWeekStart()->toDateString(),
+            'weekStart' => $weekStart->toDateString(),
+            'dashboardStats' => [
+                'students_total' => $totalStudents,
+                'students_new_30' => Student::query()->where('created_at', '>=', now()->subDays(30))->count(),
+                'pending_requests' => $pendingRequests,
+                'active_deals' => $activeDeals,
+                'pending_payments' => $pendingPayments,
+            ],
+            'gradeBars' => $gradeBars,
+            'recentStudents' => StudentFilter::apply(Student::query(), $filters)
+                ->reorder()
+                ->latest()
+                ->take(4)
+                ->get(['id', 'name', 'grade', 'major', 'email']),
             // Panels mirror the student workspaces; the assignment sections
             // additionally need the bulk_actions flag (they post to it).
             'panelFlags' => [
@@ -86,6 +136,28 @@ class ConsultantDashboardController extends Controller
             'labels' => [
                 'dashboard_heading' => 'داشبورد مشاور',
                 'welcome_prefix' => 'خوش آمدید',
+                'overview_subtitle' => 'یک نگاه سریع به وضعیت دانش‌آموزان، برنامهٔ این هفته و آزمون‌های پیش‌رو.',
+                'stat_students' => 'دانش‌آموزان',
+                'stat_students_meta' => 'نفر تازه در ۳۰ روز اخیر',
+                'stat_requests' => 'درخواست‌های عضویت',
+                'stat_requests_meta' => 'در انتظار بررسی',
+                'stat_deals' => 'قراردادهای جاری',
+                'stat_deals_meta' => 'قرارداد فعال',
+                'stat_payments' => 'پرداخت‌های در انتظار',
+                'stat_payments_meta' => 'رسید در انتظار تأیید',
+                'week_progress' => 'پیشرفت این هفته',
+                'grade_mix' => 'ترکیب دانش‌آموزان',
+                'grade_mix_empty' => 'برای نمایش ترکیب، ابتدا پایهٔ دانش‌آموزان را ثبت کنید.',
+                'recent_students' => 'تازه‌ترین دانش‌آموزان',
+                'recent_students_empty' => 'هنوز دانش‌آموزی در این مجموعه ثبت نشده است.',
+                'quick_actions' => 'دسترسی سریع',
+                'action_add_student' => 'افزودن دانش‌آموز',
+                'action_requests' => 'درخواست‌ها',
+                'action_deals' => 'تمدیدها',
+                'action_chat' => 'گفتگو',
+                'action_studio' => 'استودیوی ظاهر',
+                'view_all' => 'مشاهدهٔ همه',
+                'today_label' => 'امروز',
                 'student_list' => 'لیست دانش‌آموزان شما',
                 'search_placeholder' => 'جستجو بر اساس نام یا ایمیل...',
                 'search_button' => 'جستجو',

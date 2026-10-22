@@ -4,13 +4,29 @@
     consultant sidebar's styles so both portals stay visually identical, and
     keeps the `sidebar-link` contract page-router uses for the active state.
 --}}
-<aside class="consultant-sidebar">
-    <a href="{{ route('student.dashboard') }}" class="brand">
+<header class="sidebar-mobile-bar">
+    <a href="{{ route('student.dashboard') }}" class="brand sidebar-mobile-brand">
         <span class="brand-mark brand-mark-small"></span>
         <strong>{{ $tenant['short_name'] }}</strong>
     </a>
+    <button type="button" class="sidebar-toggle" data-sidebar-toggle aria-controls="app-sidebar" aria-expanded="false" aria-label="منو">
+        <span class="sidebar-toggle-bars" aria-hidden="true"><span></span><span></span><span></span></span>
+    </button>
+</header>
+<div class="sidebar-scrim" data-sidebar-scrim hidden></div>
+<aside id="app-sidebar" class="consultant-sidebar" aria-label="ناوبری پنل">
+    <div class="sidebar-brand">
+        <a href="{{ route('student.dashboard') }}" class="brand">
+            <span class="brand-mark brand-mark-small"></span>
+            <span class="sidebar-brand-copy">
+                <strong>{{ $tenant['short_name'] }}</strong>
+                <small>پنل دانشآموز</small>
+            </span>
+        </a>
+    </div>
 
     <nav class="sidebar-links" aria-label="ناوبری اصلی">
+        <span class="sidebar-section-label">فضای من</span>
         <a
             href="{{ route('student.dashboard') }}"
             class="sidebar-link {{ request()->routeIs('student.dashboard') ? 'active' : '' }}"
@@ -29,10 +45,10 @@
             </a>
         @endif
 
-        @if(site('features.student_materials', false) && \Illuminate\Support\Facades\Route::has('student.lessons.index'))
+        @if((site('features.student_materials', false) || site('features.student_lessons', false)) && \Illuminate\Support\Facades\Route::has('student.lessons.index'))
             <a
                 href="{{ route('student.lessons.index') }}"
-                class="sidebar-link {{ request()->routeIs('student.lessons*') ? 'active' : '' }}"
+                class="sidebar-link {{ request()->routeIs('student.lessons*') || request()->routeIs('student.lesson-reader*') ? 'active' : '' }}"
             >
                 <i class="fas fa-book-open-reader" aria-hidden="true"></i>
                 <span>درس‌ها</span>
@@ -82,6 +98,15 @@
     </nav>
 
     <div class="sidebar-user topnav-user">
+        <div class="sidebar-account">
+            <div class="sidebar-account-id">
+                <span class="sidebar-avatar" aria-hidden="true">{{ mb_substr(auth('student')->user()?->name ?? $tenant['short_name'], 0, 1) }}</span>
+                <span class="sidebar-account-copy">
+                    <strong>{{ auth('student')->user()?->name ?? $tenant['short_name'] }}</strong>
+                    <small>حساب کاربری</small>
+                </span>
+            </div>
+            <div class="sidebar-account-actions">
         @if(site('features.deals', false) && \Illuminate\Support\Facades\Route::has('student.notifications'))
             @php
                 $notifs = \App\Models\DealNotification::query()
@@ -130,5 +155,7 @@
         >
             <i class="fas fa-user"></i>
         </a>
+            </div>
+        </div>
     </div>
 </aside>

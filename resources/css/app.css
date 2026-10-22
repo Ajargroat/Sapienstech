@@ -5,6 +5,10 @@
 @import "./features/studio-block-editor.css";
 @import "./features/exams.css";
 @import "./features/student-dashboard.css";
+@import "./features/dashboard.css";
+@import "./features/shell-nav.css";
+@import "./features/app-surface.css";
+@import "./features/lessons.css";
 
 /* =========================================
    0. Theme color tokens
@@ -4326,6 +4330,15 @@ body:has(.profile-dialog[open]) { overflow: hidden; }
   border-color: color-mix(in srgb, var(--c-danger, #F87171) 40%, var(--c-border));
 }
 
+/* A settings card that is only a layout grouping: no fill, border, shadow or
+   padding, so its content sits on the page like the blog section's. */
+.settings-card--flat {
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+
 .settings-card-title {
   font-size: 17px;
   font-weight: 800;
@@ -4468,8 +4481,15 @@ select.settings-input option,
    ========================================================================== */
 .blog-filters {
   display: flex;
+  align-items: center;
   gap: 8px;
   margin-bottom: 16px;
+}
+
+/* The create action moved out of the removed panel heading: it rides at the
+   far end of the filter row instead. */
+.blog-filters .blog-add {
+  margin-inline-start: auto;
 }
 
 .blog-chip {
@@ -4670,8 +4690,8 @@ select.settings-input option,
    carries status/cover/actions; collapses under 980px. */
 .blog-form {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 300px;
-  gap: 16px 36px;
+  grid-template-columns: minmax(0, 1fr) 270px;
+  gap: 16px 28px;
   align-items: start;
   max-width: none;
 }
@@ -5154,7 +5174,7 @@ select.settings-input option,
    that hosts the full two-column form fragment. Declared after
    .exam-modal so the width override wins on equal specificity. */
 .blog-form-modal {
-  width: min(1240px, calc(100% - 40px));
+  width: min(1060px, calc(100% - 40px));
   max-height: min(900px, 94vh);
   overflow: hidden;
 }
@@ -6146,121 +6166,6 @@ details[open] > .studio-group-head .studio-group-caret { transform: rotate(180de
   cursor: pointer;
 }
 
-/* ==========================================================================
-   SIDEBAR SHELL — theme.layout.shell_nav = sidebar (consultant + student)
-   The rail replaces the sticky topnav and content shifts by its width. All
-   placement uses logical properties, so the RTL panel mirrors for free.
-   ========================================================================== */
-.consultant-sidebar {
-  position: fixed;
-  inset-block: 0;
-  inset-inline-start: 0;
-  z-index: 50;
-  width: var(--sidebar-width, 240px);
-  display: flex;
-  flex-direction: column;
-  gap: 28px;
-  padding: var(--sidebar-top, 36px) 16px var(--sidebar-bottom, 48px);
-  background: color-mix(in srgb, var(--c-surface) 94%, transparent);
-  border-inline-end: 1px solid var(--c-border);
-  backdrop-filter: blur(var(--backdrop-blur));
-  box-shadow: var(--sidebar-shadow, none);
-}
-
-.consultant-sidebar .brand {
-  padding-inline-start: 6px;
-}
-
-.sidebar-links {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 4px;
-  flex: 1 1 auto;
-  overflow-y: auto;
-}
-
-.sidebar-link {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
-  border-radius: var(--radius-sidebar, 12px);
-  color: var(--c-muted);
-  font-weight: 600;
-  font-size: 14px;
-  transition: all var(--animation-duration) ease;
-}
-
-.sidebar-link:hover {
-  color: var(--c-text);
-  background: color-mix(in srgb, var(--c-text) 6%, transparent);
-}
-
-.sidebar-link.active {
-  color: var(--c-primary);
-  background: color-mix(in srgb, var(--c-primary) 12%, transparent);
-}
-
-.sidebar-link i {
-  width: 20px;
-  flex: 0 0 auto;
-  text-align: center;
-}
-
-.sidebar-user {
-  flex: 0 0 auto;
-}
-
-body[data-shell-nav="sidebar"] .consultant-content {
-  margin-inline-start: var(--sidebar-width, 240px);
-}
-
-/* Small screens: the rail becomes a bottom bar — the pattern the topnav
-   already yields to on narrow viewports. Labels sit under the icons. */
-@media (max-width: 680px) {
-  .consultant-sidebar {
-    inset-block: auto 0;
-    inset-inline: 0;
-    width: auto;
-    flex-direction: row;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    border-inline-end: 0;
-    border-block-start: 1px solid var(--c-border);
-  }
-
-  .consultant-sidebar .brand {
-    display: none;
-  }
-
-  .sidebar-links {
-    flex-direction: row;
-    min-width: 0;
-    overflow-x: auto;
-    overflow-y: hidden;
-    scrollbar-width: none;
-  }
-
-  .sidebar-links::-webkit-scrollbar {
-    display: none;
-  }
-
-  .sidebar-link {
-    flex: 0 0 auto;
-    flex-direction: column;
-    gap: 3px;
-    padding: 6px 12px;
-    font-size: 11px;
-    text-align: center;
-  }
-
-  body[data-shell-nav="sidebar"] .consultant-content {
-    margin-inline-start: 0;
-    padding-block-end: 84px;
-  }
-}
 
 
 /* ==========================================================================
@@ -7289,6 +7194,10 @@ button.teacher-class-row:hover {
 .deal-msg-queue { display: inline-flex; align-items: center; gap: 4px; }
 
 /* Chips (demo's quick filters) */
+/* Native selects in the deals filter row: the app's select chrome, sized to
+   its content instead of the 100%-wide filter-input default. */
+select.filter-input.deal-filter-select { width: auto; min-width: 150px; }
+
 .deal-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
 
 .deal-chip {

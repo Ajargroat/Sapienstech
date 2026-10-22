@@ -1,7 +1,7 @@
 @extends('consultant.bulk.layout')
 
 @section('bulk-content')
-<div class="settings-cards">
+<div class="settings-cards page-surface">
     <section class="settings-card">
         <h3 class="settings-card-title">تاریخچهٔ اقدامات گروهی</h3>
 

@@ -49,6 +49,8 @@ return [
         'student_materials' => true,
         'student_assignments' => true,
         'student_timetable' => true,
+        'lesson_library' => true,
+        'student_lessons' => true,
         'appearance_staff_publish' => false,
     ],
 

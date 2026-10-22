@@ -48,6 +48,12 @@
       "bi": "arrow-right",
       "la": "arrow-right"
     },
+    "arrow-up": {
+      "lucide": "arrow-up",
+      "tabler": "arrow-big-up",
+      "bi": "arrow-up",
+      "la": "arrow-up"
+    },
     "arrow-up-right-from-square": {
       "lucide": "external-link",
       "tabler": "external-link",
@@ -66,6 +72,12 @@
       "bi": "at",
       "la": "at"
     },
+    "ban": {
+      "lucide": "ban",
+      "tabler": "ban",
+      "bi": "slash-circle",
+      "la": "ban"
+    },
     "bars": {
       "lucide": "menu",
       "tabler": "menu",
@@ -77,6 +89,12 @@
       "tabler": "bell",
       "bi": "bell",
       "la": "bell"
+    },
+    "bell-slash": {
+      "lucide": "bell-off",
+      "tabler": "bell-off",
+      "bi": "bell-slash",
+      "la": "bell-slash"
     },
     "blog": {
       "lucide": "newspaper",
@@ -246,29 +264,17 @@
       "bi": "exclamation-circle",
       "la": "exclamation-circle"
     },
-    "triangle-exclamation": {
-      "lucide": "triangle-alert",
-      "tabler": "alert-triangle",
-      "bi": "exclamation-triangle",
-      "la": "exclamation-triangle"
-    },
-    "coins": {
-      "lucide": "coins",
-      "tabler": "coins",
-      "bi": "coin",
-      "la": "coins"
-    },
-    "bell-slash": {
-      "lucide": "bell-off",
-      "tabler": "bell-off",
-      "bi": "bell-slash",
-      "la": "bell-slash"
-    },
     "circle-info": {
       "lucide": "info",
       "tabler": "info-circle",
       "bi": "info-circle",
       "la": "info-circle"
+    },
+    "circle-pause": {
+      "lucide": "circle-pause",
+      "tabler": "player-pause",
+      "bi": "pause-circle",
+      "la": "pause-circle"
     },
     "circle-question": {
       "lucide": "circle-question-mark",
@@ -312,6 +318,12 @@
       "bi": "cloud-upload",
       "la": "cloud-upload-alt"
     },
+    "coins": {
+      "lucide": "coins",
+      "tabler": "coins",
+      "bi": "coin",
+      "la": "coins"
+    },
     "columns": {
       "lucide": "columns-2",
       "tabler": "columns-2",
@@ -342,11 +354,23 @@
       "bi": "copy",
       "la": "copy"
     },
+    "crop-simple": {
+      "lucide": "crop",
+      "tabler": "crop",
+      "bi": "crop",
+      "la": "crop"
+    },
     "cubes": {
       "lucide": "boxes",
       "tabler": "box",
       "bi": "boxes",
       "la": "cubes"
+    },
+    "database": {
+      "lucide": "database",
+      "tabler": "database",
+      "bi": "database",
+      "la": "database"
     },
     "desktop": {
       "lucide": "monitor",
@@ -438,11 +462,23 @@
       "bi": "flag",
       "la": "flag"
     },
+    "floppy-disk": {
+      "lucide": "save",
+      "tabler": "device-floppy",
+      "bi": "save",
+      "la": "save"
+    },
     "folder-open": {
       "lucide": "folder-open",
       "tabler": "folder-open",
       "bi": "folder2-open",
       "la": "folder-open"
+    },
+    "folder-tree": {
+      "lucide": "folder-tree",
+      "tabler": "folders",
+      "bi": "folder-fill",
+      "la": "folder"
     },
     "font": {
       "lucide": "type",
@@ -522,6 +558,12 @@
       "bi": "image",
       "la": "image"
     },
+    "images": {
+      "lucide": "images",
+      "tabler": "photo",
+      "bi": "images",
+      "la": "images"
+    },
     "inbox": {
       "lucide": "inbox",
       "tabler": "inbox",
@@ -557,6 +599,12 @@
       "tabler": "stack",
       "bi": "layers",
       "la": "layer-group"
+    },
+    "lightbulb": {
+      "lucide": "lightbulb",
+      "tabler": "bulb",
+      "bi": "lightbulb",
+      "la": "lightbulb"
     },
     "link": {
       "lucide": "link",
@@ -887,6 +935,12 @@
       "tabler": "trash",
       "bi": "trash",
       "la": "trash"
+    },
+    "triangle-exclamation": {
+      "lucide": "triangle-alert",
+      "tabler": "alert-triangle",
+      "bi": "exclamation-triangle",
+      "la": "exclamation-triangle"
     },
     "underline": {
       "lucide": "underline",

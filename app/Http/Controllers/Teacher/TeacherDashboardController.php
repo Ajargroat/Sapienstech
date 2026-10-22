@@ -79,6 +79,10 @@ class TeacherDashboardController extends Controller
                 'assignments' => $assignments->count(),
                 'pending_reviews' => $pendingReviews,
                 'completed' => $completed,
+                'reviews_total' => $pendingReviews + $completed,
+                'review_percent' => ($pendingReviews + $completed) > 0
+                    ? (int) round(($completed / ($pendingReviews + $completed)) * 100)
+                    : 0,
             ],
         ]);
     }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Support\AuthSurface;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,9 +14,21 @@ use Illuminate\View\View;
 
 class LoginController extends Controller
 {
+    /**
+     * The login surface: a tenant's bespoke shell when one is published for
+     * its own host, otherwise the shared card page.
+     *
+     * AuthSurface fails closed — an unknown slug, an unpublished folder or a
+     * corrupt manifest all resolve to `null` — so a broken shell can never
+     * take a tenant's login down. This is presentation dispatch ONLY: the
+     * route, both guards' POST endpoints, CSRF, throttling and the
+     * identifier rules are untouched below.
+     */
     public function showLoginForm(): View
     {
-        return view('auth.login');
+        $shell = app(AuthSurface::class)->for(tenant());
+
+        return view($shell ?? 'auth.login');
     }
 
     public function login(Request $request): RedirectResponse

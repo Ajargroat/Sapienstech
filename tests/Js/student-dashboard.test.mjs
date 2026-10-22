@@ -402,4 +402,10 @@ test('the real dashboard blade ships the week-notes skeleton with its hooks', ()
     assert.match(blade, /data-url-notes="\{\{ route\('student\.schedule\.notes'\) \}\}"/);
     assert.match(blade, /data-week-start="\{\{ \$weekStart->toDateString\(\) \}\}"/);
     assert.match(blade, /id="student-week-notes-empty"[^>]*hidden/);
+
+    // React island boundary (PLAN react-01): the section is the mount marker,
+    // and the cloned template keeps its own thread marker. React only fills
+    // the containers the Blade view already ships.
+    assert.match(blade, /id="student-week-notes" data-react-island="student-week-notes"/);
+    assert.match(blade, /data-student-comment-thread data-react-island="student-comments"/);
 });

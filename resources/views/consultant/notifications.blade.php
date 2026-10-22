@@ -9,6 +9,7 @@
 @extends('layouts.consultant')
 
 @section('content')
+<div class="page-surface">
 @php $today = \Illuminate\Support\Carbon::today(); @endphp
 
 <div class="settings-cards">
@@ -152,5 +153,6 @@
             </div>
         @endif
     </section>
+</div>
 </div>
 @endsection

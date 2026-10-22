@@ -29,7 +29,7 @@
              (Appearance studio → «جای منوی پنل»). The ternary normalises any
              unexpected value back to the topnav, so the include path is always
              one of two literals. --}}
-        @php $shellNav = site('theme.layout.shell_nav') === 'sidebar' ? 'sidebar' : 'topnav'; @endphp
+        @php $shellNav = site('theme.layout.shell_nav') === 'topnav' ? 'topnav' : 'sidebar'; @endphp
         {{-- Studio ids: the dashboard is a canvas page like the landing, so its
              shell carries stable data-studio-path ids under the consultant
              root. The marker makes the nav an addressable section; the content
