@@ -80,6 +80,18 @@ what makes the static demo files win over the framework.
 by nginx directly and never reaches Laravel; everything else falls through to
 `index.php`, where `IdentifyTenant` resolves the host.
 
+### The corporate site (sapienstech.ir)
+
+`sapienstech.ir` is the one host that does **not** use this document root. It
+has its own vhost — checked in as `deploy/nginx/sapienstech.ir.conf`, installed
+as `/etc/nginx/sites-available/sapienstech.ir` — pointing at
+`/var/www/sapienstech/corporate-site`. The apex is the company site, not a
+tenant, so it must not fall through to `index.php`.
+
+It is still deployed by `git pull` in this repository; a content change needs
+no `npm`, no `migrate` and no cache rebuild. Full runbook, including the
+`leads` table and the HTTPS setup: `docs/corporate-site.md`.
+
 ## 7. HTTPS
 
 | step | command |

@@ -6,6 +6,9 @@
 /.env
 /.env.backup
 /.env.*.local
+
+# Corporate site (sapienstech.ir) server-only credentials
+/corporate-config.php
 /.phpunit.result.cache
 
 # Storage
