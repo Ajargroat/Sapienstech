@@ -1,0 +1,710 @@
+/* =========================================
+   Student report card (کارنامه) — student/report-card
+
+   The page's own language on top of the shared `.page-surface` chrome: an arc
+   gauge, a trend line, a per-subject rail and the weak-subject cards. Every
+   colour is a tenant token (var(--c-*)) or color-mix over one, so the page
+   re-themes with the tenant. No literal palette values, by project rule.
+
+   The reveal is opt-in per element (`[data-reveal]`) and applied by
+   resources/js/features/student-report-card.js; without JS the content is
+   simply visible (the class is only added by the script).
+   ========================================= */
+
+/* Registered, so a missing value falls back INSIDE the calc rather than making
+   the whole position invalid at computed-value time (an unregistered --x/--y
+   collapses the dot to the containing block's corner). */
+@property --rc-x {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 0%;
+}
+
+@property --rc-y {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 0%;
+}
+
+.rc-page {
+  --rc-below: var(--c-danger);
+  --rc-above: var(--c-success);
+}
+
+.rc-head-sub {
+  margin: 4px 0 0;
+  font-size: 12.5px;
+  line-height: 1.8;
+  color: var(--c-muted);
+}
+
+.rc-head-count {
+  display: inline-flex;
+  align-items: center;
+  margin-inline-start: 8px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--c-primary) 12%, transparent);
+  color: var(--c-primary);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.rc-head-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex: 0 0 auto;
+}
+
+.rc-head-badge span {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--c-muted);
+}
+
+.rc-head-badge strong {
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.2;
+  color: var(--c-heading);
+  font-variant-numeric: tabular-nums;
+}
+
+.rc-head-badge small {
+  font-size: 12px;
+  color: var(--c-muted);
+  margin-inline-start: 2px;
+}
+
+/* --- Empty ------------------------------------------------------------- */
+.rc-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 46px 24px;
+  text-align: center;
+}
+
+.rc-empty-icon {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--c-primary) 12%, transparent);
+  color: var(--c-primary);
+  font-size: 20px;
+}
+
+.rc-empty h3 {
+  margin: 6px 0 0;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.rc-empty p {
+  margin: 0;
+  max-width: 46ch;
+  font-size: 12.5px;
+  line-height: 1.9;
+  color: var(--c-muted);
+}
+
+/* --- Hero: arc + facts -------------------------------------------------- */
+.rc-hero {
+  display: grid;
+  grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(16px, 2.4vw, 28px);
+  padding: clamp(16px, 2vw, 24px);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-card);
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--c-primary) 10%, var(--c-surface)) 0%,
+      var(--c-surface) 64%
+    );
+  box-shadow: var(--card-shadow, none);
+}
+
+.rc-hero-arc {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.rc-arc {
+  width: 112px;
+  height: 112px;
+  flex: 0 0 auto;
+}
+
+.rc-arc-track {
+  fill: none;
+  stroke: color-mix(in srgb, var(--c-text) 10%, transparent);
+  stroke-width: 9;
+  stroke-linecap: round;
+}
+
+.rc-arc-value {
+  fill: none;
+  stroke-width: 9;
+  stroke-linecap: round;
+}
+
+.rc-arc-value.is-above { stroke: var(--c-success); }
+.rc-arc-value.is-below { stroke: var(--c-danger); }
+
+.rc-arc-pass {
+  stroke: var(--c-text);
+  stroke-opacity: 0.55;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.rc-arc-caption {
+  fill: var(--c-muted);
+  font-size: 7.5px;
+  font-weight: 700;
+}
+
+.rc-arc-number {
+  fill: var(--c-heading);
+  font-size: 19px;
+  font-weight: 800;
+  font-family: var(--font-heading);
+  font-variant-numeric: tabular-nums;
+}
+
+.rc-hero-arc-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.rc-hero-arc-copy span {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--c-muted);
+}
+
+.rc-hero-arc-copy strong {
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.6;
+  color: var(--c-heading);
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.rc-hero-arc-copy small {
+  font-size: 11.5px;
+  color: var(--c-primary);
+  font-weight: 700;
+}
+
+.rc-hero-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rc-hero-facts li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: 11px 13px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--c-surface) 78%, transparent);
+}
+
+.rc-fact-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--c-muted);
+}
+
+.rc-fact-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 14.5px;
+  font-weight: 800;
+  color: var(--c-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.rc-fact-value small {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--c-muted);
+}
+
+.rc-fact-sep {
+  color: var(--c-subtle);
+  font-weight: 600;
+}
+
+.rc-delta--up { color: var(--c-success); }
+.rc-delta--down { color: var(--c-danger); }
+.rc-delta--flat { color: var(--c-muted); }
+
+.rc-absent-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: var(--c-danger);
+  background: color-mix(in srgb, var(--c-danger) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c-danger) 30%, transparent);
+}
+
+.rc-pending-pill {
+  display: inline-flex;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: var(--c-muted);
+  background: color-mix(in srgb, var(--c-text) 7%, transparent);
+}
+
+/* --- Panels ------------------------------------------------------------ */
+.rc-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+  align-items: start;
+  gap: var(--card-gap);
+}
+
+.rc-panel {
+  padding: calc(var(--card-padding) * 0.75);
+}
+
+.rc-panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.rc-panel-head h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 15.5px;
+  font-weight: 800;
+}
+
+.rc-panel-head h3 i { color: var(--c-primary); font-size: 13px; }
+
+.rc-panel-hint {
+  font-size: 11px;
+  color: var(--c-muted);
+}
+
+.rc-note {
+  margin: 0;
+  padding: 12px 0;
+  font-size: 12.5px;
+  line-height: 1.9;
+  color: var(--c-muted);
+}
+
+/* --- Trend chart ------------------------------------------------------- */
+.rc-chart {
+  position: relative;
+  height: 190px;
+  margin: 4px 0 0;
+  border-radius: var(--radius-md);
+  background:
+    linear-gradient(
+      to top,
+      color-mix(in srgb, var(--c-primary) 5%, transparent),
+      transparent 70%
+    );
+  overflow: hidden;
+}
+
+.rc-chart-svg {
+  position: absolute;
+  inset: 8px 0 22px;
+  width: 100%;
+  height: calc(100% - 30px);
+  overflow: visible;
+}
+
+.rc-chart-path {
+  fill: none;
+  stroke: var(--c-primary);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  /* preserveAspectRatio="none" would stretch the stroke: use a non-scaling one. */
+  vector-effect: non-scaling-stroke;
+}
+
+.rc-chart-area { fill: color-mix(in srgb, var(--c-primary) 12%, transparent); }
+
+.rc-chart-line {
+  position: absolute;
+  inset-inline: 0;
+  top: calc(8px + (100% - 30px) * var(--at) / 100%);
+  height: 0;
+  border-top: 1px dashed color-mix(in srgb, var(--c-muted) 45%, transparent);
+  pointer-events: none;
+}
+
+.rc-chart-line--pass {
+  border-top: 1px dashed color-mix(in srgb, var(--c-danger) 55%, transparent);
+}
+
+.rc-chart-line--pass em {
+  position: absolute;
+  inset-inline-start: 4px;
+  top: -16px;
+  font-size: 9.5px;
+  font-style: normal;
+  font-weight: 700;
+  color: var(--c-danger);
+}
+
+.rc-chart-dot {
+  position: absolute;
+  inset-inline-start: calc(4px + (100% - 8px) * var(--rc-x) / 100%);
+  top: calc(4px + (100% - 26px) * var(--rc-y) / 100%);
+  width: 9px;
+  height: 9px;
+  margin-inline-start: -4.5px;
+  margin-top: -4.5px;
+  border-radius: 999px;
+  background: var(--c-primary);
+  border: 2px solid var(--c-surface);
+  box-shadow: 0 0 0 1px var(--c-primary);
+}
+
+.rc-chart-dot.is-below {
+  background: var(--c-danger);
+  box-shadow: 0 0 0 1px var(--c-danger);
+}
+
+.rc-chart-axis {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 2px;
+  font-size: 9px;
+  color: var(--c-subtle);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Subject rail ------------------------------------------------------ */
+.rc-subject-list {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rc-subject { display: flex; flex-direction: column; gap: 5px; }
+
+.rc-subject-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.rc-subject-name { font-size: 12.5px; font-weight: 700; }
+
+.rc-subject-value {
+  font-size: 12.5px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.rc-subject.is-below .rc-subject-value { color: var(--c-danger); }
+.rc-subject.is-above .rc-subject-value { color: var(--c-success); }
+
+.rc-subject-track {
+  position: relative;
+  height: 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--c-text) 8%, transparent);
+}
+
+.rc-subject-fill {
+  display: block;
+  width: var(--rc-value, 0%);
+  height: 100%;
+  border-radius: inherit;
+  background: var(--c-primary);
+}
+
+.rc-subject.is-below .rc-subject-fill { background: var(--c-danger); }
+
+/* The pass line, drawn ON the rail: a subject's distance from it is the
+   thing the student is being asked to read. */
+.rc-subject-pass {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  inset-inline-start: calc(var(--at) * 1%);
+  width: 2px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--c-text) 55%, transparent);
+}
+
+.rc-subject-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 10.5px;
+  color: var(--c-muted);
+}
+
+.rc-trend-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 700;
+}
+
+.rc-trend-chip i { font-size: 9px; }
+.rc-trend-chip--up { color: var(--c-success); }
+.rc-trend-chip--down { color: var(--c-danger); }
+.rc-trend-chip--flat { color: var(--c-muted); }
+
+/* --- Weak subjects ----------------------------------------------------- */
+.rc-weak-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rc-weak-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 13px 14px;
+  border: 1px solid color-mix(in srgb, var(--c-danger) 30%, var(--c-border));
+  border-radius: var(--radius-md);
+  background:
+    linear-gradient(
+      160deg,
+      color-mix(in srgb, var(--c-danger) 8%, var(--c-surface)),
+      var(--c-surface) 75%
+    );
+}
+
+.rc-weak-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.rc-weak-head strong { font-size: 13.5px; font-weight: 800; }
+
+.rc-weak-gap {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--c-danger);
+}
+
+.rc-weak-bar {
+  height: 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--c-danger) 14%, transparent);
+}
+
+.rc-weak-bar span {
+  display: block;
+  width: var(--rc-value, 0%);
+  height: 100%;
+  border-radius: inherit;
+  background: var(--c-danger);
+}
+
+.rc-weak-note {
+  display: flex;
+  gap: 6px;
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.9;
+  color: var(--c-text);
+}
+
+.rc-weak-note i { color: var(--c-warning); font-size: 11px; margin-top: 3px; }
+
+.rc-weak-meta {
+  font-size: 10.5px;
+  color: var(--c-muted);
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+/* --- Absences ---------------------------------------------------------- */
+.rc-absence-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rc-absence-list li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--c-danger) 7%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c-danger) 18%, transparent);
+  font-size: 12px;
+}
+
+.rc-absence-date { color: var(--c-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.rc-absence-title { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rc-absence-source { font-size: 10.5px; color: var(--c-danger); font-weight: 700; }
+
+/* --- Row log ----------------------------------------------------------- */
+.rc-log {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rc-log-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  background: var(--c-surface-alt);
+  transition: border-color var(--animation-duration) var(--ease, ease);
+}
+
+.rc-log-row:hover { border-color: color-mix(in srgb, var(--c-primary) 38%, var(--c-border)); }
+.rc-log-row.is-absent { opacity: 0.82; }
+
+.rc-log-source {
+  --rc-brand: var(--c-primary);
+  display: inline-flex;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: var(--rc-brand);
+  background: color-mix(in srgb, var(--rc-brand) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--rc-brand) 26%, transparent);
+  white-space: nowrap;
+}
+
+.rc-log-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.rc-log-main strong {
+  font-size: 12.5px;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rc-log-main small { font-size: 10.5px; color: var(--c-muted); }
+
+.rc-log-score {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  white-space: nowrap;
+}
+
+.rc-log-score strong { font-size: 13.5px; font-weight: 800; color: var(--c-success); font-variant-numeric: tabular-nums; }
+.rc-log-score strong.is-below { color: var(--c-danger); }
+.rc-log-score small { font-size: 10px; color: var(--c-muted); }
+
+.rc-log-open {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  color: var(--c-muted);
+  transition: color var(--animation-duration) ease, background var(--animation-duration) ease;
+}
+
+.rc-log-open:hover {
+  color: var(--c-primary);
+  background: color-mix(in srgb, var(--c-primary) 10%, transparent);
+}
+
+/* --- Reveal ------------------------------------------------------------ */
+@media (prefers-reduced-motion: no-preference) {
+  [data-reveal].rc-reveal {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  [data-reveal].rc-reveal.is-in {
+    opacity: 1;
+    transform: none;
+    transition:
+      opacity 420ms var(--ease, ease),
+      transform 420ms var(--ease, ease);
+  }
+}
+
+/* --- Responsive -------------------------------------------------------- */
+@media (max-width: 1023px) {
+  .rc-hero { grid-template-columns: minmax(0, 1fr); }
+  .rc-columns { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 599px) {
+  .rc-hero-facts { grid-template-columns: minmax(0, 1fr); }
+  .rc-chart { height: 150px; }
+  .rc-log-row { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .rc-log-open { display: none; }
+  .rc-absence-list li { grid-template-columns: minmax(0, 1fr) auto; }
+  .rc-absence-title { grid-column: 1 / -1; order: 3; }
+}

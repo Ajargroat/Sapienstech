@@ -57,6 +57,7 @@ class ProfileController extends Controller
 
         return match ($tab) {
             'chat' => $chat->index($request),
+            'report' => app(ReportSettingsController::class)->index($request),
             'edit' => view('consultant.settings.edit', [
                 'user' => $request->user(),
                 'tabs' => SettingsTabs::visible('consultant'),

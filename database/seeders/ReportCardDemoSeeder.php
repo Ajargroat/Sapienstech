@@ -19,9 +19,21 @@ use Illuminate\Support\Facades\DB;
  */
 class ReportCardDemoSeeder extends Seeder
 {
+    /**
+     * @param  string  $dataset  `demo` (tenant-one, the default) or `moein`
+     *                           (a multi-year trend for the moeinacademy school
+     *                           tenant, so the student report card can be seen
+     *                           with real history).
+     * @param  int|null  $tenantId  Write into this tenant; default = first.
+     */
+    public function __construct(
+        private readonly string $dataset = 'demo',
+        private readonly ?int $tenantId = null,
+    ) {}
+
     public function run(): void
     {
-        $file = database_path('seeders/report-cards-demo.json');
+        $file = database_path('seeders/report-cards-'.$this->dataset.'.json');
 
         if (! is_file($file)) {
             $this->command?->warn("Not found: {$file}");
@@ -31,7 +43,7 @@ class ReportCardDemoSeeder extends Seeder
 
         $data = json_decode(file_get_contents($file), true, 512, JSON_THROW_ON_ERROR);
 
-        $tenantId = (int) DB::table('tenants')->orderBy('id')->value('id');
+        $tenantId = $this->tenantId ?? (int) DB::table('tenants')->orderBy('id')->value('id');
         abort_unless($tenantId > 0, 1, 'دیتابیس هیچ tenant ندارد.');
 
         $studentIds = array_map(

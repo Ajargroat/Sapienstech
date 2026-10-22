@@ -39,6 +39,10 @@ return [
         'student_schedule' => true,
         'student_exams' => true,
         'report_cards' => true,
+        // A school tenant: every student sits the same exams, so the
+        // participants' average next to each subject is meaningful. The
+        // consultancy tenants keep the baseline (hidden).
+        'report_show_class_average' => true,
         'direct_chat' => true,
         'student_chat' => true,
         'bulk_actions' => true,

@@ -74,6 +74,7 @@ export default defineConfig(({ mode }) => {
 
                     'resources/js/features/profile-edit.js',
                     'resources/js/features/student-dashboard.js',
+                    'resources/js/features/student-report-card.js',
                     'resources/js/features/teacher-panel.js',
                     // Dev-only Agentation toolbar; guarded by import.meta.env.DEV,
                     // so it loads nothing in a production build.

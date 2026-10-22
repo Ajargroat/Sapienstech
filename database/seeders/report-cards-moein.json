@@ -1,0 +1,99 @@
+{
+  "companies": [
+    { "name": "قلم‌چی", "slug": "ghalamchi", "color": "#E11D48" },
+    { "name": "ماز", "slug": "maz", "color": "#7C3AED" },
+    { "name": "سنجش", "slug": "sanjesh", "color": "#0EA5E9" }
+  ],
+  "results": [
+    {
+      "student_id": 6246,
+      "company": "ghalamchi",
+      "title": "آزمون آزمایشی ۲۵ — جامع تجربی",
+      "exam_date": "2026-06-20",
+      "status": "completed",
+      "total_questions": 120,
+      "correct_count": 72,
+      "wrong_count": 24,
+      "blank_count": 24,
+      "percent": 60.0,
+      "exam_rank": 5400,
+      "participants": 92000,
+      "lesson_percents": { "زیست‌شناسی": 68, "شیمی": 58, "فیزیک": 52, "ریاضی": 44 }
+    },
+    {
+      "student_id": 6246,
+      "company": "ghalamchi",
+      "title": "آزمون آزمایشی ۲۸ — جامع تجربی",
+      "exam_date": "2026-07-18",
+      "status": "completed",
+      "total_questions": 120,
+      "correct_count": 79,
+      "wrong_count": 21,
+      "blank_count": 20,
+      "percent": 66.0,
+      "exam_rank": 4100,
+      "participants": 95000,
+      "lesson_percents": { "زیست‌شناسی": 73, "شیمی": 63, "فیزیک": 55, "ریاضی": 48 }
+    },
+    {
+      "student_id": 6246,
+      "company": "maz",
+      "title": "آزمون جامع ماز — نوبت اول",
+      "exam_date": "2026-08-15",
+      "status": "completed",
+      "total_questions": 100,
+      "correct_count": 71,
+      "wrong_count": 19,
+      "blank_count": 10,
+      "percent": 71.0,
+      "exam_rank": 2300,
+      "participants": 41000,
+      "lesson_percents": { "زیست‌شناسی": 78, "شیمی": 69, "فیزیک": 58, "ریاضی": 52 }
+    },
+    {
+      "student_id": 6246,
+      "company": "sanjesh",
+      "title": "آزمون شبیه‌ساز کنکور سراسری — مرحله ۱",
+      "exam_date": "2026-09-10",
+      "status": "completed",
+      "total_questions": 200,
+      "correct_count": 138,
+      "wrong_count": 40,
+      "blank_count": 22,
+      "percent": 69.0,
+      "exam_rank": 18000,
+      "participants": 130000,
+      "lesson_percents": { "زیست‌شناسی": 76, "شیمی": 66, "فیزیک": 60, "ریاضی": 50 }
+    },
+    {
+      "student_id": 6246,
+      "company": "ghalamchi",
+      "title": "آزمون آزمایشی ۳۱ — جامع تجربی",
+      "exam_date": "2026-10-02",
+      "status": "completed",
+      "total_questions": 120,
+      "correct_count": 88,
+      "wrong_count": 20,
+      "blank_count": 12,
+      "percent": 73.0,
+      "exam_rank": 2900,
+      "participants": 97000,
+      "lesson_percents": { "زیست‌شناسی": 81, "شیمی": 70, "فیزیک": 63, "ریاضی": 56 }
+    },
+    {
+      "student_id": 6246,
+      "company": "maz",
+      "title": "آزمون جامع ماز — نوبت سوم",
+      "exam_date": "2026-10-14",
+      "status": "absent",
+      "total_questions": null,
+      "correct_count": null,
+      "wrong_count": null,
+      "blank_count": null,
+      "percent": null,
+      "exam_rank": null,
+      "participants": 39000,
+      "lesson_percents": null
+    }
+  ]
+}

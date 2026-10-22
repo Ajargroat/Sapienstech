@@ -84,6 +84,26 @@ return [
 
         /*
         |------------------------------------------------------------------------
+        | Student report card (کارنامه) — the student's own page.
+        |
+        | `report_pass_line` is the percentage a subject is judged against; it
+        | drives the "needs attention" list and the passed/not-passed colour on
+        | the report card and the dashboard's stats block. Written by the
+        | consultant from Settings → کارنامه (not Studio), and resolved as
+        | `report.pass_line` — see App\Support\ReportCard::passLine(). 0..100.
+        |
+        | `report_show_class_average` (default false) shows the named
+        | corporations' "% of participants" line next to each subject. The
+        | number can only come from a report that was imported with a class
+        | (participants) figure, so a consultant tenant that never imports one
+        | simply never sees the row. Off by default: competition is opt-in.
+        |------------------------------------------------------------------------
+        */
+        'report_pass_line' => 50,
+        'report_show_class_average' => false,
+
+        /*
+        |------------------------------------------------------------------------
         | Deal renewal (تمدید و پرداخت) — the consultant manager plus the
         | student's continue/withdraw decision + payment receipt submission.
         |------------------------------------------------------------------------

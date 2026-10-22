@@ -49,6 +49,11 @@ class SettingsTabs
             ['key' => 'edit',       'label_key' => 'settings_profile_edit', 'fallback' => 'ویرایش پروفایل',  'feature' => 'settings_profile', 'icon' => 'fa-user-pen'],
 
             ['key' => 'chat',       'label_key' => 'settings_chat',        'fallback' => 'گفتگو',            'feature' => 'settings_chat',    'icon' => 'fa-comments'],
+
+            // The pass line + class-average switch the student کارنامه reads.
+            // Gated by `report_cards`: with no report card there is nothing
+            // here to configure.
+            ['key' => 'report',     'label_key' => 'settings_report',      'fallback' => 'کارنامه',          'feature' => 'report_cards',     'icon' => 'fa-chart-pie'],
         ];
     }
 

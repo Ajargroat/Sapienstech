@@ -3,19 +3,31 @@
 namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
+use App\Support\ReportCard;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 /**
- * The student's report-card (کارنامه) page, reachable from the portal's top
- * navigation. The real report-card data pipeline is consultant-side only for
- * now (see App\Http\Controllers\Consultant\StudentReportCardController), so
- * this page currently carries the "coming soon" notice that used to sit in a
- * dashboard panel.
+ * The student's report card (کارنامه) — their own exams, side by side.
+ *
+ * Replaces the "coming soon" panel with the real contract
+ * (App\Support\ReportCard), which merges the tenant's in-system exams with the
+ * corporation mock results the consultant imported for this student.
+ *
+ * The page never asks who the student is: it reads the authenticated
+ * `student` guard, and both models carry BelongsToTenant, so a student can only
+ * ever see their own tenant's rows.
  */
 class StudentReportCardController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
-        return view('student.report-card');
+        $student = $request->user('student');
+        $report = ReportCard::forStudent($student);
+
+        return view('student.report-card', [
+            'student' => $student,
+            'report' => $report,
+        ]);
     }
 }

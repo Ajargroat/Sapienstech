@@ -15,6 +15,7 @@ use App\Http\Controllers\Consultant\JoinRequestController as ConsultantJoinReque
 use App\Http\Controllers\Consultant\ScheduleAssistantController;
 use App\Http\Controllers\Consultant\Settings\ChatSettingsController as ConsultantChatSettingsController;
 use App\Http\Controllers\Consultant\Settings\ProfileController as ConsultantProfileController;
+use App\Http\Controllers\Consultant\Settings\ReportSettingsController as ConsultantReportSettingsController;
 use App\Http\Controllers\Consultant\StudentExamController;
 use App\Http\Controllers\Consultant\StudentFeatureController;
 use App\Http\Controllers\Consultant\StudentReportCardController;
@@ -205,6 +206,13 @@ Route::middleware('auth')->prefix('consultant')->name('consultant.')->group(func
         Route::post('chat', [ConsultantChatSettingsController::class, 'save'])
             ->middleware('consultant.feature:settings_chat')
             ->name('chat.save');
+
+        // The report-card section: the pass line plus the class-average
+        // switch that the student کارنامه and the dashboard read. Gated by
+        // the same feature that shows the report card at all.
+        Route::post('report', [ConsultantReportSettingsController::class, 'save'])
+            ->middleware('consultant.feature:report_cards')
+            ->name('report.save');
 
         /*
         | Appearance studio — moved to the standalone /studio page (the
