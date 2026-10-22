@@ -44,3 +44,7 @@ Thumbs.db
 .idea
 .vscode
 .claude
+
+# Python bytecode (scripts/pdf/ is run by the PDF pipeline)
+__pycache__/
+*.pyc

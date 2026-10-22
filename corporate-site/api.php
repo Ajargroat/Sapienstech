@@ -1,4 +1,6 @@
 <?php
+// Marks this as the only caller allowed to execute config.php.
+define('CORPORATE_API', true);
 require_once __DIR__ . '/config.php';
 
 // ─── CORS headers ─────────────────────────────────────────────────────────

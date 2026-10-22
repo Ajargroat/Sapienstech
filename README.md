@@ -21,6 +21,14 @@ primary domain. **Leave that variable empty in production.**
 `sapienstech.ir` is the company site, not a tenant: it lives in `corporate-site/`
 and is served by its own nginx vhost. See `docs/corporate-site.md`.
 
+That vhost serves the marketing page, `api.php` and static assets — **it must not
+hand ordinary page requests to `public/index.php`**. When it does, every path the
+framework does not own 404s at the Laravel error page while the corporate vhost
+still answers `200`, so the site is both broken and "up". The failure is silent
+because the tenant is correct either way; only the file list tells you which
+document root served the response (`fonts/`, `api.php` exist only under
+`corporate-site/`). See `docs/deployment.md` for the checkout and vhost layout.
+
 ## How tenancy works
 
 Two things resolve a tenant, and they are independent:

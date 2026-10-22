@@ -84,9 +84,22 @@ by nginx directly and never reaches Laravel; everything else falls through to
 
 `sapienstech.ir` is the one host that does **not** use this document root. It
 has its own vhost — checked in as `deploy/nginx/sapienstech.ir.conf`, installed
-as `/etc/nginx/sites-available/sapienstech.ir` — pointing at
+as `/etc/nginx/sites-available/sapienstech` (the pre-existing vhost file; do not
+add a second file for the same name) — pointing at
 `/var/www/sapienstech/corporate-site`. The apex is the company site, not a
 tenant, so it must not fall through to `index.php`.
+
+That host is still `200` when it is broken. If its server block points at the
+Laravel document root, nginx answers every request from `public/index.php`, and
+`IdentifyTenant` then 404s the paths the framework does not own — the visitor
+sees the Laravel error page on a site that looks up. Two quick probes tell the
+two roots apart, because `fonts/` and `api.php` exist only under
+`corporate-site/`:
+
+| probe | corporate root | Laravel root |
+|---|---|---|
+| `curl -sI https://sapienstech.ir/api.php` | `405` (or `204`) + `Access-Control-Allow-*` | `404`, HTML body |
+| `curl -s https://sapienstech.ir/fonts/` | font file or `403` | `404` |
 
 It is still deployed by `git pull` in this repository; a content change needs
 no `npm`, no `migrate` and no cache rebuild. Full runbook, including the

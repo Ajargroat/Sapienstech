@@ -6,7 +6,7 @@ different document root. That separation is the whole design, so read the two
 paragraphs below before changing anything.
 
 ```text
-sapienstech.ir      ──► /etc/nginx/sites-available/sapienstech.ir
+sapienstech.ir      ──► /etc/nginx/sites-available/sapienstech
                         root /var/www/sapienstech/corporate-site
                         index.html  ·  api.php  ·  fonts/  ·  logo.png
 
@@ -14,6 +14,13 @@ everything else     ──► the Laravel vhost
                         root /var/www/sapienstech/public
                         IdentifyTenant → domains table → tenant
 ```
+
+One file, one `server_name`. The vhost is installed **over** the existing
+`sites-available/sapienstech` file; a second file named `sapienstech.ir` is how
+this host was once served by the Laravel root instead — the page 404'd at the
+framework while the site still answered `200`. After any change, `sudo nginx -T
+| grep -n server_name` must show exactly one block claiming the apex, and
+`curl -sI https://sapienstech.ir/api.php` must answer `405`, not a `404` page.
 
 **Why not just put the files in `public/`?** The Laravel vhost falls through to
 `public/index.php` for every host and resolves it against the `domains` table.
@@ -83,8 +90,17 @@ which looks exactly like "my change did nothing".
 ```bash
 sudo cp /etc/nginx/sites-available/sapienstech /root/nginx-sapienstech.ir.bak
 sudo cp deploy/nginx/sapienstech.ir.conf /etc/nginx/sites-available/sapienstech
+# Remove the stray second block if an earlier attempt created one:
+sudo rm -f /etc/nginx/sites-enabled/sapienstech.ir
 sudo grep -nE "root|server_name" /etc/nginx/sites-available/sapienstech
 sudo nginx -t && sudo systemctl reload nginx
+```
+
+Then prove which root answers (the corporate root owns these paths):
+
+```bash
+sudo nginx -T | grep -n "server_name"     # exactly one block for the apex
+curl -sI https://sapienstech.ir/api.php   # 405, not an HTML 404
 ```
 
 The `grep` must print `root /var/www/sapienstech/corporate-site;`. If it still
@@ -171,12 +187,14 @@ block only affects caching; unknown extensions still fall through
 ## Rollback
 
 ```bash
-sudo rm /etc/nginx/sites-enabled/sapienstech.ir
-sudo systemctl reload nginx
+sudo cp /root/nginx-sapienstech.ir.bak /etc/nginx/sites-available/sapienstech
+sudo nginx -t && sudo systemctl reload nginx
 ```
 
 The apex then falls back to the Laravel vhost. That only serves the old
 آکادمی جنت page if its `domains` row still exists — see below.
+(Do not delete `sites-enabled/sapienstech` — that file also carries the tenant
+hosts, so removing it takes every tenant down with the corporate page.)
 
 ## The old tenant (`tenant-one`)
 
