@@ -17,6 +17,10 @@ use Throwable;
  *     request can ever become a path segment;
  *   - the slug must exist in the `tenants` table (the page folder alone is not
  *     enough — a folder with no tenant is dead weight, not a surface);
+ *   - a deploy-time `tenant.surface` key may point the tenant at a different
+ *     surface directory (the production `dr-kafi-mentoring` alias uses
+ *     `drkafimentoring`); the alias passes the same slug rule, so it can never
+ *     become a path either;
  *   - `meta.json` must exist and declare this surface `enabled`;
  *   - the Blade file must exist;
  *   - ANY exception on the way (missing file, unreadable JSON, malformed
@@ -63,7 +67,7 @@ class LandingSurface
     /** The directory that would hold this tenant's surface, valid or not. */
     public function path(?Tenant $tenant): ?string
     {
-        $slug = $this->safeSlug($tenant);
+        $slug = $this->surfaceSlug($tenant);
 
         return $slug === null ? null : resource_path(self::ROOT.DIRECTORY_SEPARATOR.$slug);
     }
@@ -112,10 +116,35 @@ class LandingSurface
         return preg_match('/^[a-z0-9][a-z0-9-]*$/', $slug) === 1 ? $slug : null;
     }
 
+    /**
+     * The slug of the directory that holds this tenant's surfaces.
+     *
+     * Normally it is the tenant slug. A deploy-time alias (`tenant.surface`)
+     * exists because a tenant may be renamed in the database while its shipped
+     * surfaces keep their original folder — `dr-kafi-mentoring` in production
+     * points at the tracked `drkafimentoring` folder. The alias is read from
+     * the tenant's config file, never from the request, and is validated by
+     * the same slug rule as the tenant slug before it is concatenated.
+     */
+    public function surfaceSlug(?Tenant $tenant): ?string
+    {
+        $slug = $this->safeSlug($tenant);
+
+        if ($slug === null) {
+            return null;
+        }
+
+        $alias = config("tenants.{$slug}.tenant.surface");
+
+        return is_string($alias) && preg_match('/^[a-z0-9][a-z0-9-]*$/', $alias) === 1
+            ? $alias
+            : $slug;
+    }
+
     /** @return string|null the view name, or null to use the legacy landing */
     protected function resolve(?Tenant $tenant, bool $force): ?string
     {
-        $slug = $this->safeSlug($tenant);
+        $slug = $this->surfaceSlug($tenant);
 
         if ($slug === null) {
             return null;

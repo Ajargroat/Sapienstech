@@ -36,7 +36,11 @@ return [
         // style-src only. This is a deliberate, bounded concession: a style
         // cannot execute script, and the tenant-supplied CSS escape hatch is
         // already admin-only (theme-vars.blade.php:49-52).
-        'style_src' => ["'self'", "'unsafe-inline'"],
+        //
+        // cdnjs serves the Font Awesome stylesheet that partials/theme-icons
+        // emits by default; without it in style-src the icons render empty
+        // while font-src (which already allows cdnjs) is never reached.
+        'style_src' => ["'self'", "'unsafe-inline'", 'https://cdnjs.cloudflare.com'],
 
         // Font Awesome is loaded from cdnjs by partials/theme-icons; the
         // tenant's chosen icon set is served same-origin from public/icons.

@@ -283,11 +283,11 @@ class AuthSurfaceTest extends TestCase
 
         // Dispatched at all — the failure this test exists to catch.
         $this->assertStringContainsString('data-auth-surface="tenant-one"', $content);
-        $this->assertStringContainsString('<body class="jn-auth">', $content);
+        $this->assertStringContainsString('<body class="auth-shell">', $content);
 
         // The frame the shell owns.
-        $this->assertStringContainsString('<blockquote class="jn-auth__quote">', $content);
-        $this->assertStringContainsString('jn-auth__panel', $content);
+        $this->assertStringContainsString('<blockquote class="auth-shell__quote">', $content);
+        $this->assertStringContainsString('auth-shell__panel', $content);
 
         // The card is de-chromed, never re-implemented: still one shared
         // partial (its login-card hook), still once, still both guards.

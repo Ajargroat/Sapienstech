@@ -7,15 +7,24 @@ page receives — identical to the shared landing — is governed by the contrac
 
 ```
 resources/landings/{slug}/
-    landing.blade.php   the page — the tenant owns this markup completely
-    meta.json           declares the surface published (see below)
-    landing.css         optional: the page's own CSS
-    landing.js          optional: the page's own behaviour
+    landing.blade.php     the page — the tenant owns this markup completely
+    login-shell.blade.php the login frame — presentation only (see below)
+    meta.json             declares the surface published (see below)
+    landing.css           optional: the page's own CSS
+    landing.js            optional: the page's own behaviour
 ```
 
 `{slug}` must be the tenant's `slug` from the `tenants` table and must match
 `^[a-z0-9][a-z0-9-]*$`. Nothing else is accepted — see
 `app/Support/LandingSurface.php`.
+
+A tenant whose database slug differs from its shipped folder names the folder
+with the deploy-time `tenant.surface` key in its config file. Production is the
+live example: the tenant slug is `dr-kafi-mentoring`, the committed surfaces
+are `resources/landings/drkafimentoring/`, and
+`config/tenants/drkafimentoring.php` declares `'surface' => 'drkafimentoring'`.
+The alias is read from config, never from a request, and is validated by the
+same slug rule before it becomes a path.
 
 ## Why this exists
 
@@ -93,11 +102,23 @@ Rules a generated page must follow:
 
 ## Adding a page
 
+`php artisan tenant:make` scaffolds both files from the checked-in stubs in
+`resources/stubs/` and publishes the surface only after `LandingLint` passes.
+For an existing tenant:
+
 1. Create `resources/landings/{slug}/landing.blade.php`.
 2. Include the two partials above.
 3. Write the page against the core sheet.
 4. Leave `meta.json` out (or `"enabled": false`) until it is reviewed.
 5. Run the publish gate below; only then set `"enabled": true` to publish.
+
+## The login shell
+
+`login-shell.blade.php` is optional and follows exactly the same fail-closed
+rules. It may change the frame, never the credential card: the shell includes
+`auth.partials.login-card` unchanged, so both guards, `@csrf`, `throttle:login`,
+the failed-login tab re-open and `whereIdentifier` stay platform wiring. A
+missing/unpublished shell renders the shared `auth.login` page instead.
 
 ## Publish gate
 
@@ -105,6 +126,7 @@ A surface goes live only when the linter is green:
 
 ```sh
 php artisan landing:lint drkafimentoring
+php artisan landing:lint          # every surface
 ```
 
 Non-zero exit means "do not publish" — fix the reported problems first.

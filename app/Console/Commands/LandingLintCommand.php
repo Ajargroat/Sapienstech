@@ -107,7 +107,14 @@ class LandingLintCommand extends Command
 
         // Publishing state is reported but never fails the lint: an
         // unpublished page that is otherwise correct is a page in review.
-        $tenant = Tenant::where('slug', $slug)->first();
+        //
+        // The tenant is resolved by its *surface* slug, not its database slug:
+        // production's `dr-kafi-mentoring` owns the `drkafimentoring` folder
+        // through the `tenant.surface` alias, so a plain slug lookup reported
+        // the live page as "not published".
+        $tenant = Tenant::query()
+            ->get()
+            ->first(fn (Tenant $candidate): bool => $surfaces->surfaceSlug($candidate) === $slug);
         $published = $tenant !== null && $surfaces->for($tenant) !== null;
 
         if ($problems === []) {

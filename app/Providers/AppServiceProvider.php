@@ -63,8 +63,12 @@ class AppServiceProvider extends ServiceProvider
         View::getFinder()->prependLocation(str_replace('\\', '/', resource_path('landings')));
 
         RateLimiter::for('login', function (Request $request) {
+            // The login card posts `identifier` (email, national code or
+            // phone), not `email`. Keying on the field that does not exist
+            // silently reduced this to a per-IP limit, so one attempt per
+            // account was never actually counted.
             return Limit::perMinute(5)->by(
-                strtolower((string) $request->input('email')).'|'.$request->ip()
+                strtolower((string) $request->input('identifier')).'|'.$request->ip()
             );
         });
 

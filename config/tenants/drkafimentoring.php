@@ -24,6 +24,13 @@ return [
         'short_name' => 'علیرضا کافی',
         'role_label' => 'پنل مشاور',
         'page_title' => 'داشبورد مشاور',
+
+        // The production tenant row is `dr-kafi-mentoring` (see
+        // config/tenants/dr-kafi-mentoring.php) while the shipped bespoke
+        // surfaces live under the tracked `drkafimentoring` folder. This alias
+        // is the single mapping between the two; LandingSurface/AuthSurface
+        // validate it with the same slug rule as the tenant slug.
+        'surface' => 'drkafimentoring',
     ],
 
     'theme' => [

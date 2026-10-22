@@ -51,7 +51,7 @@
     $monogram = mb_substr((string) ($adv['name'] ?? $tenant['name']), 0, 1);
 
     $advisorImage = isset($adv['image'])
-        ? 'tenants/'.($tenant['slug'] ?? '').'/'.ltrim((string) $adv['image'], '/')
+        ? 'tenants/'.(tenant()?->slug ?? '').'/'.ltrim((string) $adv['image'], '/')
         : null;
 @endphp
 <!DOCTYPE html>

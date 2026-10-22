@@ -4,7 +4,9 @@ namespace App\Console\Commands;
 
 use App\Models\Domain;
 use App\Models\Tenant;
+use App\Models\User;
 use App\Models\WebsiteConfig;
+use App\Support\LandingLint;
 use App\Support\SiteConfig;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
@@ -28,7 +30,7 @@ class TenantMake extends Command
                             {--admin-email= : Optional tenant_admin login to create}
                             {--force : Overwrite an existing tenant config file}';
 
-    protected $description = 'Create a tenant, its primary domain, its config file and its asset folder';
+    protected $description = 'Create a tenant, its primary domain, its config file, its bespoke landing surface and its asset folder';
 
     /**
      * Characters a slug may not contain. `:` is the important one: it is legal in
@@ -39,27 +41,31 @@ class TenantMake extends Command
 
     public function handle(): int
     {
-        $slug  = Str::slug((string) $this->argument('slug'));
-        $name  = (string) $this->argument('name');
+        $slug = Str::slug((string) $this->argument('slug'));
+        $name = (string) $this->argument('name');
         $arche = (string) $this->option('archetype');
 
         if ($slug === '') {
             $this->error('The slug resolved to an empty string.');
+
             return self::FAILURE;
         }
 
         if (strpbrk($slug, self::INVALID_SLUG_CHARS) !== false) {
             $this->error('Slug contains a character that is unsafe on Windows filesystems: '.self::INVALID_SLUG_CHARS);
+
             return self::FAILURE;
         }
 
         if (! is_file(config_path("archetypes/{$arche}.php"))) {
             $this->error("Unknown archetype '{$arche}'. Available: ".implode(', ', $this->archetypes()));
+
             return self::FAILURE;
         }
 
         if (Tenant::where('slug', $slug)->exists()) {
             $this->error("A tenant with slug '{$slug}' already exists.");
+
             return self::FAILURE;
         }
 
@@ -67,6 +73,7 @@ class TenantMake extends Command
 
         if (is_file($configPath) && ! $this->option('force')) {
             $this->error("config/tenants/{$slug}.php already exists. Use --force to overwrite.");
+
             return self::FAILURE;
         }
 
@@ -86,6 +93,15 @@ class TenantMake extends Command
 
         // ---- config file ---------------------------------------------------
         if ($this->writeConfigFile($configPath, $slug, $name, $arche) === self::FAILURE) {
+            return self::FAILURE;
+        }
+
+        // ---- bespoke surface ----------------------------------------------
+        // A new tenant is a *new-landing* tenant from its first request: the
+        // scaffold is the same bespoke surface system the shipped tenants use
+        // (resources/landings/{slug}/), not the legacy shared skeleton. Both
+        // files are copied from the checked-in stubs, linted, and published.
+        if ($this->writeSurface($slug) === self::FAILURE) {
             return self::FAILURE;
         }
 
@@ -186,9 +202,79 @@ class TenantMake extends Command
         return self::SUCCESS;
     }
 
+    /**
+     * Scaffold the tenant's bespoke landing surface.
+     *
+     * The files are checked-in stubs (resources/stubs/), so the generated page
+     * is exactly the page the factory ships and is linted here before it is
+     * published. A surface that fails the contract is written disabled rather
+     * than pretending to be live: LandingSurface then falls back to the shared
+     * page, which is the fail-closed behaviour the resolver already provides.
+     */
+    private function writeSurface(string $slug): int
+    {
+        $dir = resource_path('landings/'.$slug);
+
+        if (is_file($dir.'/landing.blade.php')) {
+            $this->components->warn("resources/landings/{$slug}/ already exists; surface kept.");
+
+            return self::SUCCESS;
+        }
+
+        $landingStub = resource_path('stubs/landing.blade.php');
+        $loginStub = resource_path('stubs/login-shell.blade.php');
+
+        foreach ([$landingStub, $loginStub] as $stub) {
+            if (! is_file($stub)) {
+                $this->error('Missing surface stub: '.$stub);
+
+                return self::FAILURE;
+            }
+        }
+
+        if (! is_dir($dir) && ! mkdir($dir, 0755, true) && ! is_dir($dir)) {
+            $this->error("Could not create {$dir}.");
+
+            return self::FAILURE;
+        }
+
+        $landing = (string) file_get_contents($landingStub);
+        $login = (string) file_get_contents($loginStub);
+
+        if (file_put_contents($dir.'/landing.blade.php', $landing) === false
+            || file_put_contents($dir.'/login-shell.blade.php', $login) === false) {
+            $this->error("Could not write the surface files in {$dir}.");
+
+            return self::FAILURE;
+        }
+
+        $problems = app(LandingLint::class)->check($landing);
+        $published = $problems === [];
+
+        file_put_contents($dir.'/meta.json', json_encode([
+            'enabled' => $published,
+            'published_at' => $published ? now()->toIso8601String() : null,
+            'published_by' => $published ? 'tenant:make' : null,
+        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT)."\n");
+
+        if (! $published) {
+            $this->error("Surface lint failed; resources/landings/{$slug}/ was created unpublished:");
+            foreach ($problems as $problem) {
+                $this->line('  - '.$problem);
+            }
+
+            return self::FAILURE;
+        }
+
+        $this->components->info("Wrote resources/landings/{$slug}/landing.blade.php");
+        $this->components->info("Wrote resources/landings/{$slug}/login-shell.blade.php (published)");
+
+        return self::SUCCESS;
+    }
+
     private function phpString(string $value): string
     {
-        return "'".str_replace(["\\", "'"], ["\\\\", "\\'"], $value)."'";
+        return "'".str_replace(['\\', "'"], ['\\\\', "\\'"], $value)."'";
     }
 
     private function createDomain(Tenant $tenant, string $host): void
@@ -197,13 +283,14 @@ class TenantMake extends Command
 
         if ($existing = Domain::where('domain', $host)->first()) {
             $this->warn("Domain {$host} already belongs to tenant {$existing->tenant_id}; skipped.");
+
             return;
         }
 
         Domain::create([
-            'tenant_id'   => $tenant->id,
-            'domain'      => $host,
-            'is_primary'  => true,
+            'tenant_id' => $tenant->id,
+            'domain' => $host,
+            'is_primary' => true,
             // Local/dev domains are trusted on creation. For production domains
             // clear this and verify out-of-band.
             'verified_at' => now(),
@@ -216,22 +303,23 @@ class TenantMake extends Command
 
     private function createAdmin(Tenant $tenant, string $email): void
     {
-        if (\App\Models\User::withoutGlobalScopes()->where('email', $email)->exists()) {
+        if (User::withoutGlobalScopes()->where('email', $email)->exists()) {
             $this->warn("User {$email} already exists; skipped.");
+
             return;
         }
 
         $password = Str::password(16);
 
-        \App\Models\User::withoutGlobalScopes()->create([
+        User::withoutGlobalScopes()->create([
             'tenant_id' => $tenant->id,
             // Left NULL on purpose: a tenant admin may enter through any of
             // their tenant's domains (see User::canLoginThrough).
             'domain_id' => null,
-            'name'      => $tenant->name,
-            'email'     => $email,
-            'password'  => bcrypt($password),
-            'role'      => \App\Models\User::ROLE_TENANT_ADMIN,
+            'name' => $tenant->name,
+            'email' => $email,
+            'password' => bcrypt($password),
+            'role' => User::ROLE_TENANT_ADMIN,
         ]);
 
         $this->components->info("tenant_admin {$email} / {$password}");
@@ -248,7 +336,9 @@ class TenantMake extends Command
         $this->line('     then run: ipconfig /flushdns');
         $this->line("  2. Add the host to vite.config.js server.allowedHosts if you use 'npm run dev'.");
         $this->line("  3. Put this tenant's images in public/tenants/{$slug}/images/.");
-        $this->line('  4. Fill in advisor / stats / testimonials / blog copy in');
-        $this->line("     config/tenants/{$slug}.php, then run: php artisan tenant:validate {$slug}");
+        $this->line("  4. Edit the surface in resources/landings/{$slug}/landing.blade.php");
+        $this->line('     and the copy in config/tenants/'.$slug.'.php;');
+        $this->line("     run: php artisan landing:lint {$slug}");
+        $this->line("     and: php artisan tenant:validate {$slug}");
     }
 }
